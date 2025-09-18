@@ -1,0 +1,26 @@
+name: clean_architecture_linter
+description: A comprehensive custom lint package that enforces Clean Architecture principles in Flutter projects.
+version: 0.1.0
+repository: https://github.com/ittae/clean_architecture_linter
+homepage: https://github.com/ittae/clean_architecture_linter
+documentation: https://github.com/ittae/clean_architecture_linter/blob/main/README.md
+issue_tracker: https://github.com/ittae/clean_architecture_linter/issues
+
+topics:
+  - flutter
+  - clean-architecture
+  - lint
+  - custom-lint
+  - static-analysis
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  analyzer: ^6.8.0
+  custom_lint_builder: ^0.6.7
+
+dev_dependencies:
+  custom_lint: ^0.6.7
+  lints: ^5.0.0
+  test: ^1.24.0
