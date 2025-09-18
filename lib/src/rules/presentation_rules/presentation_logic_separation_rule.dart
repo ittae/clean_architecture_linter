@@ -15,7 +15,7 @@ class PresentationLogicSeparationRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -25,7 +25,7 @@ class PresentationLogicSeparationRule extends DartLintRule {
 
   void _checkPresentationLogicSeparation(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -58,7 +58,7 @@ class PresentationLogicSeparationRule extends DartLintRule {
   bool _isUIWidget(String className, ClassDeclaration node) {
     final extendsClause = node.extendsClause;
     if (extendsClause != null) {
-      final superclass = extendsClause.superclass.name2.lexeme;
+      final superclass = extendsClause.superclass.name.lexeme;
       return superclass == 'StatefulWidget' ||
              superclass == 'StatelessWidget' ||
              superclass.endsWith('Widget');

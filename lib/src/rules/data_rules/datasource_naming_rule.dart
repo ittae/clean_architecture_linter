@@ -14,7 +14,7 @@ class DataSourceNamingRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -24,7 +24,7 @@ class DataSourceNamingRule extends DartLintRule {
 
   void _checkDataSourceNaming(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;

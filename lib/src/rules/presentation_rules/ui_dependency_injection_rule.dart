@@ -14,7 +14,7 @@ class UiDependencyInjectionRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addInstanceCreationExpression((node) {
@@ -24,7 +24,7 @@ class UiDependencyInjectionRule extends DartLintRule {
 
   void _checkUIConstructorUsage(
     InstanceCreationExpression node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -32,7 +32,7 @@ class UiDependencyInjectionRule extends DartLintRule {
     // Only check files in presentation layer
     if (!_isPresentationLayerFile(filePath)) return;
 
-    final constructorName = node.constructorName.type.name2.lexeme;
+    final constructorName = node.constructorName.type.name.lexeme;
 
     // Check if creating instances of domain or data layer classes directly
     if (_isDomainOrDataLayerClass(constructorName)) {

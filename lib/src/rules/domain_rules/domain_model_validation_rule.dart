@@ -29,7 +29,7 @@ class DomainModelValidationRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -39,7 +39,7 @@ class DomainModelValidationRule extends DartLintRule {
 
   void _checkDomainModelValidation(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -102,7 +102,7 @@ class DomainModelValidationRule extends DartLintRule {
     );
   }
 
-  void _checkBasicValidation(DomainModelAnalysis analysis, ErrorReporter reporter) {
+  void _checkBasicValidation(DomainModelAnalysis analysis, DiagnosticReporter reporter) {
     // Check if entity needs validation based on complexity
     if (analysis.complexityScore > 3 && analysis.validationMethods.isEmpty) {
       final code = LintCode(
@@ -118,7 +118,7 @@ class DomainModelValidationRule extends DartLintRule {
     }
   }
 
-  void _checkBusinessRules(DomainModelAnalysis analysis, ErrorReporter reporter) {
+  void _checkBusinessRules(DomainModelAnalysis analysis, DiagnosticReporter reporter) {
     // Entities with multiple business-related fields should have business rule methods
     if (analysis.isEntity && analysis.fieldCount > 3 && analysis.businessRuleMethods.isEmpty) {
       final code = LintCode(
@@ -133,7 +133,7 @@ class DomainModelValidationRule extends DartLintRule {
     }
   }
 
-  void _checkValueObjectValidation(DomainModelAnalysis analysis, ErrorReporter reporter) {
+  void _checkValueObjectValidation(DomainModelAnalysis analysis, DiagnosticReporter reporter) {
     // Value objects should always have validation
     if (analysis.isValueObject && analysis.validationMethods.isEmpty) {
       final code = LintCode(
@@ -151,7 +151,7 @@ class DomainModelValidationRule extends DartLintRule {
     }
   }
 
-  void _checkFactoryMethodValidation(DomainModelAnalysis analysis, ErrorReporter reporter) {
+  void _checkFactoryMethodValidation(DomainModelAnalysis analysis, DiagnosticReporter reporter) {
     // Check if factory methods have proper validation
     for (final factory in analysis.factoryMethods) {
       if (!_factoryHasValidation(factory)) {
@@ -165,7 +165,7 @@ class DomainModelValidationRule extends DartLintRule {
     }
   }
 
-  void _checkInvariantEnforcement(DomainModelAnalysis analysis, ErrorReporter reporter) {
+  void _checkInvariantEnforcement(DomainModelAnalysis analysis, DiagnosticReporter reporter) {
     // Check for invariant enforcement patterns
     if (analysis.complexityScore > 5 && !_hasInvariantEnforcement(analysis)) {
       final code = LintCode(

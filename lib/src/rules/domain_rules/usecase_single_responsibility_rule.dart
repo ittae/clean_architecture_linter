@@ -28,7 +28,7 @@ class UseCaseSingleResponsibilityRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -38,7 +38,7 @@ class UseCaseSingleResponsibilityRule extends DartLintRule {
 
   void _checkUseCaseResponsibility(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -98,7 +98,7 @@ class UseCaseSingleResponsibilityRule extends DartLintRule {
     );
   }
 
-  void _checkMethodCount(UseCaseAnalysis analysis, ErrorReporter reporter) {
+  void _checkMethodCount(UseCaseAnalysis analysis, DiagnosticReporter reporter) {
     if (analysis.mainMethods.isEmpty) {
       final code = LintCode(
         name: 'usecase_single_responsibility',
@@ -143,7 +143,7 @@ class UseCaseSingleResponsibilityRule extends DartLintRule {
     }
   }
 
-  void _checkBusinessLogicComplexity(UseCaseAnalysis analysis, ErrorReporter reporter) {
+  void _checkBusinessLogicComplexity(UseCaseAnalysis analysis, DiagnosticReporter reporter) {
     // Check if the main method is too complex (indication of multiple responsibilities)
     for (final method in analysis.mainMethods) {
       final complexity = _calculateMethodComplexity(method);
@@ -158,7 +158,7 @@ class UseCaseSingleResponsibilityRule extends DartLintRule {
     }
   }
 
-  void _checkMultipleConcerns(UseCaseAnalysis analysis, ErrorReporter reporter) {
+  void _checkMultipleConcerns(UseCaseAnalysis analysis, DiagnosticReporter reporter) {
     // Check if UseCase has too many dependencies (indication of multiple concerns)
     final dependencies = _countDependencies(analysis.fields);
     if (dependencies > 3) {
@@ -174,7 +174,7 @@ class UseCaseSingleResponsibilityRule extends DartLintRule {
     }
   }
 
-  void _checkUseCaseNaming(ClassDeclaration node, ErrorReporter reporter) {
+  void _checkUseCaseNaming(ClassDeclaration node, DiagnosticReporter reporter) {
     final className = node.name.lexeme;
 
     // Check if UseCase name is too generic or suggests multiple responsibilities

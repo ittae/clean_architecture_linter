@@ -15,7 +15,7 @@ class StateManagementRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -25,7 +25,7 @@ class StateManagementRule extends DartLintRule {
 
   void _checkStateManagementPattern(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -59,7 +59,7 @@ class StateManagementRule extends DartLintRule {
     // Check if extends StatefulWidget or StatelessWidget
     final extendsClause = node.extendsClause;
     if (extendsClause != null) {
-      final superclass = extendsClause.superclass.name2.lexeme;
+      final superclass = extendsClause.superclass.name.lexeme;
       return superclass == 'StatefulWidget' ||
              superclass == 'StatelessWidget' ||
              superclass.endsWith('Widget');

@@ -27,7 +27,7 @@ class EntityImmutabilityRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -37,7 +37,7 @@ class EntityImmutabilityRule extends DartLintRule {
 
   void _checkEntityImmutability(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -63,7 +63,7 @@ class EntityImmutabilityRule extends DartLintRule {
     _checkConstructorPatterns(node, reporter);
   }
 
-  void _checkFieldImmutability(FieldDeclaration member, ErrorReporter reporter) {
+  void _checkFieldImmutability(FieldDeclaration member, DiagnosticReporter reporter) {
     final fields = member.fields;
 
     // Check if field is mutable
@@ -90,7 +90,7 @@ class EntityImmutabilityRule extends DartLintRule {
     // Check for mutable collection types
     final type = fields.type;
     if (type is NamedType && fields.isFinal) {
-      final typeName = type.name2.lexeme;
+      final typeName = type.name.lexeme;
       if (_isMutableCollectionType(typeName)) {
         final code = LintCode(
           name: 'entity_immutability',
@@ -102,7 +102,7 @@ class EntityImmutabilityRule extends DartLintRule {
     }
   }
 
-  void _checkMethodImmutability(MethodDeclaration member, ErrorReporter reporter, String className) {
+  void _checkMethodImmutability(MethodDeclaration member, DiagnosticReporter reporter, String className) {
     // Check for setters
     if (member.isSetter) {
       final code = LintCode(
@@ -125,7 +125,7 @@ class EntityImmutabilityRule extends DartLintRule {
     }
   }
 
-  void _checkConstructorPatterns(ClassDeclaration node, ErrorReporter reporter) {
+  void _checkConstructorPatterns(ClassDeclaration node, DiagnosticReporter reporter) {
     final constructors = node.members.whereType<ConstructorDeclaration>().toList();
 
     // Check if there's a proper const constructor or immutable pattern

@@ -14,7 +14,7 @@ class RepositoryImplementationRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -24,7 +24,7 @@ class RepositoryImplementationRule extends DartLintRule {
 
   void _checkRepositoryImplementation(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -74,7 +74,7 @@ class RepositoryImplementationRule extends DartLintRule {
           if (param is SimpleFormalParameter) {
             final type = param.type;
             if (type is NamedType) {
-              final typeName = type.name2.lexeme;
+              final typeName = type.name.lexeme;
               if (typeName.contains('DataSource')) {
                 return true;
               }
@@ -89,7 +89,7 @@ class RepositoryImplementationRule extends DartLintRule {
       if (member is FieldDeclaration) {
         final type = member.fields.type;
         if (type is NamedType) {
-          final typeName = type.name2.lexeme;
+          final typeName = type.name.lexeme;
           if (typeName.contains('DataSource')) {
             return true;
           }

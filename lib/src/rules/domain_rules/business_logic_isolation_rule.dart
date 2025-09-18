@@ -30,7 +30,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     // Check class declarations for business logic in UI components
@@ -56,7 +56,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
 
   void _checkBusinessLogicIsolation(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -82,7 +82,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
 
   void _checkDirectBusinessLogicCalls(
     MethodInvocation node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -114,7 +114,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
 
   void _checkBusinessLogicDependencies(
     FieldDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -122,7 +122,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
 
     final type = node.fields.type;
     if (type is NamedType) {
-      final typeName = type.name2.lexeme;
+      final typeName = type.name.lexeme;
 
       // Check for direct repository dependencies
       if (_isRepositoryType(typeName)) {
@@ -148,7 +148,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
 
   void _checkBusinessLogicComputations(
     VariableDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -188,7 +188,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
     );
   }
 
-  void _checkComplexBusinessLogic(UIComponentAnalysis analysis, ErrorReporter reporter) {
+  void _checkComplexBusinessLogic(UIComponentAnalysis analysis, DiagnosticReporter reporter) {
     for (final method in analysis.methods) {
       final body = method.body;
       if (body is BlockFunctionBody) {
@@ -205,7 +205,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
     }
   }
 
-  void _checkValidationLogic(UIComponentAnalysis analysis, ErrorReporter reporter) {
+  void _checkValidationLogic(UIComponentAnalysis analysis, DiagnosticReporter reporter) {
     for (final method in analysis.methods) {
       if (_hasValidationLogic(method)) {
         final code = LintCode(
@@ -218,7 +218,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
     }
   }
 
-  void _checkCalculationLogic(UIComponentAnalysis analysis, ErrorReporter reporter) {
+  void _checkCalculationLogic(UIComponentAnalysis analysis, DiagnosticReporter reporter) {
     for (final method in analysis.methods) {
       if (_hasCalculationLogic(method)) {
         final code = LintCode(
@@ -231,7 +231,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
     }
   }
 
-  void _checkDataTransformation(UIComponentAnalysis analysis, ErrorReporter reporter) {
+  void _checkDataTransformation(UIComponentAnalysis analysis, DiagnosticReporter reporter) {
     for (final method in analysis.methods) {
       if (_hasDataTransformation(method)) {
         final code = LintCode(
@@ -244,7 +244,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
     }
   }
 
-  void _checkStateManagementLogic(UIComponentAnalysis analysis, ErrorReporter reporter) {
+  void _checkStateManagementLogic(UIComponentAnalysis analysis, DiagnosticReporter reporter) {
     for (final method in analysis.methods) {
       if (_hasComplexStateLogic(method)) {
         final code = LintCode(

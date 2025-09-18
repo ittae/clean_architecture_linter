@@ -26,7 +26,7 @@ class DomainPurityRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     // Check import statements for external dependencies
@@ -42,7 +42,7 @@ class DomainPurityRule extends DartLintRule {
 
   void _checkImportPurity(
     ImportDirective node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -160,14 +160,14 @@ class DomainPurityRule extends DartLintRule {
   }
 
   /// Additional checks for code constructs within domain layer files
-  void _checkClassDeclarations(ClassDeclaration node, ErrorReporter reporter, CustomLintResolver resolver) {
+  void _checkClassDeclarations(ClassDeclaration node, DiagnosticReporter reporter, CustomLintResolver resolver) {
     final filePath = resolver.path;
     if (!_isDomainLayerFile(filePath)) return;
 
     // Check for inheritance from external framework classes
     final extendsClause = node.extendsClause;
     if (extendsClause != null) {
-      final superTypeName = extendsClause.superclass.name2.lexeme;
+      final superTypeName = extendsClause.superclass.name.lexeme;
       if (_isExternalFrameworkClass(superTypeName)) {
         final code = LintCode(
           name: 'domain_purity',
@@ -182,7 +182,7 @@ class DomainPurityRule extends DartLintRule {
     final implementsClause = node.implementsClause;
     if (implementsClause != null) {
       for (final interface in implementsClause.interfaces) {
-        final interfaceName = interface.name2.lexeme;
+        final interfaceName = interface.name.lexeme;
         if (_isExternalFrameworkClass(interfaceName)) {
           final code = LintCode(
             name: 'domain_purity',

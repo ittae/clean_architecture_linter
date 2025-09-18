@@ -27,7 +27,7 @@ class RepositoryInterfaceRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     // Check import statements for data layer repository implementations
@@ -53,7 +53,7 @@ class RepositoryInterfaceRule extends DartLintRule {
 
   void _checkRepositoryImports(
     ImportDirective node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -78,7 +78,7 @@ class RepositoryInterfaceRule extends DartLintRule {
 
   void _checkRepositoryInterface(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -108,7 +108,7 @@ class RepositoryInterfaceRule extends DartLintRule {
 
   void _checkRepositoryDependencies(
     ConstructorDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -120,7 +120,7 @@ class RepositoryInterfaceRule extends DartLintRule {
       if (param is SimpleFormalParameter) {
         final type = param.type;
         if (type is NamedType) {
-          final typeName = type.name2.lexeme;
+          final typeName = type.name.lexeme;
           if (_isConcreteRepositoryType(typeName)) {
             final code = LintCode(
               name: 'repository_interface',
@@ -136,7 +136,7 @@ class RepositoryInterfaceRule extends DartLintRule {
 
   void _checkRepositoryFields(
     FieldDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -144,7 +144,7 @@ class RepositoryInterfaceRule extends DartLintRule {
 
     final type = node.fields.type;
     if (type is NamedType) {
-      final typeName = type.name2.lexeme;
+      final typeName = type.name.lexeme;
       if (_isConcreteRepositoryType(typeName)) {
         final code = LintCode(
           name: 'repository_interface',
@@ -156,13 +156,13 @@ class RepositoryInterfaceRule extends DartLintRule {
     }
   }
 
-  void _checkRepositoryMethod(MethodDeclaration method, ErrorReporter reporter, String className) {
+  void _checkRepositoryMethod(MethodDeclaration method, DiagnosticReporter reporter, String className) {
     final methodName = method.name.lexeme;
     final returnType = method.returnType;
 
     // Check if repository method returns domain entities (not data models)
     if (returnType is NamedType) {
-      final returnTypeName = returnType.name2.lexeme;
+      final returnTypeName = returnType.name.lexeme;
       if (_isDataLayerModel(returnTypeName)) {
         final code = LintCode(
           name: 'repository_interface',

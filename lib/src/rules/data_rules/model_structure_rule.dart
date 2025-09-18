@@ -14,7 +14,7 @@ class ModelStructureRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -24,7 +24,7 @@ class ModelStructureRule extends DartLintRule {
 
   void _checkModelStructure(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -75,7 +75,7 @@ class ModelStructureRule extends DartLintRule {
             if (param is SimpleFormalParameter) {
               final type = param.type;
               if (type is NamedType) {
-                final typeName = type.name2.lexeme;
+                final typeName = type.name.lexeme;
                 if (typeName == 'Map' || typeName.contains('Map')) {
                   return true;
                 }
@@ -96,7 +96,7 @@ class ModelStructureRule extends DartLintRule {
           // Check if it returns Map
           final returnType = member.returnType;
           if (returnType is NamedType) {
-            final typeName = returnType.name2.lexeme;
+            final typeName = returnType.name.lexeme;
             if (typeName == 'Map' || typeName.contains('Map')) {
               return true;
             }
