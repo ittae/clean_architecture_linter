@@ -1,0 +1,71 @@
+name: Publish to pub.dev
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Dart SDK
+      uses: dart-lang/setup-dart@v1
+      with:
+        sdk: 'stable'
+
+    - name: Install dependencies
+      run: dart pub get
+
+    - name: Run analyzer
+      run: dart analyze --fatal-infos
+
+    - name: Check formatting
+      run: dart format --output=none --set-exit-if-changed .
+
+    - name: Run tests
+      run: dart test
+
+    - name: Check pub publishing (dry run)
+      run: dart pub publish --dry-run
+
+    - name: Setup pub credentials
+      run: |
+        mkdir -p ~/.config/dart
+        echo '${{ secrets.PUB_DEV_PUBLISH_ACCESS_TOKEN }}' > ~/.config/dart/pub-credentials.json
+
+    - name: Publish to pub.dev
+      run: dart pub publish --force
+
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body: |
+          ## Changes in this Release
+
+          Please see [CHANGELOG.md](CHANGELOG.md) for detailed changes.
+
+          ## Installation
+
+          Add this to your package's `pubspec.yaml` file:
+
+          ```yaml
+          dev_dependencies:
+            clean_architecture_linter: ^${{ github.ref_name }}
+            custom_lint: ^0.8.1
+          ```
+
+          Then run:
+          ```bash
+          dart pub get
+          ```
+        draft: false
+        prerelease: false
