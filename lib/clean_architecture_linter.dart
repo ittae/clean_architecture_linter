@@ -3,7 +3,7 @@
 /// This package provides lint rules to ensure proper separation of concerns,
 /// dependency inversion, and architectural boundaries in Flutter applications
 /// following Clean Architecture patterns.
-library clean_architecture_linter;
+library;
 
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 

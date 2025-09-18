@@ -1,16 +1,18 @@
 import 'package:clean_architecture_linter/clean_architecture_linter.dart';
+import 'package:custom_lint_builder/custom_lint_builder.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('A group of tests', () {
-    final awesome = Awesome();
-
-    setUp(() {
-      // Additional setup goes here.
+  group('Clean Architecture Linter Tests', () {
+    test('Plugin can be created', () {
+      final plugin = createPlugin();
+      expect(plugin, isNotNull);
+      expect(plugin.runtimeType.toString(), contains('CleanArchitectureLinterPlugin'));
     });
 
-    test('First Test', () {
-      expect(awesome.isAwesome, isTrue);
+    test('Plugin is properly configured', () {
+      final plugin = createPlugin();
+      expect(plugin, isA<PluginBase>());
     });
   });
 }

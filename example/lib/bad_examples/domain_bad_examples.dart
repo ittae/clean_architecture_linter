@@ -1,8 +1,10 @@
 // Bad examples that will be flagged by Clean Architecture Linter
 
 // ❌ Domain Purity Violation - importing external frameworks
-import 'package:http/http.dart' as http; // This will be flagged
-import 'package:flutter/material.dart'; // This will be flagged
+// import 'package:http/http.dart' as http; // This will be flagged
+// import 'package:flutter/material.dart'; // This will be flagged
+
+// These imports are commented out for example purposes, but would be flagged:
 
 // ❌ Entity Immutability Violation
 class BadUserEntity {
@@ -61,9 +63,9 @@ class BadUserBusinessLogic {
   // ❌ Depending on concrete implementation - will be flagged
   final BadUserRepositoryImpl repository;
   // ❌ Depending on external framework type - will be flagged
-  final http.Client httpClient;
+  // final http.Client httpClient; // Would be flagged if uncommented
 
-  BadUserBusinessLogic(this.repository, this.httpClient);
+  BadUserBusinessLogic(this.repository);
 }
 
 abstract class UserRepository {

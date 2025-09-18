@@ -112,23 +112,6 @@ class StateManagementRule extends DartLintRule {
     method.accept(visitor);
     return visitor.hasBusinessLogic;
   }
-
-  bool _isBusinessLogicMethod(String methodName) {
-    final businessLogicMethods = [
-      'save',
-      'update',
-      'delete',
-      'create',
-      'fetch',
-      'load',
-      'post',
-      'get',
-      'put',
-      'patch',
-    ];
-
-    return businessLogicMethods.any((method) => methodName.toLowerCase().contains(method));
-  }
 }
 
 class _BusinessLogicVisitor extends RecursiveAstVisitor<void> {
