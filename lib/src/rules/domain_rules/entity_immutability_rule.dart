@@ -23,7 +23,7 @@ class EntityImmutabilityRule extends DartLintRule {
     problemMessage:
         'Domain entities must be immutable to ensure data integrity and thread safety.',
     correctionMessage:
-        'Make all fields final, remove setters, and ensure collections are properly immutable.',
+        'Make all fields final, remove setters, use @freezed annotation, or declare class as sealed for immutability.',
   );
 
   @override
@@ -51,6 +51,11 @@ class EntityImmutabilityRule extends DartLintRule {
 
     // Check if this is an entity class
     if (!_isEntityClass(className, filePath)) return;
+
+    // Skip immutability checks for Freezed classes and sealed classes
+    if (_isFreezedClass(node) || _isSealedClass(node)) {
+      return;
+    }
 
     // Check each member for immutability violations
     for (final member in node.members) {
@@ -194,5 +199,34 @@ class EntityImmutabilityRule extends DartLintRule {
     return className.endsWith('Entity') ||
         filePath.contains('/entities/') ||
         filePath.contains('\\entities\\');
+  }
+
+  /// Check if class uses Freezed package for immutability
+  bool _isFreezedClass(ClassDeclaration node) {
+    // Check for @freezed annotation
+    for (final annotation in node.metadata) {
+      if (annotation.name.name == 'freezed' ||
+          annotation.name.name == 'Freezed') {
+        return true;
+      }
+    }
+
+    // Check for mixin with _$ClassName pattern (Freezed generated)
+    final withClause = node.withClause;
+    if (withClause != null) {
+      for (final mixin in withClause.mixinTypes) {
+        final mixinName = mixin.name.lexeme;
+        if (mixinName.startsWith('_\$${node.name.lexeme}')) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /// Check if class is sealed (inherently immutable in Dart 3.0+)
+  bool _isSealedClass(ClassDeclaration node) {
+    return node.sealedKeyword != null;
   }
 }
