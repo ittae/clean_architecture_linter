@@ -64,12 +64,7 @@ class UserModel {
 
   // Convert to domain entity
   UserEntity toEntity() {
-    return UserEntity(
-      id: id,
-      name: name,
-      email: email,
-      createdAt: createdAt,
-    );
+    return UserEntity(id: id, name: name, email: email, createdAt: createdAt);
   }
 }
 

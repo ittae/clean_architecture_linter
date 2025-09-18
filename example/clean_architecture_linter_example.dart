@@ -9,5 +9,7 @@ void main() {
   // when you run 'dart pub custom_lint' or use it in your IDE
 
   print('Plugin type: ${plugin.runtimeType}');
-  print('Clean Architecture Linter is ready to enforce architectural boundaries!');
+  print(
+    'Clean Architecture Linter is ready to enforce architectural boundaries!',
+  );
 }

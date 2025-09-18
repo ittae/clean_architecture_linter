@@ -1,13 +1,15 @@
 // Bad examples for Data Layer that will be flagged
 
 // ❌ DataSource Naming Violation
-class BadUserService { // Should end with DataSource - will be flagged
+class BadUserService {
+  // Should end with DataSource - will be flagged
   Future<Map<String, dynamic>> getUser(String id) async {
     return {};
   }
 }
 
-class UserApi { // Should end with DataSource - will be flagged
+class UserApi {
+  // Should end with DataSource - will be flagged
   Future<Map<String, dynamic>> fetchUser(String id) async {
     return {};
   }
@@ -19,11 +21,7 @@ class BadUserModel {
   final String name;
   final String email;
 
-  BadUserModel({
-    required this.id,
-    required this.name,
-    required this.email,
-  });
+  BadUserModel({required this.id, required this.name, required this.email});
 
   // ❌ Missing fromJson constructor - will be flagged
   // ❌ Missing toJson method - will be flagged
@@ -43,7 +41,8 @@ class UserDto {
 }
 
 // ❌ Repository Implementation Violation
-class BadUserRepositoryImpl { // Should implement domain interface - will be flagged
+class BadUserRepositoryImpl {
+  // Should implement domain interface - will be flagged
   // ❌ No DataSource dependency - will be flagged
   BadUserRepositoryImpl();
 
