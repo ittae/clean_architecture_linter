@@ -16,6 +16,11 @@ topics:
 environment:
   sdk: ^3.8.1
 
+platforms:
+  linux:
+  macos:
+  windows:
+
 dependencies:
   analyzer: ^8.1.1
   custom_lint_builder: ^0.8.1

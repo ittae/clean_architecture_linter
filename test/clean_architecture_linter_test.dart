@@ -7,7 +7,10 @@ void main() {
     test('Plugin can be created', () {
       final plugin = createPlugin();
       expect(plugin, isNotNull);
-      expect(plugin.runtimeType.toString(), contains('CleanArchitectureLinterPlugin'));
+      expect(
+        plugin.runtimeType.toString(),
+        contains('CleanArchitectureLinterPlugin'),
+      );
     });
 
     test('Plugin is properly configured', () {
