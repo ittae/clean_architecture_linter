@@ -222,9 +222,9 @@ class UseCaseSingleResponsibilityRule extends DartLintRule {
       if (node is TryStatement) cyclomaticComplexity++;
       if (node is ExpressionStatement) statementCount++;
 
-      node.childEntities.forEach((child) {
+      for (var child in node.childEntities) {
         if (child is AstNode) countComplexity(child);
-      });
+      }
     }
 
     countComplexity(method);
