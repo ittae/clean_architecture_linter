@@ -93,4 +93,4 @@ jobs:
         cd example
         dart pub get
         dart analyze
-        dart run example/clean_architecture_linter_example.dart
+        dart run clean_architecture_linter_example.dart
