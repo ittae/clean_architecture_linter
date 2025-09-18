@@ -8,8 +8,10 @@ class PresentationLogicSeparationRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'presentation_logic_separation',
-    problemMessage: 'Presentation logic should be separated from UI components.',
-    correctionMessage: 'Move presentation logic to separate classes like Controllers, ViewModels, or Providers.',
+    problemMessage:
+        'Presentation logic should be separated from UI components.',
+    correctionMessage:
+        'Move presentation logic to separate classes like Controllers, ViewModels, or Providers.',
   );
 
   @override
@@ -48,11 +50,11 @@ class PresentationLogicSeparationRule extends DartLintRule {
 
   bool _isPresentationLayerFile(String filePath) {
     return filePath.contains('/presentation/') ||
-           filePath.contains('\\presentation\\') ||
-           filePath.contains('/ui/') ||
-           filePath.contains('\\ui\\') ||
-           filePath.contains('/widgets/') ||
-           filePath.contains('\\widgets\\');
+        filePath.contains('\\presentation\\') ||
+        filePath.contains('/ui/') ||
+        filePath.contains('\\ui\\') ||
+        filePath.contains('/widgets/') ||
+        filePath.contains('\\widgets\\');
   }
 
   bool _isUIWidget(String className, ClassDeclaration node) {
@@ -60,8 +62,8 @@ class PresentationLogicSeparationRule extends DartLintRule {
     if (extendsClause != null) {
       final superclass = extendsClause.superclass.name.lexeme;
       return superclass == 'StatefulWidget' ||
-             superclass == 'StatelessWidget' ||
-             superclass.endsWith('Widget');
+          superclass == 'StatelessWidget' ||
+          superclass.endsWith('Widget');
     }
 
     return className.endsWith('Widget');
@@ -108,23 +110,23 @@ class PresentationLogicSeparationRule extends DartLintRule {
   bool _hasValidationLogic(MethodDeclaration method) {
     final methodName = method.name.lexeme.toLowerCase();
     return methodName.contains('valid') ||
-           methodName.contains('check') ||
-           methodName.contains('verify');
+        methodName.contains('check') ||
+        methodName.contains('verify');
   }
 
   bool _hasFormattingLogic(MethodDeclaration method) {
     final methodName = method.name.lexeme.toLowerCase();
     return methodName.contains('format') ||
-           methodName.contains('parse') ||
-           methodName.contains('convert');
+        methodName.contains('parse') ||
+        methodName.contains('convert');
   }
 
   bool _hasCalculationLogic(MethodDeclaration method) {
     final methodName = method.name.lexeme.toLowerCase();
     return methodName.contains('calculate') ||
-           methodName.contains('compute') ||
-           methodName.contains('sum') ||
-           methodName.contains('total');
+        methodName.contains('compute') ||
+        methodName.contains('sum') ||
+        methodName.contains('total');
   }
 
   bool _hasComplexConditionalLogic(MethodDeclaration method) {

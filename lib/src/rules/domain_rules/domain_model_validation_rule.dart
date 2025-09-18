@@ -22,8 +22,10 @@ class DomainModelValidationRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'domain_model_validation',
-    problemMessage: 'Domain models must have appropriate validation and business rules for their complexity.',
-    correctionMessage: 'Add validation methods, business rule methods, or factory methods with validation to ensure data integrity.',
+    problemMessage:
+        'Domain models must have appropriate validation and business rules for their complexity.',
+    correctionMessage:
+        'Add validation methods, business rule methods, or factory methods with validation to ensure data integrity.',
   );
 
   @override
@@ -102,13 +104,18 @@ class DomainModelValidationRule extends DartLintRule {
     );
   }
 
-  void _checkBasicValidation(DomainModelAnalysis analysis, DiagnosticReporter reporter) {
+  void _checkBasicValidation(
+    DomainModelAnalysis analysis,
+    DiagnosticReporter reporter,
+  ) {
     // Check if entity needs validation based on complexity
     if (analysis.complexityScore > 3 && analysis.validationMethods.isEmpty) {
       final code = LintCode(
         name: 'domain_model_validation',
-        problemMessage: 'Complex domain model lacks validation methods: ${analysis.className}',
-        correctionMessage: 'Add validation methods (isValid(), validate()) to ensure business rules are enforced.',
+        problemMessage:
+            'Complex domain model lacks validation methods: ${analysis.className}',
+        correctionMessage:
+            'Add validation methods (isValid(), validate()) to ensure business rules are enforced.',
       );
       // Report on first field if available, otherwise on class
       final target = analysis.fields.isNotEmpty ? analysis.fields.first : null;
@@ -118,13 +125,20 @@ class DomainModelValidationRule extends DartLintRule {
     }
   }
 
-  void _checkBusinessRules(DomainModelAnalysis analysis, DiagnosticReporter reporter) {
+  void _checkBusinessRules(
+    DomainModelAnalysis analysis,
+    DiagnosticReporter reporter,
+  ) {
     // Entities with multiple business-related fields should have business rule methods
-    if (analysis.isEntity && analysis.fieldCount > 3 && analysis.businessRuleMethods.isEmpty) {
+    if (analysis.isEntity &&
+        analysis.fieldCount > 3 &&
+        analysis.businessRuleMethods.isEmpty) {
       final code = LintCode(
         name: 'domain_model_validation',
-        problemMessage: 'Entity lacks business rule methods: ${analysis.className}',
-        correctionMessage: 'Add business rule methods (canPerform(), shouldAllow(), isEligible()) to encapsulate domain logic.',
+        problemMessage:
+            'Entity lacks business rule methods: ${analysis.className}',
+        correctionMessage:
+            'Add business rule methods (canPerform(), shouldAllow(), isEligible()) to encapsulate domain logic.',
       );
       // Report on class declaration
       if (analysis.methods.isNotEmpty) {
@@ -133,13 +147,17 @@ class DomainModelValidationRule extends DartLintRule {
     }
   }
 
-  void _checkValueObjectValidation(DomainModelAnalysis analysis, DiagnosticReporter reporter) {
+  void _checkValueObjectValidation(
+    DomainModelAnalysis analysis,
+    DiagnosticReporter reporter,
+  ) {
     // Value objects should always have validation
     if (analysis.isValueObject && analysis.validationMethods.isEmpty) {
       final code = LintCode(
         name: 'domain_model_validation',
         problemMessage: 'Value object lacks validation: ${analysis.className}',
-        correctionMessage: 'Value objects must validate their invariants. Add validation in constructor or factory method.',
+        correctionMessage:
+            'Value objects must validate their invariants. Add validation in constructor or factory method.',
       );
       // Report on constructor or first field
       final target = analysis.constructors.isNotEmpty
@@ -151,27 +169,37 @@ class DomainModelValidationRule extends DartLintRule {
     }
   }
 
-  void _checkFactoryMethodValidation(DomainModelAnalysis analysis, DiagnosticReporter reporter) {
+  void _checkFactoryMethodValidation(
+    DomainModelAnalysis analysis,
+    DiagnosticReporter reporter,
+  ) {
     // Check if factory methods have proper validation
     for (final factory in analysis.factoryMethods) {
       if (!_factoryHasValidation(factory)) {
         final code = LintCode(
           name: 'domain_model_validation',
-          problemMessage: 'Factory method lacks validation: ${factory.name?.lexeme ?? 'unnamed'}',
-          correctionMessage: 'Factory methods should validate input and enforce business rules before creating instances.',
+          problemMessage:
+              'Factory method lacks validation: ${factory.name?.lexeme ?? 'unnamed'}',
+          correctionMessage:
+              'Factory methods should validate input and enforce business rules before creating instances.',
         );
         reporter.atNode(factory, code);
       }
     }
   }
 
-  void _checkInvariantEnforcement(DomainModelAnalysis analysis, DiagnosticReporter reporter) {
+  void _checkInvariantEnforcement(
+    DomainModelAnalysis analysis,
+    DiagnosticReporter reporter,
+  ) {
     // Check for invariant enforcement patterns
     if (analysis.complexityScore > 5 && !_hasInvariantEnforcement(analysis)) {
       final code = LintCode(
         name: 'domain_model_validation',
-        problemMessage: 'Complex domain model lacks invariant enforcement: ${analysis.className}',
-        correctionMessage: 'Add private validation methods and call them from constructors to enforce business invariants.',
+        problemMessage:
+            'Complex domain model lacks invariant enforcement: ${analysis.className}',
+        correctionMessage:
+            'Add private validation methods and call them from constructors to enforce business invariants.',
       );
       if (analysis.constructors.isNotEmpty) {
         reporter.atNode(analysis.constructors.first, code);
@@ -180,17 +208,16 @@ class DomainModelValidationRule extends DartLintRule {
   }
 
   bool _isDomainLayerFile(String filePath) {
-    return filePath.contains('/domain/') ||
-           filePath.contains('\\domain\\');
+    return filePath.contains('/domain/') || filePath.contains('\\domain\\');
   }
 
   bool _isDomainModel(String className, String filePath) {
     return _isEntity(className) ||
-           _isValueObject(className) ||
-           filePath.contains('/entities/') ||
-           filePath.contains('\\entities\\') ||
-           filePath.contains('/value_objects/') ||
-           filePath.contains('\\value_objects\\');
+        _isValueObject(className) ||
+        filePath.contains('/entities/') ||
+        filePath.contains('\\entities\\') ||
+        filePath.contains('/value_objects/') ||
+        filePath.contains('\\value_objects\\');
   }
 
   bool _isEntity(String className) {
@@ -199,12 +226,22 @@ class DomainModelValidationRule extends DartLintRule {
 
   bool _isValueObject(String className) {
     final valueObjectSuffixes = [
-      'Value', 'ValueObject', 'VO', 'Id', 'Email', 'Address', 'Money', 'Price'
+      'Value',
+      'ValueObject',
+      'VO',
+      'Id',
+      'Email',
+      'Address',
+      'Money',
+      'Price',
     ];
     return valueObjectSuffixes.any((suffix) => className.endsWith(suffix));
   }
 
-  int _calculateModelComplexity(List<FieldDeclaration> fields, List<MethodDeclaration> methods) {
+  int _calculateModelComplexity(
+    List<FieldDeclaration> fields,
+    List<MethodDeclaration> methods,
+  ) {
     var complexity = fields.length;
 
     // Add complexity for method types
@@ -217,36 +254,41 @@ class DomainModelValidationRule extends DartLintRule {
     return complexity;
   }
 
-  List<MethodDeclaration> _findValidationMethods(List<MethodDeclaration> methods) {
+  List<MethodDeclaration> _findValidationMethods(
+    List<MethodDeclaration> methods,
+  ) {
     return methods.where((method) {
       final name = method.name.lexeme.toLowerCase();
       return name.contains('valid') ||
-             name.contains('check') ||
-             name.contains('verify') ||
-             name.contains('ensure');
+          name.contains('check') ||
+          name.contains('verify') ||
+          name.contains('ensure');
     }).toList();
   }
 
-  List<MethodDeclaration> _findBusinessRuleMethods(List<MethodDeclaration> methods) {
+  List<MethodDeclaration> _findBusinessRuleMethods(
+    List<MethodDeclaration> methods,
+  ) {
     return methods.where((method) {
       final name = method.name.lexeme.toLowerCase();
       return name.startsWith('can') ||
-             name.startsWith('should') ||
-             name.startsWith('must') ||
-             name.startsWith('is') && name.length > 2 ||
-             name.startsWith('has') && name.length > 3;
+          name.startsWith('should') ||
+          name.startsWith('must') ||
+          name.startsWith('is') && name.length > 2 ||
+          name.startsWith('has') && name.length > 3;
     }).toList();
   }
 
-  List<ConstructorDeclaration> _findFactoryMethods(List<ConstructorDeclaration> constructors) {
+  List<ConstructorDeclaration> _findFactoryMethods(
+    List<ConstructorDeclaration> constructors,
+  ) {
     return constructors.where((constructor) {
       final name = constructor.name?.lexeme;
-      return name != null && (
-        name.startsWith('from') ||
-        name.startsWith('create') ||
-        name.startsWith('build') ||
-        name.startsWith('parse')
-      );
+      return name != null &&
+          (name.startsWith('from') ||
+              name.startsWith('create') ||
+              name.startsWith('build') ||
+              name.startsWith('parse'));
     }).toList();
   }
 
@@ -258,9 +300,9 @@ class DomainModelValidationRule extends DartLintRule {
       return statements.any((statement) {
         final statementText = statement.toString().toLowerCase();
         return statementText.contains('throw') ||
-               statementText.contains('assert') ||
-               statementText.contains('valid') ||
-               statementText.contains('check');
+            statementText.contains('assert') ||
+            statementText.contains('valid') ||
+            statementText.contains('check');
       });
     }
     return false;
@@ -270,26 +312,28 @@ class DomainModelValidationRule extends DartLintRule {
     // Check for private validation methods
     final privateValidationMethods = analysis.methods.where((method) {
       final name = method.name.lexeme;
-      return name.startsWith('_') && (
-        name.contains('valid') ||
-        name.contains('check') ||
-        name.contains('ensure')
-      );
+      return name.startsWith('_') &&
+          (name.contains('valid') ||
+              name.contains('check') ||
+              name.contains('ensure'));
     });
 
     // Check if constructors call validation
-    final constructorsWithValidation = analysis.constructors.where((constructor) {
+    final constructorsWithValidation = analysis.constructors.where((
+      constructor,
+    ) {
       final body = constructor.body;
       if (body is BlockFunctionBody) {
         final bodyText = body.toString().toLowerCase();
         return bodyText.contains('_valid') ||
-               bodyText.contains('_check') ||
-               bodyText.contains('_ensure');
+            bodyText.contains('_check') ||
+            bodyText.contains('_ensure');
       }
       return false;
     });
 
-    return privateValidationMethods.isNotEmpty && constructorsWithValidation.isNotEmpty;
+    return privateValidationMethods.isNotEmpty &&
+        constructorsWithValidation.isNotEmpty;
   }
 
   int _getFieldCount(ClassDeclaration node) {

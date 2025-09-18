@@ -21,8 +21,10 @@ class UseCaseSingleResponsibilityRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'usecase_single_responsibility',
-    problemMessage: 'UseCase must follow Single Responsibility Principle with one focused business operation.',
-    correctionMessage: 'Split complex UseCase into multiple focused UseCases, each handling a single business operation.',
+    problemMessage:
+        'UseCase must follow Single Responsibility Principle with one focused business operation.',
+    correctionMessage:
+        'Split complex UseCase into multiple focused UseCases, each handling a single business operation.',
   );
 
   @override
@@ -98,12 +100,17 @@ class UseCaseSingleResponsibilityRule extends DartLintRule {
     );
   }
 
-  void _checkMethodCount(UseCaseAnalysis analysis, DiagnosticReporter reporter) {
+  void _checkMethodCount(
+    UseCaseAnalysis analysis,
+    DiagnosticReporter reporter,
+  ) {
     if (analysis.mainMethods.isEmpty) {
       final code = LintCode(
         name: 'usecase_single_responsibility',
-        problemMessage: 'UseCase missing main execution method (call() or execute())',
-        correctionMessage: 'Add a call() or execute() method as the main entry point for the UseCase.',
+        problemMessage:
+            'UseCase missing main execution method (call() or execute())',
+        correctionMessage:
+            'Add a call() or execute() method as the main entry point for the UseCase.',
       );
       // Report on the first public method or class if no public methods
       final target = analysis.publicMethods.isNotEmpty
@@ -119,7 +126,8 @@ class UseCaseSingleResponsibilityRule extends DartLintRule {
         final code = LintCode(
           name: 'usecase_single_responsibility',
           problemMessage: 'Multiple main execution methods detected',
-          correctionMessage: 'Keep only one call() or execute() method per UseCase.',
+          correctionMessage:
+              'Keep only one call() or execute() method per UseCase.',
         );
         reporter.atNode(analysis.mainMethods[i], code);
       }
@@ -135,37 +143,49 @@ class UseCaseSingleResponsibilityRule extends DartLintRule {
       if (!_isAllowedAuxiliaryMethod(method.name.lexeme)) {
         final code = LintCode(
           name: 'usecase_single_responsibility',
-          problemMessage: 'Extra public method violates Single Responsibility: ${method.name.lexeme}',
-          correctionMessage: 'Move this method to a separate UseCase or make it private if it\'s a helper method.',
+          problemMessage:
+              'Extra public method violates Single Responsibility: ${method.name.lexeme}',
+          correctionMessage:
+              'Move this method to a separate UseCase or make it private if it\'s a helper method.',
         );
         reporter.atNode(method, code);
       }
     }
   }
 
-  void _checkBusinessLogicComplexity(UseCaseAnalysis analysis, DiagnosticReporter reporter) {
+  void _checkBusinessLogicComplexity(
+    UseCaseAnalysis analysis,
+    DiagnosticReporter reporter,
+  ) {
     // Check if the main method is too complex (indication of multiple responsibilities)
     for (final method in analysis.mainMethods) {
       final complexity = _calculateMethodComplexity(method);
       if (complexity.isHighlyComplex) {
         final code = LintCode(
           name: 'usecase_single_responsibility',
-          problemMessage: 'UseCase main method is too complex, suggesting multiple responsibilities',
-          correctionMessage: 'Break down complex logic into smaller, focused UseCases or extract private helper methods.',
+          problemMessage:
+              'UseCase main method is too complex, suggesting multiple responsibilities',
+          correctionMessage:
+              'Break down complex logic into smaller, focused UseCases or extract private helper methods.',
         );
         reporter.atNode(method, code);
       }
     }
   }
 
-  void _checkMultipleConcerns(UseCaseAnalysis analysis, DiagnosticReporter reporter) {
+  void _checkMultipleConcerns(
+    UseCaseAnalysis analysis,
+    DiagnosticReporter reporter,
+  ) {
     // Check if UseCase has too many dependencies (indication of multiple concerns)
     final dependencies = _countDependencies(analysis.fields);
     if (dependencies > 3) {
       final code = LintCode(
         name: 'usecase_single_responsibility',
-        problemMessage: 'UseCase has too many dependencies ($dependencies), suggesting multiple concerns',
-        correctionMessage: 'Consider splitting into multiple focused UseCases with fewer dependencies each.',
+        problemMessage:
+            'UseCase has too many dependencies ($dependencies), suggesting multiple concerns',
+        correctionMessage:
+            'Consider splitting into multiple focused UseCases with fewer dependencies each.',
       );
       // Report on constructor or first field
       if (analysis.fields.isNotEmpty) {
@@ -182,7 +202,8 @@ class UseCaseSingleResponsibilityRule extends DartLintRule {
       final code = LintCode(
         name: 'usecase_single_responsibility',
         problemMessage: 'UseCase name is too generic: $className',
-        correctionMessage: 'Use specific, action-oriented names like "CreateUserUseCase" or "ValidateEmailUseCase".',
+        correctionMessage:
+            'Use specific, action-oriented names like "CreateUserUseCase" or "ValidateEmailUseCase".',
       );
       reporter.atNode(node, code);
     }
@@ -192,7 +213,8 @@ class UseCaseSingleResponsibilityRule extends DartLintRule {
       final code = LintCode(
         name: 'usecase_single_responsibility',
         problemMessage: 'UseCase name suggests multiple actions: $className',
-        correctionMessage: 'Split into separate UseCases for each action (e.g., CreateAndValidateUser → CreateUser + ValidateUser).',
+        correctionMessage:
+            'Split into separate UseCases for each action (e.g., CreateAndValidateUser → CreateUser + ValidateUser).',
       );
       reporter.atNode(node, code);
     }
@@ -206,8 +228,8 @@ class UseCaseSingleResponsibilityRule extends DartLintRule {
       'validate', 'isValid',
     ];
     return allowedMethods.contains(methodName) ||
-           methodName.startsWith('validate') ||
-           methodName.startsWith('isValid');
+        methodName.startsWith('validate') ||
+        methodName.startsWith('isValid');
   }
 
   MethodComplexity _calculateMethodComplexity(MethodDeclaration method) {
@@ -242,30 +264,38 @@ class UseCaseSingleResponsibilityRule extends DartLintRule {
 
   bool _isGenericUseCaseName(String className) {
     final genericNames = [
-      'UseCase', 'BusinessUseCase', 'DomainUseCase',
-      'ServiceUseCase', 'ManagerUseCase', 'HandlerUseCase',
+      'UseCase',
+      'BusinessUseCase',
+      'DomainUseCase',
+      'ServiceUseCase',
+      'ManagerUseCase',
+      'HandlerUseCase',
     ];
     return genericNames.contains(className);
   }
 
   bool _hasMultipleActions(String className) {
     final multipleActionPatterns = [
-      'And', 'Or', 'Plus', 'With',
-      'CreateAndUpdate', 'SaveAndValidate', 'FetchAndProcess',
+      'And',
+      'Or',
+      'Plus',
+      'With',
+      'CreateAndUpdate',
+      'SaveAndValidate',
+      'FetchAndProcess',
     ];
     return multipleActionPatterns.any((pattern) => className.contains(pattern));
   }
 
   bool _isDomainLayerFile(String filePath) {
-    return filePath.contains('/domain/') ||
-           filePath.contains('\\domain\\');
+    return filePath.contains('/domain/') || filePath.contains('\\domain\\');
   }
 
   bool _isUseCaseClass(String className, String filePath) {
     return className.endsWith('UseCase') ||
-           className.endsWith('Usecase') ||
-           filePath.contains('/usecases/') ||
-           filePath.contains('\\usecases\\');
+        className.endsWith('Usecase') ||
+        filePath.contains('/usecases/') ||
+        filePath.contains('\\usecases\\');
   }
 }
 

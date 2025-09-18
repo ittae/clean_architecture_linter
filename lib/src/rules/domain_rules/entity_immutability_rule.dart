@@ -20,8 +20,10 @@ class EntityImmutabilityRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'entity_immutability',
-    problemMessage: 'Domain entities must be immutable to ensure data integrity and thread safety.',
-    correctionMessage: 'Make all fields final, remove setters, and ensure collections are properly immutable.',
+    problemMessage:
+        'Domain entities must be immutable to ensure data integrity and thread safety.',
+    correctionMessage:
+        'Make all fields final, remove setters, and ensure collections are properly immutable.',
   );
 
   @override
@@ -63,23 +65,27 @@ class EntityImmutabilityRule extends DartLintRule {
     _checkConstructorPatterns(node, reporter);
   }
 
-  void _checkFieldImmutability(FieldDeclaration member, DiagnosticReporter reporter) {
+  void _checkFieldImmutability(
+    FieldDeclaration member,
+    DiagnosticReporter reporter,
+  ) {
     final fields = member.fields;
 
     // Check if field is mutable
     if (!fields.isFinal && !fields.isConst) {
       // Allow private fields with careful consideration
-      final isPrivate = fields.variables.any((variable) =>
-        variable.name.lexeme.startsWith('_'));
+      final isPrivate = fields.variables.any(
+        (variable) => variable.name.lexeme.startsWith('_'),
+      );
 
       final code = LintCode(
         name: 'entity_immutability',
         problemMessage: isPrivate
-          ? 'Private mutable field detected - consider making final for true immutability'
-          : 'Mutable field detected in entity class',
+            ? 'Private mutable field detected - consider making final for true immutability'
+            : 'Mutable field detected in entity class',
         correctionMessage: isPrivate
-          ? 'Make private field final or provide controlled access methods'
-          : 'Make field final to ensure entity immutability',
+            ? 'Make private field final or provide controlled access methods'
+            : 'Make field final to ensure entity immutability',
       );
 
       if (!isPrivate) {
@@ -95,20 +101,26 @@ class EntityImmutabilityRule extends DartLintRule {
         final code = LintCode(
           name: 'entity_immutability',
           problemMessage: 'Mutable collection type ($typeName) in entity field',
-          correctionMessage: 'Use immutable collections or provide defensive copying. Consider using UnmodifiableListView or similar.',
+          correctionMessage:
+              'Use immutable collections or provide defensive copying. Consider using UnmodifiableListView or similar.',
         );
         reporter.atNode(type, code);
       }
     }
   }
 
-  void _checkMethodImmutability(MethodDeclaration member, DiagnosticReporter reporter, String className) {
+  void _checkMethodImmutability(
+    MethodDeclaration member,
+    DiagnosticReporter reporter,
+    String className,
+  ) {
     // Check for setters
     if (member.isSetter) {
       final code = LintCode(
         name: 'entity_immutability',
         problemMessage: 'Setter methods violate entity immutability',
-        correctionMessage: 'Remove setter method. Use factory methods or copyWith() pattern for state changes.',
+        correctionMessage:
+            'Remove setter method. Use factory methods or copyWith() pattern for state changes.',
       );
       reporter.atNode(member, code);
     }
@@ -119,14 +131,20 @@ class EntityImmutabilityRule extends DartLintRule {
       final code = LintCode(
         name: 'entity_immutability',
         problemMessage: 'Method name suggests state mutation: $methodName',
-        correctionMessage: 'Ensure method returns new instance instead of mutating current state.',
+        correctionMessage:
+            'Ensure method returns new instance instead of mutating current state.',
       );
       reporter.atNode(member, code);
     }
   }
 
-  void _checkConstructorPatterns(ClassDeclaration node, DiagnosticReporter reporter) {
-    final constructors = node.members.whereType<ConstructorDeclaration>().toList();
+  void _checkConstructorPatterns(
+    ClassDeclaration node,
+    DiagnosticReporter reporter,
+  ) {
+    final constructors = node.members
+        .whereType<ConstructorDeclaration>()
+        .toList();
 
     // Check if there's a proper const constructor or immutable pattern
     final hasConstConstructor = constructors.any((c) => c.constKeyword != null);
@@ -140,30 +158,41 @@ class EntityImmutabilityRule extends DartLintRule {
 
   bool _isMutableCollectionType(String typeName) {
     final mutableTypes = [
-      'List', 'Set', 'Map',
-      'LinkedHashMap', 'LinkedHashSet',
-      'HashMap', 'HashSet',
+      'List',
+      'Set',
+      'Map',
+      'LinkedHashMap',
+      'LinkedHashSet',
+      'HashMap',
+      'HashSet',
     ];
     return mutableTypes.contains(typeName);
   }
 
   bool _isMutatingMethodName(String methodName) {
     final mutatingPrefixes = [
-      'set', 'update', 'modify', 'change', 'alter',
-      'add', 'remove', 'delete', 'clear', 'reset',
+      'set',
+      'update',
+      'modify',
+      'change',
+      'alter',
+      'add',
+      'remove',
+      'delete',
+      'clear',
+      'reset',
     ];
     final lowerMethodName = methodName.toLowerCase();
     return mutatingPrefixes.any((prefix) => lowerMethodName.startsWith(prefix));
   }
 
   bool _isDomainLayerFile(String filePath) {
-    return filePath.contains('/domain/') ||
-           filePath.contains('\\domain\\');
+    return filePath.contains('/domain/') || filePath.contains('\\domain\\');
   }
 
   bool _isEntityClass(String className, String filePath) {
     return className.endsWith('Entity') ||
-           filePath.contains('/entities/') ||
-           filePath.contains('\\entities\\');
+        filePath.contains('/entities/') ||
+        filePath.contains('\\entities\\');
   }
 }

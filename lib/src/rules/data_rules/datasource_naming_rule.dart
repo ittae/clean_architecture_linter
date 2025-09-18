@@ -7,8 +7,10 @@ class DataSourceNamingRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'datasource_naming',
-    problemMessage: 'DataSource classes should follow proper naming conventions.',
-    correctionMessage: 'Use suffix "DataSource", "RemoteDataSource", or "LocalDataSource".',
+    problemMessage:
+        'DataSource classes should follow proper naming conventions.',
+    correctionMessage:
+        'Use suffix "DataSource", "RemoteDataSource", or "LocalDataSource".',
   );
 
   @override
@@ -42,7 +44,7 @@ class DataSourceNamingRule extends DartLintRule {
 
   bool _isDataSourceFile(String filePath) {
     return (filePath.contains('/data/') || filePath.contains('\\data\\')) &&
-           (filePath.contains('/datasources/') ||
+        (filePath.contains('/datasources/') ||
             filePath.contains('\\datasources\\') ||
             filePath.contains('datasource'));
   }

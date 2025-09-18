@@ -7,8 +7,10 @@ class RepositoryImplementationRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'repository_implementation',
-    problemMessage: 'Repository implementations should properly implement domain interfaces.',
-    correctionMessage: 'Ensure repository classes implement domain repository interfaces and delegate to data sources.',
+    problemMessage:
+        'Repository implementations should properly implement domain interfaces.',
+    correctionMessage:
+        'Ensure repository classes implement domain repository interfaces and delegate to data sources.',
   );
 
   @override
@@ -54,15 +56,15 @@ class RepositoryImplementationRule extends DartLintRule {
 
   bool _isDataLayerRepositoryFile(String filePath) {
     return (filePath.contains('/data/') || filePath.contains('\\data\\')) &&
-           (filePath.contains('/repositories/') ||
+        (filePath.contains('/repositories/') ||
             filePath.contains('\\repositories\\') ||
             filePath.contains('repository'));
   }
 
   bool _isRepositoryImplementation(String className) {
     return className.endsWith('Repository') ||
-           className.endsWith('RepositoryImpl') ||
-           className.contains('Repository');
+        className.endsWith('RepositoryImpl') ||
+        className.contains('Repository');
   }
 
   bool _hasDataSourceDependency(ClassDeclaration node) {

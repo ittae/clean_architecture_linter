@@ -7,8 +7,10 @@ class UiDependencyInjectionRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'ui_dependency_injection',
-    problemMessage: 'UI components should receive dependencies through dependency injection.',
-    correctionMessage: 'Use dependency injection patterns instead of direct instantiation in UI components.',
+    problemMessage:
+        'UI components should receive dependencies through dependency injection.',
+    correctionMessage:
+        'Use dependency injection patterns instead of direct instantiation in UI components.',
   );
 
   @override
@@ -42,15 +44,15 @@ class UiDependencyInjectionRule extends DartLintRule {
 
   bool _isPresentationLayerFile(String filePath) {
     return filePath.contains('/presentation/') ||
-           filePath.contains('\\presentation\\') ||
-           filePath.contains('/ui/') ||
-           filePath.contains('\\ui\\') ||
-           filePath.contains('/widgets/') ||
-           filePath.contains('\\widgets\\') ||
-           filePath.contains('/pages/') ||
-           filePath.contains('\\pages\\') ||
-           filePath.contains('/screens/') ||
-           filePath.contains('\\screens\\');
+        filePath.contains('\\presentation\\') ||
+        filePath.contains('/ui/') ||
+        filePath.contains('\\ui\\') ||
+        filePath.contains('/widgets/') ||
+        filePath.contains('\\widgets\\') ||
+        filePath.contains('/pages/') ||
+        filePath.contains('\\pages\\') ||
+        filePath.contains('/screens/') ||
+        filePath.contains('\\screens\\');
   }
 
   bool _isDomainOrDataLayerClass(String className) {
@@ -64,16 +66,11 @@ class UiDependencyInjectionRule extends DartLintRule {
     ];
 
     return domainDataPatterns.any((pattern) => className.contains(pattern)) ||
-           _isHttpClientClass(className);
+        _isHttpClientClass(className);
   }
 
   bool _isHttpClientClass(String className) {
-    final httpClientPatterns = [
-      'HttpClient',
-      'Dio',
-      'Client',
-      'ApiClient',
-    ];
+    final httpClientPatterns = ['HttpClient', 'Dio', 'Client', 'ApiClient'];
 
     return httpClientPatterns.contains(className);
   }

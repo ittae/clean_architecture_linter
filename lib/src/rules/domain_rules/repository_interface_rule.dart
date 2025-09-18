@@ -20,8 +20,10 @@ class RepositoryInterfaceRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'repository_interface',
-    problemMessage: 'Domain layer must depend only on repository abstractions, not concrete implementations.',
-    correctionMessage: 'Use abstract repository interfaces and ensure proper separation between domain and data layers.',
+    problemMessage:
+        'Domain layer must depend only on repository abstractions, not concrete implementations.',
+    correctionMessage:
+        'Use abstract repository interfaces and ensure proper separation between domain and data layers.',
   );
 
   @override
@@ -92,8 +94,10 @@ class RepositoryInterfaceRule extends DartLintRule {
       // This is a concrete repository in domain layer - should be abstract
       final code = LintCode(
         name: 'repository_interface',
-        problemMessage: 'Repository in domain layer should be abstract: $className',
-        correctionMessage: 'Make repository abstract or move implementation to data layer.',
+        problemMessage:
+            'Repository in domain layer should be abstract: $className',
+        correctionMessage:
+            'Make repository abstract or move implementation to data layer.',
       );
       reporter.atNode(node, code);
     }
@@ -124,8 +128,10 @@ class RepositoryInterfaceRule extends DartLintRule {
           if (_isConcreteRepositoryType(typeName)) {
             final code = LintCode(
               name: 'repository_interface',
-              problemMessage: 'Constructor depends on concrete repository implementation: $typeName',
-              correctionMessage: 'Use abstract repository interface instead of concrete implementation.',
+              problemMessage:
+                  'Constructor depends on concrete repository implementation: $typeName',
+              correctionMessage:
+                  'Use abstract repository interface instead of concrete implementation.',
             );
             reporter.atNode(type, code);
           }
@@ -148,15 +154,21 @@ class RepositoryInterfaceRule extends DartLintRule {
       if (_isConcreteRepositoryType(typeName)) {
         final code = LintCode(
           name: 'repository_interface',
-          problemMessage: 'Field depends on concrete repository implementation: $typeName',
-          correctionMessage: 'Use abstract repository interface instead of concrete implementation.',
+          problemMessage:
+              'Field depends on concrete repository implementation: $typeName',
+          correctionMessage:
+              'Use abstract repository interface instead of concrete implementation.',
         );
         reporter.atNode(type, code);
       }
     }
   }
 
-  void _checkRepositoryMethod(MethodDeclaration method, DiagnosticReporter reporter, String className) {
+  void _checkRepositoryMethod(
+    MethodDeclaration method,
+    DiagnosticReporter reporter,
+    String className,
+  ) {
     final methodName = method.name.lexeme;
     final returnType = method.returnType;
 
@@ -166,8 +178,10 @@ class RepositoryInterfaceRule extends DartLintRule {
       if (_isDataLayerModel(returnTypeName)) {
         final code = LintCode(
           name: 'repository_interface',
-          problemMessage: 'Repository method returns data layer model: $returnTypeName',
-          correctionMessage: 'Repository methods should return domain entities, not data models.',
+          problemMessage:
+              'Repository method returns data layer model: $returnTypeName',
+          correctionMessage:
+              'Repository methods should return domain entities, not data models.',
         );
         reporter.atNode(returnType, code);
       }
@@ -177,8 +191,10 @@ class RepositoryInterfaceRule extends DartLintRule {
     if (!_isValidRepositoryMethodName(methodName)) {
       final code = LintCode(
         name: 'repository_interface',
-        problemMessage: 'Repository method name should follow domain language: $methodName',
-        correctionMessage: 'Use domain-specific method names (get, save, find, create, delete) instead of technical terms.',
+        problemMessage:
+            'Repository method name should follow domain language: $methodName',
+        correctionMessage:
+            'Use domain-specific method names (get, save, find, create, delete) instead of technical terms.',
       );
       reporter.atNode(method, code);
     }
@@ -187,11 +203,14 @@ class RepositoryInterfaceRule extends DartLintRule {
   RepositoryViolation? _analyzeRepositoryImport(String importUri) {
     // Check for data layer repository implementations
     if ((importUri.contains('/data/') || importUri.contains('\\data\\')) &&
-        (importUri.contains('repository') || importUri.contains('Repository'))) {
+        (importUri.contains('repository') ||
+            importUri.contains('Repository'))) {
       if (importUri.contains('impl') || importUri.contains('Impl')) {
         return RepositoryViolation(
-          message: 'Importing concrete repository implementation from data layer',
-          suggestion: 'Import only abstract repository interfaces. Move concrete implementations to data layer.',
+          message:
+              'Importing concrete repository implementation from data layer',
+          suggestion:
+              'Import only abstract repository interfaces. Move concrete implementations to data layer.',
         );
       }
     }
@@ -207,8 +226,10 @@ class RepositoryInterfaceRule extends DartLintRule {
     for (final pattern in infraPatterns) {
       if (importUri.startsWith(pattern)) {
         return RepositoryViolation(
-          message: 'Direct infrastructure dependency detected in domain repository',
-          suggestion: 'Use repository abstractions instead of direct infrastructure dependencies.',
+          message:
+              'Direct infrastructure dependency detected in domain repository',
+          suggestion:
+              'Use repository abstractions instead of direct infrastructure dependencies.',
         );
       }
     }
@@ -217,8 +238,7 @@ class RepositoryInterfaceRule extends DartLintRule {
   }
 
   bool _isDomainLayerFile(String filePath) {
-    return filePath.contains('/domain/') ||
-           filePath.contains('\\domain\\');
+    return filePath.contains('/domain/') || filePath.contains('\\domain\\');
   }
 
   bool _isRepositoryClass(String className) {
@@ -227,24 +247,36 @@ class RepositoryInterfaceRule extends DartLintRule {
 
   bool _isConcreteRepositoryType(String typeName) {
     return typeName.endsWith('RepositoryImpl') ||
-           typeName.endsWith('RepositoryImplementation') ||
-           (typeName.contains('Repository') && typeName.contains('Impl'));
+        typeName.endsWith('RepositoryImplementation') ||
+        (typeName.contains('Repository') && typeName.contains('Impl'));
   }
 
   bool _isDataLayerModel(String typeName) {
     return typeName.endsWith('Model') ||
-           typeName.endsWith('Dto') ||
-           typeName.endsWith('Response') ||
-           typeName.endsWith('Entity') && typeName.contains('Data');
+        typeName.endsWith('Dto') ||
+        typeName.endsWith('Response') ||
+        typeName.endsWith('Entity') && typeName.contains('Data');
   }
 
   bool _isValidRepositoryMethodName(String methodName) {
     final validPrefixes = [
-      'get', 'find', 'search', 'fetch',
-      'save', 'create', 'add', 'insert',
-      'update', 'modify', 'change',
-      'delete', 'remove', 'clear',
-      'exists', 'count', 'has',
+      'get',
+      'find',
+      'search',
+      'fetch',
+      'save',
+      'create',
+      'add',
+      'insert',
+      'update',
+      'modify',
+      'change',
+      'delete',
+      'remove',
+      'clear',
+      'exists',
+      'count',
+      'has',
     ];
 
     final lowerMethodName = methodName.toLowerCase();
@@ -257,8 +289,5 @@ class RepositoryViolation {
   final String message;
   final String suggestion;
 
-  const RepositoryViolation({
-    required this.message,
-    required this.suggestion,
-  });
+  const RepositoryViolation({required this.message, required this.suggestion});
 }

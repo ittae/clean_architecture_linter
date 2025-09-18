@@ -8,8 +8,10 @@ class StateManagementRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'state_management_pattern',
-    problemMessage: 'State management should follow proper architectural patterns.',
-    correctionMessage: 'Use proper state management patterns like Provider, Riverpod, or Bloc instead of direct state manipulation.',
+    problemMessage:
+        'State management should follow proper architectural patterns.',
+    correctionMessage:
+        'Use proper state management patterns like Provider, Riverpod, or Bloc instead of direct state manipulation.',
   );
 
   @override
@@ -48,11 +50,11 @@ class StateManagementRule extends DartLintRule {
 
   bool _isPresentationLayerFile(String filePath) {
     return filePath.contains('/presentation/') ||
-           filePath.contains('\\presentation\\') ||
-           filePath.contains('/ui/') ||
-           filePath.contains('\\ui\\') ||
-           filePath.contains('/widgets/') ||
-           filePath.contains('\\widgets\\');
+        filePath.contains('\\presentation\\') ||
+        filePath.contains('/ui/') ||
+        filePath.contains('\\ui\\') ||
+        filePath.contains('/widgets/') ||
+        filePath.contains('\\widgets\\');
   }
 
   bool _isWidgetClass(String className, ClassDeclaration node) {
@@ -61,13 +63,13 @@ class StateManagementRule extends DartLintRule {
     if (extendsClause != null) {
       final superclass = extendsClause.superclass.name.lexeme;
       return superclass == 'StatefulWidget' ||
-             superclass == 'StatelessWidget' ||
-             superclass.endsWith('Widget');
+          superclass == 'StatelessWidget' ||
+          superclass.endsWith('Widget');
     }
 
     return className.endsWith('Widget') ||
-           className.endsWith('Page') ||
-           className.endsWith('Screen');
+        className.endsWith('Page') ||
+        className.endsWith('Screen');
   }
 
   bool _hasImproperStateManagement(ClassDeclaration node) {
@@ -84,7 +86,8 @@ class StateManagementRule extends DartLintRule {
         }
 
         // Check for event handlers with direct repository/usecase calls
-        if (_isEventHandler(methodName) && _hasDirectBusinessLogicCalls(member)) {
+        if (_isEventHandler(methodName) &&
+            _hasDirectBusinessLogicCalls(member)) {
           return true;
         }
       }
@@ -101,10 +104,10 @@ class StateManagementRule extends DartLintRule {
 
   bool _isEventHandler(String methodName) {
     return methodName.startsWith('on') ||
-           methodName.startsWith('handle') ||
-           methodName.contains('Pressed') ||
-           methodName.contains('Tapped') ||
-           methodName.contains('Changed');
+        methodName.startsWith('handle') ||
+        methodName.contains('Pressed') ||
+        methodName.contains('Tapped') ||
+        methodName.contains('Changed');
   }
 
   bool _hasDirectBusinessLogicCalls(MethodDeclaration method) {
@@ -140,6 +143,8 @@ class _BusinessLogicVisitor extends RecursiveAstVisitor<void> {
       'patch',
     ];
 
-    return businessLogicMethods.any((method) => methodName.toLowerCase().contains(method));
+    return businessLogicMethods.any(
+      (method) => methodName.toLowerCase().contains(method),
+    );
   }
 }

@@ -8,7 +8,8 @@ class ModelStructureRule extends DartLintRule {
   static const _code = LintCode(
     name: 'model_structure',
     problemMessage: 'Data models should have proper serialization methods.',
-    correctionMessage: 'Add fromJson() constructor and toJson() method to data models.',
+    correctionMessage:
+        'Add fromJson() constructor and toJson() method to data models.',
   );
 
   @override
@@ -48,7 +49,7 @@ class ModelStructureRule extends DartLintRule {
 
   bool _isDataLayerModelFile(String filePath) {
     return (filePath.contains('/data/') || filePath.contains('\\data\\')) &&
-           (filePath.contains('/models/') ||
+        (filePath.contains('/models/') ||
             filePath.contains('\\models\\') ||
             filePath.contains('model') ||
             filePath.contains('dto'));
@@ -56,11 +57,11 @@ class ModelStructureRule extends DartLintRule {
 
   bool _isDataModel(String className, String filePath) {
     return className.endsWith('Model') ||
-           className.endsWith('Dto') ||
-           className.endsWith('Response') ||
-           className.endsWith('Request') ||
-           filePath.contains('/models/') ||
-           filePath.contains('\\models\\');
+        className.endsWith('Dto') ||
+        className.endsWith('Response') ||
+        className.endsWith('Request') ||
+        filePath.contains('/models/') ||
+        filePath.contains('\\models\\');
   }
 
   bool _hasFromJsonConstructor(ClassDeclaration node) {
