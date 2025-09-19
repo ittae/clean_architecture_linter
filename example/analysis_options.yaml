@@ -1,0 +1,33 @@
+include: package:lints/recommended.yaml
+
+analyzer:
+  plugins:
+    - custom_lint
+
+custom_lint:
+  rules:
+    # Framework Rules
+    - framework_isolation
+    - database_detail
+    - web_framework_detail
+    - glue_code
+    # Domain Rules
+    - dependency_inversion
+    - entity_independence
+    - immutability
+    - entity_business_rules
+    - entity_stability
+    - usecase_orchestration
+    - usecase_application_rules
+    - usecase_independence
+    # Data Rules
+    - data_source_abstraction
+    - repository_implementation
+    - no_business_logic_in_data
+    # Adapter Rules
+    - data_conversion_adapter
+    - mvc_architecture
+    - external_service_adapter
+    # General Rules
+    - layer_dependency
+    - circular_dependency

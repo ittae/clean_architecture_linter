@@ -14,12 +14,26 @@ import 'src/rules/domain_rules/usecase_single_responsibility_rule.dart';
 import 'src/rules/domain_rules/business_logic_isolation_rule.dart';
 import 'src/rules/domain_rules/domain_model_validation_rule.dart';
 import 'src/rules/domain_rules/dependency_inversion_rule.dart';
+import 'src/rules/domain_rules/entity_business_rules_rule.dart';
+import 'src/rules/domain_rules/entity_stability_rule.dart';
+import 'src/rules/domain_rules/usecase_orchestration_rule.dart';
+import 'src/rules/domain_rules/usecase_application_rules_rule.dart';
+import 'src/rules/domain_rules/usecase_independence_rule.dart';
 import 'src/rules/data_rules/datasource_naming_rule.dart';
 import 'src/rules/data_rules/repository_implementation_rule.dart';
 import 'src/rules/data_rules/model_structure_rule.dart';
 import 'src/rules/presentation_rules/ui_dependency_injection_rule.dart';
 import 'src/rules/presentation_rules/state_management_rule.dart';
 import 'src/rules/presentation_rules/presentation_logic_separation_rule.dart';
+import 'src/rules/layer_dependency_rule.dart';
+import 'src/rules/circular_dependency_rule.dart';
+import 'src/rules/adapter_rules/data_conversion_adapter_rule.dart';
+import 'src/rules/adapter_rules/mvc_architecture_rule.dart';
+import 'src/rules/adapter_rules/external_service_adapter_rule.dart';
+import 'src/rules/framework_rules/framework_isolation_rule.dart';
+import 'src/rules/framework_rules/database_detail_rule.dart';
+import 'src/rules/framework_rules/web_framework_detail_rule.dart';
+import 'src/rules/framework_rules/glue_code_rule.dart';
 
 /// Plugin entry point for Clean Architecture Linter.
 PluginBase createPlugin() => _CleanArchitectureLinterPlugin();
@@ -30,8 +44,13 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
     // Domain Layer Rules
     DomainPurityRule(),
     EntityImmutabilityRule(),
+    EntityBusinessRulesRule(),
+    EntityStabilityRule(),
     RepositoryInterfaceRule(),
     UseCaseSingleResponsibilityRule(),
+    UseCaseOrchestrationRule(),
+    UseCaseApplicationRulesRule(),
+    UseCaseIndependenceRule(),
     BusinessLogicIsolationRule(),
     DomainModelValidationRule(),
     DependencyInversionRule(),
@@ -45,5 +64,20 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
     UiDependencyInjectionRule(),
     StateManagementRule(),
     PresentationLogicSeparationRule(),
+
+    // Cross-Layer Rules
+    LayerDependencyRule(),
+    CircularDependencyRule(),
+
+    // Interface Adapter Rules
+    DataConversionAdapterRule(),
+    MVCArchitectureRule(),
+    ExternalServiceAdapterRule(),
+
+    // Framework & Driver Rules
+    FrameworkIsolationRule(),
+    DatabaseDetailRule(),
+    WebFrameworkDetailRule(),
+    GlueCodeRule(),
   ];
 }
