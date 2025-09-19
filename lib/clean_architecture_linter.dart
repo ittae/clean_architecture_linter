@@ -38,6 +38,10 @@ import 'src/rules/abstraction_level_rule.dart';
 import 'src/rules/flexible_layer_detection_rule.dart';
 import 'src/rules/core_dependency_rule.dart';
 import 'src/rules/abstraction_progression_rule.dart';
+import 'src/rules/boundary_crossing_rule.dart';
+import 'src/rules/dependency_inversion_boundary_rule.dart';
+import 'src/rules/interface_boundary_rule.dart';
+import 'src/rules/polymorphic_flow_control_rule.dart';
 
 /// Plugin entry point for Clean Architecture Linter.
 PluginBase createPlugin() => _CleanArchitectureLinterPlugin();
@@ -89,5 +93,11 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
     FlexibleLayerDetectionRule(),
     CoreDependencyRule(),
     AbstractionProgressionRule(),
+
+    // Boundary Crossing Rules
+    BoundaryCrossingRule(),
+    DependencyInversionBoundaryRule(),
+    InterfaceBoundaryRule(),
+    PolymorphicFlowControlRule(),
   ];
 }
