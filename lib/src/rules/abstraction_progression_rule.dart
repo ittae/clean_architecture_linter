@@ -67,7 +67,7 @@ class AbstractionProgressionRule extends DartLintRule {
             _getFileAbstractionAdvice(layer, fileAbstraction),
       );
       // Note: Reporting on compilation unit for file-level issues
-      reporter.atElement(resolver.libraryElement);
+      reporter.atNode(node, code);
     }
   }
 
@@ -204,7 +204,7 @@ class AbstractionProgressionRule extends DartLintRule {
 
     final implementsClause = node.implementsClause;
     if (implementsClause != null) {
-      for (final interface in implementsClause.interfaces) {
+      for (final _ in implementsClause.interfaces) {
         totalMembers++;
         abstractScore++; // Implementing interfaces is abstracting
       }
@@ -244,12 +244,10 @@ class AbstractionProgressionRule extends DartLintRule {
     }
 
     // Analyze method body
-    if (body != null) {
-      final bodyAnalysis = _analyzeMethodBody(body);
-      concreteScore += bodyAnalysis.concreteOperations;
-      abstractScore += bodyAnalysis.abstractOperations;
-      totalElements += bodyAnalysis.totalOperations;
-    }
+    final bodyAnalysis = _analyzeMethodBody(body);
+    concreteScore += bodyAnalysis.concreteOperations;
+    abstractScore += bodyAnalysis.abstractOperations;
+    totalElements += bodyAnalysis.totalOperations;
 
     // Analyze parameters
     final parameters = node.parameters?.parameters ?? [];

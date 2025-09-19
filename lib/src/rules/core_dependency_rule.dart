@@ -233,8 +233,6 @@ class CoreDependencyRule extends DartLintRule {
     String methodName,
   ) {
     final body = method.body;
-    if (body == null) return;
-
     final bodyString = body.toString();
     final currentAbstraction = _detectAbstractionLevel(filePath);
 
@@ -476,10 +474,10 @@ class CoreDependencyRule extends DartLintRule {
     List<DependencyNode> cycle,
     DiagnosticReporter reporter,
   ) {
-    final cycleDescription = cycle.map((n) => _getLayerName(n.abstractionLevel)).join(' → ');
-
     // Note: We can't report on specific nodes here since we don't have them
     // This would need to be enhanced to track original AST nodes
+    // For future reference, cycle description would be:
+    // cycle.map((n) => _getLayerName(n.abstractionLevel)).join(' → ')
   }
 
   String _getLayerName(int abstractionLevel) {

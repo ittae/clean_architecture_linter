@@ -1,4 +1,5 @@
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
@@ -138,7 +139,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
     _validateBoundaryPolymorphism(node, reporter, layer, methodName, targetString);
 
     // Check for missing polymorphic opportunities
-    _checkMissedPolymorphicOpportunity(node, reporter, layer, methodName, targetString);
+    _checkMissedPolymorphicOpportunities(node, reporter, layer, methodName, targetString);
   }
 
   void _validateObjectCreationPattern(
@@ -214,9 +215,6 @@ class PolymorphicFlowControlRule extends DartLintRule {
     ArchitecturalLayer layer,
     String methodName,
   ) {
-    final body = method.body;
-    if (body == null) return;
-
     // Check for type checking instead of polymorphism
     _checkTypeCheckingAntiPattern(method, reporter, methodName);
 
@@ -442,8 +440,6 @@ class PolymorphicFlowControlRule extends DartLintRule {
     String methodName,
   ) {
     final body = method.body;
-    if (body == null) return;
-
     final bodyString = body.toString();
 
     // Check for type checking patterns
@@ -465,8 +461,6 @@ class PolymorphicFlowControlRule extends DartLintRule {
     String methodName,
   ) {
     final body = method.body;
-    if (body == null) return;
-
     // Look for switch statements that could be replaced with polymorphism
     body.visitChildren(SwitchStatementVisitor(reporter, methodName));
   }
@@ -506,8 +500,6 @@ class PolymorphicFlowControlRule extends DartLintRule {
     String className,
   ) {
     final body = method.body;
-    if (body == null) return;
-
     final bodyString = body.toString();
 
     // Check for new keyword indicating hard-coded dependencies
@@ -699,6 +691,34 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   bool _isStrategyBase(String className) {
     return className.contains('Strategy') || className.contains('Algorithm');
+  }
+
+  void _checkMissedPolymorphicOpportunities(
+    MethodInvocation node,
+    DiagnosticReporter reporter,
+    ArchitecturalLayer layer,
+    String methodName,
+    String targetString,
+  ) {
+    // Check for missed opportunities to use polymorphism
+    if (_couldBenefitFromPolymorphism(targetString, methodName)) {
+      final code = LintCode(
+        name: 'polymorphic_flow_control',
+        problemMessage:
+            'Method call $methodName could benefit from polymorphic design',
+        correctionMessage:
+            'Consider using polymorphic interface instead of direct method call.',
+      );
+      reporter.atNode(node, code);
+    }
+  }
+
+  bool _couldBenefitFromPolymorphism(String target, String methodName) {
+    // Simple heuristic for polymorphism opportunities
+    return target.contains('Impl') ||
+           target.contains('Concrete') ||
+           methodName.contains('switch') ||
+           methodName.contains('if');
   }
 }
 

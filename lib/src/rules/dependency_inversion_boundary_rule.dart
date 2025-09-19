@@ -200,7 +200,6 @@ class DependencyInversionBoundaryRule extends DartLintRule {
     String className,
   ) {
     var hasOutputPortDependency = false;
-    var hasRepositoryInterfaceDependency = false;
     var hasDirectPresenterDependency = false;
     var hasConcreteRepositoryDependency = false;
 
@@ -216,9 +215,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
             hasDirectPresenterDependency = true;
           }
 
-          if (_isRepositoryInterface(typeName)) {
-            hasRepositoryInterfaceDependency = true;
-          } else if (_isRepositoryImplementation(typeName)) {
+          if (_isRepositoryImplementation(typeName)) {
             hasConcreteRepositoryDependency = true;
           }
         }

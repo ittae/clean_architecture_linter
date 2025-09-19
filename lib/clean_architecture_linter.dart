@@ -46,6 +46,7 @@ import 'src/rules/data_boundary_crossing_rule.dart';
 import 'src/rules/entity_boundary_isolation_rule.dart';
 import 'src/rules/dto_boundary_pattern_rule.dart';
 import 'src/rules/database_row_boundary_rule.dart';
+import 'src/rules/clean_architecture_benefits_rule.dart';
 
 /// Plugin entry point for Clean Architecture Linter.
 PluginBase createPlugin() => _CleanArchitectureLinterPlugin();
@@ -109,5 +110,8 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
     EntityBoundaryIsolationRule(),
     DTOBoundaryPatternRule(),
     DatabaseRowBoundaryRule(),
+
+    // Clean Architecture Benefits
+    CleanArchitectureBenefitsRule(),
   ];
 }

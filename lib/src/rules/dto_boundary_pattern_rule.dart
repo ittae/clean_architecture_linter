@@ -501,9 +501,6 @@ class DTOBoundaryPatternRule extends DartLintRule {
     ArchitecturalLayer layer,
     String methodName,
   ) {
-    final body = method.body;
-    if (body == null) return;
-
     // Check for proper DTO transformation patterns
     if (_isTransformationMethod(methodName)) {
       _validateTransformationImplementation(method, reporter, methodName);
@@ -718,8 +715,6 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   bool _isStatefulOperation(MethodDeclaration method) {
     final body = method.body;
-    if (body == null) return false;
-
     final bodyString = body.toString();
     return bodyString.contains('this.') &&
            (bodyString.contains(' = ') || bodyString.contains('add(') || bodyString.contains('remove('));
@@ -766,8 +761,6 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   bool _modifiesState(MethodDeclaration method) {
     final body = method.body;
-    if (body == null) return false;
-
     final bodyString = body.toString();
     return bodyString.contains('this.') && bodyString.contains(' = ');
   }
@@ -788,8 +781,6 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   bool _hasTransformationLogic(MethodDeclaration method) {
     final body = method.body;
-    if (body == null) return false;
-
     final bodyString = body.toString();
     final transformationPatterns = [
       'toDTO', 'fromDTO', 'toEntity', 'fromEntity'
@@ -799,8 +790,6 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   bool _hasValidationInConstructor(ConstructorDeclaration constructor) {
     final body = constructor.body;
-    if (body == null) return false;
-
     final bodyString = body.toString();
     final validationPatterns = [
       'if (', 'throw ', 'assert', 'validate', 'check'
@@ -822,19 +811,17 @@ class DTOBoundaryPatternRule extends DartLintRule {
   ) {
     // Validate that transformation methods follow proper patterns
     final body = method.body;
-    if (body != null) {
-      final bodyString = body.toString();
+    final bodyString = body.toString();
 
-      if (!_hasProperTransformationPattern(bodyString)) {
-        final code = LintCode(
-          name: 'dto_boundary_pattern',
-          problemMessage:
-              'Transformation method $methodName lacks proper transformation pattern',
-          correctionMessage:
-              'Implement proper field-by-field transformation between DTO and entity.',
-        );
-        reporter.atNode(method, code);
-      }
+    if (!_hasProperTransformationPattern(bodyString)) {
+      final code = LintCode(
+        name: 'dto_boundary_pattern',
+        problemMessage:
+            'Transformation method $methodName lacks proper transformation pattern',
+        correctionMessage:
+            'Implement proper field-by-field transformation between DTO and entity.',
+      );
+      reporter.atNode(method, code);
     }
   }
 

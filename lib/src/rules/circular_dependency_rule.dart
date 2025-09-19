@@ -245,7 +245,7 @@ class CircularDependencyRule extends DartLintRule {
       final parts = packagePath.split('/');
       if (parts.isNotEmpty) {
         // Check if it's the same package (not external)
-        if (currentFile.contains('/' + parts[0] + '/')) {
+        if (currentFile.contains('/${parts[0]}/')) {
           // Convert to project-relative path
           final libIndex = currentFile.indexOf('/lib/');
           if (libIndex != -1) {

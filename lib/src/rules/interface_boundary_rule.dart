@@ -376,16 +376,14 @@ class InterfaceBoundaryRule extends DartLintRule {
     // Check for implementation details in interface
     for (final member in node.members) {
       if (member is MethodDeclaration && !member.isAbstract) {
-        if (member.body != null) {
-          final code = LintCode(
-            name: 'interface_boundary',
-            problemMessage:
-                'Interface $className contains implementation details',
-            correctionMessage:
-                'Interfaces should only declare abstract methods.',
-          );
-          reporter.atNode(member, code);
-        }
+        final code = LintCode(
+          name: 'interface_boundary',
+          problemMessage:
+              'Interface $className contains implementation details',
+          correctionMessage:
+              'Interfaces should only declare abstract methods.',
+        );
+        reporter.atNode(member, code);
       }
 
       if (member is FieldDeclaration) {
@@ -430,7 +428,7 @@ class InterfaceBoundaryRule extends DartLintRule {
     final methodName = method.name.lexeme;
 
     // Check for proper async handling in boundary methods
-    if (_shouldBeAsync(methodName) && !method.isAsynchronous) {
+    if (_shouldBeAsync(methodName) && !_isAsyncMethod(method)) {
       final code = LintCode(
         name: 'interface_boundary',
         problemMessage:
@@ -619,6 +617,13 @@ class InterfaceBoundaryRule extends DartLintRule {
       'execute', 'handle', 'call', 'invoke'
     ];
     return asyncPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
+  }
+
+  bool _isAsyncMethod(MethodDeclaration method) {
+    final returnType = method.returnType;
+    return returnType.toString().contains('Future') ||
+           returnType.toString().contains('Stream') ||
+           method.body.toString().contains('async');
   }
 
   bool _requiresErrorHandling(String methodName) {

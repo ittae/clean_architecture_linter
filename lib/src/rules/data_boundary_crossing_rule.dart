@@ -189,9 +189,6 @@ class DataBoundaryCrossingRule extends DartLintRule {
     ArchitecturalLayer layer,
     String methodName,
   ) {
-    final body = method.body;
-    if (body == null) return;
-
     // Check for inappropriate data conversions
     _checkDataConversionViolations(method, reporter, layer, methodName);
 
@@ -413,8 +410,6 @@ class DataBoundaryCrossingRule extends DartLintRule {
     String methodName,
   ) {
     final body = method.body;
-    if (body == null) return;
-
     final bodyString = body.toString();
 
     // Check for entity-to-entity conversions across boundaries
@@ -449,8 +444,6 @@ class DataBoundaryCrossingRule extends DartLintRule {
     String methodName,
   ) {
     final body = method.body;
-    if (body == null) return;
-
     // Check if boundary method manipulates entities directly
     if (_isBoundaryMethod(layer, methodName) && _manipulatesEntities(body)) {
       final code = LintCode(
@@ -471,8 +464,6 @@ class DataBoundaryCrossingRule extends DartLintRule {
     String methodName,
   ) {
     final body = method.body;
-    if (body == null) return;
-
     final bodyString = body.toString();
 
     // Check for RowStructure or similar being passed inward
@@ -547,13 +538,18 @@ class DataBoundaryCrossingRule extends DartLintRule {
     if (returnType is NamedType) {
       final typeName = returnType.name.lexeme;
 
-      _validateReturnTypeBoundaryData(
-        function.functionExpression,
-        reporter,
-        layer,
-        functionName,
-        typeName,
-      );
+      // Create a simple validation for function return type
+      final boundary = _detectBoundaryType(layer, functionName);
+      if (boundary != BoundaryType.none && _isInappropriateBoundaryDataType(typeName)) {
+        final code = LintCode(
+          name: 'data_boundary_crossing',
+          problemMessage:
+              'Function returns inappropriate boundary type: $typeName',
+          correctionMessage:
+              'Return DTO or simple data structure for boundary crossing.',
+        );
+        reporter.atNode(function, code);
+      }
     }
   }
 
@@ -666,10 +662,10 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   BoundaryType _detectBoundaryType(ArchitecturalLayer layer, String methodName) {
     // Detect if method is crossing architectural boundaries
-    if (_isControllerBoundaryMethod(layer, methodName)) return BoundaryType.controller_usecase;
-    if (_isUseCaseBoundaryMethod(layer, methodName)) return BoundaryType.usecase_presenter;
-    if (_isRepositoryBoundaryMethod(layer, methodName)) return BoundaryType.usecase_repository;
-    if (_isGatewayBoundaryMethod(layer, methodName)) return BoundaryType.adapter_infrastructure;
+    if (_isControllerBoundaryMethod(layer, methodName)) return BoundaryType.controllerUsecase;
+    if (_isUseCaseBoundaryMethod(layer, methodName)) return BoundaryType.usecasePresenter;
+    if (_isRepositoryBoundaryMethod(layer, methodName)) return BoundaryType.usecaseRepository;
+    if (_isGatewayBoundaryMethod(layer, methodName)) return BoundaryType.adapterInfrastructure;
     return BoundaryType.none;
   }
 
@@ -858,9 +854,9 @@ class ArchitecturalLayer {
 }
 
 enum BoundaryType {
-  controller_usecase,
-  usecase_presenter,
-  usecase_repository,
-  adapter_infrastructure,
+  controllerUsecase,
+  usecasePresenter,
+  usecaseRepository,
+  adapterInfrastructure,
   none,
 }

@@ -295,8 +295,6 @@ class DatabaseRowBoundaryRule extends DartLintRule {
     String methodName,
   ) {
     final body = method.body;
-    if (body == null) return;
-
     final bodyString = body.toString();
 
     // Check for direct RowStructure usage
@@ -355,7 +353,6 @@ class DatabaseRowBoundaryRule extends DartLintRule {
     String methodName,
   ) {
     // Check for obvious database row passing patterns
-    final target = node.target?.toString() ?? '';
     final arguments = node.argumentList.arguments;
 
     for (final arg in arguments) {

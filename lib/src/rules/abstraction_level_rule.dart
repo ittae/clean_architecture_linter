@@ -198,7 +198,6 @@ class AbstractionLevelRule extends DartLintRule {
 
   MethodAbstractionLevel _analyzeMethodAbstraction(MethodDeclaration method) {
     final methodName = method.name.lexeme;
-    final body = method.body;
 
     // Analyze method characteristics
     if (_isConcreteMethod(method, methodName)) {
@@ -277,20 +276,16 @@ class AbstractionLevelRule extends DartLintRule {
 
     // Check method body for concrete operations
     final body = method.body;
-    if (body != null) {
-      final bodyString = body.toString().toLowerCase();
-      final concreteBodyPatterns = [
-        'http.', 'file.', 'database.', 'connection.',
-        'socket.', 'stream.', 'buffer.'
-      ];
+    final bodyString = body.toString().toLowerCase();
+    final concreteBodyPatterns = [
+      'http.', 'file.', 'database.', 'connection.',
+      'socket.', 'stream.', 'buffer.'
+    ];
 
-      final hasConcreteBody = concreteBodyPatterns.any((pattern) =>
-          bodyString.contains(pattern));
+    final hasConcreteBody = concreteBodyPatterns.any((pattern) =>
+        bodyString.contains(pattern));
 
-      return hasConcretePattern || hasConcreteBody;
-    }
-
-    return hasConcretePattern;
+    return hasConcretePattern || hasConcreteBody;
   }
 
   bool _isHighLevelPolicyMethod(MethodDeclaration method, String methodName) {

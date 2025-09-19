@@ -288,8 +288,6 @@ class EntityBoundaryIsolationRule extends DartLintRule {
     if (_isDomainLayer(layer)) return;
 
     final body = method.body;
-    if (body == null) return;
-
     final bodyString = body.toString();
 
     // Check for direct entity instantiation

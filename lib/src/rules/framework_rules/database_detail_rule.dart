@@ -79,7 +79,6 @@ class DatabaseDetailRule extends DartLintRule {
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
-    final className = node.name.lexeme;
 
     if (_isFrameworkLayer(filePath)) {
       // In framework layer - check for business logic leakage
