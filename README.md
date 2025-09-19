@@ -3,39 +3,106 @@
 [![pub package](https://img.shields.io/pub/v/clean_architecture_linter.svg)](https://pub.dev/packages/clean_architecture_linter)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A comprehensive custom lint package that enforces Clean Architecture principles in Flutter projects. This is the **first** and **only** lint tool specifically designed to maintain proper architectural boundaries and patterns in Flutter applications following Clean Architecture.
+> 🇰🇷 [한국어 README](README_KO.md) | 🇺🇸 English README
+
+A comprehensive custom lint package that enforces Clean Architecture principles in Flutter projects. This is the **first** and **only** lint tool specifically designed to maintain proper architectural boundaries and patterns in Flutter applications following Uncle Bob's Clean Architecture.
 
 ## 🚀 Features
 
-- **13 Specialized Lint Rules** across all layers of Clean Architecture
-- **Domain Layer Rules** (7 rules): Ensures business logic purity and proper abstractions
-- **Data Layer Rules** (3 rules): Validates repository implementations and data models
+- **39 Comprehensive Lint Rules** covering all aspects of Clean Architecture
+- **Domain Layer Rules** (11 rules): Ensures business logic purity and proper abstractions
+- **Data Layer Rules** (7 rules): Validates repository implementations and data models
 - **Presentation Layer Rules** (3 rules): Enforces UI/business logic separation
+- **Interface Adapter Rules** (3 rules): Validates proper data conversion patterns
+- **Framework Rules** (4 rules): Ensures framework details stay in outer layer
+- **Boundary Rules** (11 rules): Enforces proper boundary crossing patterns
 - **Real-time feedback** in your IDE (VS Code, IntelliJ IDEA, Android Studio)
 - **Configurable rules** - enable/disable specific rules as needed
 - **Zero dependencies** on your app - works as a dev dependency
 
-### Domain Layer Rules
+## 📋 Rules by Clean Architecture Layer
 
-- **Domain Purity**: Prevents domain layer from depending on external frameworks
-- **Entity Immutability**: Ensures domain entities are immutable
-- **Repository Interface**: Validates proper repository abstraction usage
-- **UseCase Single Responsibility**: Enforces single responsibility in use cases
-- **Business Logic Isolation**: Prevents business logic leakage to UI layer
-- **Domain Model Validation**: Ensures proper validation in domain entities
-- **Dependency Inversion**: Validates dependency direction in domain layer
+### 🎯 Domain Layer (Core Business Rules)
+*The innermost layer containing business logic and rules*
 
-### Data Layer Rules
+**Entity & Business Rules (4 rules):**
+- `entity_business_rules` - Ensures entities contain only enterprise business rules
+- `entity_stability` - Validates entity stability and immutability
+- `entity_immutability` - Enforces immutable domain entities
+- `business_logic_isolation` - Prevents business logic leakage to outer layers
 
-- **DataSource Naming**: Enforces proper naming conventions for data sources
-- **Repository Implementation**: Validates repository implementation patterns
-- **Model Structure**: Ensures data models have proper serialization methods
+**Use Cases & Application Rules (4 rules):**
+- `usecase_orchestration` - Validates use case orchestration patterns
+- `usecase_application_rules` - Ensures use cases contain application-specific rules
+- `usecase_independence` - Enforces use case independence
+- `usecase_single_responsibility` - Validates single responsibility principle
 
-### Presentation Layer Rules
+**Domain Interfaces & Validation (3 rules):**
+- `repository_interface` - Validates proper repository abstractions
+- `domain_model_validation` - Ensures proper domain validation
+- `domain_purity` - Prevents external framework dependencies
+- `dependency_inversion` - Validates dependency direction
 
-- **UI Dependency Injection**: Prevents direct instantiation of business logic in UI
-- **State Management Pattern**: Validates proper state management usage
-- **Presentation Logic Separation**: Enforces separation of presentation logic from UI
+### 💾 Data Layer (Data Access & External Interfaces)
+*Repository implementations and data source management*
+
+**Repository & Data Source Rules (3 rules):**
+- `repository_implementation` - Validates repository implementation patterns
+- `datasource_naming` - Enforces proper naming conventions
+- `model_structure` - Ensures data models have proper structure
+
+**Boundary Data Rules (4 rules):**
+- `data_boundary_crossing` - Validates proper data crossing boundaries
+- `database_row_boundary` - Prevents database row structures crossing inward
+- `dto_boundary_pattern` - Enforces DTO patterns for boundary crossing
+- `entity_boundary_isolation` - Isolates entities from outer layers
+
+### 🎨 Presentation Layer (UI & Delivery Mechanism)
+*User interface and delivery mechanisms*
+
+**UI & State Management (3 rules):**
+- `ui_dependency_injection` - Prevents direct business logic instantiation
+- `state_management` - Validates proper state management patterns
+- `presentation_logic_separation` - Enforces UI/business logic separation
+
+### 🔗 Interface Adapters (Data Format Conversion)
+*Controllers, Presenters, and Gateways*
+
+**Data Conversion & MVC (3 rules):**
+- `data_conversion_adapter` - Validates data format conversions
+- `mvc_architecture` - Enforces MVC patterns in adapters
+- `external_service_adapter` - Validates external service adapter patterns
+
+### ⚙️ Framework & Drivers (External Details)
+*Web frameworks, databases, and external agencies*
+
+**Framework Isolation (4 rules):**
+- `framework_isolation` - Isolates framework details in outermost layer
+- `database_detail` - Keeps database details in framework layer
+- `web_framework_detail` - Isolates web framework specifics
+- `glue_code` - Validates glue code patterns
+
+### 🌐 Architectural Boundaries (Cross-Cutting Concerns)
+*Rules that span multiple layers and enforce Uncle Bob's principles*
+
+**Dependency & Layer Rules (5 rules):**
+- `layer_dependency` - Enforces The Dependency Rule (inward only)
+- `circular_dependency` - Prevents circular dependencies
+- `core_dependency` - Validates core dependency patterns
+- `abstraction_level` - Ensures proper abstraction levels
+- `flexible_layer_detection` - Supports flexible layer architectures
+
+**Boundary Crossing Patterns (6 rules):**
+- `boundary_crossing` - Validates proper boundary crossing
+- `dependency_inversion_boundary` - Enforces dependency inversion at boundaries
+- `interface_boundary` - Validates interface boundary patterns
+- `polymorphic_flow_control` - Ensures polymorphic flow control inversion
+- `abstraction_progression` - Validates abstraction progression across layers
+- `clean_architecture_benefits` - Ensures architecture provides expected benefits
+
+> 📖 **Detailed Rules Guide**: See [RULES.md](RULES.md) for comprehensive documentation of all 39 rules, including examples, Uncle Bob quotes, and implementation guidance.
+>
+> 🇰🇷 **한글 가이드**: [RULES_KO.md](RULES_KO.md)에서 39개 규칙에 대한 한국어 설명과 실제 사용 시나리오를 확인하세요.
 
 ## 📦 Installation
 
@@ -58,20 +125,57 @@ analyzer:
 
 custom_lint:
   rules:
-    # Enable all Clean Architecture rules
-    - domain_purity
+    # Domain Layer Rules (11 rules)
+    - entity_business_rules
+    - entity_stability
     - entity_immutability
-    - repository_interface
-    - usecase_single_responsibility
     - business_logic_isolation
+    - usecase_orchestration
+    - usecase_application_rules
+    - usecase_independence
+    - usecase_single_responsibility
+    - repository_interface
     - domain_model_validation
+    - domain_purity
     - dependency_inversion
-    - datasource_naming
+
+    # Data Layer Rules (7 rules)
     - repository_implementation
+    - datasource_naming
     - model_structure
+    - data_boundary_crossing
+    - database_row_boundary
+    - dto_boundary_pattern
+    - entity_boundary_isolation
+
+    # Presentation Layer Rules (3 rules)
     - ui_dependency_injection
-    - state_management_pattern
+    - state_management
     - presentation_logic_separation
+
+    # Interface Adapter Rules (3 rules)
+    - data_conversion_adapter
+    - mvc_architecture
+    - external_service_adapter
+
+    # Framework Rules (4 rules)
+    - framework_isolation
+    - database_detail
+    - web_framework_detail
+    - glue_code
+
+    # Boundary Rules (11 rules)
+    - layer_dependency
+    - circular_dependency
+    - core_dependency
+    - abstraction_level
+    - flexible_layer_detection
+    - boundary_crossing
+    - dependency_inversion_boundary
+    - interface_boundary
+    - polymorphic_flow_control
+    - abstraction_progression
+    - clean_architecture_benefits
 ```
 
 ## 🚦 Usage
