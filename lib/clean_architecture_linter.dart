@@ -42,6 +42,10 @@ import 'src/rules/boundary_crossing_rule.dart';
 import 'src/rules/dependency_inversion_boundary_rule.dart';
 import 'src/rules/interface_boundary_rule.dart';
 import 'src/rules/polymorphic_flow_control_rule.dart';
+import 'src/rules/data_boundary_crossing_rule.dart';
+import 'src/rules/entity_boundary_isolation_rule.dart';
+import 'src/rules/dto_boundary_pattern_rule.dart';
+import 'src/rules/database_row_boundary_rule.dart';
 
 /// Plugin entry point for Clean Architecture Linter.
 PluginBase createPlugin() => _CleanArchitectureLinterPlugin();
@@ -99,5 +103,11 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
     DependencyInversionBoundaryRule(),
     InterfaceBoundaryRule(),
     PolymorphicFlowControlRule(),
+
+    // Data Boundary Rules
+    DataBoundaryCrossingRule(),
+    EntityBoundaryIsolationRule(),
+    DTOBoundaryPatternRule(),
+    DatabaseRowBoundaryRule(),
   ];
 }
