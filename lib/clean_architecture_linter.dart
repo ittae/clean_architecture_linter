@@ -34,6 +34,10 @@ import 'src/rules/framework_rules/framework_isolation_rule.dart';
 import 'src/rules/framework_rules/database_detail_rule.dart';
 import 'src/rules/framework_rules/web_framework_detail_rule.dart';
 import 'src/rules/framework_rules/glue_code_rule.dart';
+import 'src/rules/abstraction_level_rule.dart';
+import 'src/rules/flexible_layer_detection_rule.dart';
+import 'src/rules/core_dependency_rule.dart';
+import 'src/rules/abstraction_progression_rule.dart';
 
 /// Plugin entry point for Clean Architecture Linter.
 PluginBase createPlugin() => _CleanArchitectureLinterPlugin();
@@ -79,5 +83,11 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
     DatabaseDetailRule(),
     WebFrameworkDetailRule(),
     GlueCodeRule(),
+
+    // Advanced Clean Architecture Rules
+    AbstractionLevelRule(),
+    FlexibleLayerDetectionRule(),
+    CoreDependencyRule(),
+    AbstractionProgressionRule(),
   ];
 }
