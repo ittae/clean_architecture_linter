@@ -1,0 +1,19 @@
+# 🚀 Clean Architecture Linter - 간단 설정 예제
+# 이 파일을 복사해서 프로젝트의 analysis_options.yaml로 사용하세요
+
+include: package:lints/recommended.yaml
+
+analyzer:
+  plugins:
+    - custom_lint
+
+  # 🔥 모든 Clean Architecture 규칙을 ERROR로 강제하려면 아래 주석 해제
+  # treat-package-warnings-as-errors: true
+
+# 💡 특정 규칙만 끄고 싶다면 아래 사용
+# custom_lint:
+#   rules:
+#     - domain_model_validation: false
+
+# 🎯 끝! 이게 전부입니다.
+# Clean Architecture 위반 시 자동으로 경고/오류가 표시됩니다.
