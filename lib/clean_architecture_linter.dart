@@ -8,14 +8,11 @@ library;
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import 'src/rules/domain_rules/domain_purity_rule.dart';
-// import 'src/rules/domain_rules/entity_immutability_rule.dart'; // Replaced by ConsolidatedEntityRule
 import 'src/rules/domain_rules/repository_interface_rule.dart';
 import 'src/rules/domain_rules/usecase_single_responsibility_rule.dart';
 import 'src/rules/domain_rules/business_logic_isolation_rule.dart';
 import 'src/rules/domain_rules/domain_model_validation_rule.dart';
 import 'src/rules/domain_rules/dependency_inversion_rule.dart';
-// import 'src/rules/domain_rules/entity_business_rules_rule.dart'; // Replaced by ConsolidatedEntityRule
-// import 'src/rules/domain_rules/entity_stability_rule.dart'; // Replaced by ConsolidatedEntityRule
 import 'src/rules/domain_rules/usecase_orchestration_rule.dart';
 import 'src/rules/domain_rules/usecase_application_rules_rule.dart';
 import 'src/rules/domain_rules/usecase_independence_rule.dart';
@@ -59,9 +56,6 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
     DomainPurityRule(),
     // Consolidated Entity Rule (replaces EntityImmutabilityRule, EntityBusinessRulesRule, EntityStabilityRule)
     ConsolidatedEntityRule(),
-    // EntityImmutabilityRule(), // Replaced by ConsolidatedEntityRule
-    // EntityBusinessRulesRule(), // Replaced by ConsolidatedEntityRule
-    // EntityStabilityRule(), // Replaced by ConsolidatedEntityRule
     RepositoryInterfaceRule(),
     UseCaseSingleResponsibilityRule(),
     UseCaseOrchestrationRule(),
