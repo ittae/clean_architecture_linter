@@ -597,8 +597,8 @@ class EntityBoundaryIsolationRule extends DartLintRule {
 
   bool _containsEntityInstantiation(String bodyString) {
     final entityInstantiationPatterns = [
-      'new Entity', 'new.*Entity', 'Entity(',
-      'new.*Aggregate', 'AggregateRoot('
+      'new Entity', 'new.*Entity', r'Entity\(',
+      'new.*Aggregate', r'AggregateRoot\('
     ];
 
     return entityInstantiationPatterns.any((pattern) =>

@@ -282,7 +282,7 @@ class RepositoryImplementationRule extends DartLintRule {
     // Check for complex business logic patterns
     final businessPatterns = [
       'validate', 'calculate', 'compute', 'process',
-      'if (.*&&.*||', // Complex conditionals
+      r'if\s*\(.*&&.*\|\|', // Complex conditionals
       'switch.*case.*case.*case', // Multiple business rules
     ];
 
