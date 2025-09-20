@@ -55,6 +55,9 @@ class WebFrameworkDetailRule extends DartLintRule {
     final importUri = node.uri.stringValue;
     if (importUri == null) return;
 
+    // Skip test files
+    if (_isTestFile(filePath)) return;
+
     if (_isWebFrameworkImport(importUri)) {
       if (!_isFrameworkLayer(filePath)) {
         final layerType = _getLayerType(filePath);
@@ -68,8 +71,8 @@ class WebFrameworkDetailRule extends DartLintRule {
       }
     }
 
-    // Check for platform-specific web imports
-    if (_isPlatformWebImport(importUri) && !_isFrameworkLayer(filePath)) {
+    // Check for platform-specific web imports with Flutter Web exception
+    if (_isPlatformWebImport(importUri) && !_isFrameworkLayer(filePath) && !_isFlutterWebFile(filePath)) {
       final layerType = _getLayerType(filePath);
       final code = LintCode(
         name: 'web_framework_detail',
@@ -401,6 +404,12 @@ class WebFrameworkDetailRule extends DartLintRule {
       'package:express/',
     ];
 
+    // Allow shelf_test in test files
+    if (importUri.startsWith('package:shelf_test/') ||
+        importUri.startsWith('package:test/')) {
+      return false;
+    }
+
     return webFrameworkImports.any((web) => importUri.startsWith(web));
   }
 
@@ -470,5 +479,20 @@ class WebFrameworkDetailRule extends DartLintRule {
       return 'presentation';
     }
     return 'unknown';
+  }
+
+  bool _isTestFile(String filePath) {
+    return filePath.contains('/test/') ||
+           filePath.contains('\\test\\') ||
+           filePath.endsWith('_test.dart') ||
+           filePath.contains('/integration_test/') ||
+           filePath.contains('\\integration_test\\');
+  }
+
+  bool _isFlutterWebFile(String filePath) {
+    return filePath.contains('/web/') ||
+           filePath.contains('\\web\\') ||
+           filePath.endsWith('_web.dart') ||
+           filePath.contains('web_');
   }
 }

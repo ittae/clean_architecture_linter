@@ -55,6 +55,9 @@ class FrameworkIsolationRule extends DartLintRule {
     final importUri = node.uri.stringValue;
     if (importUri == null) return;
 
+    // Skip test files - they may need direct framework access
+    if (_isTestFile(filePath)) return;
+
     // Check if framework imports are leaking into inner layers
     if (_isFrameworkImport(importUri)) {
       if (_isInnerLayer(filePath)) {
@@ -252,11 +255,16 @@ class FrameworkIsolationRule extends DartLintRule {
     }
 
     // UI framework violations (more strict)
-    if (_isUIFramework(importUri) && _isDomainLayer(filePath)) {
+    if (_isUIFramework(importUri) && _isDomainLayer(filePath) && !_isTestFile(filePath)) {
       return FrameworkViolation(
         message: 'UI framework leaked into domain layer: $importUri',
         suggestion: 'Domain layer must be UI-independent. Remove UI framework dependencies.',
       );
+    }
+
+    // Flutter Web specific allowances
+    if (_isFlutterWebImport(importUri) && _isFlutterWebContext(filePath)) {
+      return null; // Allow Flutter Web imports in web-specific files
     }
 
     return null;
@@ -308,6 +316,9 @@ class FrameworkIsolationRule extends DartLintRule {
       'configure', 'setup', 'initialize', 'connect',
       'wire', 'bind', 'register', 'create',
       'main', 'run', 'start', 'launch',
+      // Flutter-specific glue code patterns
+      'runapp', 'buildapp', 'createapp', 'setupapp',
+      'configureapp', 'initializeapp', 'bootstrapapp',
     ];
 
     final isGlueCodeName = glueCodePatterns.any((pattern) =>
@@ -315,19 +326,30 @@ class FrameworkIsolationRule extends DartLintRule {
 
     if (isGlueCodeName) return true;
 
+    // Allow Flutter app setup methods
+    if (_isFlutterAppSetupMethod(methodName)) return true;
+
     // Check if method is simple (minimal logic)
     final body = method.body;
     if (body is BlockFunctionBody) {
       final bodyString = body.toString();
 
-      // Glue code should be simple
+      // Glue code should be simple - increased thresholds for practical use
       final statementCount = bodyString.split(';').length - 1;
       final lineCount = bodyString.split('\n').length;
 
-      return statementCount <= 10 && lineCount <= 20; // Simple glue code
+      return statementCount <= 15 && lineCount <= 30; // More flexible for real projects
     }
 
     return false;
+  }
+
+  bool _isFlutterAppSetupMethod(String methodName) {
+    final flutterAppMethods = [
+      'runApp', 'main', 'createApp', 'buildApp',
+      'configureApp', 'setupApp', 'initializeApp'
+    ];
+    return flutterAppMethods.any((method) => methodName == method);
   }
 
   bool _isFrameworkImport(String importUri) {
@@ -403,6 +425,11 @@ class FrameworkIsolationRule extends DartLintRule {
       'dart:ui',
     ];
 
+    // Allow flutter_test in test files
+    if (importUri.startsWith('package:flutter_test/')) {
+      return false;
+    }
+
     return uiFrameworks.any((ui) => importUri.startsWith(ui));
   }
 
@@ -434,9 +461,34 @@ class FrameworkIsolationRule extends DartLintRule {
       '/external/', '\\external\\',
       '/drivers/', '\\drivers\\',
       '/main.dart', '\\main.dart',
+      '/app.dart', '\\app.dart',
+      '/bootstrap/', '\\bootstrap\\',
     ];
 
     return frameworkPaths.any((path) => filePath.contains(path));
+  }
+
+  bool _isTestFile(String filePath) {
+    return filePath.contains('/test/') ||
+           filePath.contains('\\test\\') ||
+           filePath.endsWith('_test.dart') ||
+           filePath.contains('/integration_test/') ||
+           filePath.contains('\\integration_test\\') ||
+           filePath.contains('/test_driver/') ||
+           filePath.contains('\\test_driver\\');
+  }
+
+  bool _isFlutterWebImport(String importUri) {
+    return importUri.startsWith('dart:html') ||
+           importUri.startsWith('dart:js') ||
+           importUri.startsWith('dart:js_util');
+  }
+
+  bool _isFlutterWebContext(String filePath) {
+    return filePath.contains('/web/') ||
+           filePath.contains('\\web\\') ||
+           filePath.contains('web_') ||
+           filePath.endsWith('_web.dart');
   }
 
   bool _isInnerLayer(String filePath) {

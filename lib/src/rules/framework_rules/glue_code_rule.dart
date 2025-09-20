@@ -228,7 +228,7 @@ class GlueCodeRule extends DartLintRule {
       methodCount: methodCount,
       fieldCount: fieldCount,
       totalLines: totalLines,
-      isComplexForGlueCode: methodCount > 15 || fieldCount > 10 || totalLines > 200,
+      isComplexForGlueCode: methodCount > 25 || fieldCount > 15 || totalLines > 300,
     );
   }
 
@@ -262,9 +262,9 @@ class GlueCodeRule extends DartLintRule {
       totalLines: totalLines,
       cyclomaticComplexity: cyclomaticComplexity,
       statementCount: statementCount,
-      isComplexForGlueCode: cyclomaticComplexity > 5 ||
-                           statementCount > 15 ||
-                           totalLines > 50,
+      isComplexForGlueCode: cyclomaticComplexity > 8 ||
+                           statementCount > 25 ||
+                           totalLines > 75,
     );
   }
 
@@ -320,12 +320,28 @@ class GlueCodeRule extends DartLintRule {
       'Launcher', 'Runner', 'Starter',
       'Container', 'Module', 'Plugin',
       'Factory', 'Builder', 'Creator',
+      // Flutter-specific patterns
+      'MaterialApp', 'CupertinoApp', 'WidgetsApp',
+      'GetMaterialApp', 'Phoenix', 'AppWidget',
+      // DI Container patterns
+      'ServiceLocator', 'DIContainer', 'Injector',
+      'GetItModule', 'ProviderModule', 'RiverpodModule',
     ];
 
     return appropriateClassPatterns.any((pattern) => className.contains(pattern)) ||
            className == 'main' ||
            className.endsWith('Module') ||
-           className.endsWith('Config');
+           className.endsWith('Config') ||
+           className.endsWith('App') ||
+           _isFlutterAppClass(className);
+  }
+
+  bool _isFlutterAppClass(String className) {
+    final flutterAppPatterns = [
+      'MaterialApp', 'CupertinoApp', 'WidgetsApp',
+      'GetMaterialApp', 'Phoenix', 'AppWidget'
+    ];
+    return flutterAppPatterns.any((pattern) => className == pattern);
   }
 
   bool _isAppropriateGlueMethod(String methodName) {
@@ -335,10 +351,27 @@ class GlueCodeRule extends DartLintRule {
       'bootstrap', 'wire', 'bind', 'register',
       'create', 'build', 'make', 'factory',
       'connect', 'attach', 'mount', 'install',
+      // Flutter-specific patterns
+      'runapp', 'ensureinitialized', 'setpreferred',
+      'configureapp', 'setupapp', 'initializeapp',
+      // DI setup patterns
+      'setupgetit', 'configuredependencies', 'setupservices',
+      'registerservices', 'wireup', 'setupinjection',
+      // Route setup patterns
+      'setuproutes', 'configurerouting', 'initroutes',
     ];
 
     return appropriateMethodPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+        methodName.toLowerCase().contains(pattern)) ||
+        _isFlutterSetupMethod(methodName);
+  }
+
+  bool _isFlutterSetupMethod(String methodName) {
+    final flutterSetupMethods = [
+      'runApp', 'ensureInitialized', 'setPreferredOrientations',
+      'configureApp', 'setupApp', 'initializeApp'
+    ];
+    return flutterSetupMethods.any((method) => methodName == method);
   }
 
   bool _containsBusinessLogic(MethodDeclaration method, String methodName) {
@@ -376,8 +409,21 @@ class GlueCodeRule extends DartLintRule {
       'format', 'normalize', 'sanitize',
     ];
 
+    // Allow simple Flutter app configuration data processing
+    if (_isFlutterConfigurationMethod(methodName)) {
+      return false;
+    }
+
     return dataProcessingPatterns.any((pattern) =>
         methodName.toLowerCase().contains(pattern));
+  }
+
+  bool _isFlutterConfigurationMethod(String methodName) {
+    final flutterConfigMethods = [
+      'configureApp', 'setupTheme', 'buildTheme',
+      'createRoute', 'generateRoute', 'parseRoute'
+    ];
+    return flutterConfigMethods.any((method) => methodName.contains(method));
   }
 
   bool _containsValidationLogic(MethodDeclaration method, String methodName) {
@@ -410,9 +456,21 @@ class GlueCodeRule extends DartLintRule {
       '/bootstrap/', '\\bootstrap\\',
       '/config/', '\\config\\',
       '/setup/', '\\setup\\',
+      '/app.dart', '\\app.dart',
+      '/application/', '\\application\\',
+      '/launcher/', '\\launcher\\',
     ];
 
-    return frameworkPaths.any((path) => filePath.contains(path));
+    return frameworkPaths.any((path) => filePath.contains(path)) ||
+           _isTestFile(filePath); // Allow complexity in test files
+  }
+
+  bool _isTestFile(String filePath) {
+    return filePath.contains('/test/') ||
+           filePath.contains('\\test\\') ||
+           filePath.endsWith('_test.dart') ||
+           filePath.contains('/test_') ||
+           filePath.contains('\\test_');
   }
 }
 

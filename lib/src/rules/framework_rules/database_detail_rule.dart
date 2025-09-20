@@ -59,6 +59,9 @@ class DatabaseDetailRule extends DartLintRule {
     final importUri = node.uri.stringValue;
     if (importUri == null) return;
 
+    // Skip test files and migration files
+    if (_isTestFile(filePath) || _isMigrationFile(filePath)) return;
+
     if (_isDatabaseImport(importUri)) {
       if (!_isFrameworkLayer(filePath)) {
         final layerType = _getLayerType(filePath);
@@ -140,6 +143,9 @@ class DatabaseDetailRule extends DartLintRule {
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
+
+    // Skip test files and migration files
+    if (_isTestFile(filePath) || _isMigrationFile(filePath)) return;
 
     if (!_isFrameworkLayer(filePath)) {
       // Check for SQL strings in inner layers
@@ -367,6 +373,21 @@ class DatabaseDetailRule extends DartLintRule {
     ];
 
     return frameworkPaths.any((path) => filePath.contains(path));
+  }
+
+  bool _isTestFile(String filePath) {
+    return filePath.contains('/test/') ||
+           filePath.contains('\\test\\') ||
+           filePath.endsWith('_test.dart') ||
+           filePath.contains('/integration_test/') ||
+           filePath.contains('\\integration_test\\');
+  }
+
+  bool _isMigrationFile(String filePath) {
+    return filePath.contains('/migrations/') ||
+           filePath.contains('\\migrations\\') ||
+           filePath.contains('migration') ||
+           filePath.endsWith('_migration.dart');
   }
 
   String _getLayerType(String filePath) {
