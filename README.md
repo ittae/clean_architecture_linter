@@ -5,20 +5,18 @@
 
 > 🇰🇷 [한국어 README](README_KO.md) | 🇺🇸 English README
 
-A comprehensive custom lint package that enforces Clean Architecture principles in Flutter projects. This is the **first** and **only** lint tool specifically designed to maintain proper architectural boundaries and patterns in Flutter applications following Uncle Bob's Clean Architecture.
+A comprehensive custom lint package that **automatically enforces Clean Architecture principles** in Flutter/Dart projects. Write code naturally while the linter guides you toward perfect Clean Architecture compliance with real-time feedback and actionable corrections.
 
-## 🚀 Features
+## ✨ Key Features
 
-- **39 Comprehensive Lint Rules** covering all aspects of Clean Architecture
-- **Domain Layer Rules** (11 rules): Ensures business logic purity and proper abstractions
-- **Data Layer Rules** (7 rules): Validates repository implementations and data models
-- **Presentation Layer Rules** (3 rules): Enforces UI/business logic separation
-- **Interface Adapter Rules** (3 rules): Validates proper data conversion patterns
-- **Framework Rules** (4 rules): Ensures framework details stay in outer layer
-- **Boundary Rules** (11 rules): Enforces proper boundary crossing patterns
-- **Real-time feedback** in your IDE (VS Code, IntelliJ IDEA, Android Studio)
-- **Configurable rules** - enable/disable specific rules as needed
-- **Zero dependencies** on your app - works as a dev dependency
+- 🛡️ **Automatic Clean Architecture Protection** - Write code freely, linter catches violations
+- 🎯 **16+ Specialized Rules** - Comprehensive coverage of all Clean Architecture layers
+- 🚀 **Flutter-Optimized** - Built specifically for Flutter development patterns
+- 📚 **Educational** - Learn Clean Architecture through guided corrections
+- ⚡ **Real-time Feedback** - Immediate warnings with actionable solutions
+- 🔧 **Zero Configuration** - Works out of the box with sensible defaults
+- 🎛️ **Flexible Configuration** - Core, Standard, and Strict modes available
+- 🧪 **Test-Aware** - Smart exceptions for test files and development contexts
 
 ## 📋 Rules by Clean Architecture Layer
 
@@ -104,78 +102,58 @@ A comprehensive custom lint package that enforces Clean Architecture principles 
 >
 > 🇰🇷 **한글 가이드**: [RULES_KO.md](RULES_KO.md)에서 39개 규칙에 대한 한국어 설명과 실제 사용 시나리오를 확인하세요.
 
-## 📦 Installation
+## 🚀 Quick Start
 
-Add `clean_architecture_linter` as a dev dependency in your `pubspec.yaml`:
+### 1. Add to your project
 
 ```yaml
+# pubspec.yaml
 dev_dependencies:
-  clean_architecture_linter: ^0.1.0
+  clean_architecture_linter: ^1.0.0
   custom_lint: ^0.6.7
 ```
 
-## ⚙️ Configuration
-
-Create or update your `analysis_options.yaml`:
+### 2. Enable custom lint
 
 ```yaml
+# analysis_options.yaml
 analyzer:
   plugins:
     - custom_lint
+```
 
-custom_lint:
-  rules:
-    # Domain Layer Rules (11 rules)
-    - entity_business_rules
-    - entity_stability
-    - entity_immutability
-    - business_logic_isolation
-    - usecase_orchestration
-    - usecase_application_rules
-    - usecase_independence
-    - usecase_single_responsibility
-    - repository_interface
-    - domain_model_validation
-    - domain_purity
-    - dependency_inversion
+### 3. Run the linter
 
-    # Data Layer Rules (7 rules)
-    - repository_implementation
-    - datasource_naming
-    - model_structure
-    - data_boundary_crossing
-    - database_row_boundary
-    - dto_boundary_pattern
-    - entity_boundary_isolation
+```bash
+dart pub get
+dart pub custom_lint
+```
 
-    # Presentation Layer Rules (3 rules)
-    - ui_dependency_injection
-    - state_management
-    - presentation_logic_separation
+That's it! The linter will now automatically enforce Clean Architecture principles in your codebase.
 
-    # Interface Adapter Rules (3 rules)
-    - data_conversion_adapter
-    - mvc_architecture
-    - external_service_adapter
+## 🎛️ Configuration Options
 
-    # Framework Rules (4 rules)
-    - framework_isolation
-    - database_detail
-    - web_framework_detail
-    - glue_code
+Choose your enforcement level:
 
-    # Boundary Rules (11 rules)
-    - layer_dependency
-    - circular_dependency
-    - core_dependency
-    - abstraction_level
-    - flexible_layer_detection
-    - boundary_crossing
-    - dependency_inversion_boundary
-    - interface_boundary
-    - polymorphic_flow_control
-    - abstraction_progression
-    - clean_architecture_benefits
+### 📚 Core Rules Only (Essentials)
+```dart
+// lib/clean_architecture_linter.dart
+import 'package:clean_architecture_linter/clean_architecture_linter_core.dart';
+PluginBase createPlugin() => createCorePlugin();
+```
+
+### 🎯 Standard Rules (Recommended)
+```dart
+// lib/clean_architecture_linter.dart
+import 'package:clean_architecture_linter/clean_architecture_linter.dart';
+// Default - no changes needed
+```
+
+### 🔒 Strict Rules (Maximum Enforcement)
+```dart
+// lib/clean_architecture_linter.dart
+import 'package:clean_architecture_linter/clean_architecture_linter_strict.dart';
+PluginBase createPlugin() => createStrictPlugin();
 ```
 
 ## 🚦 Usage

@@ -5,46 +5,69 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] - 2024-12-18
+## [1.0.0] - 2024-01-20
 
-### Added
+### 🎉 Initial Stable Release
 
-#### Domain Layer Rules (7 rules)
-- **Domain Purity Rule**: Prevents domain layer from depending on external frameworks (Flutter, HTTP clients, etc.)
-- **Entity Immutability Rule**: Enforces immutable entities with final fields and no setters
-- **Repository Interface Rule**: Validates that domain layer only depends on repository interfaces, not implementations
-- **UseCase Single Responsibility Rule**: Ensures UseCase classes have only one call() or execute() method
-- **Business Logic Isolation Rule**: Prevents business logic from leaking into UI components
-- **Domain Model Validation Rule**: Encourages proper validation and business rules in domain entities
-- **Dependency Inversion Rule**: Validates that domain layer depends on abstractions, not concretions
+The first stable release of Clean Architecture Linter - a comprehensive custom lint package that automatically enforces Clean Architecture principles in Flutter/Dart projects.
 
-#### Data Layer Rules (3 rules)
-- **DataSource Naming Rule**: Enforces proper naming conventions for data sources (DataSource, RemoteDataSource, LocalDataSource suffixes)
-- **Repository Implementation Rule**: Validates that repository implementations properly implement domain interfaces and use data sources
-- **Model Structure Rule**: Ensures data models have proper serialization methods (fromJson constructor and toJson method)
+### ✨ Features Added
 
-#### Presentation Layer Rules (3 rules)
-- **UI Dependency Injection Rule**: Prevents direct instantiation of business logic classes in UI components
-- **State Management Rule**: Validates proper state management patterns and prevents business logic in build methods
-- **Presentation Logic Separation Rule**: Enforces separation of presentation logic from UI components
+#### 🎯 Domain Layer Rules (5 rules)
+- **`domain_purity`** - Ensures domain layer independence from external frameworks
+- **`consolidated_entity_rule`** - Validates entity immutability, business rules, and stability
+- **`consolidated_usecase_rule`** - Enforces UseCase patterns, single responsibility, and independence
+- **`repository_interface_rule`** - Validates proper repository abstractions
+- **`dependency_inversion_rule`** - Ensures dependency direction follows Clean Architecture
 
-#### Package Features
-- Custom lint integration with `custom_lint_builder`
-- Real-time IDE feedback (VS Code, IntelliJ IDEA, Android Studio)
-- Comprehensive documentation and examples
-- MIT License for open source usage
-- Example files demonstrating good and bad patterns
+#### 📊 Data Layer Rules (3 rules)
+- **`datasource_naming_rule`** - Enforces proper DataSource patterns and external communication
+- **`repository_implementation_rule`** - Validates repository implementations and domain interface compliance
+- **`model_structure_rule`** - Ensures data models have proper serialization, domain conversion, and business logic separation
 
-### Infrastructure
-- Initial package structure with organized rule categories
-- Comprehensive README with installation and usage instructions
-- MIT License
-- Example project with good and bad code patterns
-- Unit test structure prepared
+#### 🎨 Presentation Layer Rules (4 rules)
+- **`business_logic_isolation_rule`** - Prevents business logic in UI components
+- **`state_management_rule`** - Validates proper Flutter state management patterns (Provider, Bloc, Riverpod)
+- **`presentation_logic_separation_rule`** - Enforces separation of complex presentation logic
+- **`ui_dependency_injection_rule`** - Ensures proper dependency injection patterns in UI
 
-### Documentation
-- Detailed README with feature overview
-- Installation and configuration instructions
-- Code examples for each rule
-- Project structure guidelines
-- Contributing guidelines
+#### 🔧 Framework Layer Rules (4 rules)
+- **`glue_code_rule`** - Validates framework layer simplicity and glue code patterns
+- **`web_framework_detail_rule`** - Isolates web framework concerns to framework layer
+- **`database_detail_rule`** - Isolates database concerns to framework layer
+- **`framework_isolation_rule`** - Prevents framework leakage into inner layers
+
+### 🎛️ Configuration System
+- **Core Mode** - Essential rules only (5 rules)
+- **Standard Mode** - Recommended rules (16 rules)
+- **Strict Mode** - Maximum enforcement (16 rules as errors)
+
+### 🚀 Framework Support
+- **UI**: Flutter, Angular Dart
+- **Web**: Shelf, Dart Frog, Conduit, Angel3
+- **Database**: Sqflite, Drift, Floor, Hive, Isar, Realm, ObjectBox
+- **HTTP**: Dio, Http, Retrofit
+- **State Management**: Provider, Riverpod, Bloc, GetX
+
+### 🧪 Test-Aware Features
+- **Test File Exceptions** - Relaxed rules for test files
+- **Integration Test Support** - Special handling for `integration_test/`
+- **Migration Files** - Database rules relaxed for migration files
+- **Flutter Test** - Allows `flutter_test` package usage
+
+### 📚 Educational Features
+- **Specific Error Messages** - Clear violation descriptions
+- **Actionable Corrections** - Step-by-step fix guidance
+- **Layer Guidance** - Explains which layer code belongs in
+- **Pattern Suggestions** - Recommends Clean Architecture patterns
+
+### 🛠️ Platform Support
+- **Dart SDK**: Compatible with Dart 3.0.0+
+- **Platforms**: Linux, macOS, Windows
+- **IDE Integration**: VS Code, IntelliJ IDEA, Android Studio
+
+### 📖 Documentation
+- Comprehensive README with quick start guide
+- Complete rule reference documentation
+- Configuration options for different team needs
+- Real-world examples and best practices
