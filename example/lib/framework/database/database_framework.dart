@@ -1,4 +1,6 @@
 // GOOD: Database framework implementation with proper isolation
+import '../../domain/repositories/user_repository.dart';
+import '../../domain/entities/user.dart';
 
 // Mock database framework types
 class Database {
@@ -12,8 +14,6 @@ class Connection {}
 class Transaction {}
 
 // GOOD: Database framework adapter implementing repository interface
-import '../../domain/repositories/user_repository.dart';
-import '../../domain/entities/user.dart';
 
 class DatabaseUserRepository implements UserRepository {
   final Database _database;
