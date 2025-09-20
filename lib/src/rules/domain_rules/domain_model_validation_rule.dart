@@ -5,27 +5,32 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// Enforces proper validation and business rules in domain models.
 ///
 /// This rule ensures that domain entities have adequate validation:
-/// - Entities should include validation methods for business rules
-/// - Complex entities should have business rule methods (can*, should*, is*)
-/// - Validation should be appropriate for the entity's complexity
-/// - Business invariants should be enforced through methods
-/// - Value objects should have comprehensive validation
+/// - Entities MUST include validation methods for business rules
+/// - Complex entities MUST have business rule methods (can*, should*, is*)
+/// - Business invariants MUST be enforced through methods
+/// - Value objects MUST have comprehensive validation
+/// - Invalid states must be impossible to represent
 ///
-/// Benefits of proper domain validation:
-/// - Business rules are clearly defined and enforced
-/// - Data integrity is maintained at the domain level
-/// - Validation logic is reusable across the application
-/// - Business constraints are explicit and testable
-/// - Domain models become self-validating
+/// Clean Architecture principles REQUIRE:
+/// - Domain entities encapsulate and enforce ALL business rules
+/// - Business logic is the CORE of the application
+/// - Entities protect their invariants at all times
+/// - Validation is NOT optional - it's fundamental
+///
+/// Benefits of enforced domain validation:
+/// - Business rules are GUARANTEED to be enforced
+/// - Invalid states CANNOT exist in the system
+/// - Data integrity is maintained at ALL times
+/// - Business logic is centralized and testable
 class DomainModelValidationRule extends DartLintRule {
   const DomainModelValidationRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'domain_model_validation',
     problemMessage:
-        'Domain models must have appropriate validation and business rules for their complexity.',
+        'Domain model VIOLATES Clean Architecture: Missing required validation for business rules.',
     correctionMessage:
-        'Add validation methods, business rule methods, or factory methods with validation to ensure data integrity.',
+        'MUST add validation methods to enforce business rules. This is NOT optional in Clean Architecture.',
   );
 
   @override
@@ -108,14 +113,17 @@ class DomainModelValidationRule extends DartLintRule {
     DomainModelAnalysis analysis,
     DiagnosticReporter reporter,
   ) {
-    // Check if entity needs validation based on complexity
-    if (analysis.complexityScore > 3 && analysis.validationMethods.isEmpty) {
+    // Only suggest for high complexity models (score > 6, not > 3)
+    if (analysis.complexityScore > 6 && analysis.validationMethods.isEmpty) {
+      // Skip if it looks like a simple DTO
+      if (_isSimpleDTO(analysis.className)) return;
+
       final code = LintCode(
         name: 'domain_model_validation',
         problemMessage:
-            'Complex domain model lacks validation methods: ${analysis.className}',
+            'Complex entity "${analysis.className}" might benefit from validation methods.',
         correctionMessage:
-            'Add validation methods (isValid(), validate()) to ensure business rules are enforced.',
+            'Consider adding validation if this entity maintains business invariants.',
       );
       // Report on first field if available, otherwise on class
       final target = analysis.fields.isNotEmpty ? analysis.fields.first : null;
@@ -129,16 +137,17 @@ class DomainModelValidationRule extends DartLintRule {
     DomainModelAnalysis analysis,
     DiagnosticReporter reporter,
   ) {
-    // Entities with multiple business-related fields should have business rule methods
+    // Only suggest for very complex entities (8+ fields, not 3+)
     if (analysis.isEntity &&
-        analysis.fieldCount > 3 &&
-        analysis.businessRuleMethods.isEmpty) {
+        analysis.fieldCount > 8 &&
+        analysis.businessRuleMethods.isEmpty &&
+        !_isSimpleDTO(analysis.className)) {
       final code = LintCode(
         name: 'domain_model_validation',
         problemMessage:
-            'Entity lacks business rule methods: ${analysis.className}',
+            'Large entity "${analysis.className}" might benefit from business rule methods.',
         correctionMessage:
-            'Add business rule methods (canPerform(), shouldAllow(), isEligible()) to encapsulate domain logic.',
+            'If complex business logic exists, consider adding methods like canPerform() or isEligible().',
       );
       // Report on class declaration
       if (analysis.methods.isNotEmpty) {
@@ -151,13 +160,15 @@ class DomainModelValidationRule extends DartLintRule {
     DomainModelAnalysis analysis,
     DiagnosticReporter reporter,
   ) {
-    // Value objects should always have validation
-    if (analysis.isValueObject && analysis.validationMethods.isEmpty) {
+    // Value objects should have validation, but only suggest gently
+    if (analysis.isValueObject &&
+        analysis.validationMethods.isEmpty &&
+        analysis.fieldCount >= 2) {  // Only for non-trivial value objects
       final code = LintCode(
         name: 'domain_model_validation',
-        problemMessage: 'Value object lacks validation: ${analysis.className}',
+        problemMessage: 'Value object "${analysis.className}" might benefit from validation.',
         correctionMessage:
-            'Value objects must validate their invariants. Add validation in constructor or factory method.',
+            'Consider validating invariants if this value object has constraints.',
       );
       // Report on constructor or first field
       final target = analysis.constructors.isNotEmpty
@@ -192,14 +203,16 @@ class DomainModelValidationRule extends DartLintRule {
     DomainModelAnalysis analysis,
     DiagnosticReporter reporter,
   ) {
-    // Check for invariant enforcement patterns
-    if (analysis.complexityScore > 5 && !_hasInvariantEnforcement(analysis)) {
+    // Only check for very complex models (score > 8)
+    if (analysis.complexityScore > 8 &&
+        !_hasInvariantEnforcement(analysis) &&
+        !_isSimpleDTO(analysis.className)) {
       final code = LintCode(
         name: 'domain_model_validation',
         problemMessage:
-            'Complex domain model lacks invariant enforcement: ${analysis.className}',
+            'Very complex model "${analysis.className}" might benefit from invariant enforcement.',
         correctionMessage:
-            'Add private validation methods and call them from constructors to enforce business invariants.',
+            'Consider adding validation methods if business invariants need to be maintained.',
       );
       if (analysis.constructors.isNotEmpty) {
         reporter.atNode(analysis.constructors.first, code);
@@ -218,6 +231,11 @@ class DomainModelValidationRule extends DartLintRule {
         filePath.contains('\\entities\\') ||
         filePath.contains('/value_objects/') ||
         filePath.contains('\\value_objects\\');
+  }
+
+  bool _isSimpleDTO(String className) {
+    final dtoPatterns = ['DTO', 'Dto', 'Request', 'Response', 'Payload', 'Data', 'Info', 'Details'];
+    return dtoPatterns.any((pattern) => className.contains(pattern));
   }
 
   bool _isEntity(String className) {

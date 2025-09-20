@@ -9,20 +9,23 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import 'src/rules/domain_rules/domain_purity_rule.dart';
 import 'src/rules/domain_rules/repository_interface_rule.dart';
-import 'src/rules/domain_rules/usecase_single_responsibility_rule.dart';
-import 'src/rules/domain_rules/business_logic_isolation_rule.dart';
 import 'src/rules/domain_rules/domain_model_validation_rule.dart';
 import 'src/rules/domain_rules/dependency_inversion_rule.dart';
-import 'src/rules/domain_rules/usecase_orchestration_rule.dart';
-import 'src/rules/domain_rules/usecase_application_rules_rule.dart';
-import 'src/rules/domain_rules/usecase_independence_rule.dart';
 import 'src/rules/domain_rules/consolidated_entity_rule.dart';
+import 'src/rules/domain_rules/consolidated_usecase_rule.dart';
+// Removed individual UseCase rules - replaced by ConsolidatedUseCaseRule
+// import 'src/rules/domain_rules/usecase_single_responsibility_rule.dart';
+// import 'src/rules/domain_rules/usecase_orchestration_rule.dart';
+// import 'src/rules/domain_rules/usecase_application_rules_rule.dart';
+// import 'src/rules/domain_rules/usecase_independence_rule.dart';
+// import 'src/rules/domain_rules/business_logic_isolation_rule.dart'; // Moved to presentation
 import 'src/rules/data_rules/datasource_naming_rule.dart';
 import 'src/rules/data_rules/repository_implementation_rule.dart';
 import 'src/rules/data_rules/model_structure_rule.dart';
 import 'src/rules/presentation_rules/ui_dependency_injection_rule.dart';
 import 'src/rules/presentation_rules/state_management_rule.dart';
 import 'src/rules/presentation_rules/presentation_logic_separation_rule.dart';
+import 'src/rules/presentation_rules/business_logic_isolation_rule.dart';
 import 'src/rules/layer_dependency_rule.dart';
 import 'src/rules/circular_dependency_rule.dart';
 import 'src/rules/adapter_rules/data_conversion_adapter_rule.dart';
@@ -54,15 +57,10 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
   List<LintRule> getLintRules(CustomLintConfigs configs) => [
     // Domain Layer Rules
     DomainPurityRule(),
-    // Consolidated Entity Rule (replaces EntityImmutabilityRule, EntityBusinessRulesRule, EntityStabilityRule)
     ConsolidatedEntityRule(),
+    ConsolidatedUseCaseRule(),
     RepositoryInterfaceRule(),
-    UseCaseSingleResponsibilityRule(),
-    UseCaseOrchestrationRule(),
-    UseCaseApplicationRulesRule(),
-    UseCaseIndependenceRule(),
-    BusinessLogicIsolationRule(),
-    DomainModelValidationRule(),
+    DomainModelValidationRule(), 
     DependencyInversionRule(),
 
     // Data Layer Rules
@@ -74,6 +72,7 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
     UiDependencyInjectionRule(),
     StateManagementRule(),
     PresentationLogicSeparationRule(),
+    BusinessLogicIsolationRule(),
 
     // Cross-Layer Rules
     LayerDependencyRule(),
