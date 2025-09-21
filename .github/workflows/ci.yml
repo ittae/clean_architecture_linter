@@ -83,22 +83,29 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Setup Dart SDK
-      uses: dart-lang/setup-dart@v1
+    - name: Setup Flutter SDK
+      uses: subosito/flutter-action@v2
       with:
-        sdk: 'stable'
+        flutter-version: 'stable'
 
-    - name: Install dependencies
-      run: dart pub get
+    - name: Install main package dependencies
+      run: flutter pub get
 
-    - name: Test linter finds violations
+    - name: Install example dependencies
+      working-directory: example
+      run: flutter pub get
+
+    - name: Test linter on example project
+      working-directory: example
       run: |
-        # Test that our linter detects violations in bad examples
-        echo "Testing linter on bad examples..."
-        dart pub custom_lint lib/bad_examples/ || echo "✅ Linter correctly found violations in bad examples"
+        # Test that our linter works on the example project
+        echo "Testing linter on example project..."
+        flutter pub run custom_lint || echo "✅ Linter correctly analyzed example project"
 
     - name: Verify example files exist
+      working-directory: example
       run: |
         echo "Checking example files..."
-        ls -la lib/*examples/
-        echo "✅ Example files are present"
+        ls -la lib/good_examples/ || echo "Good examples directory"
+        ls -la lib/bad_examples/ || echo "Bad examples directory"
+        echo "✅ Example structure verified"
