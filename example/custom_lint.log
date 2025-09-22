@@ -3224,3 +3224,534 @@ at:
 [custom_lint] 2025-09-20T12:10:20.663224 #23     main (file:///Users/itae/.pub-cache/hosted/pub.dev/custom_lint-0.8.1/bin/custom_lint.dart:80:5)
 [custom_lint] 2025-09-20T12:10:20.663224 <asynchronous suspension>
 [custom_lint] 2025-09-20T12:10:20.663224
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/domain_rules/domain_purity_rule.dart:180:54: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final superTypeName = extendsClause.superclass.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                                      ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/domain_rules/domain_purity_rule.dart:197:41: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904         final interfaceName = interface.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                         ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/domain_rules/repository_interface_rule.dart:127:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/domain_rules/repository_interface_rule.dart:153:29: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                             ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/domain_rules/repository_interface_rule.dart:177:41: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final returnTypeName = returnType.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                         ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/domain_rules/dependency_inversion_rule.dart:202:27: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904     final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                           ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/domain_rules/dependency_inversion_rule.dart:241:27: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904     final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                           ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/domain_rules/dependency_inversion_rule.dart:313:27: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904     final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                           ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/domain_rules/consolidated_entity_rule.dart:125:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/domain_rules/consolidated_entity_rule.dart:202:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/domain_rules/consolidated_usecase_rule.dart:121:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/domain_rules/consolidated_usecase_rule.dart:204:36: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final superName = superclass.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                    ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/domain_rules/consolidated_usecase_rule.dart:219:41: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904         final interfaceName = interface.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                         ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/data_rules/datasource_naming_rule.dart:127:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/data_rules/datasource_naming_rule.dart:182:37: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904         final typeName = returnType.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                     ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/data_rules/repository_implementation_rule.dart:113:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/data_rules/repository_implementation_rule.dart:153:41: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904         final interfaceName = interface.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                         ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/data_rules/model_structure_rule.dart:232:50: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final superName = extendsClause.superclass.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                                  ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/presentation_rules/ui_dependency_injection_rule.dart:74:55: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904     final constructorName = node.constructorName.type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                                       ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/presentation_rules/ui_dependency_injection_rule.dart:204:65: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904         if (type is NamedType && _isBusinessDependencyType(type.name.lexeme)) {
+[custom_lint] 2025-09-22T09:13:19.250904                                                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/presentation_rules/ui_dependency_injection_rule.dart:212:38: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904                 dependencyName: type.name.lexeme,
+[custom_lint] 2025-09-22T09:13:19.250904                                      ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/presentation_rules/ui_dependency_injection_rule.dart:282:29: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                             ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/presentation_rules/ui_dependency_injection_rule.dart:305:65: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904         if (type is NamedType && _isBusinessDependencyType(type.name.lexeme)) {
+[custom_lint] 2025-09-22T09:13:19.250904                                                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/presentation_rules/ui_dependency_injection_rule.dart:323:51: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final superclass = extendsClause.superclass.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                                   ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/presentation_rules/state_management_rule.dart:137:51: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final superclass = extendsClause.superclass.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                                   ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/presentation_rules/state_management_rule.dart:159:51: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final superclass = extendsClause.superclass.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                                   ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/presentation_rules/state_management_rule.dart:269:29: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                             ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/presentation_rules/state_management_rule.dart:289:51: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final superclass = extendsClause.superclass.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                                   ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/presentation_rules/state_management_rule.dart:316:41: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904         final interfaceName = interface.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                         ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/presentation_rules/presentation_logic_separation_rule.dart:63:51: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final superclass = extendsClause.superclass.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                                   ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/presentation_rules/business_logic_isolation_rule.dart:130:29: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                             ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/adapter_rules/data_conversion_adapter_rule.dart:179:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/adapter_rules/mvc_architecture_rule.dart:257:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/adapter_rules/external_service_adapter_rule.dart:230:39: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final interfaceName = interface.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                       ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/framework_rules/framework_isolation_rule.dart:183:54: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final superTypeName = extendsClause.superclass.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                                      ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/framework_rules/framework_isolation_rule.dart:200:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/framework_rules/framework_isolation_rule.dart:223:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/framework_rules/database_detail_rule.dart:218:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/framework_rules/web_framework_detail_rule.dart:234:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/framework_rules/web_framework_detail_rule.dart:251:54: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final superTypeName = extendsClause.superclass.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                                      ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/flexible_layer_detection_rule.dart:519:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme.toLowerCase();
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/core_dependency_rule.dart:149:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/core_dependency_rule.dart:175:29: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                             ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/core_dependency_rule.dart:207:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/abstraction_progression_rule.dart:197:55: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final superclassName = extendsClause.superclass.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                                       ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/abstraction_progression_rule.dart:259:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/abstraction_progression_rule.dart:431:37: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904         return _isConcreteType(type.name.lexeme);
+[custom_lint] 2025-09-22T09:13:19.250904                                     ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/abstraction_progression_rule.dart:444:37: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904         return _isAbstractType(type.name.lexeme);
+[custom_lint] 2025-09-22T09:13:19.250904                                     ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/boundary_crossing_rule.dart:90:37: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904               final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                     ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/boundary_crossing_rule.dart:121:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/boundary_crossing_rule.dart:150:41: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904         final interfaceName = interface.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                         ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/boundary_crossing_rule.dart:182:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/boundary_crossing_rule.dart:317:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/boundary_crossing_rule.dart:355:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/boundary_crossing_rule.dart:391:41: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904         final interfaceName = interface.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                         ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/boundary_crossing_rule.dart:422:41: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904         final interfaceName = interface.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                         ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/dependency_inversion_boundary_rule.dart:124:37: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904               final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                     ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/dependency_inversion_boundary_rule.dart:154:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/dependency_inversion_boundary_rule.dart:210:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/dependency_inversion_boundary_rule.dart:273:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/dependency_inversion_boundary_rule.dart:307:41: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904         final interfaceName = interface.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                         ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/dependency_inversion_boundary_rule.dart:337:41: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904         final interfaceName = interface.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                         ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/dependency_inversion_boundary_rule.dart:367:41: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904         final interfaceName = interface.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                         ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/interface_boundary_rule.dart:205:39: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final interfaceName = interface.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                       ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/interface_boundary_rule.dart:571:39: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final interfaceName = interface.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                       ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/interface_boundary_rule.dart:737:23: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           return type.name.lexeme.contains('OutputPort') ||
+[custom_lint] 2025-09-22T09:13:19.250904                       ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/interface_boundary_rule.dart:738:23: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904                  type.name.lexeme.contains('Port');
+[custom_lint] 2025-09-22T09:13:19.250904                       ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/interface_boundary_rule.dart:750:39: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final interfaceName = interface.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                       ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/polymorphic_flow_control_rule.dart:85:48: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904     final typeName = node.constructorName.type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                                ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/polymorphic_flow_control_rule.dart:386:55: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final superClassName = extendsClause.superclass.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                                       ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/polymorphic_flow_control_rule.dart:480:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/data_boundary_crossing_rule.dart:150:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/data_boundary_crossing_rule.dart:174:35: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final typeName = returnType.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                   ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/data_boundary_crossing_rule.dart:390:31: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904         final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                               ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/data_boundary_crossing_rule.dart:516:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/data_boundary_crossing_rule.dart:539:35: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final typeName = returnType.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                   ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/data_boundary_crossing_rule.dart:563:29: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                             ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/data_boundary_crossing_rule.dart:588:31: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904         final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                               ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/data_boundary_crossing_rule.dart:632:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/entity_boundary_isolation_rule.dart:98:31: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904         final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                               ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/entity_boundary_isolation_rule.dart:125:29: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                             ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/entity_boundary_isolation_rule.dart:204:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/entity_boundary_isolation_rule.dart:255:35: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final typeName = returnType.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                   ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/entity_boundary_isolation_rule.dart:338:55: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final superclassName = extendsClause.superclass.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                                       ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/entity_boundary_isolation_rule.dart:362:41: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904         final interfaceName = interface.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                         ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/entity_boundary_isolation_rule.dart:389:31: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904         final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                               ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/dto_boundary_pattern_rule.dart:190:31: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904         final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                               ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/dto_boundary_pattern_rule.dart:310:55: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final superclassName = extendsClause.superclass.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                                       ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/dto_boundary_pattern_rule.dart:448:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/dto_boundary_pattern_rule.dart:465:35: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final typeName = returnType.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                   ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/database_row_boundary_rule.dart:99:31: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904         final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                               ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/database_row_boundary_rule.dart:126:29: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                             ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/database_row_boundary_rule.dart:203:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/database_row_boundary_rule.dart:254:35: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final typeName = returnType.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                   ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/database_row_boundary_rule.dart:443:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/clean_architecture_benefits_rule.dart:385:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/clean_architecture_benefits_rule.dart:449:55: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904       final superclassName = extendsClause.superclass.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                                       ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/clean_architecture_benefits_rule.dart:668:33: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904           final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                                 ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/clean_architecture_benefits_rule.dart:728:31: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904         final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                               ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904 /Users/itae/dev/clean_architecture_linter/lib/src/rules/clean_architecture_benefits_rule.dart:816:31: Error: The getter 'name' isn't defined for the type 'NamedType'.
+[custom_lint] 2025-09-22T09:13:19.250904  - 'NamedType' is from 'package:analyzer/src/dart/ast/ast.dart' ('/Users/itae/.pub-cache/hosted/pub.dev/analyzer-7.6.0/lib/src/dart/ast/ast.dart').
+[custom_lint] 2025-09-22T09:13:19.250904 Try correcting the name to the name of an existing getter, or defining a getter or field named 'name'.
+[custom_lint] 2025-09-22T09:13:19.250904         final typeName = type.name.lexeme;
+[custom_lint] 2025-09-22T09:13:19.250904                               ^^^^
+[custom_lint] 2025-09-22T09:13:19.250904
+[custom_lint] 2025-09-22T09:13:19.250904
+Failed to start pluginsThe request analysis.setContextRoots failed with the following error:
+RequestErrorCode.PLUGIN_ERROR
+Bad state: Failed to start the plugins.
+at:
+#0      SocketCustomLintServerToClientChannel._checkInitializationFail.<anonymous closure> (package:custom_lint/src/v2/server_to_client_channel.dart:223:11)
+<asynchronous suspension>
+#1      Future.any.onValue (dart:async/future.dart:616:5)
+<asynchronous suspension>
+
+[custom_lint] 2025-09-22T09:13:19.260080 _PrettyRequestFailure: {"code":"PLUGIN_ERROR","message":"Bad state: Failed to start the plugins.","stackTrace":"#0      SocketCustomLintServerToClientChannel._checkInitializationFail.<anonymous closure> (package:custom_lint/src/v2/server_to_client_channel.dart:223:11)\n<asynchronous suspension>\n#1      Future.any.onValue (dart:async/future.dart:616:5)\n<asynchronous suspension>\n"}
+[custom_lint] 2025-09-22T09:13:19.260080 #0      ChannelBase.sendRequest (package:custom_lint/src/server_isolate_channel.dart:82:7)
+[custom_lint] 2025-09-22T09:13:19.260080 <asynchronous suspension>
+[custom_lint] 2025-09-22T09:13:19.260080 #1      CustomLintRunner.initialize.<anonymous closure> (package:custom_lint/src/runner.dart:41:5)
+[custom_lint] 2025-09-22T09:13:19.260080 <asynchronous suspension>
+[custom_lint] 2025-09-22T09:13:19.260080 #2      _runServer.<anonymous closure> (package:custom_lint/custom_lint.dart:96:7)
+[custom_lint] 2025-09-22T09:13:19.260080 <asynchronous suspension>
+[custom_lint] 2025-09-22T09:13:19.260080 #3      _AsyncCompleter.complete (dart:async/future_impl.dart:96:3)
+[custom_lint] 2025-09-22T09:13:19.260080 <asynchronous suspension>
+[custom_lint] 2025-09-22T09:13:19.260080 #4      _runServer.<anonymous closure> (package:custom_lint/custom_lint.dart:126:19)
+[custom_lint] 2025-09-22T09:13:19.260080 <asynchronous suspension>
+[custom_lint] 2025-09-22T09:13:19.260080 #5      _runServer (package:custom_lint/custom_lint.dart:86:3)
+[custom_lint] 2025-09-22T09:13:19.260080 <asynchronous suspension>
+[custom_lint] 2025-09-22T09:13:19.260080 #6      customLint (package:custom_lint/custom_lint.dart:50:5)
+[custom_lint] 2025-09-22T09:13:19.260080 <asynchronous suspension>
+[custom_lint] 2025-09-22T09:13:19.260080 #7      entrypoint (file:///Users/itae/.pub-cache/hosted/pub.dev/custom_lint-0.7.6/bin/custom_lint.dart:68:3)
+[custom_lint] 2025-09-22T09:13:19.260080 <asynchronous suspension>
+[custom_lint] 2025-09-22T09:13:19.260080 #8      main (file:///Users/itae/.pub-cache/hosted/pub.dev/custom_lint-0.7.6/bin/custom_lint.dart:80:5)
+[custom_lint] 2025-09-22T09:13:19.260080 <asynchronous suspension>
+[custom_lint] 2025-09-22T09:13:19.260080
