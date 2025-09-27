@@ -448,9 +448,29 @@ class FlexibleLayerDetectionRule extends DartLintRule {
   }
 
   bool _isExternalPackage(String importUri) {
-    return importUri.startsWith('package:') &&
-        !importUri.startsWith('package:flutter/') &&
-        !importUri.startsWith('package:dart');
+    if (!importUri.startsWith('package:')) {
+      return false;
+    }
+
+    // Flutter and Dart packages are not external
+    if (importUri.startsWith('package:flutter/') ||
+        importUri.startsWith('package:dart')) {
+      return false;
+    }
+
+    // Internal project packages (same project name) are not external
+    // Extract project name from import URI: package:project_name/...
+    final packageNameMatch = RegExp(r'package:([^/]+)/').firstMatch(importUri);
+    if (packageNameMatch != null) {
+      final packageName = packageNameMatch.group(1);
+      // Common internal project names that should not be treated as external
+      final internalPackages = ['ittae', 'app', 'core', 'shared', 'common'];
+      if (internalPackages.contains(packageName)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   bool _containsBusinessLogic(ClassDeclaration node) {

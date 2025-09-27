@@ -428,9 +428,12 @@ class AbstractionProgressionRule extends DartLintRule {
       'Entity',
       'ValueObject',
       'Service',
-      'Repository'
+      'Repository',
+      'UseCase',     // UseCases are abstract domain operations
+      'Usecase',     // Alternative naming
     ];
-    return abstractIndicators.any((indicator) => className.contains(indicator));
+    final lowerClassName = className.toLowerCase();
+    return abstractIndicators.any((indicator) => lowerClassName.contains(indicator.toLowerCase()));
   }
 
   bool _isConcreteMember(ClassMember member) {
@@ -492,7 +495,11 @@ class AbstractionProgressionRule extends DartLintRule {
       'assess',
       'determine',
       'authorize',
-      'approve'
+      'approve',
+      'execute',  // UseCase execution is abstract operation
+      'call',     // UseCase call method is abstract
+      'handle',   // Domain event handling is abstract
+      'manage',   // Domain management is abstract
     ];
     return abstractPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
