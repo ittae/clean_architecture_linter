@@ -288,14 +288,18 @@ class BusinessLogicIsolationRule extends DartLintRule {
   }
 
   bool _isRepositoryCall(String methodName, Expression? target) {
-    // Check method names that suggest repository operations
+    // Only flag if the target is actually a repository
+    if (target != null && _isRepositoryTarget(target)) {
+      return true;
+    }
+
+    // Check for specific repository method patterns
     final repositoryMethods = [
       'save',
       'create',
       'update',
       'delete',
       'find',
-      'get',
       'fetch',
       'load',
       'store',
@@ -303,16 +307,35 @@ class BusinessLogicIsolationRule extends DartLintRule {
       'remove',
     ];
 
+    // Exclude utility class calls (static methods)
+    if (target != null && _isUtilityClass(target)) {
+      return false;
+    }
+
     return repositoryMethods.any(
           (method) => methodName.toLowerCase().contains(method),
-        ) ||
-        (target != null && _isRepositoryTarget(target));
+        );
   }
 
   bool _isRepositoryTarget(Expression target) {
     if (target is SimpleIdentifier) {
       final name = target.name.toLowerCase();
       return name.contains('repository') || name.contains('repo');
+    }
+    return false;
+  }
+
+  bool _isUtilityClass(Expression target) {
+    if (target is SimpleIdentifier) {
+      final name = target.name;
+      // Check for common utility class patterns
+      return name.endsWith('Utils') ||
+             name.endsWith('Util') ||
+             name.endsWith('Helper') ||
+             name.endsWith('Helpers') ||
+             name.endsWith('Extensions') ||
+             name.endsWith('Constants') ||
+             name.endsWith('Config');
     }
     return false;
   }
