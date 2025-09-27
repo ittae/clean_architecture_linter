@@ -398,7 +398,12 @@ class UiDependencyInjectionRule extends DartLintRule {
     }
 
     // Provider pattern service locator calls
+    // But exclude Riverpod ref.read/ref.watch which are safe DI patterns
     if (methodName == 'read' || methodName == 'watch') {
+      // Riverpod ref.read/ref.watch are safe and don't need error handling
+      if (target.contains('ref')) {
+        return false;
+      }
       return true;
     }
 

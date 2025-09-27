@@ -4,6 +4,9 @@
 /// across different lint rules.
 library;
 
+import 'package:analyzer/error/listener.dart';
+import 'package:custom_lint_builder/custom_lint_builder.dart';
+
 /// Utility functions for Clean Architecture layer detection and file filtering.
 class CleanArchitectureUtils {
   /// Checks if a file path should be excluded from analysis.
@@ -44,6 +47,36 @@ class CleanArchitectureUtils {
     if (shouldExcludeFile(filePath)) return false;
     return filePath.contains('/presentation/') || filePath.contains('\\presentation\\');
   }
+}
+
+/// Base class for Clean Architecture lint rules that automatically excludes test files.
+abstract class CleanArchitectureLintRule extends DartLintRule {
+  const CleanArchitectureLintRule({required LintCode code}) : super(code: code);
+
+  @override
+  void run(
+    CustomLintResolver resolver,
+    ErrorReporter reporter,
+    CustomLintContext context,
+  ) {
+    final filePath = resolver.path;
+
+    // Skip analysis for test files and generated files
+    if (CleanArchitectureUtils.shouldExcludeFile(filePath)) {
+      return;
+    }
+
+    // Call the rule-specific implementation
+    runRule(resolver, reporter, context);
+  }
+
+  /// Override this method instead of run() to implement rule-specific logic.
+  /// Test files are automatically excluded.
+  void runRule(
+    CustomLintResolver resolver,
+    ErrorReporter reporter,
+    CustomLintContext context,
+  );
 }
 
 /// Configuration options for Clean Architecture Linter rules.

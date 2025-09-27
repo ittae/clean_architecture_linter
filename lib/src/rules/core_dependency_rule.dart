@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../clean_architecture_linter_base.dart';
+
 /// The Core Dependency Rule - Uncle Bob's fundamental Clean Architecture principle.
 ///
 /// "Source code dependencies always point inwards. As you move inwards the level
@@ -35,6 +37,11 @@ class CoreDependencyRule extends DartLintRule {
     CustomLintContext context,
   ) {
     final filePath = resolver.path;
+
+    // Skip analysis for test files and generated files
+    if (CleanArchitectureUtils.shouldExcludeFile(filePath)) {
+      return;
+    }
 
     context.registry.addImportDirective((node) {
       _trackDependency(node, filePath);
@@ -268,14 +275,20 @@ class CoreDependencyRule extends DartLintRule {
     // Application/Use Cases
     if (_isApplicationLayer(path)) return 3;
 
-    // Interface Adapters
+    // Interface Adapters (including presentation layer)
     if (_isAdapterLayer(path)) return 2;
 
     // Framework/Infrastructure (lowest abstraction)
     if (_isFrameworkLayer(path)) return 1;
 
-    // External packages (even lower)
-    if (path.startsWith('package:') && !_isInternalPackage(path)) return 0;
+    // External packages (even lower) - but exclude internal project paths
+    if (path.startsWith('package:') && !_isInternalPackage(path)) {
+      // Check if it's an internal presentation layer reference
+      if (_isInternalPresentationReference(path)) {
+        return 2; // Same level as adapter/presentation
+      }
+      return 0;
+    }
 
     return 2; // Default to adapter level
   }
@@ -511,7 +524,7 @@ class CoreDependencyRule extends DartLintRule {
   }
 
   bool _isAdapterLayer(String path) {
-    return path.contains('/adapters/') || path.contains('/controllers/') || path.contains('/presenters/');
+    return path.contains('/adapters/') || path.contains('/controllers/') || path.contains('/presenters/') || path.contains('/presentation/');
   }
 
   bool _isFrameworkLayer(String path) {
@@ -556,6 +569,16 @@ class CoreDependencyRule extends DartLintRule {
 
   bool _isInternalPackage(String importUri) {
     return importUri.startsWith('package:flutter/') || importUri.startsWith('package:dart');
+  }
+
+  bool _isInternalPresentationReference(String importUri) {
+    // Check if it's an internal project reference to presentation layer
+    // Pattern: package:project_name/features/.../presentation/...
+    return importUri.contains('/presentation/') ||
+           importUri.contains('/features/') ||
+           importUri.contains('_state.dart') ||
+           importUri.contains('_notifier.dart') ||
+           importUri.contains('_provider.dart');
   }
 }
 
