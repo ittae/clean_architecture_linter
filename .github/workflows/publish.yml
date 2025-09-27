@@ -60,7 +60,7 @@ jobs:
           ```yaml
           dev_dependencies:
             clean_architecture_linter: ^${{ github.ref_name }}
-            custom_lint: ^0.8.1
+            custom_lint: ^0.7.6
           ```
 
           Then run:
