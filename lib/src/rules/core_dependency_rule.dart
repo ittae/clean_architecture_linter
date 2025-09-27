@@ -568,7 +568,42 @@ class CoreDependencyRule extends DartLintRule {
   }
 
   bool _isInternalPackage(String importUri) {
-    return importUri.startsWith('package:flutter/') || importUri.startsWith('package:dart');
+    // Core Flutter and Dart packages are always allowed
+    if (importUri.startsWith('package:flutter/') || importUri.startsWith('package:dart')) {
+      return true;
+    }
+
+    // Check if it's clearly an infrastructure package that should be restricted
+    if (_isInfrastructurePackage(importUri)) {
+      return false; // Infrastructure packages are "external" for dependency rule
+    }
+
+    // Everything else (UI, state management, utilities) is considered "internal"
+    return true;
+  }
+
+  bool _isInfrastructurePackage(String importUri) {
+    // Infrastructure packages that should be restricted in inner layers
+    final infrastructurePatterns = [
+      // Network/HTTP clients
+      '/http/', '/dio/', '/chopper/', '/retrofit/',
+      // Databases
+      '/sqflite/', '/hive/', '/isar/', '/drift/', '/floor/',
+      // Cloud services
+      '/firebase_', '/cloud_', '/aws_', '/supabase/',
+      // File system
+      '/path_provider/', '/file_picker/', '/open_file/',
+      // Platform-specific
+      '/device_info/', '/package_info/', '/platform/',
+      // Background services
+      '/workmanager/', '/background_', '/isolate/',
+      // Security/Auth infrastructure
+      '/crypto/', '/encrypt/', '/local_auth/', '/biometric/',
+      // External APIs
+      '/google_', '/facebook_', '/twitter_', '/oauth/',
+    ];
+
+    return infrastructurePatterns.any((pattern) => importUri.contains(pattern));
   }
 
   bool _isInternalPresentationReference(String importUri) {
