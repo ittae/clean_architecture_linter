@@ -417,8 +417,33 @@ class AbstractionLevelRule extends DartLintRule {
   bool _isFrameworkImport(String importUri) {
     final frameworkImports = [
       'package:sqflite/', 'package:http/', 'package:dio/',
-      'package:flutter/', 'dart:io', 'dart:html'
+      'dart:io', 'dart:html'
     ];
+
+    // Flutter UI imports are acceptable in presentation/adapter layer
+    final flutterUIImports = [
+      'package:flutter/material.dart',
+      'package:flutter/widgets.dart',
+      'package:flutter/cupertino.dart',
+      'package:flutter/services.dart',
+    ];
+
+    // If it's a Flutter UI import, don't treat as framework violation
+    if (flutterUIImports.any((import) => importUri == import)) {
+      return false;
+    }
+
+    // Other Flutter imports (like foundation, painting, etc.) are framework-level
+    if (importUri.startsWith('package:flutter/')) {
+      final allowedFlutterPaths = [
+        'package:flutter/material.dart',
+        'package:flutter/widgets.dart',
+        'package:flutter/cupertino.dart',
+        'package:flutter/services.dart',
+      ];
+      return !allowedFlutterPaths.contains(importUri);
+    }
+
     return frameworkImports.any((import) => importUri.startsWith(import));
   }
 
