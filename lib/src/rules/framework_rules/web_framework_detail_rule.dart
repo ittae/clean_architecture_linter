@@ -272,8 +272,17 @@ class WebFrameworkDetailRule extends DartLintRule {
   }
 
   bool _containsHTTPOperation(MethodDeclaration method, String methodName) {
+    // Check if method is in a Repository interface (abstract methods are OK)
+    if (method.isAbstract) {
+      return false; // Abstract methods (interfaces) can have get/post etc. method names
+    }
+
+    // Check if it's in a repository interface
+    if (_isRepositoryInterface(method)) {
+      return false; // Repository interfaces can have get/post etc. method names
+    }
+
     final httpPatterns = [
-      'get',
       'post',
       'put',
       'delete',
@@ -288,7 +297,38 @@ class WebFrameworkDetailRule extends DartLintRule {
       'upload',
     ];
 
-    final hasHTTPName = httpPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
+    // "get" is too generic - only flag if it's clearly HTTP-related
+    var hasHTTPName = httpPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
+
+    // Additional check for "get" methods - only flag if clearly HTTP-related
+    if (methodName.toLowerCase().contains('get')) {
+      // Allow domain-oriented get methods like getMyData, getUserProfile
+      final domainGetPatterns = [
+        'getmy',     // getMyWhenToMeets
+        'getuser',   // getUserProfile
+        'getall',    // getAllItems
+        'getcurrent', // getCurrentUser
+        'getactive', // getActiveItems
+      ];
+
+      final isDomainGet = domainGetPatterns.any((pattern) =>
+          methodName.toLowerCase().contains(pattern));
+
+      if (isDomainGet) {
+        return false; // Domain get methods are allowed
+      }
+
+      // Only flag HTTP-specific get patterns
+      final httpGetPatterns = [
+        'getrequest',
+        'getresponse',
+        'gethttp',
+        'getapi',
+      ];
+
+      hasHTTPName = httpGetPatterns.any((pattern) =>
+          methodName.toLowerCase().contains(pattern));
+    }
 
     if (hasHTTPName) return true;
 
@@ -568,5 +608,36 @@ class WebFrameworkDetailRule extends DartLintRule {
         filePath.contains('\\web\\') ||
         filePath.endsWith('_web.dart') ||
         filePath.contains('web_');
+  }
+
+  bool _isRepositoryInterface(MethodDeclaration method) {
+    // Get the parent class declaration
+    final parent = method.parent;
+    if (parent is! ClassDeclaration) return false;
+
+    final className = parent.name.lexeme;
+
+    // Check if class name suggests it's a repository interface
+    final repositoryPatterns = [
+      'Repository',
+      'DataSource',
+      'Gateway',
+      'Port',
+    ];
+
+    final isRepositoryClass = repositoryPatterns.any((pattern) =>
+        className.contains(pattern));
+
+    if (!isRepositoryClass) return false;
+
+    // Check if the class is abstract (interface)
+    final isAbstractClass = parent.abstractKeyword != null;
+
+    // Check if all methods in the class are abstract (interface pattern)
+    final hasOnlyAbstractMethods = parent.members
+        .whereType<MethodDeclaration>()
+        .every((method) => method.isAbstract || method.isGetter || method.isSetter);
+
+    return isRepositoryClass && (isAbstractClass || hasOnlyAbstractMethods);
   }
 }
