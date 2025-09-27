@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../clean_architecture_linter_base.dart';
+
 /// Enforces proper validation and business rules in domain models.
 ///
 /// This rule ensures that domain entities have adequate validation:
@@ -52,7 +54,7 @@ class DomainModelValidationRule extends DartLintRule {
     final filePath = resolver.path;
 
     // Only check files in domain layer
-    if (!_isDomainLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isDomainLayerFile(filePath)) return;
 
     final className = node.name.lexeme;
 
@@ -220,9 +222,6 @@ class DomainModelValidationRule extends DartLintRule {
     }
   }
 
-  bool _isDomainLayerFile(String filePath) {
-    return filePath.contains('/domain/') || filePath.contains('\\domain\\');
-  }
 
   bool _isDomainModel(String className, String filePath) {
     return _isEntity(className) ||

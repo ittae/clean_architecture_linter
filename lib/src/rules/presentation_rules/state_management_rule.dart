@@ -3,6 +3,8 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../clean_architecture_linter_base.dart';
+
 /// Enforces proper state management patterns in Flutter Clean Architecture.
 ///
 /// This rule validates that presentation layer follows proper state management:
@@ -53,7 +55,7 @@ class StateManagementRule extends DartLintRule {
     final filePath = resolver.path;
 
     // Only check files in presentation layer
-    if (!_isPresentationLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isPresentationLayerFile(filePath)) return;
 
     final className = node.name.lexeme;
     final analysis = _analyzeClassForStateManagement(node);
@@ -72,7 +74,7 @@ class StateManagementRule extends DartLintRule {
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
-    if (!_isPresentationLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isPresentationLayerFile(filePath)) return;
 
     final methodName = node.methodName.name;
 
@@ -104,7 +106,7 @@ class StateManagementRule extends DartLintRule {
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
-    if (!_isPresentationLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isPresentationLayerFile(filePath)) return;
 
     final importUri = node.uri.stringValue;
     if (importUri == null) return;
@@ -120,14 +122,6 @@ class StateManagementRule extends DartLintRule {
     }
   }
 
-  bool _isPresentationLayerFile(String filePath) {
-    return filePath.contains('/presentation/') ||
-        filePath.contains('\\presentation\\') ||
-        filePath.contains('/ui/') ||
-        filePath.contains('\\ui\\') ||
-        filePath.contains('/widgets/') ||
-        filePath.contains('\\widgets\\');
-  }
 
   bool _isWidgetClass(String className, ClassDeclaration node) {
     // Check if extends StatefulWidget or StatelessWidget

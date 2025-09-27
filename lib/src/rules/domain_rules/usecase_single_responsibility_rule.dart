@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../clean_architecture_linter_base.dart';
+
 /// Enforces Single Responsibility Principle in UseCase classes.
 ///
 /// This rule ensures that UseCase classes follow the Single Responsibility Principle:
@@ -46,7 +48,7 @@ class UseCaseSingleResponsibilityRule extends DartLintRule {
     final filePath = resolver.path;
 
     // Only check files in domain layer
-    if (!_isDomainLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isDomainLayerFile(filePath)) return;
 
     final className = node.name.lexeme;
 
@@ -287,9 +289,6 @@ class UseCaseSingleResponsibilityRule extends DartLintRule {
     return multipleActionPatterns.any((pattern) => className.contains(pattern));
   }
 
-  bool _isDomainLayerFile(String filePath) {
-    return filePath.contains('/domain/') || filePath.contains('\\domain\\');
-  }
 
   bool _isUseCaseClass(String className, String filePath) {
     return className.endsWith('UseCase') ||

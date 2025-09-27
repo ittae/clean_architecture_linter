@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../clean_architecture_linter_base.dart';
+
 /// Enforces proper repository abstraction patterns in domain layer.
 ///
 /// This rule ensures that the domain layer follows the Repository pattern correctly:
@@ -60,7 +62,7 @@ class RepositoryInterfaceRule extends DartLintRule {
     final filePath = resolver.path;
 
     // Only check files in domain layer
-    if (!_isDomainLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isDomainLayerFile(filePath)) return;
 
     final importUri = node.uri.stringValue;
     if (importUri == null) return;
@@ -83,7 +85,7 @@ class RepositoryInterfaceRule extends DartLintRule {
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
-    if (!_isDomainLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isDomainLayerFile(filePath)) return;
 
     final className = node.name.lexeme;
     if (!_isRepositoryClass(className)) return;
@@ -113,7 +115,7 @@ class RepositoryInterfaceRule extends DartLintRule {
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
-    if (!_isDomainLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isDomainLayerFile(filePath)) return;
 
     // Check constructor parameters for repository types
     final parameters = node.parameters.parameters;
@@ -141,7 +143,7 @@ class RepositoryInterfaceRule extends DartLintRule {
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
-    if (!_isDomainLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isDomainLayerFile(filePath)) return;
 
     final type = node.fields.type;
     if (type is NamedType) {
@@ -222,9 +224,6 @@ class RepositoryInterfaceRule extends DartLintRule {
     return null;
   }
 
-  bool _isDomainLayerFile(String filePath) {
-    return filePath.contains('/domain/') || filePath.contains('\\domain\\');
-  }
 
   bool _isRepositoryClass(String className) {
     return className.endsWith('Repository') || className.contains('Repository');

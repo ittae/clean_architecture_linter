@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../clean_architecture_linter_base.dart';
+
 /// Enforces domain layer purity by preventing dependencies on external frameworks.
 ///
 /// This rule ensures that the domain layer remains independent of:
@@ -49,7 +51,7 @@ class DomainPurityRule extends DartLintRule {
     final filePath = resolver.path;
 
     // Only check files in domain layer
-    if (!_isDomainLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isDomainLayerFile(filePath)) return;
 
     final importUri = node.uri.stringValue;
     if (importUri == null) return;
@@ -156,9 +158,6 @@ class DomainPurityRule extends DartLintRule {
     return null;
   }
 
-  bool _isDomainLayerFile(String filePath) {
-    return filePath.contains('/domain/') || filePath.contains('\\domain\\');
-  }
 
   /// Additional checks for code constructs within domain layer files
   void _checkClassDeclarations(
@@ -167,7 +166,7 @@ class DomainPurityRule extends DartLintRule {
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
-    if (!_isDomainLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isDomainLayerFile(filePath)) return;
 
     // Check for inheritance from external framework classes
     final extendsClause = node.extendsClause;

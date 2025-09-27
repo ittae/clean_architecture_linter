@@ -118,6 +118,12 @@ dev_dependencies:
 analyzer:
   plugins:
     - custom_lint
+  exclude:
+    - test/**  
+    - "**/*.test.dart"    # 테스트 파일 제외
+    - "**/*.g.dart"       # 생성된 파일 제외
+    - "**/*.freezed.dart" # Freezed 파일 제외
+    - "**/*.mocks.dart"   # Mock 파일 제외
 
 custom_lint:
   rules:

@@ -120,6 +120,12 @@ dev_dependencies:
 analyzer:
   plugins:
     - custom_lint
+  exclude:
+    - test/**               
+    - "**/*.test.dart"    # Exclude test files
+    - "**/*.g.dart"       # Exclude generated files
+    - "**/*.freezed.dart" # Exclude Freezed files
+    - "**/*.mocks.dart"   # Exclude mock files
 ```
 
 ### 3. Run the linter

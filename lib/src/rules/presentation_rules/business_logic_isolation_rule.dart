@@ -3,6 +3,8 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../clean_architecture_linter_base.dart';
+
 /// Enforces strict separation between business logic and presentation layer.
 ///
 /// This rule ensures that business logic remains isolated in the domain layer:
@@ -63,7 +65,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
     final filePath = resolver.path;
 
     // Only check files in presentation layer
-    if (!_isPresentationLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isPresentationLayerFile(filePath)) return;
 
     final className = node.name.lexeme;
 
@@ -87,7 +89,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
-    if (!_isPresentationLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isPresentationLayerFile(filePath)) return;
 
     final methodName = node.methodName.name;
     final target = node.target;
@@ -120,7 +122,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
-    if (!_isPresentationLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isPresentationLayerFile(filePath)) return;
 
     final type = node.fields.type;
     if (type is NamedType) {
@@ -156,7 +158,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
-    if (!_isPresentationLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isPresentationLayerFile(filePath)) return;
 
     final initializer = node.initializer;
     if (initializer != null) {
@@ -276,14 +278,6 @@ class BusinessLogicIsolationRule extends DartLintRule {
     }
   }
 
-  bool _isPresentationLayerFile(String filePath) {
-    return filePath.contains('/presentation/') ||
-        filePath.contains('\\presentation\\') ||
-        filePath.contains('/ui/') ||
-        filePath.contains('\\ui\\') ||
-        filePath.contains('/widgets/') ||
-        filePath.contains('\\widgets\\');
-  }
 
   bool _isUIComponent(String className) {
     return className.endsWith('Widget') ||

@@ -3,6 +3,8 @@ include: package:lints/recommended.yaml
 analyzer:
   plugins:
     - custom_lint
+  exclude:
+    - test/**
 
 custom_lint:
   rules:

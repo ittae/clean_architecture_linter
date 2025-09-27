@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../clean_architecture_linter_base.dart';
+
 /// Enforces proper dependency injection patterns in UI components.
 ///
 /// This rule ensures that UI components follow Clean Architecture principles
@@ -67,7 +69,7 @@ class UiDependencyInjectionRule extends DartLintRule {
     final filePath = resolver.path;
 
     // Only check files in presentation layer
-    if (!_isPresentationLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isPresentationLayerFile(filePath)) return;
 
     final constructorName = node.constructorName.type.name2.lexeme;
 
@@ -85,7 +87,7 @@ class UiDependencyInjectionRule extends DartLintRule {
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
-    if (!_isPresentationLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isPresentationLayerFile(filePath)) return;
 
     final className = node.name.lexeme;
     if (!_isUIComponent(className, node)) return;
@@ -119,7 +121,7 @@ class UiDependencyInjectionRule extends DartLintRule {
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
-    if (!_isPresentationLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isPresentationLayerFile(filePath)) return;
 
     final methodName = node.methodName.name;
     final target = node.target?.toString() ?? '';
@@ -154,7 +156,7 @@ class UiDependencyInjectionRule extends DartLintRule {
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
-    if (!_isPresentationLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isPresentationLayerFile(filePath)) return;
 
     final importUri = node.uri.stringValue;
     if (importUri == null) return;
@@ -173,18 +175,6 @@ class UiDependencyInjectionRule extends DartLintRule {
     }
   }
 
-  bool _isPresentationLayerFile(String filePath) {
-    return filePath.contains('/presentation/') ||
-        filePath.contains('\\presentation\\') ||
-        filePath.contains('/ui/') ||
-        filePath.contains('\\ui\\') ||
-        filePath.contains('/widgets/') ||
-        filePath.contains('\\widgets\\') ||
-        filePath.contains('/pages/') ||
-        filePath.contains('\\pages\\') ||
-        filePath.contains('/screens/') ||
-        filePath.contains('\\screens\\');
-  }
 
   DependencyInjectionAnalysis _analyzeDependencyInjection(ClassDeclaration node) {
     final fields = <FieldDeclaration>[];

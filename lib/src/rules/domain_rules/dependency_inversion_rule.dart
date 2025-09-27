@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../clean_architecture_linter_base.dart';
+
 /// Enforces Dependency Inversion Principle in the domain layer.
 ///
 /// This rule ensures that domain layer classes depend only on abstractions:
@@ -59,7 +61,7 @@ class DependencyInversionRule extends DartLintRule {
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
-    if (!_isDomainLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isDomainLayerFile(filePath)) return;
 
     final analysis = _analyzeDependencyTypes(node.parameters.parameters);
 
@@ -79,7 +81,7 @@ class DependencyInversionRule extends DartLintRule {
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
-    if (!_isDomainLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isDomainLayerFile(filePath)) return;
 
     final type = node.fields.type;
     if (type is NamedType) {
@@ -101,7 +103,7 @@ class DependencyInversionRule extends DartLintRule {
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
-    if (!_isDomainLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isDomainLayerFile(filePath)) return;
 
     final importUri = node.uri.stringValue;
     if (importUri == null) return;
@@ -123,7 +125,7 @@ class DependencyInversionRule extends DartLintRule {
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
-    if (!_isDomainLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isDomainLayerFile(filePath)) return;
 
     // Check superclass
     final superclass = node.extendsClause?.superclass;
@@ -373,9 +375,6 @@ class DependencyInversionRule extends DartLintRule {
     return frameworkTypes.contains(typeName);
   }
 
-  bool _isDomainLayerFile(String filePath) {
-    return filePath.contains('/domain/') || filePath.contains('\\domain\\');
-  }
 }
 
 /// Analysis result for dependency inversion violations

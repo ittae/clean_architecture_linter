@@ -3,6 +3,8 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../clean_architecture_linter_base.dart';
+
 class PresentationLogicSeparationRule extends DartLintRule {
   const PresentationLogicSeparationRule() : super(code: _code);
 
@@ -31,7 +33,7 @@ class PresentationLogicSeparationRule extends DartLintRule {
     final filePath = resolver.path;
 
     // Only check files in presentation layer
-    if (!_isPresentationLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isPresentationLayerFile(filePath)) return;
 
     final className = node.name.lexeme;
 
@@ -46,14 +48,6 @@ class PresentationLogicSeparationRule extends DartLintRule {
     }
   }
 
-  bool _isPresentationLayerFile(String filePath) {
-    return filePath.contains('/presentation/') ||
-        filePath.contains('\\presentation\\') ||
-        filePath.contains('/ui/') ||
-        filePath.contains('\\ui\\') ||
-        filePath.contains('/widgets/') ||
-        filePath.contains('\\widgets\\');
-  }
 
   bool _isUIWidget(String className, ClassDeclaration node) {
     final extendsClause = node.extendsClause;
