@@ -23,8 +23,7 @@ class UseCaseIndependenceRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'usecase_independence',
-    problemMessage:
-        'Use Case must remain independent of external concerns and frameworks.',
+    problemMessage: 'Use Case must remain independent of external concerns and frameworks.',
     correctionMessage:
         'Remove dependencies on databases, UI, frameworks, or external services. Use abstractions instead.',
   );
@@ -32,7 +31,7 @@ class UseCaseIndependenceRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addImportDirective((node) {
@@ -50,7 +49,7 @@ class UseCaseIndependenceRule extends DartLintRule {
 
   void _checkUseCaseImportIndependence(
     ImportDirective node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -72,7 +71,7 @@ class UseCaseIndependenceRule extends DartLintRule {
 
   void _checkUseCaseClassIndependence(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -90,7 +89,7 @@ class UseCaseIndependenceRule extends DartLintRule {
 
   void _checkUseCaseMethodIndependence(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -108,18 +107,17 @@ class UseCaseIndependenceRule extends DartLintRule {
 
   void _checkInheritanceIndependence(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     // Check superclass
     final superclass = node.extendsClause?.superclass;
     if (superclass is NamedType) {
-      final superTypeName = superclass.name.lexeme;
+      final superTypeName = superclass.name2.lexeme;
       if (_isExternalFrameworkClass(superTypeName)) {
         final code = LintCode(
           name: 'usecase_independence',
           problemMessage: 'Use Case extends external framework class: $superTypeName',
-          correctionMessage:
-              'Use Cases should not depend on external frameworks. Use composition instead.',
+          correctionMessage: 'Use Cases should not depend on external frameworks. Use composition instead.',
         );
         reporter.atNode(superclass, code);
       }
@@ -129,13 +127,12 @@ class UseCaseIndependenceRule extends DartLintRule {
     final interfaces = node.implementsClause?.interfaces;
     if (interfaces != null) {
       for (final interface in interfaces) {
-        final interfaceName = interface.name.lexeme;
+        final interfaceName = interface.name2.lexeme;
         if (_isExternalFrameworkClass(interfaceName)) {
           final code = LintCode(
             name: 'usecase_independence',
             problemMessage: 'Use Case implements external framework interface: $interfaceName',
-            correctionMessage:
-                'Use Cases should not depend on external frameworks. Create domain abstractions.',
+            correctionMessage: 'Use Cases should not depend on external frameworks. Create domain abstractions.',
           );
           reporter.atNode(interface, code);
         }
@@ -145,20 +142,19 @@ class UseCaseIndependenceRule extends DartLintRule {
 
   void _checkFieldIndependence(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     for (final member in node.members) {
       if (member is FieldDeclaration) {
         final type = member.fields.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
 
           if (_isDatabaseDependency(typeName)) {
             final code = LintCode(
               name: 'usecase_independence',
               problemMessage: 'Use Case field depends on database technology: $typeName',
-              correctionMessage:
-                  'Use repository abstractions instead of direct database dependencies.',
+              correctionMessage: 'Use repository abstractions instead of direct database dependencies.',
             );
             reporter.atNode(type, code);
           }
@@ -167,8 +163,7 @@ class UseCaseIndependenceRule extends DartLintRule {
             final code = LintCode(
               name: 'usecase_independence',
               problemMessage: 'Use Case field depends on UI framework: $typeName',
-              correctionMessage:
-                  'Use Cases should be independent of UI. Remove UI framework dependencies.',
+              correctionMessage: 'Use Cases should be independent of UI. Remove UI framework dependencies.',
             );
             reporter.atNode(type, code);
           }
@@ -177,8 +172,7 @@ class UseCaseIndependenceRule extends DartLintRule {
             final code = LintCode(
               name: 'usecase_independence',
               problemMessage: 'Use Case field depends on external service: $typeName',
-              correctionMessage:
-                  'Use service abstractions instead of direct external service dependencies.',
+              correctionMessage: 'Use service abstractions instead of direct external service dependencies.',
             );
             reporter.atNode(type, code);
           }
@@ -189,7 +183,7 @@ class UseCaseIndependenceRule extends DartLintRule {
 
   void _checkAnnotationIndependence(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     for (final annotation in node.metadata) {
       final annotationName = annotation.name.name;
@@ -197,8 +191,7 @@ class UseCaseIndependenceRule extends DartLintRule {
         final code = LintCode(
           name: 'usecase_independence',
           problemMessage: 'Use Case uses framework-specific annotation: @$annotationName',
-          correctionMessage:
-              'Remove framework-specific annotations. Use Cases should be framework-agnostic.',
+          correctionMessage: 'Remove framework-specific annotations. Use Cases should be framework-agnostic.',
         );
         reporter.atNode(annotation, code);
       }
@@ -207,18 +200,17 @@ class UseCaseIndependenceRule extends DartLintRule {
 
   void _checkMethodSignatureIndependence(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     // Check return type
     final returnType = method.returnType;
     if (returnType is NamedType) {
-      final typeName = returnType.name.lexeme;
+      final typeName = returnType.name2.lexeme;
       if (_isExternalFrameworkClass(typeName)) {
         final code = LintCode(
           name: 'usecase_independence',
           problemMessage: 'Use Case method returns external framework type: $typeName',
-          correctionMessage:
-              'Return domain types or abstractions instead of framework-specific types.',
+          correctionMessage: 'Return domain types or abstractions instead of framework-specific types.',
         );
         reporter.atNode(returnType, code);
       }
@@ -231,13 +223,12 @@ class UseCaseIndependenceRule extends DartLintRule {
         if (param is SimpleFormalParameter) {
           final type = param.type;
           if (type is NamedType) {
-            final typeName = type.name.lexeme;
+            final typeName = type.name2.lexeme;
             if (_isExternalFrameworkClass(typeName)) {
               final code = LintCode(
                 name: 'usecase_independence',
                 problemMessage: 'Use Case method parameter uses external framework type: $typeName',
-                correctionMessage:
-                    'Use domain types or abstractions instead of framework-specific parameters.',
+                correctionMessage: 'Use domain types or abstractions instead of framework-specific parameters.',
               );
               reporter.atNode(type, code);
             }
@@ -249,16 +240,23 @@ class UseCaseIndependenceRule extends DartLintRule {
 
   void _checkMethodBodyIndependence(
     BlockFunctionBody body,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     MethodDeclaration method,
   ) {
     final bodyString = body.toString();
 
     // Check for direct database calls
     final databaseCalls = [
-      'database.', 'db.', 'sql.', 'query(',
-      'connection.', 'statement.', 'transaction.',
-      'mongodb.', 'firestore.', 'redis.',
+      'database.',
+      'db.',
+      'sql.',
+      'query(',
+      'connection.',
+      'statement.',
+      'transaction.',
+      'mongodb.',
+      'firestore.',
+      'redis.',
     ];
 
     for (final call in databaseCalls) {
@@ -266,8 +264,7 @@ class UseCaseIndependenceRule extends DartLintRule {
         final code = LintCode(
           name: 'usecase_independence',
           problemMessage: 'Use Case contains direct database calls',
-          correctionMessage:
-              'Use repository abstractions instead of direct database access.',
+          correctionMessage: 'Use repository abstractions instead of direct database access.',
         );
         reporter.atNode(body, code);
         break;
@@ -276,9 +273,15 @@ class UseCaseIndependenceRule extends DartLintRule {
 
     // Check for UI framework calls
     final uiCalls = [
-      'Navigator.', 'BuildContext', 'Widget',
-      'setState(', 'notifyListeners()', 'context.',
-      'MaterialApp', 'Scaffold', 'AppBar',
+      'Navigator.',
+      'BuildContext',
+      'Widget',
+      'setState(',
+      'notifyListeners()',
+      'context.',
+      'MaterialApp',
+      'Scaffold',
+      'AppBar',
     ];
 
     for (final call in uiCalls) {
@@ -286,8 +289,7 @@ class UseCaseIndependenceRule extends DartLintRule {
         final code = LintCode(
           name: 'usecase_independence',
           problemMessage: 'Use Case contains UI framework calls',
-          correctionMessage:
-              'Use Cases should be independent of UI. Remove UI framework calls.',
+          correctionMessage: 'Use Cases should be independent of UI. Remove UI framework calls.',
         );
         reporter.atNode(body, code);
         break;
@@ -296,9 +298,17 @@ class UseCaseIndependenceRule extends DartLintRule {
 
     // Check for external service calls
     final externalCalls = [
-      'http.', 'dio.', 'client.', 'api.',
-      'aws.', 'gcp.', 'azure.', 'firebase.',
-      'stripe.', 'paypal.', 'twilio.',
+      'http.',
+      'dio.',
+      'client.',
+      'api.',
+      'aws.',
+      'gcp.',
+      'azure.',
+      'firebase.',
+      'stripe.',
+      'paypal.',
+      'twilio.',
     ];
 
     for (final call in externalCalls) {
@@ -306,8 +316,7 @@ class UseCaseIndependenceRule extends DartLintRule {
         final code = LintCode(
           name: 'usecase_independence',
           problemMessage: 'Use Case contains direct external service calls',
-          correctionMessage:
-              'Use service abstractions instead of direct external service calls.',
+          correctionMessage: 'Use service abstractions instead of direct external service calls.',
         );
         reporter.atNode(body, code);
         break;
@@ -316,8 +325,12 @@ class UseCaseIndependenceRule extends DartLintRule {
 
     // Check for platform-specific calls
     final platformCalls = [
-      'Platform.', 'dart:io', 'dart:html',
-      'window.', 'document.', 'localStorage.',
+      'Platform.',
+      'dart:io',
+      'dart:html',
+      'window.',
+      'document.',
+      'localStorage.',
     ];
 
     for (final call in platformCalls) {
@@ -413,55 +426,100 @@ class UseCaseIndependenceRule extends DartLintRule {
 
   bool _isDatabaseDependency(String typeName) {
     final dbTypes = [
-      'Database', 'Connection', 'Transaction', 'Statement',
-      'SqlDatabase', 'NoSqlDatabase', 'MongoDB', 'FirebaseFirestore',
-      'HiveBox', 'IsarCollection', 'RealmObject',
+      'Database',
+      'Connection',
+      'Transaction',
+      'Statement',
+      'SqlDatabase',
+      'NoSqlDatabase',
+      'MongoDB',
+      'FirebaseFirestore',
+      'HiveBox',
+      'IsarCollection',
+      'RealmObject',
     ];
     return dbTypes.any((type) => typeName.contains(type));
   }
 
   bool _isUIFrameworkDependency(String typeName) {
     final uiTypes = [
-      'Widget', 'BuildContext', 'Navigator', 'Route',
-      'Component', 'Element', 'View', 'Controller',
-      'MaterialApp', 'Scaffold', 'AppBar', 'Drawer',
+      'Widget',
+      'BuildContext',
+      'Navigator',
+      'Route',
+      'Component',
+      'Element',
+      'View',
+      'Controller',
+      'MaterialApp',
+      'Scaffold',
+      'AppBar',
+      'Drawer',
     ];
     return uiTypes.any((type) => typeName.contains(type));
   }
 
   bool _isExternalServiceDependency(String typeName) {
     final serviceTypes = [
-      'HttpClient', 'RestClient', 'GraphQLClient', 'GrpcClient',
-      'FirebaseAuth', 'FirebaseStorage', 'StripeClient',
-      'PayPalClient', 'TwilioClient', 'SendGridClient',
+      'HttpClient',
+      'RestClient',
+      'GraphQLClient',
+      'GrpcClient',
+      'FirebaseAuth',
+      'FirebaseStorage',
+      'StripeClient',
+      'PayPalClient',
+      'TwilioClient',
+      'SendGridClient',
     ];
     return serviceTypes.any((type) => typeName.contains(type));
   }
 
   bool _isExternalFrameworkClass(String typeName) {
     final frameworkTypes = [
-      'Widget', 'Component', 'Element', 'Controller',
-      'HttpClient', 'RestClient', 'Database', 'Connection',
-      'MaterialApp', 'AngularComponent', 'ReactComponent',
+      'Widget',
+      'Component',
+      'Element',
+      'Controller',
+      'HttpClient',
+      'RestClient',
+      'Database',
+      'Connection',
+      'MaterialApp',
+      'AngularComponent',
+      'ReactComponent',
     ];
     return frameworkTypes.any((type) => typeName.contains(type));
   }
 
   bool _isFrameworkSpecificAnnotation(String annotationName) {
     final frameworkAnnotations = [
-      'Component', 'Injectable', 'Service', 'Controller',
-      'Widget', 'StatefulWidget', 'StatelessWidget',
-      'Entity', 'Table', 'Column', 'PrimaryKey',
-      'RestController', 'RequestMapping', 'Autowired',
+      'Component',
+      'Injectable',
+      'Service',
+      'Controller',
+      'Widget',
+      'StatefulWidget',
+      'StatelessWidget',
+      'Entity',
+      'Table',
+      'Column',
+      'PrimaryKey',
+      'RestController',
+      'RequestMapping',
+      'Autowired',
     ];
     return frameworkAnnotations.contains(annotationName);
   }
 
   bool _isUseCaseFile(String filePath) {
     return (filePath.contains('/domain/') || filePath.contains('\\domain\\')) &&
-        (filePath.contains('/usecases/') || filePath.contains('\\usecases\\') ||
-         filePath.contains('/use_cases/') || filePath.contains('\\use_cases\\') ||
-         filePath.endsWith('_usecase.dart') || filePath.endsWith('usecase.dart'));
+        (filePath.contains('/usecases/') ||
+            filePath.contains('\\usecases\\') ||
+            filePath.contains('/use_cases/') ||
+            filePath.contains('\\use_cases\\') ||
+            filePath.endsWith('_usecase.dart') ||
+            filePath.endsWith('usecase.dart'));
   }
 }
 

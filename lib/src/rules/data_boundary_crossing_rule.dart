@@ -30,16 +30,14 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'data_boundary_crossing',
-    problemMessage:
-        'Data boundary crossing violation: {0}',
-    correctionMessage:
-        'Use simple data structures (DTOs) that are convenient for the inner circle.',
+    problemMessage: 'Data boundary crossing violation: {0}',
+    correctionMessage: 'Use simple data structures (DTOs) that are convenient for the inner circle.',
   );
 
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addMethodDeclaration((node) {
@@ -61,7 +59,7 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   void _analyzeMethodDataBoundary(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -82,7 +80,7 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   void _analyzeFunctionDataBoundary(
     FunctionDeclaration function,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -98,7 +96,7 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   void _analyzeDataTransferClass(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -118,7 +116,7 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   void _analyzeVariableDataBoundary(
     VariableDeclaration variable,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -137,7 +135,7 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   void _validateMethodParameters(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String methodName,
   ) {
@@ -147,7 +145,7 @@ class DataBoundaryCrossingRule extends DartLintRule {
       if (param is SimpleFormalParameter) {
         final type = param.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
           final paramName = param.name?.lexeme ?? '';
 
           _validateParameterBoundaryData(
@@ -165,13 +163,13 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   void _validateMethodReturnType(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String methodName,
   ) {
     final returnType = method.returnType;
     if (returnType is NamedType) {
-      final typeName = returnType.name.lexeme;
+      final typeName = returnType.name2.lexeme;
 
       _validateReturnTypeBoundaryData(
         method,
@@ -185,7 +183,7 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   void _validateMethodBodyDataFlow(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String methodName,
   ) {
@@ -201,7 +199,7 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   void _validateParameterBoundaryData(
     SimpleFormalParameter param,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String methodName,
     String typeName,
@@ -213,10 +211,8 @@ class DataBoundaryCrossingRule extends DartLintRule {
       if (boundary != BoundaryType.none) {
         final code = LintCode(
           name: 'data_boundary_crossing',
-          problemMessage:
-              'Entity $typeName passed across ${boundary.name} boundary in $methodName',
-          correctionMessage:
-              'Convert entity to simple DTO before crossing boundary.',
+          problemMessage: 'Entity $typeName passed across ${boundary.name} boundary in $methodName',
+          correctionMessage: 'Convert entity to simple DTO before crossing boundary.',
         );
         reporter.atNode(param, code);
       }
@@ -227,10 +223,8 @@ class DataBoundaryCrossingRule extends DartLintRule {
       if (_isCrossingInward(layer)) {
         final code = LintCode(
           name: 'data_boundary_crossing',
-          problemMessage:
-              'Database row structure $typeName passed inward across boundary',
-          correctionMessage:
-              'Convert to simple data structure convenient for inner circle.',
+          problemMessage: 'Database row structure $typeName passed inward across boundary',
+          correctionMessage: 'Convert to simple data structure convenient for inner circle.',
         );
         reporter.atNode(param, code);
       }
@@ -242,10 +236,8 @@ class DataBoundaryCrossingRule extends DartLintRule {
       if (boundary != BoundaryType.none) {
         final code = LintCode(
           name: 'data_boundary_crossing',
-          problemMessage:
-              'Framework-specific type $typeName crosses ${boundary.name} boundary',
-          correctionMessage:
-              'Use framework-agnostic data structure for boundary crossing.',
+          problemMessage: 'Framework-specific type $typeName crosses ${boundary.name} boundary',
+          correctionMessage: 'Use framework-agnostic data structure for boundary crossing.',
         );
         reporter.atNode(param, code);
       }
@@ -257,10 +249,8 @@ class DataBoundaryCrossingRule extends DartLintRule {
       if (boundary != BoundaryType.none) {
         final code = LintCode(
           name: 'data_boundary_crossing',
-          problemMessage:
-              'Complex object $typeName with behavior crosses boundary in $methodName',
-          correctionMessage:
-              'Extract data into simple structure for boundary crossing.',
+          problemMessage: 'Complex object $typeName with behavior crosses boundary in $methodName',
+          correctionMessage: 'Extract data into simple structure for boundary crossing.',
         );
         reporter.atNode(param, code);
       }
@@ -269,7 +259,7 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   void _validateReturnTypeBoundaryData(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String methodName,
     String typeName,
@@ -281,10 +271,8 @@ class DataBoundaryCrossingRule extends DartLintRule {
     if (_isEntityType(typeName)) {
       final code = LintCode(
         name: 'data_boundary_crossing',
-        problemMessage:
-            'Method $methodName returns Entity $typeName across ${boundary.name} boundary',
-        correctionMessage:
-            'Return simple DTO instead of Entity.',
+        problemMessage: 'Method $methodName returns Entity $typeName across ${boundary.name} boundary',
+        correctionMessage: 'Return simple DTO instead of Entity.',
       );
       reporter.atNode(method, code);
     }
@@ -293,10 +281,8 @@ class DataBoundaryCrossingRule extends DartLintRule {
     if (_isORMType(typeName)) {
       final code = LintCode(
         name: 'data_boundary_crossing',
-        problemMessage:
-            'Method $methodName returns ORM object $typeName across boundary',
-        correctionMessage:
-            'Convert ORM object to simple data structure before returning.',
+        problemMessage: 'Method $methodName returns ORM object $typeName across boundary',
+        correctionMessage: 'Convert ORM object to simple data structure before returning.',
       );
       reporter.atNode(method, code);
     }
@@ -305,10 +291,8 @@ class DataBoundaryCrossingRule extends DartLintRule {
     if (_isInappropriateCollectionType(typeName, boundary)) {
       final code = LintCode(
         name: 'data_boundary_crossing',
-        problemMessage:
-            'Method $methodName returns inappropriate collection type across boundary',
-        correctionMessage:
-            'Use simple collection of DTOs for boundary crossing.',
+        problemMessage: 'Method $methodName returns inappropriate collection type across boundary',
+        correctionMessage: 'Use simple collection of DTOs for boundary crossing.',
       );
       reporter.atNode(method, code);
     }
@@ -316,7 +300,7 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   void _validateDataTransferObjectDesign(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -329,7 +313,7 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   void _validateDTOSimplicity(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     // Check for business logic in DTO
@@ -341,10 +325,8 @@ class DataBoundaryCrossingRule extends DartLintRule {
       if (_isBusinessLogicMethod(methodName) && !_isAllowedDTOMethod(methodName)) {
         final code = LintCode(
           name: 'data_boundary_crossing',
-          problemMessage:
-              'DTO $className contains business logic method: $methodName',
-          correctionMessage:
-              'DTOs should be simple data containers without business logic.',
+          problemMessage: 'DTO $className contains business logic method: $methodName',
+          correctionMessage: 'DTOs should be simple data containers without business logic.',
         );
         reporter.atNode(method, code);
       }
@@ -356,7 +338,7 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   void _validateDTOImmutability(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     final fields = node.members.whereType<FieldDeclaration>();
@@ -365,10 +347,8 @@ class DataBoundaryCrossingRule extends DartLintRule {
       if (!field.fields.isFinal && !field.fields.isLate) {
         final code = LintCode(
           name: 'data_boundary_crossing',
-          problemMessage:
-              'DTO $className has mutable field - DTOs should be immutable',
-          correctionMessage:
-              'Make DTO fields final for immutable data transfer.',
+          problemMessage: 'DTO $className has mutable field - DTOs should be immutable',
+          correctionMessage: 'Make DTO fields final for immutable data transfer.',
         );
         reporter.atNode(field, code);
       }
@@ -377,7 +357,7 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   void _validateDTODependencies(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -387,15 +367,13 @@ class DataBoundaryCrossingRule extends DartLintRule {
     for (final field in fields) {
       final type = field.fields.type;
       if (type is NamedType) {
-        final typeName = type.name.lexeme;
+        final typeName = type.name2.lexeme;
 
         if (_violatesDTODependencyRules(typeName, layer)) {
           final code = LintCode(
             name: 'data_boundary_crossing',
-            problemMessage:
-                'DTO $className has inappropriate dependency: $typeName',
-            correctionMessage:
-                'DTOs should only contain simple types or other DTOs.',
+            problemMessage: 'DTO $className has inappropriate dependency: $typeName',
+            correctionMessage: 'DTOs should only contain simple types or other DTOs.',
           );
           reporter.atNode(field, code);
         }
@@ -405,7 +383,7 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   void _checkDataConversionViolations(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String methodName,
   ) {
@@ -416,10 +394,8 @@ class DataBoundaryCrossingRule extends DartLintRule {
     if (_containsEntityConversion(bodyString) && _isBoundaryMethod(layer, methodName)) {
       final code = LintCode(
         name: 'data_boundary_crossing',
-        problemMessage:
-            'Method $methodName performs entity conversion across boundary',
-        correctionMessage:
-            'Use simple data mapping instead of entity conversion.',
+        problemMessage: 'Method $methodName performs entity conversion across boundary',
+        correctionMessage: 'Use simple data mapping instead of entity conversion.',
       );
       reporter.atNode(method, code);
     }
@@ -428,10 +404,8 @@ class DataBoundaryCrossingRule extends DartLintRule {
     if (_containsDatabaseObjectPassing(bodyString)) {
       final code = LintCode(
         name: 'data_boundary_crossing',
-        problemMessage:
-            'Method $methodName passes database objects across boundary',
-        correctionMessage:
-            'Convert database objects to simple data structures.',
+        problemMessage: 'Method $methodName passes database objects across boundary',
+        correctionMessage: 'Convert database objects to simple data structures.',
       );
       reporter.atNode(method, code);
     }
@@ -439,7 +413,7 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   void _checkEntityManipulationViolations(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String methodName,
   ) {
@@ -448,10 +422,8 @@ class DataBoundaryCrossingRule extends DartLintRule {
     if (_isBoundaryMethod(layer, methodName) && _manipulatesEntities(body)) {
       final code = LintCode(
         name: 'data_boundary_crossing',
-        problemMessage:
-            'Boundary method $methodName manipulates entities directly',
-        correctionMessage:
-            'Extract entity data to DTOs before boundary operations.',
+        problemMessage: 'Boundary method $methodName manipulates entities directly',
+        correctionMessage: 'Extract entity data to DTOs before boundary operations.',
       );
       reporter.atNode(method, code);
     }
@@ -459,7 +431,7 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   void _checkDatabaseRowViolations(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String methodName,
   ) {
@@ -470,10 +442,8 @@ class DataBoundaryCrossingRule extends DartLintRule {
     if (_containsRowStructurePassing(bodyString) && _isCrossingInward(layer)) {
       final code = LintCode(
         name: 'data_boundary_crossing',
-        problemMessage:
-            'Method $methodName passes database row structure inward',
-        correctionMessage:
-            'Convert row structure to format convenient for inner circle.',
+        problemMessage: 'Method $methodName passes database row structure inward',
+        correctionMessage: 'Convert row structure to format convenient for inner circle.',
       );
       reporter.atNode(method, code);
     }
@@ -481,7 +451,7 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   void _checkInappropriateDataStructures(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -489,10 +459,8 @@ class DataBoundaryCrossingRule extends DartLintRule {
     if (_isInappropriateBoundaryData(className, layer)) {
       final code = LintCode(
         name: 'data_boundary_crossing',
-        problemMessage:
-            'Class $className is inappropriate for boundary data transfer',
-        correctionMessage:
-            'Create simple DTO for boundary data transfer instead.',
+        problemMessage: 'Class $className is inappropriate for boundary data transfer',
+        correctionMessage: 'Create simple DTO for boundary data transfer instead.',
       );
       reporter.atNode(node, code);
     }
@@ -503,7 +471,7 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   void _validateFunctionParameters(
     FunctionDeclaration function,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String functionName,
   ) {
@@ -513,7 +481,7 @@ class DataBoundaryCrossingRule extends DartLintRule {
       if (param is SimpleFormalParameter) {
         final type = param.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
 
           _validateParameterBoundaryData(
             param,
@@ -530,23 +498,21 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   void _validateFunctionReturnType(
     FunctionDeclaration function,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String functionName,
   ) {
     final returnType = function.returnType;
     if (returnType is NamedType) {
-      final typeName = returnType.name.lexeme;
+      final typeName = returnType.name2.lexeme;
 
       // Create a simple validation for function return type
       final boundary = _detectBoundaryType(layer, functionName);
       if (boundary != BoundaryType.none && _isInappropriateBoundaryDataType(typeName)) {
         final code = LintCode(
           name: 'data_boundary_crossing',
-          problemMessage:
-              'Function returns inappropriate boundary type: $typeName',
-          correctionMessage:
-              'Return DTO or simple data structure for boundary crossing.',
+          problemMessage: 'Function returns inappropriate boundary type: $typeName',
+          correctionMessage: 'Return DTO or simple data structure for boundary crossing.',
         );
         reporter.atNode(function, code);
       }
@@ -555,20 +521,18 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   void _validateVariableType(
     VariableDeclaration variable,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     TypeAnnotation type,
   ) {
     if (type is NamedType) {
-      final typeName = type.name.lexeme;
+      final typeName = type.name2.lexeme;
 
       if (_isInappropriateBoundaryDataType(typeName) && _isInBoundaryContext(layer)) {
         final code = LintCode(
           name: 'data_boundary_crossing',
-          problemMessage:
-              'Variable of inappropriate boundary type: $typeName',
-          correctionMessage:
-              'Use simple data structure for boundary operations.',
+          problemMessage: 'Variable of inappropriate boundary type: $typeName',
+          correctionMessage: 'Use simple data structure for boundary operations.',
         );
         reporter.atNode(variable, code);
       }
@@ -577,7 +541,7 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   void _validateDTONestedComplexity(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     final fields = node.members.whereType<FieldDeclaration>();
@@ -585,15 +549,13 @@ class DataBoundaryCrossingRule extends DartLintRule {
     for (final field in fields) {
       final type = field.fields.type;
       if (type is NamedType) {
-        final typeName = type.name.lexeme;
+        final typeName = type.name2.lexeme;
 
         if (_isOverlyComplexForDTO(typeName)) {
           final code = LintCode(
             name: 'data_boundary_crossing',
-            problemMessage:
-                'DTO $className field has overly complex type: $typeName',
-            correctionMessage:
-                'Simplify DTO structure or create separate DTOs for complex data.',
+            problemMessage: 'DTO $className field has overly complex type: $typeName',
+            correctionMessage: 'Simplify DTO structure or create separate DTOs for complex data.',
           );
           reporter.atNode(field, code);
         }
@@ -603,16 +565,14 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   void _validateDTONaming(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     if (!_hasProperDTONaming(className)) {
       final code = LintCode(
         name: 'data_boundary_crossing',
-        problemMessage:
-            'Data transfer class $className should follow DTO naming conventions',
-        correctionMessage:
-            'Use DTO, Data, or Request/Response suffix for boundary data classes.',
+        problemMessage: 'Data transfer class $className should follow DTO naming conventions',
+        correctionMessage: 'Use DTO, Data, or Request/Response suffix for boundary data classes.',
       );
       reporter.atNode(node, code);
     }
@@ -620,7 +580,7 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   void _checkFrameworkCouplingInData(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -629,15 +589,13 @@ class DataBoundaryCrossingRule extends DartLintRule {
       if (member is FieldDeclaration) {
         final type = member.fields.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
 
           if (_isFrameworkCoupledType(typeName)) {
             final code = LintCode(
               name: 'data_boundary_crossing',
-              problemMessage:
-                  'Data class $className has framework coupling: $typeName',
-              correctionMessage:
-                  'Remove framework dependencies from boundary data structures.',
+              problemMessage: 'Data class $className has framework coupling: $typeName',
+              correctionMessage: 'Remove framework dependencies from boundary data structures.',
             );
             reporter.atNode(member, code);
           }
@@ -671,87 +629,83 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   bool _isEntityType(String typeName) {
     return typeName.contains('Entity') ||
-           typeName.contains('Aggregate') ||
-           typeName.contains('ValueObject') ||
-           _isDomainModelType(typeName);
+        typeName.contains('Aggregate') ||
+        typeName.contains('ValueObject') ||
+        _isDomainModelType(typeName);
   }
 
   bool _isDatabaseRowType(String typeName) {
-    final rowTypes = [
-      'Row', 'RowStructure', 'ResultSet', 'DataRow',
-      'QueryResult', 'DatabaseRow', 'TableRow'
-    ];
+    final rowTypes = ['Row', 'RowStructure', 'ResultSet', 'DataRow', 'QueryResult', 'DatabaseRow', 'TableRow'];
     return rowTypes.any((type) => typeName.contains(type));
   }
 
   bool _isFrameworkSpecificType(String typeName) {
     final frameworkTypes = [
-      'HttpRequest', 'HttpResponse', 'ServletRequest', 'ServletResponse',
-      'DatabaseConnection', 'Connection', 'Statement', 'PreparedStatement',
-      'Intent', 'Bundle', 'Context', 'Activity', 'Fragment'
+      'HttpRequest',
+      'HttpResponse',
+      'ServletRequest',
+      'ServletResponse',
+      'DatabaseConnection',
+      'Connection',
+      'Statement',
+      'PreparedStatement',
+      'Intent',
+      'Bundle',
+      'Context',
+      'Activity',
+      'Fragment'
     ];
     return frameworkTypes.any((type) => typeName.contains(type));
   }
 
   bool _isComplexObjectWithBehavior(String typeName) {
-    final behavioralTypes = [
-      'Service', 'Manager', 'Handler', 'Processor',
-      'Controller', 'Component', 'Bean'
-    ];
+    final behavioralTypes = ['Service', 'Manager', 'Handler', 'Processor', 'Controller', 'Component', 'Bean'];
     return behavioralTypes.any((type) => typeName.contains(type));
   }
 
   bool _isORMType(String typeName) {
-    final ormTypes = [
-      'Entity', 'Model', 'ActiveRecord', 'DataModel',
-      'PersistentObject', 'DomainObject'
-    ];
-    return ormTypes.any((type) => typeName.contains(type)) &&
-           !_isDataTransferClass(typeName);
+    final ormTypes = ['Entity', 'Model', 'ActiveRecord', 'DataModel', 'PersistentObject', 'DomainObject'];
+    return ormTypes.any((type) => typeName.contains(type)) && !_isDataTransferClass(typeName);
   }
 
   bool _isDataTransferClass(String className) {
-    final dtoIndicators = [
-      'DTO', 'Data', 'Request', 'Response', 'Command',
-      'Query', 'Message', 'Payload'
-    ];
+    final dtoIndicators = ['DTO', 'Data', 'Request', 'Response', 'Command', 'Query', 'Message', 'Payload'];
     return dtoIndicators.any((indicator) => className.contains(indicator));
   }
 
   bool _isInappropriateCollectionType(String typeName, BoundaryType boundary) {
     // Check for framework-specific collections or collections of inappropriate types
     return typeName.contains('ArrayList') ||
-           typeName.contains('Vector') ||
-           typeName.contains('HashMap') && boundary != BoundaryType.none;
+        typeName.contains('Vector') ||
+        typeName.contains('HashMap') && boundary != BoundaryType.none;
   }
 
   bool _isCrossingInward(ArchitecturalLayer layer) {
     // Methods in outer layers that pass data inward
-    return layer.name == 'infrastructure' ||
-           layer.name == 'adapter' ||
-           layer.name == 'data';
+    return layer.name == 'infrastructure' || layer.name == 'adapter' || layer.name == 'data';
   }
 
   bool _isBusinessLogicMethod(String methodName) {
     final businessPatterns = [
-      'calculate', 'validate', 'process', 'execute',
-      'apply', 'transform', 'compute', 'evaluate'
+      'calculate',
+      'validate',
+      'process',
+      'execute',
+      'apply',
+      'transform',
+      'compute',
+      'evaluate'
     ];
     return businessPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _isAllowedDTOMethod(String methodName) {
-    final allowedMethods = [
-      'toString', 'equals', 'hashCode', 'copyWith',
-      'toJson', 'fromJson', 'toMap', 'fromMap'
-    ];
+    final allowedMethods = ['toString', 'equals', 'hashCode', 'copyWith', 'toJson', 'fromJson', 'toMap', 'fromMap'];
     return allowedMethods.any((method) => methodName.contains(method));
   }
 
   bool _violatesDTODependencyRules(String typeName, ArchitecturalLayer layer) {
-    return _isEntityType(typeName) ||
-           _isFrameworkSpecificType(typeName) ||
-           _isComplexObjectWithBehavior(typeName);
+    return _isEntityType(typeName) || _isFrameworkSpecificType(typeName) || _isComplexObjectWithBehavior(typeName);
   }
 
   bool _isBoundaryMethod(ArchitecturalLayer layer, String methodName) {
@@ -759,43 +713,33 @@ class DataBoundaryCrossingRule extends DartLintRule {
   }
 
   bool _containsEntityConversion(String bodyString) {
-    final conversionPatterns = [
-      '.toEntity(', '.fromEntity(', 'Entity.from', 'toValueObject'
-    ];
+    final conversionPatterns = ['.toEntity(', '.fromEntity(', 'Entity.from', 'toValueObject'];
     return conversionPatterns.any((pattern) => bodyString.contains(pattern));
   }
 
   bool _containsDatabaseObjectPassing(String bodyString) {
-    final dbPatterns = [
-      'ResultSet', 'DataRow', 'RowStructure', 'QueryResult'
-    ];
+    final dbPatterns = ['ResultSet', 'DataRow', 'RowStructure', 'QueryResult'];
     return dbPatterns.any((pattern) => bodyString.contains(pattern));
   }
 
   bool _manipulatesEntities(FunctionBody body) {
     final bodyString = body.toString();
-    final entityManipulation = [
-      '.setId(', '.updateValue(', '.changeState(', '.applyRule('
-    ];
+    final entityManipulation = ['.setId(', '.updateValue(', '.changeState(', '.applyRule('];
     return entityManipulation.any((pattern) => bodyString.contains(pattern));
   }
 
   bool _containsRowStructurePassing(String bodyString) {
-    return bodyString.contains('RowStructure') ||
-           bodyString.contains('row.') ||
-           bodyString.contains('resultSet.');
+    return bodyString.contains('RowStructure') || bodyString.contains('row.') || bodyString.contains('resultSet.');
   }
 
   bool _isInappropriateBoundaryData(String className, ArchitecturalLayer layer) {
     return _isEntityType(className) ||
-           _isFrameworkSpecificType(className) ||
-           (_isDatabaseRowType(className) && layer.level > 1);
+        _isFrameworkSpecificType(className) ||
+        (_isDatabaseRowType(className) && layer.level > 1);
   }
 
   bool _isInappropriateBoundaryDataType(String typeName) {
-    return _isEntityType(typeName) ||
-           _isDatabaseRowType(typeName) ||
-           _isFrameworkSpecificType(typeName);
+    return _isEntityType(typeName) || _isDatabaseRowType(typeName) || _isFrameworkSpecificType(typeName);
   }
 
   bool _isInBoundaryContext(ArchitecturalLayer layer) {
@@ -804,9 +748,9 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   bool _isOverlyComplexForDTO(String typeName) {
     return _isComplexObjectWithBehavior(typeName) ||
-           _isFrameworkSpecificType(typeName) ||
-           typeName.contains('Manager') ||
-           typeName.contains('Builder');
+        _isFrameworkSpecificType(typeName) ||
+        typeName.contains('Manager') ||
+        typeName.contains('Builder');
   }
 
   bool _hasProperDTONaming(String className) {
@@ -815,9 +759,7 @@ class DataBoundaryCrossingRule extends DartLintRule {
   }
 
   bool _isFrameworkCoupledType(String typeName) {
-    return _isFrameworkSpecificType(typeName) ||
-           typeName.contains('Annotation') ||
-           typeName.contains('Context');
+    return _isFrameworkSpecificType(typeName) || typeName.contains('Annotation') || typeName.contains('Context');
   }
 
   bool _isDomainModelType(String typeName) {
@@ -826,23 +768,21 @@ class DataBoundaryCrossingRule extends DartLintRule {
 
   // Boundary detection methods
   bool _isControllerBoundaryMethod(ArchitecturalLayer layer, String methodName) {
-    return layer.name == 'controller' &&
-           (methodName.contains('handle') || methodName.contains('process'));
+    return layer.name == 'controller' && (methodName.contains('handle') || methodName.contains('process'));
   }
 
   bool _isUseCaseBoundaryMethod(ArchitecturalLayer layer, String methodName) {
-    return layer.name == 'use_case' &&
-           (methodName.contains('execute') || methodName.contains('perform'));
+    return layer.name == 'use_case' && (methodName.contains('execute') || methodName.contains('perform'));
   }
 
   bool _isRepositoryBoundaryMethod(ArchitecturalLayer layer, String methodName) {
     return layer.name == 'infrastructure' &&
-           (methodName.contains('save') || methodName.contains('find') || methodName.contains('get'));
+        (methodName.contains('save') || methodName.contains('find') || methodName.contains('get'));
   }
 
   bool _isGatewayBoundaryMethod(ArchitecturalLayer layer, String methodName) {
     return layer.name == 'infrastructure' &&
-           (methodName.contains('call') || methodName.contains('send') || methodName.contains('fetch'));
+        (methodName.contains('call') || methodName.contains('send') || methodName.contains('fetch'));
   }
 }
 

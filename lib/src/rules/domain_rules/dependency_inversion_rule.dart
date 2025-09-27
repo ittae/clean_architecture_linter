@@ -22,16 +22,14 @@ class DependencyInversionRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'dependency_inversion',
-    problemMessage:
-        'Domain layer must depend on abstractions, not concrete implementations.',
-    correctionMessage:
-        'Use abstract interfaces or base classes instead of concrete implementations to follow DIP.',
+    problemMessage: 'Domain layer must depend on abstractions, not concrete implementations.',
+    correctionMessage: 'Use abstract interfaces or base classes instead of concrete implementations to follow DIP.',
   );
 
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     // Check constructor parameters for concrete dependencies
@@ -57,7 +55,7 @@ class DependencyInversionRule extends DartLintRule {
 
   void _checkConstructorDependencies(
     ConstructorDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -77,7 +75,7 @@ class DependencyInversionRule extends DartLintRule {
 
   void _checkFieldDependencies(
     FieldDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -99,7 +97,7 @@ class DependencyInversionRule extends DartLintRule {
 
   void _checkImportDependencies(
     ImportDirective node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -121,7 +119,7 @@ class DependencyInversionRule extends DartLintRule {
 
   void _checkInheritanceDependencies(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -199,16 +197,14 @@ class DependencyInversionRule extends DartLintRule {
     NamedType type,
     FormalParameter param,
   ) {
-    final typeName = type.name.lexeme;
+    final typeName = type.name2.lexeme;
 
     // Check for concrete implementation patterns
     if (_isConcreteImplementation(typeName)) {
       return DependencyViolation(
         node: param,
-        message:
-            'Constructor parameter depends on concrete implementation: $typeName',
-        suggestion:
-            'Use abstract interface or base class instead of concrete implementation.',
+        message: 'Constructor parameter depends on concrete implementation: $typeName',
+        suggestion: 'Use abstract interface or base class instead of concrete implementation.',
       );
     }
 
@@ -217,8 +213,7 @@ class DependencyInversionRule extends DartLintRule {
       return DependencyViolation(
         node: param,
         message: 'Domain layer directly depends on infrastructure: $typeName',
-        suggestion:
-            'Create domain interface and inject through dependency inversion.',
+        suggestion: 'Create domain interface and inject through dependency inversion.',
       );
     }
 
@@ -238,7 +233,7 @@ class DependencyInversionRule extends DartLintRule {
     NamedType type,
     FieldDeclaration field,
   ) {
-    final typeName = type.name.lexeme;
+    final typeName = type.name2.lexeme;
 
     if (_isConcreteImplementation(typeName)) {
       return DependencyViolation(
@@ -275,8 +270,7 @@ class DependencyInversionRule extends DartLintRule {
         return DependencyViolation(
           node: null, // Will be set by caller
           message: 'Direct infrastructure import in domain layer: $importUri',
-          suggestion:
-              'Create domain abstraction and move infrastructure to data layer.',
+          suggestion: 'Create domain abstraction and move infrastructure to data layer.',
         );
       }
     }
@@ -288,14 +282,12 @@ class DependencyInversionRule extends DartLintRule {
       return DependencyViolation(
         node: null,
         message: 'Domain layer importing from data layer: $importUri',
-        suggestion:
-            'Domain should not depend on data layer. Use dependency inversion.',
+        suggestion: 'Domain should not depend on data layer. Use dependency inversion.',
       );
     }
 
     // Check for presentation layer imports
-    if (importUri.contains('/presentation/') ||
-        importUri.contains('\\presentation\\')) {
+    if (importUri.contains('/presentation/') || importUri.contains('\\presentation\\')) {
       return DependencyViolation(
         node: null,
         message: 'Domain layer importing from presentation layer: $importUri',
@@ -310,13 +302,12 @@ class DependencyInversionRule extends DartLintRule {
     NamedType type,
     String relationship,
   ) {
-    final typeName = type.name.lexeme;
+    final typeName = type.name2.lexeme;
 
     if (_isConcreteImplementation(typeName)) {
       return DependencyViolation(
         node: type,
-        message:
-            'Domain class $relationship concrete implementation: $typeName',
+        message: 'Domain class $relationship concrete implementation: $typeName',
         suggestion: 'Use abstract base class or interface for inheritance.',
       );
     }
@@ -325,8 +316,7 @@ class DependencyInversionRule extends DartLintRule {
       return DependencyViolation(
         node: type,
         message: 'Domain class $relationship framework type: $typeName',
-        suggestion:
-            'Create domain abstraction instead of depending on framework.',
+        suggestion: 'Create domain abstraction instead of depending on framework.',
       );
     }
 

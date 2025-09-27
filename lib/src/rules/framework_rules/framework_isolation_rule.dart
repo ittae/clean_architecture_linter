@@ -21,16 +21,14 @@ class FrameworkIsolationRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'framework_isolation',
-    problemMessage:
-        'Framework details must be isolated to outermost layer and not leak into inner circles.',
-    correctionMessage:
-        'Move framework-specific code to framework layer. Use abstractions in inner layers.',
+    problemMessage: 'Framework details must be isolated to outermost layer and not leak into inner circles.',
+    correctionMessage: 'Move framework-specific code to framework layer. Use abstractions in inner layers.',
   );
 
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addImportDirective((node) {
@@ -48,7 +46,7 @@ class FrameworkIsolationRule extends DartLintRule {
 
   void _checkFrameworkImports(
     ImportDirective node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -65,8 +63,7 @@ class FrameworkIsolationRule extends DartLintRule {
         final code = LintCode(
           name: 'framework_isolation',
           problemMessage: 'Framework import detected in $layerType layer: $importUri',
-          correctionMessage:
-              'Move framework dependencies to framework layer. Use abstractions in $layerType layer.',
+          correctionMessage: 'Move framework dependencies to framework layer. Use abstractions in $layerType layer.',
         );
         reporter.atNode(node, code);
       }
@@ -86,7 +83,7 @@ class FrameworkIsolationRule extends DartLintRule {
 
   void _checkFrameworkClass(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -102,7 +99,7 @@ class FrameworkIsolationRule extends DartLintRule {
 
   void _checkFrameworkMethod(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -114,8 +111,7 @@ class FrameworkIsolationRule extends DartLintRule {
         final code = LintCode(
           name: 'framework_isolation',
           problemMessage: 'Framework layer contains business logic: $methodName',
-          correctionMessage:
-              'Move business logic to appropriate inner layer (use case, entity, or adapter).',
+          correctionMessage: 'Move business logic to appropriate inner layer (use case, entity, or adapter).',
         );
         reporter.atNode(method, code);
       }
@@ -125,8 +121,7 @@ class FrameworkIsolationRule extends DartLintRule {
         final code = LintCode(
           name: 'framework_isolation',
           problemMessage: 'Framework layer should contain only glue code: $methodName',
-          correctionMessage:
-              'Framework layer should only connect frameworks to adapters with minimal glue code.',
+          correctionMessage: 'Framework layer should only connect frameworks to adapters with minimal glue code.',
         );
         reporter.atNode(method, code);
       }
@@ -135,7 +130,7 @@ class FrameworkIsolationRule extends DartLintRule {
 
   void _checkFrameworkLayerClass(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     final className = node.name.lexeme;
 
@@ -148,8 +143,7 @@ class FrameworkIsolationRule extends DartLintRule {
           final code = LintCode(
             name: 'framework_isolation',
             problemMessage: 'Framework class contains business logic: $methodName in $className',
-            correctionMessage:
-                'Move business logic to inner layers. Framework should only contain glue code.',
+            correctionMessage: 'Move business logic to inner layers. Framework should only contain glue code.',
           );
           reporter.atNode(member, code);
         }
@@ -172,7 +166,7 @@ class FrameworkIsolationRule extends DartLintRule {
 
   void _checkInnerLayerFrameworkDependencies(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String filePath,
   ) {
     final layerType = _getLayerType(filePath);
@@ -180,13 +174,12 @@ class FrameworkIsolationRule extends DartLintRule {
     // Check inheritance
     final extendsClause = node.extendsClause;
     if (extendsClause != null) {
-      final superTypeName = extendsClause.superclass.name.lexeme;
+      final superTypeName = extendsClause.superclass.name2.lexeme;
       if (_isFrameworkClass(superTypeName)) {
         final code = LintCode(
           name: 'framework_isolation',
           problemMessage: '$layerType class extends framework class: $superTypeName',
-          correctionMessage:
-              'Use composition instead of inheritance. Create abstractions in $layerType layer.',
+          correctionMessage: 'Use composition instead of inheritance. Create abstractions in $layerType layer.',
         );
         reporter.atNode(extendsClause, code);
       }
@@ -197,13 +190,12 @@ class FrameworkIsolationRule extends DartLintRule {
       if (member is FieldDeclaration) {
         final type = member.fields.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
           if (_isFrameworkClass(typeName)) {
             final code = LintCode(
               name: 'framework_isolation',
               problemMessage: '$layerType layer depends on framework class: $typeName',
-              correctionMessage:
-                  'Use abstractions instead of direct framework dependencies in $layerType layer.',
+              correctionMessage: 'Use abstractions instead of direct framework dependencies in $layerType layer.',
             );
             reporter.atNode(type, code);
           }
@@ -214,21 +206,20 @@ class FrameworkIsolationRule extends DartLintRule {
 
   void _checkFrameworkClassDependencies(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     for (final member in node.members) {
       if (member is FieldDeclaration) {
         final type = member.fields.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
 
           // Framework should not depend on business logic
           if (_isBusinessLogicClass(typeName)) {
             final code = LintCode(
               name: 'framework_isolation',
               problemMessage: 'Framework layer depends on business logic: $typeName',
-              correctionMessage:
-                  'Framework should only depend on abstractions, not business logic classes.',
+              correctionMessage: 'Framework should only depend on abstractions, not business logic classes.',
             );
             reporter.atNode(type, code);
           }
@@ -272,13 +263,20 @@ class FrameworkIsolationRule extends DartLintRule {
 
   bool _containsBusinessLogic(MethodDeclaration method, String methodName) {
     final businessLogicPatterns = [
-      'validate', 'calculate', 'process', 'apply',
-      'business', 'rule', 'policy', 'logic',
-      'usecase', 'entity', 'domain',
+      'validate',
+      'calculate',
+      'process',
+      'apply',
+      'business',
+      'rule',
+      'policy',
+      'logic',
+      'usecase',
+      'entity',
+      'domain',
     ];
 
-    final hasBusinessLogicName = businessLogicPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    final hasBusinessLogicName = businessLogicPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
 
     if (hasBusinessLogicName) return true;
 
@@ -287,13 +285,18 @@ class FrameworkIsolationRule extends DartLintRule {
     if (body is BlockFunctionBody) {
       final bodyString = body.toString();
       final businessPatterns = [
-        'if (', 'switch (', 'for (', 'while (',
-        'validate', 'calculate', 'business',
+        'if (',
+        'switch (',
+        'for (',
+        'while (',
+        'validate',
+        'calculate',
+        'business',
       ];
 
       // Complex logic suggests business rules
-      final complexityCount = businessPatterns.fold(0, (count, pattern) =>
-          count + bodyString.split(pattern).length - 1);
+      final complexityCount =
+          businessPatterns.fold(0, (count, pattern) => count + bodyString.split(pattern).length - 1);
 
       return complexityCount > 3; // Threshold for business logic
     }
@@ -303,12 +306,17 @@ class FrameworkIsolationRule extends DartLintRule {
 
   bool _containsAdapterLogic(MethodDeclaration method, String methodName) {
     final adapterLogicPatterns = [
-      'convert', 'map', 'transform', 'adapt',
-      'toDto', 'fromDto', 'serialize', 'deserialize',
+      'convert',
+      'map',
+      'transform',
+      'adapt',
+      'toDto',
+      'fromDto',
+      'serialize',
+      'deserialize',
     ];
 
-    return adapterLogicPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return adapterLogicPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _isGlueCode(MethodDeclaration method, String methodName) {
@@ -321,8 +329,7 @@ class FrameworkIsolationRule extends DartLintRule {
       'configureapp', 'initializeapp', 'bootstrapapp',
     ];
 
-    final isGlueCodeName = glueCodePatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    final isGlueCodeName = glueCodePatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
 
     if (isGlueCodeName) return true;
 
@@ -345,10 +352,7 @@ class FrameworkIsolationRule extends DartLintRule {
   }
 
   bool _isFlutterAppSetupMethod(String methodName) {
-    final flutterAppMethods = [
-      'runApp', 'main', 'createApp', 'buildApp',
-      'configureApp', 'setupApp', 'initializeApp'
-    ];
+    final flutterAppMethods = ['runApp', 'main', 'createApp', 'buildApp', 'configureApp', 'setupApp', 'initializeApp'];
     return flutterAppMethods.any((method) => methodName == method);
   }
 
@@ -435,10 +439,19 @@ class FrameworkIsolationRule extends DartLintRule {
 
   bool _isFrameworkClass(String className) {
     final frameworkClasses = [
-      'Widget', 'StatefulWidget', 'StatelessWidget',
-      'HttpServer', 'HttpClient', 'Request', 'Response',
-      'Database', 'Transaction', 'Connection',
-      'Box', 'IsarCollection', 'RealmObject',
+      'Widget',
+      'StatefulWidget',
+      'StatelessWidget',
+      'HttpServer',
+      'HttpClient',
+      'Request',
+      'Response',
+      'Database',
+      'Transaction',
+      'Connection',
+      'Box',
+      'IsarCollection',
+      'RealmObject',
     ];
 
     return frameworkClasses.any((cls) => className.contains(cls));
@@ -446,8 +459,13 @@ class FrameworkIsolationRule extends DartLintRule {
 
   bool _isBusinessLogicClass(String className) {
     final businessClasses = [
-      'UseCase', 'Service', 'Entity', 'Repository',
-      'BusinessLogic', 'DomainService', 'Interactor',
+      'UseCase',
+      'Service',
+      'Entity',
+      'Repository',
+      'BusinessLogic',
+      'DomainService',
+      'Interactor',
     ];
 
     return businessClasses.any((cls) => className.contains(cls));
@@ -455,14 +473,22 @@ class FrameworkIsolationRule extends DartLintRule {
 
   bool _isFrameworkLayer(String filePath) {
     final frameworkPaths = [
-      '/framework/', '\\framework\\',
-      '/frameworks/', '\\frameworks\\',
-      '/infrastructure/', '\\infrastructure\\',
-      '/external/', '\\external\\',
-      '/drivers/', '\\drivers\\',
-      '/main.dart', '\\main.dart',
-      '/app.dart', '\\app.dart',
-      '/bootstrap/', '\\bootstrap\\',
+      '/framework/',
+      '\\framework\\',
+      '/frameworks/',
+      '\\frameworks\\',
+      '/infrastructure/',
+      '\\infrastructure\\',
+      '/external/',
+      '\\external\\',
+      '/drivers/',
+      '\\drivers\\',
+      '/main.dart',
+      '\\main.dart',
+      '/app.dart',
+      '\\app.dart',
+      '/bootstrap/',
+      '\\bootstrap\\',
     ];
 
     return frameworkPaths.any((path) => filePath.contains(path));
@@ -470,31 +496,27 @@ class FrameworkIsolationRule extends DartLintRule {
 
   bool _isTestFile(String filePath) {
     return filePath.contains('/test/') ||
-           filePath.contains('\\test\\') ||
-           filePath.endsWith('_test.dart') ||
-           filePath.contains('/integration_test/') ||
-           filePath.contains('\\integration_test\\') ||
-           filePath.contains('/test_driver/') ||
-           filePath.contains('\\test_driver\\');
+        filePath.contains('\\test\\') ||
+        filePath.endsWith('_test.dart') ||
+        filePath.contains('/integration_test/') ||
+        filePath.contains('\\integration_test\\') ||
+        filePath.contains('/test_driver/') ||
+        filePath.contains('\\test_driver\\');
   }
 
   bool _isFlutterWebImport(String importUri) {
-    return importUri.startsWith('dart:html') ||
-           importUri.startsWith('dart:js') ||
-           importUri.startsWith('dart:js_util');
+    return importUri.startsWith('dart:html') || importUri.startsWith('dart:js') || importUri.startsWith('dart:js_util');
   }
 
   bool _isFlutterWebContext(String filePath) {
     return filePath.contains('/web/') ||
-           filePath.contains('\\web\\') ||
-           filePath.contains('web_') ||
-           filePath.endsWith('_web.dart');
+        filePath.contains('\\web\\') ||
+        filePath.contains('web_') ||
+        filePath.endsWith('_web.dart');
   }
 
   bool _isInnerLayer(String filePath) {
-    return _isDomainLayer(filePath) ||
-           _isAdapterLayer(filePath) ||
-           _isDataLayer(filePath);
+    return _isDomainLayer(filePath) || _isAdapterLayer(filePath) || _isDataLayer(filePath);
   }
 
   bool _isDomainLayer(String filePath) {
@@ -503,10 +525,14 @@ class FrameworkIsolationRule extends DartLintRule {
 
   bool _isAdapterLayer(String filePath) {
     final adapterPaths = [
-      '/adapters/', '\\adapters\\',
-      '/interface_adapters/', '\\interface_adapters\\',
-      '/controllers/', '\\controllers\\',
-      '/presenters/', '\\presenters\\',
+      '/adapters/',
+      '\\adapters\\',
+      '/interface_adapters/',
+      '\\interface_adapters\\',
+      '/controllers/',
+      '\\controllers\\',
+      '/presenters/',
+      '\\presenters\\',
     ];
 
     return adapterPaths.any((path) => filePath.contains(path));
@@ -518,9 +544,12 @@ class FrameworkIsolationRule extends DartLintRule {
 
   bool _isPresentationLayer(String filePath) {
     final presentationPaths = [
-      '/presentation/', '\\presentation\\',
-      '/ui/', '\\ui\\',
-      '/views/', '\\views\\',
+      '/presentation/',
+      '\\presentation\\',
+      '/ui/',
+      '\\ui\\',
+      '/views/',
+      '\\views\\',
     ];
 
     return presentationPaths.any((path) => filePath.contains(path));

@@ -29,7 +29,7 @@ class AbstractionLevelRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addImportDirective((node) {
@@ -47,7 +47,7 @@ class AbstractionLevelRule extends DartLintRule {
 
   void _checkImportAbstractionLevel(
     ImportDirective node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -77,7 +77,7 @@ class AbstractionLevelRule extends DartLintRule {
 
   void _checkClassAbstractionLevel(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -102,7 +102,7 @@ class AbstractionLevelRule extends DartLintRule {
 
   void _checkMethodAbstractionLevel(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;

@@ -21,8 +21,7 @@ class UseCaseOrchestrationRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'usecase_orchestration',
-    problemMessage:
-        'Use Case must properly orchestrate entities and focus on application-specific business rules.',
+    problemMessage: 'Use Case must properly orchestrate entities and focus on application-specific business rules.',
     correctionMessage:
         'Ensure Use Case orchestrates entities, uses repositories, and contains only application-specific logic.',
   );
@@ -30,7 +29,7 @@ class UseCaseOrchestrationRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -44,7 +43,7 @@ class UseCaseOrchestrationRule extends DartLintRule {
 
   void _checkUseCaseOrchestration(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -64,7 +63,7 @@ class UseCaseOrchestrationRule extends DartLintRule {
 
   void _checkUseCaseMethod(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -82,7 +81,7 @@ class UseCaseOrchestrationRule extends DartLintRule {
 
   void _checkDependencyPattern(
     UseCaseStructureAnalysis analysis,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ClassDeclaration node,
   ) {
     // Check for repository dependencies (good)
@@ -114,8 +113,7 @@ class UseCaseOrchestrationRule extends DartLintRule {
       final code = LintCode(
         name: 'usecase_orchestration',
         problemMessage: 'Use Case should not depend directly on infrastructure',
-        correctionMessage:
-            'Use repository abstractions instead of direct infrastructure dependencies.',
+        correctionMessage: 'Use repository abstractions instead of direct infrastructure dependencies.',
       );
       reporter.atNode(node, code);
     }
@@ -125,8 +123,7 @@ class UseCaseOrchestrationRule extends DartLintRule {
       final code = LintCode(
         name: 'usecase_orchestration',
         problemMessage: 'Use Case may need repository dependencies for data access',
-        correctionMessage:
-            'Consider using repository abstractions to access and manipulate entities.',
+        correctionMessage: 'Consider using repository abstractions to access and manipulate entities.',
       );
       reporter.atNode(node, code);
     }
@@ -134,7 +131,7 @@ class UseCaseOrchestrationRule extends DartLintRule {
 
   void _checkOrchestrationPattern(
     UseCaseStructureAnalysis analysis,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ClassDeclaration node,
   ) {
     final executeMethods = analysis.methods.where(
@@ -158,8 +155,7 @@ class UseCaseOrchestrationRule extends DartLintRule {
         final code = LintCode(
           name: 'usecase_orchestration',
           problemMessage: 'Use Case should accept input parameters for the operation',
-          correctionMessage:
-              'Use Case execute/call method should accept the data needed to perform the operation.',
+          correctionMessage: 'Use Case execute/call method should accept the data needed to perform the operation.',
         );
         reporter.atNode(method, code);
       }
@@ -168,7 +164,7 @@ class UseCaseOrchestrationRule extends DartLintRule {
 
   void _checkEntityWorkSeparation(
     UseCaseStructureAnalysis analysis,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ClassDeclaration node,
   ) {
     // Check if Use Case is doing work that should be in entities
@@ -189,16 +185,25 @@ class UseCaseOrchestrationRule extends DartLintRule {
 
   void _checkMethodOrchestration(
     BlockFunctionBody body,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     MethodDeclaration method,
   ) {
     final bodyString = body.toString();
 
     // Check for direct database/infrastructure calls (anti-pattern)
     final directInfraCalls = [
-      '.save(', '.insert(', '.update(', '.delete(',
-      '.query(', '.find(', '.get(', '.post(',
-      'database.', 'db.', 'http.', 'api.',
+      '.save(',
+      '.insert(',
+      '.update(',
+      '.delete(',
+      '.query(',
+      '.find(',
+      '.get(',
+      '.post(',
+      'database.',
+      'db.',
+      'http.',
+      'api.',
     ];
 
     for (final call in directInfraCalls) {
@@ -206,8 +211,7 @@ class UseCaseOrchestrationRule extends DartLintRule {
         final code = LintCode(
           name: 'usecase_orchestration',
           problemMessage: 'Use Case contains direct infrastructure calls',
-          correctionMessage:
-              'Use repository abstractions instead of direct infrastructure calls.',
+          correctionMessage: 'Use repository abstractions instead of direct infrastructure calls.',
         );
         reporter.atNode(body, code);
         break;
@@ -216,21 +220,18 @@ class UseCaseOrchestrationRule extends DartLintRule {
 
     // Check for entity creation patterns (good)
     final entityPatterns = ['new ', 'Entity(', '.create('];
-    final hasEntityCreation = entityPatterns.any((pattern) =>
-        bodyString.contains(pattern));
+    final hasEntityCreation = entityPatterns.any((pattern) => bodyString.contains(pattern));
 
     // Check for repository usage patterns (good)
     final repositoryPatterns = ['repository.', 'Repository', '.getBy', '.findBy'];
-    final hasRepositoryUsage = repositoryPatterns.any((pattern) =>
-        bodyString.contains(pattern));
+    final hasRepositoryUsage = repositoryPatterns.any((pattern) => bodyString.contains(pattern));
 
     // If it's a complex use case but has neither entity creation nor repository usage
     if (bodyString.length > 200 && !hasEntityCreation && !hasRepositoryUsage) {
       final code = LintCode(
         name: 'usecase_orchestration',
         problemMessage: 'Complex Use Case should orchestrate entities or use repositories',
-        correctionMessage:
-            'Use Case should create/manipulate entities or coordinate with repositories.',
+        correctionMessage: 'Use Case should create/manipulate entities or coordinate with repositories.',
       );
       reporter.atNode(method, code);
     }
@@ -247,7 +248,7 @@ class UseCaseOrchestrationRule extends DartLintRule {
         // Extract dependency types
         final type = member.fields.type;
         if (type is NamedType) {
-          dependencies.add(type.name.lexeme);
+          dependencies.add(type.name2.lexeme);
         }
       }
     }
@@ -259,22 +260,25 @@ class UseCaseOrchestrationRule extends DartLintRule {
   }
 
   bool _isRepositoryDependency(String typeName) {
-    return typeName.contains('Repository') ||
-           typeName.contains('DataSource') ||
-           typeName.endsWith('Gateway');
+    return typeName.contains('Repository') || typeName.contains('DataSource') || typeName.endsWith('Gateway');
   }
 
   bool _isEntityDependency(String typeName) {
-    return typeName.endsWith('Entity') ||
-           typeName.endsWith('Model') ||
-           typeName.endsWith('Domain');
+    return typeName.endsWith('Entity') || typeName.endsWith('Model') || typeName.endsWith('Domain');
   }
 
   bool _isInfrastructureDependency(String typeName) {
     final infraTypes = [
-      'Database', 'Cache', 'HttpClient', 'ApiClient',
-      'FileSystem', 'Storage', 'NetworkClient',
-      'SqlDatabase', 'NoSqlDatabase', 'RestClient',
+      'Database',
+      'Cache',
+      'HttpClient',
+      'ApiClient',
+      'FileSystem',
+      'Storage',
+      'NetworkClient',
+      'SqlDatabase',
+      'NoSqlDatabase',
+      'RestClient',
     ];
     return infraTypes.any((type) => typeName.contains(type));
   }
@@ -284,14 +288,14 @@ class UseCaseOrchestrationRule extends DartLintRule {
     if (returnType == null) return true; // Dynamic is acceptable
 
     if (returnType is NamedType) {
-      final typeName = returnType.name.lexeme;
+      final typeName = returnType.name2.lexeme;
       // Void, Future, entities, or result types are good
       return typeName == 'void' ||
-             typeName == 'Future' ||
-             typeName.endsWith('Entity') ||
-             typeName.endsWith('Result') ||
-             typeName.endsWith('Response') ||
-             typeName == 'bool';
+          typeName == 'Future' ||
+          typeName.endsWith('Entity') ||
+          typeName.endsWith('Result') ||
+          typeName.endsWith('Response') ||
+          typeName == 'bool';
     }
     return true;
   }
@@ -307,20 +311,32 @@ class UseCaseOrchestrationRule extends DartLintRule {
 
   bool _isEntityLevelWork(String methodName) {
     final entityWorkPatterns = [
-      'validate', 'isValid', 'calculate', 'compute',
-      'applyRule', 'checkRule', 'enforceRule',
-      'add', 'remove', 'update', 'modify',
-      'processPayment', 'calculateTax', 'applyDiscount',
+      'validate',
+      'isValid',
+      'calculate',
+      'compute',
+      'applyRule',
+      'checkRule',
+      'enforceRule',
+      'add',
+      'remove',
+      'update',
+      'modify',
+      'processPayment',
+      'calculateTax',
+      'applyDiscount',
     ];
-    return entityWorkPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern.toLowerCase()));
+    return entityWorkPatterns.any((pattern) => methodName.toLowerCase().contains(pattern.toLowerCase()));
   }
 
   bool _isUseCaseFile(String filePath) {
     return (filePath.contains('/domain/') || filePath.contains('\\domain\\')) &&
-        (filePath.contains('/usecases/') || filePath.contains('\\usecases\\') ||
-         filePath.contains('/use_cases/') || filePath.contains('\\use_cases\\') ||
-         filePath.endsWith('_usecase.dart') || filePath.endsWith('usecase.dart'));
+        (filePath.contains('/usecases/') ||
+            filePath.contains('\\usecases\\') ||
+            filePath.contains('/use_cases/') ||
+            filePath.contains('\\use_cases\\') ||
+            filePath.endsWith('_usecase.dart') ||
+            filePath.endsWith('usecase.dart'));
   }
 }
 

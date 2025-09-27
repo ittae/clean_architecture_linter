@@ -21,16 +21,14 @@ class DatabaseDetailRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'database_detail',
-    problemMessage:
-        'Database is a detail and must be isolated to framework layer.',
-    correctionMessage:
-        'Move database-specific code to framework layer. Use repository abstractions in inner layers.',
+    problemMessage: 'Database is a detail and must be isolated to framework layer.',
+    correctionMessage: 'Move database-specific code to framework layer. Use repository abstractions in inner layers.',
   );
 
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addImportDirective((node) {
@@ -52,7 +50,7 @@ class DatabaseDetailRule extends DartLintRule {
 
   void _checkDatabaseImports(
     ImportDirective node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -78,7 +76,7 @@ class DatabaseDetailRule extends DartLintRule {
 
   void _checkDatabaseClass(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -94,7 +92,7 @@ class DatabaseDetailRule extends DartLintRule {
 
   void _checkDatabaseMethod(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -107,8 +105,7 @@ class DatabaseDetailRule extends DartLintRule {
         final code = LintCode(
           name: 'database_detail',
           problemMessage: 'SQL operation found in $layerType layer: $methodName',
-          correctionMessage:
-              'Move SQL operations to framework layer. Use repository methods in $layerType layer.',
+          correctionMessage: 'Move SQL operations to framework layer. Use repository methods in $layerType layer.',
         );
         reporter.atNode(method, code);
       }
@@ -118,8 +115,7 @@ class DatabaseDetailRule extends DartLintRule {
         final code = LintCode(
           name: 'database_detail',
           problemMessage: 'Database operation found in $layerType layer: $methodName',
-          correctionMessage:
-              'Move database operations to framework layer. Use abstractions in $layerType layer.',
+          correctionMessage: 'Move database operations to framework layer. Use abstractions in $layerType layer.',
         );
         reporter.atNode(method, code);
       }
@@ -139,7 +135,7 @@ class DatabaseDetailRule extends DartLintRule {
 
   void _checkDatabaseVariable(
     VariableDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -157,8 +153,7 @@ class DatabaseDetailRule extends DartLintRule {
           final code = LintCode(
             name: 'database_detail',
             problemMessage: 'SQL string found in $layerType layer',
-            correctionMessage:
-                'Move SQL strings to framework layer. Use repository methods instead.',
+            correctionMessage: 'Move SQL strings to framework layer. Use repository methods instead.',
           );
           reporter.atNode(node, code);
         }
@@ -168,7 +163,7 @@ class DatabaseDetailRule extends DartLintRule {
 
   void _checkFrameworkDatabaseClass(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     // Check for business logic in database classes
     for (final member in node.members) {
@@ -179,8 +174,7 @@ class DatabaseDetailRule extends DartLintRule {
           final code = LintCode(
             name: 'database_detail',
             problemMessage: 'Database class contains business logic: $methodName',
-            correctionMessage:
-                'Move business logic to inner layers. Database should only handle persistence details.',
+            correctionMessage: 'Move business logic to inner layers. Database should only handle persistence details.',
           );
           reporter.atNode(member, code);
         }
@@ -193,7 +187,7 @@ class DatabaseDetailRule extends DartLintRule {
 
   void _checkInnerLayerDatabaseClass(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String filePath,
   ) {
     final className = node.name.lexeme;
@@ -204,8 +198,7 @@ class DatabaseDetailRule extends DartLintRule {
       final code = LintCode(
         name: 'database_detail',
         problemMessage: 'Database class found in $layerType layer: $className',
-        correctionMessage:
-            'Move database classes to framework layer. Use repository abstractions in $layerType layer.',
+        correctionMessage: 'Move database classes to framework layer. Use repository abstractions in $layerType layer.',
       );
       reporter.atNode(node, code);
     }
@@ -215,13 +208,12 @@ class DatabaseDetailRule extends DartLintRule {
       if (member is FieldDeclaration) {
         final type = member.fields.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
           if (_isDatabaseType(typeName)) {
             final code = LintCode(
               name: 'database_detail',
               problemMessage: '$layerType class depends on database type: $typeName',
-              correctionMessage:
-                  'Use repository abstractions instead of direct database dependencies.',
+              correctionMessage: 'Use repository abstractions instead of direct database dependencies.',
             );
             reporter.atNode(type, code);
           }
@@ -232,7 +224,7 @@ class DatabaseDetailRule extends DartLintRule {
 
   void _checkDatabaseSchemaDesign(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     // Check if database schema reflects domain model too closely
     for (final member in node.members) {
@@ -255,13 +247,19 @@ class DatabaseDetailRule extends DartLintRule {
 
   bool _containsSQLOperation(MethodDeclaration method, String methodName) {
     final sqlPatterns = [
-      'select', 'insert', 'update', 'delete',
-      'create', 'drop', 'alter', 'sql',
-      'query', 'execute',
+      'select',
+      'insert',
+      'update',
+      'delete',
+      'create',
+      'drop',
+      'alter',
+      'sql',
+      'query',
+      'execute',
     ];
 
-    final hasSQLName = sqlPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    final hasSQLName = sqlPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
 
     if (hasSQLName) return true;
 
@@ -277,44 +275,71 @@ class DatabaseDetailRule extends DartLintRule {
 
   bool _containsDatabaseOperation(MethodDeclaration method, String methodName) {
     final dbOperationPatterns = [
-      'connection', 'transaction', 'commit', 'rollback',
-      'database', 'table', 'schema', 'index',
-      'migrate', 'migration', 'seed',
+      'connection',
+      'transaction',
+      'commit',
+      'rollback',
+      'database',
+      'table',
+      'schema',
+      'index',
+      'migrate',
+      'migration',
+      'seed',
     ];
 
-    return dbOperationPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return dbOperationPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _containsBusinessLogicInDatabase(MethodDeclaration method, String methodName) {
     final businessLogicPatterns = [
-      'validate', 'calculate', 'process', 'apply',
-      'business', 'rule', 'policy', 'workflow',
-      'approve', 'reject', 'authorize',
+      'validate',
+      'calculate',
+      'process',
+      'apply',
+      'business',
+      'rule',
+      'policy',
+      'workflow',
+      'approve',
+      'reject',
+      'authorize',
     ];
 
-    return businessLogicPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return businessLogicPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _containsDomainValidation(MethodDeclaration method, String methodName) {
     final domainValidationPatterns = [
-      'validateBusinessRule', 'checkDomainRule',
-      'validateInvariant', 'enforcePolicy',
-      'businessValidation', 'domainValidation',
+      'validateBusinessRule',
+      'checkDomainRule',
+      'validateInvariant',
+      'enforcePolicy',
+      'businessValidation',
+      'domainValidation',
     ];
 
-    return domainValidationPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return domainValidationPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _containsSQL(String text) {
     final sqlKeywords = [
-      'select ', 'from ', 'where ', 'insert into',
-      'update ', 'delete from', 'create table',
-      'drop table', 'alter table', 'join ',
-      'inner join', 'left join', 'right join',
-      'group by', 'order by', 'having ',
+      'select ',
+      'from ',
+      'where ',
+      'insert into',
+      'update ',
+      'delete from',
+      'create table',
+      'drop table',
+      'alter table',
+      'join ',
+      'inner join',
+      'left join',
+      'right join',
+      'group by',
+      'order by',
+      'having ',
     ];
 
     final lowerText = text.toLowerCase();
@@ -341,11 +366,18 @@ class DatabaseDetailRule extends DartLintRule {
 
   bool _isDatabaseClassName(String className) {
     final databaseClassNames = [
-      'Database', 'Connection', 'Transaction',
-      'Table', 'Schema', 'Migration',
-      'SqlDatabase', 'NoSqlDatabase',
-      'DatabaseManager', 'DatabaseHelper',
-      'DatabaseClient', 'DatabaseAdapter',
+      'Database',
+      'Connection',
+      'Transaction',
+      'Table',
+      'Schema',
+      'Migration',
+      'SqlDatabase',
+      'NoSqlDatabase',
+      'DatabaseManager',
+      'DatabaseHelper',
+      'DatabaseClient',
+      'DatabaseAdapter',
     ];
 
     return databaseClassNames.any((name) => className.contains(name));
@@ -353,10 +385,19 @@ class DatabaseDetailRule extends DartLintRule {
 
   bool _isDatabaseType(String typeName) {
     final databaseTypes = [
-      'Database', 'Connection', 'Transaction', 'Statement',
-      'ResultSet', 'DataReader', 'DataWriter',
-      'QueryBuilder', 'SqlBuilder', 'DatabaseContext',
-      'Box', 'IsarCollection', 'RealmObject',
+      'Database',
+      'Connection',
+      'Transaction',
+      'Statement',
+      'ResultSet',
+      'DataReader',
+      'DataWriter',
+      'QueryBuilder',
+      'SqlBuilder',
+      'DatabaseContext',
+      'Box',
+      'IsarCollection',
+      'RealmObject',
     ];
 
     return databaseTypes.any((type) => typeName.contains(type));
@@ -364,12 +405,18 @@ class DatabaseDetailRule extends DartLintRule {
 
   bool _isFrameworkLayer(String filePath) {
     final frameworkPaths = [
-      '/framework/', '\\framework\\',
-      '/frameworks/', '\\frameworks\\',
-      '/infrastructure/', '\\infrastructure\\',
-      '/persistence/', '\\persistence\\',
-      '/database/', '\\database\\',
-      '/storage/', '\\storage\\',
+      '/framework/',
+      '\\framework\\',
+      '/frameworks/',
+      '\\frameworks\\',
+      '/infrastructure/',
+      '\\infrastructure\\',
+      '/persistence/',
+      '\\persistence\\',
+      '/database/',
+      '\\database\\',
+      '/storage/',
+      '\\storage\\',
     ];
 
     return frameworkPaths.any((path) => filePath.contains(path));
@@ -377,32 +424,36 @@ class DatabaseDetailRule extends DartLintRule {
 
   bool _isTestFile(String filePath) {
     return filePath.contains('/test/') ||
-           filePath.contains('\\test\\') ||
-           filePath.endsWith('_test.dart') ||
-           filePath.contains('/integration_test/') ||
-           filePath.contains('\\integration_test\\');
+        filePath.contains('\\test\\') ||
+        filePath.endsWith('_test.dart') ||
+        filePath.contains('/integration_test/') ||
+        filePath.contains('\\integration_test\\');
   }
 
   bool _isMigrationFile(String filePath) {
     return filePath.contains('/migrations/') ||
-           filePath.contains('\\migrations\\') ||
-           filePath.contains('migration') ||
-           filePath.endsWith('_migration.dart');
+        filePath.contains('\\migrations\\') ||
+        filePath.contains('migration') ||
+        filePath.endsWith('_migration.dart');
   }
 
   String _getLayerType(String filePath) {
     if (filePath.contains('/domain/') || filePath.contains('\\domain\\')) {
       return 'domain';
     }
-    if (filePath.contains('/adapters/') || filePath.contains('\\adapters\\') ||
-        filePath.contains('/interface_adapters/') || filePath.contains('\\interface_adapters\\')) {
+    if (filePath.contains('/adapters/') ||
+        filePath.contains('\\adapters\\') ||
+        filePath.contains('/interface_adapters/') ||
+        filePath.contains('\\interface_adapters\\')) {
       return 'adapter';
     }
     if (filePath.contains('/data/') || filePath.contains('\\data\\')) {
       return 'data';
     }
-    if (filePath.contains('/presentation/') || filePath.contains('\\presentation\\') ||
-        filePath.contains('/ui/') || filePath.contains('\\ui\\')) {
+    if (filePath.contains('/presentation/') ||
+        filePath.contains('\\presentation\\') ||
+        filePath.contains('/ui/') ||
+        filePath.contains('\\ui\\')) {
       return 'presentation';
     }
     return 'unknown';

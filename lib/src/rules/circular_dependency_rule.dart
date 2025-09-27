@@ -31,7 +31,7 @@ class CircularDependencyRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     final currentFile = resolver.path;
@@ -80,7 +80,7 @@ class CircularDependencyRule extends DartLintRule {
 
   void _checkForCircularDependencies(
     String currentFile,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CompilationUnit node,
   ) {
     final visited = <String>{};
@@ -146,7 +146,7 @@ class CircularDependencyRule extends DartLintRule {
 
   void _checkLayerCircularDependency(
     String currentFile,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CompilationUnit node,
   ) {
     final currentLayer = _fileToLayer[currentFile];

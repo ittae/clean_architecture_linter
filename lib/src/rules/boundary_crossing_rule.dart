@@ -27,16 +27,14 @@ class BoundaryCrossingRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'boundary_crossing',
-    problemMessage:
-        'Boundary crossing violation: {0}',
-    correctionMessage:
-        'Use Dependency Inversion Principle to cross architectural boundaries properly.',
+    problemMessage: 'Boundary crossing violation: {0}',
+    correctionMessage: 'Use Dependency Inversion Principle to cross architectural boundaries properly.',
   );
 
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -54,7 +52,7 @@ class BoundaryCrossingRule extends DartLintRule {
 
   void _analyzeBoundaryCrossing(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -75,7 +73,7 @@ class BoundaryCrossingRule extends DartLintRule {
 
   void _validateConstructorBoundaries(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer currentLayer,
     String className,
   ) {
@@ -87,7 +85,7 @@ class BoundaryCrossingRule extends DartLintRule {
           if (param is SimpleFormalParameter) {
             final type = param.type;
             if (type is NamedType) {
-              final typeName = type.name.lexeme;
+              final typeName = type.name2.lexeme;
               final dependencyLayer = _inferLayerFromType(typeName);
 
               if (dependencyLayer != null) {
@@ -110,7 +108,7 @@ class BoundaryCrossingRule extends DartLintRule {
 
   void _validateFieldBoundaries(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer currentLayer,
     String className,
   ) {
@@ -118,7 +116,7 @@ class BoundaryCrossingRule extends DartLintRule {
       if (member is FieldDeclaration) {
         final type = member.fields.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
           final dependencyLayer = _inferLayerFromType(typeName);
 
           if (dependencyLayer != null) {
@@ -139,7 +137,7 @@ class BoundaryCrossingRule extends DartLintRule {
 
   void _validateBoundaryImplementation(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer currentLayer,
     String className,
   ) {
@@ -147,7 +145,7 @@ class BoundaryCrossingRule extends DartLintRule {
     final implementsClause = node.implementsClause;
     if (implementsClause != null) {
       for (final interface in implementsClause.interfaces) {
-        final interfaceName = interface.name.lexeme;
+        final interfaceName = interface.name2.lexeme;
         _validateInterfaceImplementation(
           interface,
           reporter,
@@ -164,7 +162,7 @@ class BoundaryCrossingRule extends DartLintRule {
 
   void _analyzeMethodBoundaryCalls(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -179,7 +177,7 @@ class BoundaryCrossingRule extends DartLintRule {
       if (param is SimpleFormalParameter) {
         final type = param.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
           final dependencyLayer = _inferLayerFromType(typeName);
 
           if (dependencyLayer != null) {
@@ -199,7 +197,7 @@ class BoundaryCrossingRule extends DartLintRule {
 
   void _analyzeMethodInvocation(
     MethodInvocation node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -221,7 +219,7 @@ class BoundaryCrossingRule extends DartLintRule {
 
   void _validateDependencyBoundary(
     AstNode node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer currentLayer,
     ArchitecturalLayer dependencyLayer,
     String className,
@@ -255,7 +253,7 @@ class BoundaryCrossingRule extends DartLintRule {
 
   void _validateInterfaceImplementation(
     NamedType interface,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer currentLayer,
     String className,
     String interfaceName,
@@ -269,8 +267,7 @@ class BoundaryCrossingRule extends DartLintRule {
         if (!_isValidBoundaryInterface(interfaceName, currentLayer, interfaceLayer)) {
           final code = LintCode(
             name: 'boundary_crossing',
-            problemMessage:
-                '$className implements inappropriate interface for boundary crossing: $interfaceName',
+            problemMessage: '$className implements inappropriate interface for boundary crossing: $interfaceName',
             correctionMessage:
                 'Ensure interface represents proper boundary abstraction (e.g., OutputPort, Repository, Gateway).',
           );
@@ -282,7 +279,7 @@ class BoundaryCrossingRule extends DartLintRule {
 
   void _checkBoundaryPatternViolations(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer currentLayer,
     String className,
   ) {
@@ -304,7 +301,7 @@ class BoundaryCrossingRule extends DartLintRule {
 
   void _checkUseCaseBoundaryPatterns(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     var hasOutputPort = false;
@@ -314,7 +311,7 @@ class BoundaryCrossingRule extends DartLintRule {
       if (member is FieldDeclaration) {
         final type = member.fields.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
 
           if (_isOutputPort(typeName)) {
             hasOutputPort = true;
@@ -331,10 +328,8 @@ class BoundaryCrossingRule extends DartLintRule {
     if (hasDirectPresenterDependency && !hasOutputPort) {
       final code = LintCode(
         name: 'boundary_crossing',
-        problemMessage:
-            'Use case $className has direct presenter dependency instead of output port',
-        correctionMessage:
-            'Define an output port interface in use case layer and have presenter implement it.',
+        problemMessage: 'Use case $className has direct presenter dependency instead of output port',
+        correctionMessage: 'Define an output port interface in use case layer and have presenter implement it.',
       );
       reporter.atNode(node, code);
     }
@@ -342,7 +337,7 @@ class BoundaryCrossingRule extends DartLintRule {
 
   void _checkControllerBoundaryPatterns(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     var hasUseCaseInterface = false;
@@ -352,7 +347,7 @@ class BoundaryCrossingRule extends DartLintRule {
       if (member is FieldDeclaration) {
         final type = member.fields.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
 
           if (_isUseCaseType(typeName)) {
             if (_isInterface(typeName)) {
@@ -368,10 +363,8 @@ class BoundaryCrossingRule extends DartLintRule {
     if (hasDirectUseCaseImplementation && !hasUseCaseInterface) {
       final code = LintCode(
         name: 'boundary_crossing',
-        problemMessage:
-            'Controller $className depends on concrete use case instead of interface',
-        correctionMessage:
-            'Define use case interface and depend on abstraction, not implementation.',
+        problemMessage: 'Controller $className depends on concrete use case instead of interface',
+        correctionMessage: 'Define use case interface and depend on abstraction, not implementation.',
       );
       reporter.atNode(node, code);
     }
@@ -379,7 +372,7 @@ class BoundaryCrossingRule extends DartLintRule {
 
   void _checkPresenterBoundaryPatterns(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     // Check if presenter properly implements output port
@@ -388,7 +381,7 @@ class BoundaryCrossingRule extends DartLintRule {
 
     if (implementsClause != null) {
       for (final interface in implementsClause.interfaces) {
-        final interfaceName = interface.name.lexeme;
+        final interfaceName = interface.name2.lexeme;
         if (_isOutputPort(interfaceName)) {
           implementsOutputPort = true;
           break;
@@ -399,10 +392,8 @@ class BoundaryCrossingRule extends DartLintRule {
     if (!implementsOutputPort && _isPresenterClass(className)) {
       final code = LintCode(
         name: 'boundary_crossing',
-        problemMessage:
-            'Presenter $className should implement an output port interface',
-        correctionMessage:
-            'Implement the appropriate output port interface to enable proper boundary crossing.',
+        problemMessage: 'Presenter $className should implement an output port interface',
+        correctionMessage: 'Implement the appropriate output port interface to enable proper boundary crossing.',
       );
       reporter.atNode(node, code);
     }
@@ -410,7 +401,7 @@ class BoundaryCrossingRule extends DartLintRule {
 
   void _checkRepositoryBoundaryPatterns(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     // Repository implementation should implement repository interface
@@ -419,7 +410,7 @@ class BoundaryCrossingRule extends DartLintRule {
 
     if (implementsClause != null) {
       for (final interface in implementsClause.interfaces) {
-        final interfaceName = interface.name.lexeme;
+        final interfaceName = interface.name2.lexeme;
         if (_isRepositoryInterface(interfaceName)) {
           implementsRepositoryInterface = true;
           break;
@@ -430,10 +421,8 @@ class BoundaryCrossingRule extends DartLintRule {
     if (!implementsRepositoryInterface && _isRepositoryImplementation(className)) {
       final code = LintCode(
         name: 'boundary_crossing',
-        problemMessage:
-            'Repository implementation $className should implement repository interface',
-        correctionMessage:
-            'Implement the repository interface defined in the domain layer.',
+        problemMessage: 'Repository implementation $className should implement repository interface',
+        correctionMessage: 'Implement the repository interface defined in the domain layer.',
       );
       reporter.atNode(node, code);
     }
@@ -441,7 +430,7 @@ class BoundaryCrossingRule extends DartLintRule {
 
   void _validateMethodParameterBoundary(
     SimpleFormalParameter param,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer currentLayer,
     ArchitecturalLayer dependencyLayer,
     String methodName,
@@ -453,8 +442,7 @@ class BoundaryCrossingRule extends DartLintRule {
           name: 'boundary_crossing',
           problemMessage:
               'Method $methodName in ${currentLayer.name} layer accepts concrete type from ${dependencyLayer.name} layer: $typeName',
-          correctionMessage:
-              'Accept interface/abstract type instead to maintain boundary separation.',
+          correctionMessage: 'Accept interface/abstract type instead to maintain boundary separation.',
         );
         reporter.atNode(param, code);
       }
@@ -463,7 +451,7 @@ class BoundaryCrossingRule extends DartLintRule {
 
   void _validateMethodInvocationBoundary(
     MethodInvocation node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer currentLayer,
     String methodName,
   ) {
@@ -474,10 +462,8 @@ class BoundaryCrossingRule extends DartLintRule {
     if (currentLayer.name == 'use_case' && _isPresenterTarget(target)) {
       final code = LintCode(
         name: 'boundary_crossing',
-        problemMessage:
-            'Use case directly calls presenter method: $methodName',
-        correctionMessage:
-            'Use output port interface instead of direct presenter call.',
+        problemMessage: 'Use case directly calls presenter method: $methodName',
+        correctionMessage: 'Use output port interface instead of direct presenter call.',
       );
       reporter.atNode(node, code);
     }
@@ -486,10 +472,8 @@ class BoundaryCrossingRule extends DartLintRule {
     if (currentLayer.name == 'domain' && _isInfrastructureTarget(target)) {
       final code = LintCode(
         name: 'boundary_crossing',
-        problemMessage:
-            'Domain layer directly calls infrastructure: $methodName',
-        correctionMessage:
-            'Define interface in domain layer and implement in infrastructure.',
+        problemMessage: 'Domain layer directly calls infrastructure: $methodName',
+        correctionMessage: 'Define interface in domain layer and implement in infrastructure.',
       );
       reporter.atNode(node, code);
     }
@@ -497,7 +481,7 @@ class BoundaryCrossingRule extends DartLintRule {
 
   void _validateSpecificBoundaryPatterns(
     AstNode node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer currentLayer,
     ArchitecturalLayer dependencyLayer,
     String className,
@@ -508,10 +492,8 @@ class BoundaryCrossingRule extends DartLintRule {
       if (!_isInterface(typeName) && !_isAbstractClass(typeName)) {
         final code = LintCode(
           name: 'boundary_crossing',
-          problemMessage:
-              'Controller $className depends on concrete use case: $typeName',
-          correctionMessage:
-              'Define use case interface for dependency inversion.',
+          problemMessage: 'Controller $className depends on concrete use case: $typeName',
+          correctionMessage: 'Define use case interface for dependency inversion.',
         );
         reporter.atNode(node, code);
       }
@@ -522,10 +504,8 @@ class BoundaryCrossingRule extends DartLintRule {
       if (!_isInterface(typeName)) {
         final code = LintCode(
           name: 'boundary_crossing',
-          problemMessage:
-              'Use case $className depends on concrete repository: $typeName',
-          correctionMessage:
-              'Use repository interface defined in domain layer.',
+          problemMessage: 'Use case $className depends on concrete repository: $typeName',
+          correctionMessage: 'Use repository interface defined in domain layer.',
         );
         reporter.atNode(node, code);
       }
@@ -535,10 +515,8 @@ class BoundaryCrossingRule extends DartLintRule {
     if (currentLayer.name == 'use_case' && dependencyLayer.name == 'presenter') {
       final code = LintCode(
         name: 'boundary_crossing',
-        problemMessage:
-            'Use case $className directly depends on presenter: $typeName',
-        correctionMessage:
-            'Define output port interface and have presenter implement it.',
+        problemMessage: 'Use case $className directly depends on presenter: $typeName',
+        correctionMessage: 'Define output port interface and have presenter implement it.',
       );
       reporter.atNode(node, code);
     }
@@ -587,10 +565,7 @@ class BoundaryCrossingRule extends DartLintRule {
 
   bool _isValidBoundaryInterface(String interfaceName, ArchitecturalLayer current, ArchitecturalLayer interfaceLayer) {
     // Check if interface represents proper boundary abstraction
-    final boundaryInterfaces = [
-      'OutputPort', 'Repository', 'Gateway', 'Port',
-      'Interface', 'Contract', 'Boundary'
-    ];
+    final boundaryInterfaces = ['OutputPort', 'Repository', 'Gateway', 'Port', 'Interface', 'Contract', 'Boundary'];
 
     return boundaryInterfaces.any((pattern) => interfaceName.contains(pattern));
   }
@@ -598,35 +573,35 @@ class BoundaryCrossingRule extends DartLintRule {
   // Type classification methods
   bool _isConcreteType(String typeName) {
     final concreteIndicators = [
-      'Implementation', 'Impl', 'Concrete', 'Adapter',
-      'Service', 'Manager', 'Handler', 'Client'
+      'Implementation',
+      'Impl',
+      'Concrete',
+      'Adapter',
+      'Service',
+      'Manager',
+      'Handler',
+      'Client'
     ];
-    return concreteIndicators.any((indicator) => typeName.contains(indicator)) &&
-           !_isInterface(typeName);
+    return concreteIndicators.any((indicator) => typeName.contains(indicator)) && !_isInterface(typeName);
   }
 
   bool _isInterface(String typeName) {
     return typeName.startsWith('I') ||
-           typeName.contains('Interface') ||
-           typeName.contains('Contract') ||
-           typeName.contains('Port');
+        typeName.contains('Interface') ||
+        typeName.contains('Contract') ||
+        typeName.contains('Port');
   }
 
   bool _isAbstractClass(String typeName) {
-    return typeName.startsWith('Abstract') ||
-           typeName.contains('Base');
+    return typeName.startsWith('Abstract') || typeName.contains('Base');
   }
 
   bool _isOutputPort(String typeName) {
-    return typeName.contains('OutputPort') ||
-           typeName.contains('Output') ||
-           typeName.contains('Port');
+    return typeName.contains('OutputPort') || typeName.contains('Output') || typeName.contains('Port');
   }
 
   bool _isUseCaseType(String typeName) {
-    return typeName.contains('UseCase') ||
-           typeName.contains('Interactor') ||
-           typeName.contains('Service');
+    return typeName.contains('UseCase') || typeName.contains('Interactor') || typeName.contains('Service');
   }
 
   bool _isControllerType(String typeName) {
@@ -634,8 +609,7 @@ class BoundaryCrossingRule extends DartLintRule {
   }
 
   bool _isPresenterType(String typeName) {
-    return typeName.contains('Presenter') ||
-           typeName.contains('ViewModel');
+    return typeName.contains('Presenter') || typeName.contains('ViewModel');
   }
 
   bool _isRepositoryType(String typeName) {
@@ -643,21 +617,18 @@ class BoundaryCrossingRule extends DartLintRule {
   }
 
   bool _isDomainType(String typeName) {
-    return typeName.contains('Entity') ||
-           typeName.contains('ValueObject') ||
-           typeName.contains('Policy');
+    return typeName.contains('Entity') || typeName.contains('ValueObject') || typeName.contains('Policy');
   }
 
   bool _isInfrastructureType(String typeName) {
     return typeName.contains('Database') ||
-           typeName.contains('Http') ||
-           typeName.contains('File') ||
-           typeName.contains('Network');
+        typeName.contains('Http') ||
+        typeName.contains('File') ||
+        typeName.contains('Network');
   }
 
   bool _isPresenterClass(String className) {
-    return className.contains('Presenter') ||
-           className.contains('ViewModel');
+    return className.contains('Presenter') || className.contains('ViewModel');
   }
 
   bool _isRepositoryInterface(String interfaceName) {
@@ -669,16 +640,14 @@ class BoundaryCrossingRule extends DartLintRule {
   }
 
   bool _isPresenterTarget(String target) {
-    return target.contains('presenter') ||
-           target.contains('view') ||
-           target.contains('ui');
+    return target.contains('presenter') || target.contains('view') || target.contains('ui');
   }
 
   bool _isInfrastructureTarget(String target) {
     return target.contains('database') ||
-           target.contains('http') ||
-           target.contains('file') ||
-           target.contains('network');
+        target.contains('http') ||
+        target.contains('file') ||
+        target.contains('network');
   }
 }
 

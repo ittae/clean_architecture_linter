@@ -30,7 +30,7 @@ class UseCaseSingleResponsibilityRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -40,7 +40,7 @@ class UseCaseSingleResponsibilityRule extends DartLintRule {
 
   void _checkUseCaseResponsibility(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -102,7 +102,7 @@ class UseCaseSingleResponsibilityRule extends DartLintRule {
 
   void _checkMethodCount(
     UseCaseAnalysis analysis,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     if (analysis.mainMethods.isEmpty) {
       final code = LintCode(
@@ -155,7 +155,7 @@ class UseCaseSingleResponsibilityRule extends DartLintRule {
 
   void _checkBusinessLogicComplexity(
     UseCaseAnalysis analysis,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     // Check if the main method is too complex (indication of multiple responsibilities)
     for (final method in analysis.mainMethods) {
@@ -175,7 +175,7 @@ class UseCaseSingleResponsibilityRule extends DartLintRule {
 
   void _checkMultipleConcerns(
     UseCaseAnalysis analysis,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     // Check if UseCase has too many dependencies (indication of multiple concerns)
     final dependencies = _countDependencies(analysis.fields);
@@ -194,7 +194,7 @@ class UseCaseSingleResponsibilityRule extends DartLintRule {
     }
   }
 
-  void _checkUseCaseNaming(ClassDeclaration node, DiagnosticReporter reporter) {
+  void _checkUseCaseNaming(ClassDeclaration node, ErrorReporter reporter) {
     final className = node.name.lexeme;
 
     // Check if UseCase name is too generic or suggests multiple responsibilities

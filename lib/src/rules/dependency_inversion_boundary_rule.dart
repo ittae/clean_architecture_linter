@@ -25,16 +25,14 @@ class DependencyInversionBoundaryRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'dependency_inversion_boundary',
-    problemMessage:
-        'Dependency Inversion violation at boundary: {0}',
-    correctionMessage:
-        'Create interface in high-level module and implement in low-level module.',
+    problemMessage: 'Dependency Inversion violation at boundary: {0}',
+    correctionMessage: 'Create interface in high-level module and implement in low-level module.',
   );
 
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -52,7 +50,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
 
   void _analyzeClassDependencyInversion(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -73,7 +71,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
 
   void _analyzeImportDependencyInversion(
     ImportDirective node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -96,7 +94,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
 
   void _analyzeMethodInvocationInversion(
     MethodInvocation node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -109,7 +107,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
 
   void _analyzeConstructorInversion(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -121,7 +119,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
           if (param is SimpleFormalParameter) {
             final type = param.type;
             if (type is NamedType) {
-              final typeName = type.name.lexeme;
+              final typeName = type.name2.lexeme;
               final dependencyLayer = _inferLayerFromType(typeName);
 
               if (dependencyLayer != null) {
@@ -143,7 +141,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
 
   void _analyzeFieldInversion(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -151,7 +149,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
       if (member is FieldDeclaration) {
         final type = member.fields.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
           final dependencyLayer = _inferLayerFromType(typeName);
 
           if (dependencyLayer != null) {
@@ -171,7 +169,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
 
   void _validateClassInversionPattern(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -196,7 +194,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
 
   void _validateUseCaseInversionPattern(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     var hasOutputPortDependency = false;
@@ -207,7 +205,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
       if (member is FieldDeclaration) {
         final type = member.fields.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
 
           if (_isOutputPortInterface(typeName)) {
             hasOutputPortDependency = true;
@@ -226,10 +224,8 @@ class DependencyInversionBoundaryRule extends DartLintRule {
     if (hasDirectPresenterDependency) {
       final code = LintCode(
         name: 'dependency_inversion_boundary',
-        problemMessage:
-            'Use case $className directly depends on presenter implementation',
-        correctionMessage:
-            'Define output port interface in use case layer, implement in presenter.',
+        problemMessage: 'Use case $className directly depends on presenter implementation',
+        correctionMessage: 'Define output port interface in use case layer, implement in presenter.',
       );
       reporter.atNode(node, code);
     }
@@ -237,10 +233,8 @@ class DependencyInversionBoundaryRule extends DartLintRule {
     if (hasConcreteRepositoryDependency) {
       final code = LintCode(
         name: 'dependency_inversion_boundary',
-        problemMessage:
-            'Use case $className depends on concrete repository implementation',
-        correctionMessage:
-            'Define repository interface in domain layer, implement in infrastructure.',
+        problemMessage: 'Use case $className depends on concrete repository implementation',
+        correctionMessage: 'Define repository interface in domain layer, implement in infrastructure.',
       );
       reporter.atNode(node, code);
     }
@@ -249,10 +243,8 @@ class DependencyInversionBoundaryRule extends DartLintRule {
     if (!hasOutputPortDependency && _needsOutputPort(node)) {
       final code = LintCode(
         name: 'dependency_inversion_boundary',
-        problemMessage:
-            'Use case $className should define output port for dependency inversion',
-        correctionMessage:
-            'Create output port interface to invert dependency on presenter.',
+        problemMessage: 'Use case $className should define output port for dependency inversion',
+        correctionMessage: 'Create output port interface to invert dependency on presenter.',
       );
       reporter.atNode(node, code);
     }
@@ -260,7 +252,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
 
   void _validateControllerInversionPattern(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     var hasUseCaseInterface = false;
@@ -270,7 +262,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
       if (member is FieldDeclaration) {
         final type = member.fields.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
 
           if (_isUseCaseInterface(typeName)) {
             hasUseCaseInterface = true;
@@ -284,10 +276,8 @@ class DependencyInversionBoundaryRule extends DartLintRule {
     if (hasConcreteUseCaseDependency && !hasUseCaseInterface) {
       final code = LintCode(
         name: 'dependency_inversion_boundary',
-        problemMessage:
-            'Controller $className depends on concrete use case implementation',
-        correctionMessage:
-            'Define use case interface and depend on abstraction.',
+        problemMessage: 'Controller $className depends on concrete use case implementation',
+        correctionMessage: 'Define use case interface and depend on abstraction.',
       );
       reporter.atNode(node, code);
     }
@@ -295,7 +285,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
 
   void _validatePresenterInversionPattern(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     var implementsOutputPort = false;
@@ -304,7 +294,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
     final implementsClause = node.implementsClause;
     if (implementsClause != null) {
       for (final interface in implementsClause.interfaces) {
-        final interfaceName = interface.name.lexeme;
+        final interfaceName = interface.name2.lexeme;
         if (_isOutputPortInterface(interfaceName)) {
           implementsOutputPort = true;
           break;
@@ -315,10 +305,8 @@ class DependencyInversionBoundaryRule extends DartLintRule {
     if (!implementsOutputPort && _isPresenterClass(className)) {
       final code = LintCode(
         name: 'dependency_inversion_boundary',
-        problemMessage:
-            'Presenter $className should implement output port interface',
-        correctionMessage:
-            'Implement output port interface defined in use case layer.',
+        problemMessage: 'Presenter $className should implement output port interface',
+        correctionMessage: 'Implement output port interface defined in use case layer.',
       );
       reporter.atNode(node, code);
     }
@@ -326,7 +314,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
 
   void _validateRepositoryImplInversionPattern(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     var implementsRepositoryInterface = false;
@@ -334,7 +322,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
     final implementsClause = node.implementsClause;
     if (implementsClause != null) {
       for (final interface in implementsClause.interfaces) {
-        final interfaceName = interface.name.lexeme;
+        final interfaceName = interface.name2.lexeme;
         if (_isRepositoryInterface(interfaceName)) {
           implementsRepositoryInterface = true;
           break;
@@ -345,10 +333,8 @@ class DependencyInversionBoundaryRule extends DartLintRule {
     if (!implementsRepositoryInterface && _isRepositoryImplementation(className)) {
       final code = LintCode(
         name: 'dependency_inversion_boundary',
-        problemMessage:
-            'Repository implementation $className should implement domain repository interface',
-        correctionMessage:
-            'Implement repository interface defined in domain layer.',
+        problemMessage: 'Repository implementation $className should implement domain repository interface',
+        correctionMessage: 'Implement repository interface defined in domain layer.',
       );
       reporter.atNode(node, code);
     }
@@ -356,7 +342,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
 
   void _validateGatewayInversionPattern(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     var implementsGatewayInterface = false;
@@ -364,7 +350,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
     final implementsClause = node.implementsClause;
     if (implementsClause != null) {
       for (final interface in implementsClause.interfaces) {
-        final interfaceName = interface.name.lexeme;
+        final interfaceName = interface.name2.lexeme;
         if (_isGatewayInterface(interfaceName)) {
           implementsGatewayInterface = true;
           break;
@@ -375,10 +361,8 @@ class DependencyInversionBoundaryRule extends DartLintRule {
     if (!implementsGatewayInterface && _isGatewayImplementation(className)) {
       final code = LintCode(
         name: 'dependency_inversion_boundary',
-        problemMessage:
-            'Gateway implementation $className should implement gateway interface',
-        correctionMessage:
-            'Implement gateway interface defined in domain/application layer.',
+        problemMessage: 'Gateway implementation $className should implement gateway interface',
+        correctionMessage: 'Implement gateway interface defined in domain/application layer.',
       );
       reporter.atNode(node, code);
     }
@@ -386,7 +370,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
 
   void _validateConstructorParameterInversion(
     SimpleFormalParameter param,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer currentLayer,
     ArchitecturalLayer dependencyLayer,
     String className,
@@ -397,10 +381,8 @@ class DependencyInversionBoundaryRule extends DartLintRule {
       if (!_isAbstraction(typeName)) {
         final code = LintCode(
           name: 'dependency_inversion_boundary',
-          problemMessage:
-              'High-level $className depends on low-level concrete type: $typeName',
-          correctionMessage:
-              'Define interface in high-level layer and implement in low-level layer.',
+          problemMessage: 'High-level $className depends on low-level concrete type: $typeName',
+          correctionMessage: 'Define interface in high-level layer and implement in low-level layer.',
         );
         reporter.atNode(param, code);
       }
@@ -409,7 +391,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
 
   void _validateFieldInversion(
     FieldDeclaration field,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer currentLayer,
     ArchitecturalLayer dependencyLayer,
     String className,
@@ -419,10 +401,8 @@ class DependencyInversionBoundaryRule extends DartLintRule {
       if (!_isAbstraction(typeName)) {
         final code = LintCode(
           name: 'dependency_inversion_boundary',
-          problemMessage:
-              'High-level $className has field dependency on low-level concrete type: $typeName',
-          correctionMessage:
-              'Use interface/abstract class to invert the dependency.',
+          problemMessage: 'High-level $className has field dependency on low-level concrete type: $typeName',
+          correctionMessage: 'Use interface/abstract class to invert the dependency.',
         );
         reporter.atNode(field, code);
       }
@@ -431,7 +411,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
 
   void _validateImportInversion(
     ImportDirective node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer currentLayer,
     ArchitecturalLayer importedLayer,
     String importUri,
@@ -442,10 +422,8 @@ class DependencyInversionBoundaryRule extends DartLintRule {
       if (_isConcreteImplementationImport(importUri)) {
         final code = LintCode(
           name: 'dependency_inversion_boundary',
-          problemMessage:
-              'High-level ${currentLayer.name} imports low-level concrete implementation: $importUri',
-          correctionMessage:
-              'Import interface/abstraction instead of implementation.',
+          problemMessage: 'High-level ${currentLayer.name} imports low-level concrete implementation: $importUri',
+          correctionMessage: 'Import interface/abstraction instead of implementation.',
         );
         reporter.atNode(node, code);
       }
@@ -455,10 +433,8 @@ class DependencyInversionBoundaryRule extends DartLintRule {
     if (currentLayer.name == 'domain' && importedLayer.name == 'infrastructure') {
       final code = LintCode(
         name: 'dependency_inversion_boundary',
-        problemMessage:
-            'Domain layer imports infrastructure: $importUri',
-        correctionMessage:
-            'Define interface in domain, implement in infrastructure.',
+        problemMessage: 'Domain layer imports infrastructure: $importUri',
+        correctionMessage: 'Define interface in domain, implement in infrastructure.',
       );
       reporter.atNode(node, code);
     }
@@ -467,10 +443,8 @@ class DependencyInversionBoundaryRule extends DartLintRule {
     if (currentLayer.name == 'use_case' && importedLayer.name == 'presenter') {
       final code = LintCode(
         name: 'dependency_inversion_boundary',
-        problemMessage:
-            'Use case imports presenter: $importUri',
-        correctionMessage:
-            'Create output port interface in use case, implement in presenter.',
+        problemMessage: 'Use case imports presenter: $importUri',
+        correctionMessage: 'Create output port interface in use case, implement in presenter.',
       );
       reporter.atNode(node, code);
     }
@@ -478,7 +452,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
 
   void _validateMethodCallInversion(
     MethodInvocation node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String methodName,
   ) {
@@ -488,10 +462,8 @@ class DependencyInversionBoundaryRule extends DartLintRule {
     if (layer.name == 'use_case' && _isPresenterMethod(target, methodName)) {
       final code = LintCode(
         name: 'dependency_inversion_boundary',
-        problemMessage:
-            'Use case directly calls presenter method: $methodName',
-        correctionMessage:
-            'Call through output port interface instead.',
+        problemMessage: 'Use case directly calls presenter method: $methodName',
+        correctionMessage: 'Call through output port interface instead.',
       );
       reporter.atNode(node, code);
     }
@@ -499,10 +471,8 @@ class DependencyInversionBoundaryRule extends DartLintRule {
     if (layer.name == 'domain' && _isInfrastructureMethod(target, methodName)) {
       final code = LintCode(
         name: 'dependency_inversion_boundary',
-        problemMessage:
-            'Domain directly calls infrastructure method: $methodName',
-        correctionMessage:
-            'Define interface in domain and call through abstraction.',
+        problemMessage: 'Domain directly calls infrastructure method: $methodName',
+        correctionMessage: 'Define interface in domain and call through abstraction.',
       );
       reporter.atNode(node, code);
     }
@@ -555,21 +525,20 @@ class DependencyInversionBoundaryRule extends DartLintRule {
 
   bool _isInterface(String typeName) {
     return typeName.startsWith('I') && typeName.length > 1 ||
-           typeName.contains('Interface') ||
-           typeName.contains('Contract') ||
-           typeName.contains('Port');
+        typeName.contains('Interface') ||
+        typeName.contains('Contract') ||
+        typeName.contains('Port');
   }
 
   bool _isAbstractClass(String typeName) {
-    return typeName.startsWith('Abstract') ||
-           typeName.contains('Base');
+    return typeName.startsWith('Abstract') || typeName.contains('Base');
   }
 
   // Specific pattern detection methods
   bool _isOutputPortInterface(String typeName) {
     return typeName.contains('OutputPort') ||
-           typeName.contains('Output') && _isInterface(typeName) ||
-           typeName.contains('Port') && _isInterface(typeName);
+        typeName.contains('Output') && _isInterface(typeName) ||
+        typeName.contains('Port') && _isInterface(typeName);
   }
 
   bool _isRepositoryInterface(String typeName) {
@@ -577,8 +546,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
   }
 
   bool _isRepositoryImplementation(String typeName) {
-    return typeName.contains('Repository') &&
-           (typeName.contains('Impl') || !_isInterface(typeName));
+    return typeName.contains('Repository') && (typeName.contains('Impl') || !_isInterface(typeName));
   }
 
   bool _isGatewayInterface(String typeName) {
@@ -610,32 +578,26 @@ class DependencyInversionBoundaryRule extends DartLintRule {
     return node.members.any((member) {
       if (member is MethodDeclaration) {
         final methodName = member.name.lexeme;
-        return methodName.contains('present') ||
-               methodName.contains('display') ||
-               methodName.contains('show');
+        return methodName.contains('present') || methodName.contains('display') || methodName.contains('show');
       }
       return false;
     });
   }
 
   bool _isConcreteImplementationImport(String importUri) {
-    return importUri.contains('/impl/') ||
-           importUri.contains('/implementations/') ||
-           importUri.contains('_impl.dart');
+    return importUri.contains('/impl/') || importUri.contains('/implementations/') || importUri.contains('_impl.dart');
   }
 
   // Type classification helpers
   bool _isDomainType(String typeName) {
     return typeName.contains('Entity') ||
-           typeName.contains('ValueObject') ||
-           typeName.contains('Policy') ||
-           typeName.contains('Rule');
+        typeName.contains('ValueObject') ||
+        typeName.contains('Policy') ||
+        typeName.contains('Rule');
   }
 
   bool _isUseCaseType(String typeName) {
-    return typeName.contains('UseCase') ||
-           typeName.contains('Interactor') ||
-           typeName.contains('Service');
+    return typeName.contains('UseCase') || typeName.contains('Interactor') || typeName.contains('Service');
   }
 
   bool _isControllerType(String typeName) {
@@ -643,8 +605,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
   }
 
   bool _isPresenterType(String typeName) {
-    return typeName.contains('Presenter') ||
-           typeName.contains('ViewModel');
+    return typeName.contains('Presenter') || typeName.contains('ViewModel');
   }
 
   bool _isRepositoryType(String typeName) {
@@ -653,25 +614,25 @@ class DependencyInversionBoundaryRule extends DartLintRule {
 
   bool _isInfrastructureType(String typeName) {
     return typeName.contains('Database') ||
-           typeName.contains('Http') ||
-           typeName.contains('File') ||
-           typeName.contains('Network') ||
-           typeName.contains('Driver');
+        typeName.contains('Http') ||
+        typeName.contains('File') ||
+        typeName.contains('Network') ||
+        typeName.contains('Driver');
   }
 
   bool _isPresenterMethod(String target, String methodName) {
     return target.contains('presenter') ||
-           target.contains('view') ||
-           methodName.contains('display') ||
-           methodName.contains('show');
+        target.contains('view') ||
+        methodName.contains('display') ||
+        methodName.contains('show');
   }
 
   bool _isInfrastructureMethod(String target, String methodName) {
     return target.contains('database') ||
-           target.contains('http') ||
-           target.contains('file') ||
-           methodName.contains('save') ||
-           methodName.contains('load');
+        target.contains('http') ||
+        target.contains('file') ||
+        methodName.contains('save') ||
+        methodName.contains('load');
   }
 }
 

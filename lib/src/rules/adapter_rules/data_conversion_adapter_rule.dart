@@ -21,16 +21,14 @@ class DataConversionAdapterRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'data_conversion_adapter',
-    problemMessage:
-        'Interface Adapter must focus on data conversion between internal and external formats.',
-    correctionMessage:
-        'Remove business logic from adapter. Focus only on data format conversion.',
+    problemMessage: 'Interface Adapter must focus on data conversion between internal and external formats.',
+    correctionMessage: 'Remove business logic from adapter. Focus only on data format conversion.',
   );
 
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -44,7 +42,7 @@ class DataConversionAdapterRule extends DartLintRule {
 
   void _checkDataConversionAdapter(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -65,7 +63,7 @@ class DataConversionAdapterRule extends DartLintRule {
 
   void _checkAdapterMethod(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -78,8 +76,7 @@ class DataConversionAdapterRule extends DartLintRule {
       final code = LintCode(
         name: 'data_conversion_adapter',
         problemMessage: 'Adapter method contains business logic: $methodName',
-        correctionMessage:
-            'Move business logic to use case or entity. Adapter should only convert data formats.',
+        correctionMessage: 'Move business logic to use case or entity. Adapter should only convert data formats.',
       );
       reporter.atNode(method, code);
     }
@@ -89,8 +86,7 @@ class DataConversionAdapterRule extends DartLintRule {
       final code = LintCode(
         name: 'data_conversion_adapter',
         problemMessage: 'Adapter has too much entity knowledge: $methodName',
-        correctionMessage:
-            'Adapters should only know entity structure for conversion, not business rules.',
+        correctionMessage: 'Adapters should only know entity structure for conversion, not business rules.',
       );
       reporter.atNode(method, code);
     }
@@ -98,7 +94,7 @@ class DataConversionAdapterRule extends DartLintRule {
 
   void _checkForBusinessLogic(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     for (final member in node.members) {
       if (member is MethodDeclaration) {
@@ -109,8 +105,7 @@ class DataConversionAdapterRule extends DartLintRule {
           final code = LintCode(
             name: 'data_conversion_adapter',
             problemMessage: 'Adapter contains validation logic: $methodName',
-            correctionMessage:
-                'Move validation to entity or use case. Adapter should only convert formats.',
+            correctionMessage: 'Move validation to entity or use case. Adapter should only convert formats.',
           );
           reporter.atNode(member, code);
         }
@@ -120,8 +115,7 @@ class DataConversionAdapterRule extends DartLintRule {
           final code = LintCode(
             name: 'data_conversion_adapter',
             problemMessage: 'Adapter contains calculation logic: $methodName',
-            correctionMessage:
-                'Move calculations to entity or use case. Adapter should only convert formats.',
+            correctionMessage: 'Move calculations to entity or use case. Adapter should only convert formats.',
           );
           reporter.atNode(member, code);
         }
@@ -131,8 +125,7 @@ class DataConversionAdapterRule extends DartLintRule {
           final code = LintCode(
             name: 'data_conversion_adapter',
             problemMessage: 'Adapter enforces business rules: $methodName',
-            correctionMessage:
-                'Move business rules to entity. Adapter should only convert data.',
+            correctionMessage: 'Move business rules to entity. Adapter should only convert data.',
           );
           reporter.atNode(member, code);
         }
@@ -142,7 +135,7 @@ class DataConversionAdapterRule extends DartLintRule {
 
   void _checkConversionMethods(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     final methods = node.members.whereType<MethodDeclaration>().toList();
 
@@ -154,8 +147,7 @@ class DataConversionAdapterRule extends DartLintRule {
       final code = LintCode(
         name: 'data_conversion_adapter',
         problemMessage: 'Adapter lacks conversion methods',
-        correctionMessage:
-            'Add methods to convert between internal and external formats (e.g., toDto(), fromDto()).',
+        correctionMessage: 'Add methods to convert between internal and external formats (e.g., toDto(), fromDto()).',
       );
       reporter.atNode(node, code);
     }
@@ -170,21 +162,20 @@ class DataConversionAdapterRule extends DartLintRule {
 
   void _checkAdapterDependencies(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     for (final member in node.members) {
       if (member is FieldDeclaration) {
         final type = member.fields.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
 
           // Check for use case dependencies (usually bad)
           if (_isUseCaseType(typeName)) {
             final code = LintCode(
               name: 'data_conversion_adapter',
               problemMessage: 'Adapter should not depend on use cases: $typeName',
-              correctionMessage:
-                  'Adapters should receive data from use cases via parameters, not inject them.',
+              correctionMessage: 'Adapters should receive data from use cases via parameters, not inject them.',
             );
             reporter.atNode(type, code);
           }
@@ -194,8 +185,7 @@ class DataConversionAdapterRule extends DartLintRule {
             final code = LintCode(
               name: 'data_conversion_adapter',
               problemMessage: 'Adapter should not store entities as dependencies: $typeName',
-              correctionMessage:
-                  'Adapters should receive entities as parameters for conversion, not store them.',
+              correctionMessage: 'Adapters should receive entities as parameters for conversion, not store them.',
             );
             reporter.atNode(type, code);
           }
@@ -206,7 +196,7 @@ class DataConversionAdapterRule extends DartLintRule {
 
   void _checkConversionMethodSignature(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     final parameters = method.parameters?.parameters ?? [];
 
@@ -215,8 +205,7 @@ class DataConversionAdapterRule extends DartLintRule {
       final code = LintCode(
         name: 'data_conversion_adapter',
         problemMessage: 'Conversion method should accept data to convert',
-        correctionMessage:
-            'Add parameter with data to be converted (entity, dto, etc.).',
+        correctionMessage: 'Add parameter with data to be converted (entity, dto, etc.).',
       );
       reporter.atNode(method, code);
     }
@@ -227,8 +216,7 @@ class DataConversionAdapterRule extends DartLintRule {
       final code = LintCode(
         name: 'data_conversion_adapter',
         problemMessage: 'Conversion method should specify return type',
-        correctionMessage:
-            'Specify return type for converted data (DTO, Entity, Map, etc.).',
+        correctionMessage: 'Specify return type for converted data (DTO, Entity, Map, etc.).',
       );
       reporter.atNode(method, code);
     }
@@ -242,14 +230,21 @@ class DataConversionAdapterRule extends DartLintRule {
 
       // Business logic patterns
       final businessPatterns = [
-        'if (', 'switch (', 'while (', 'for (',
-        'validate', 'calculate', 'process',
-        'apply', 'enforce', 'check',
+        'if (',
+        'switch (',
+        'while (',
+        'for (',
+        'validate',
+        'calculate',
+        'process',
+        'apply',
+        'enforce',
+        'check',
       ];
 
       // Simple conversion shouldn't have complex logic
-      final hasComplexLogic = businessPatterns.any((pattern) =>
-          bodyString.split(pattern).length > 3); // More than 2 occurrences
+      final hasComplexLogic =
+          businessPatterns.any((pattern) => bodyString.split(pattern).length > 3); // More than 2 occurrences
 
       return hasComplexLogic;
     }
@@ -263,94 +258,129 @@ class DataConversionAdapterRule extends DartLintRule {
 
       // Patterns that suggest deep entity knowledge
       final entityKnowledgePatterns = [
-        'isValid', 'isActive', 'canBeProcessed',
-        'businessRule', 'domainRule', 'invariant',
-        'calculateTotal', 'applyDiscount', 'processPayment',
+        'isValid',
+        'isActive',
+        'canBeProcessed',
+        'businessRule',
+        'domainRule',
+        'invariant',
+        'calculateTotal',
+        'applyDiscount',
+        'processPayment',
       ];
 
-      return entityKnowledgePatterns.any((pattern) =>
-          bodyString.contains(pattern));
+      return entityKnowledgePatterns.any((pattern) => bodyString.contains(pattern));
     }
     return false;
   }
 
   bool _isValidationMethod(String methodName) {
     final validationPatterns = [
-      'validate', 'isValid', 'check', 'verify',
-      'ensure', 'assert', 'confirm',
+      'validate',
+      'isValid',
+      'check',
+      'verify',
+      'ensure',
+      'assert',
+      'confirm',
     ];
-    return validationPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return validationPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _isCalculationMethod(String methodName) {
     final calcPatterns = [
-      'calculate', 'compute', 'sum', 'total',
-      'add', 'subtract', 'multiply', 'divide',
-      'process', 'apply', 'transform',
+      'calculate',
+      'compute',
+      'sum',
+      'total',
+      'add',
+      'subtract',
+      'multiply',
+      'divide',
+      'process',
+      'apply',
+      'transform',
     ];
-    return calcPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return calcPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _isBusinessRuleMethod(String methodName) {
     final rulePatterns = [
-      'businessRule', 'domainRule', 'enforce',
-      'policy', 'constraint', 'invariant',
-      'authorize', 'permit', 'allow',
+      'businessRule',
+      'domainRule',
+      'enforce',
+      'policy',
+      'constraint',
+      'invariant',
+      'authorize',
+      'permit',
+      'allow',
     ];
-    return rulePatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return rulePatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _isToExternalMethod(String methodName) {
     final toExternalPatterns = [
-      'toDto', 'toJson', 'toXml', 'toMap',
-      'toDatabase', 'toExternal', 'serialize',
-      'asDto', 'asJson', 'asMap',
+      'toDto',
+      'toJson',
+      'toXml',
+      'toMap',
+      'toDatabase',
+      'toExternal',
+      'serialize',
+      'asDto',
+      'asJson',
+      'asMap',
     ];
-    return toExternalPatterns.any((pattern) =>
-        methodName.contains(pattern));
+    return toExternalPatterns.any((pattern) => methodName.contains(pattern));
   }
 
   bool _isFromExternalMethod(String methodName) {
     final fromExternalPatterns = [
-      'fromDto', 'fromJson', 'fromXml', 'fromMap',
-      'fromDatabase', 'fromExternal', 'deserialize',
-      'parseDto', 'parseJson', 'parseMap',
+      'fromDto',
+      'fromJson',
+      'fromXml',
+      'fromMap',
+      'fromDatabase',
+      'fromExternal',
+      'deserialize',
+      'parseDto',
+      'parseJson',
+      'parseMap',
     ];
-    return fromExternalPatterns.any((pattern) =>
-        methodName.contains(pattern));
+    return fromExternalPatterns.any((pattern) => methodName.contains(pattern));
   }
 
   bool _isConversionMethod(String methodName) {
     return _isToExternalMethod(methodName) ||
-           _isFromExternalMethod(methodName) ||
-           methodName.contains('convert') ||
-           methodName.contains('map') ||
-           methodName.contains('transform');
+        _isFromExternalMethod(methodName) ||
+        methodName.contains('convert') ||
+        methodName.contains('map') ||
+        methodName.contains('transform');
   }
 
   bool _isUseCaseType(String typeName) {
-    return typeName.endsWith('UseCase') ||
-           typeName.endsWith('Service') ||
-           typeName.endsWith('Interactor');
+    return typeName.endsWith('UseCase') || typeName.endsWith('Service') || typeName.endsWith('Interactor');
   }
 
   bool _isEntityType(String typeName) {
-    return typeName.endsWith('Entity') ||
-           typeName.endsWith('DomainObject') ||
-           typeName.endsWith('Aggregate');
+    return typeName.endsWith('Entity') || typeName.endsWith('DomainObject') || typeName.endsWith('Aggregate');
   }
 
   bool _isAdapterLayerFile(String filePath) {
     final adapterPaths = [
-      '/adapters/', '\\adapters\\',
-      '/interface_adapters/', '\\interface_adapters\\',
-      '/controllers/', '\\controllers\\',
-      '/presenters/', '\\presenters\\',
-      '/gateways/', '\\gateways\\',
-      '/mappers/', '\\mappers\\',
+      '/adapters/',
+      '\\adapters\\',
+      '/interface_adapters/',
+      '\\interface_adapters\\',
+      '/controllers/',
+      '\\controllers\\',
+      '/presenters/',
+      '\\presenters\\',
+      '/gateways/',
+      '\\gateways\\',
+      '/mappers/',
+      '\\mappers\\',
     ];
 
     return adapterPaths.any((path) => filePath.contains(path));
@@ -358,11 +388,16 @@ class DataConversionAdapterRule extends DartLintRule {
 
   bool _isAdapterClass(String className, String filePath) {
     final adapterPatterns = [
-      'Adapter', 'Controller', 'Presenter', 'Gateway',
-      'Mapper', 'Converter', 'Translator', 'Transformer',
+      'Adapter',
+      'Controller',
+      'Presenter',
+      'Gateway',
+      'Mapper',
+      'Converter',
+      'Translator',
+      'Transformer',
     ];
 
-    return adapterPatterns.any((pattern) => className.contains(pattern)) ||
-           _isAdapterLayerFile(filePath);
+    return adapterPatterns.any((pattern) => className.contains(pattern)) || _isAdapterLayerFile(filePath);
   }
 }

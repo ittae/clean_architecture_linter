@@ -21,8 +21,7 @@ class DataSourceNamingRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'datasource_implementation',
-    problemMessage:
-        'DataSource must properly implement external system communication patterns.',
+    problemMessage: 'DataSource must properly implement external system communication patterns.',
     correctionMessage:
         'Ensure DataSource handles external communications, returns data models, and follows naming conventions.',
   );
@@ -30,7 +29,7 @@ class DataSourceNamingRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -44,7 +43,7 @@ class DataSourceNamingRule extends DartLintRule {
 
   void _checkDataSourceImplementation(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -79,7 +78,7 @@ class DataSourceNamingRule extends DartLintRule {
 
   void _checkDataSourceImports(
     ImportDirective node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -89,8 +88,7 @@ class DataSourceNamingRule extends DartLintRule {
     if (importUri == null) return;
 
     // DataSource should not import domain entities directly
-    if (importUri.contains('/domain/entities/') ||
-        importUri.contains('/domain/models/')) {
+    if (importUri.contains('/domain/entities/') || importUri.contains('/domain/models/')) {
       final code = LintCode(
         name: 'datasource_implementation',
         problemMessage: 'DataSource should not import domain entities directly',
@@ -114,9 +112,7 @@ class DataSourceNamingRule extends DartLintRule {
 
         // Check for error handling patterns
         final bodyString = member.body.toString();
-        if (bodyString.contains('try') ||
-            bodyString.contains('catch') ||
-            bodyString.contains('.catchError')) {
+        if (bodyString.contains('try') || bodyString.contains('catch') || bodyString.contains('.catchError')) {
           hasErrorHandling = true;
         }
       } else if (member is FieldDeclaration) {
@@ -124,7 +120,7 @@ class DataSourceNamingRule extends DartLintRule {
 
         final type = member.fields.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
           if (_isHttpClientType(typeName)) hasHttpClient = true;
           if (_isDatabaseType(typeName)) hasDatabase = true;
           if (_isCacheType(typeName)) hasCache = true;
@@ -144,7 +140,7 @@ class DataSourceNamingRule extends DartLintRule {
 
   void _checkExternalCommunication(
     DataSourceAnalysis analysis,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     // Check if DataSource has any external communication mechanism
@@ -173,13 +169,13 @@ class DataSourceNamingRule extends DartLintRule {
 
   void _checkReturnTypes(
     DataSourceAnalysis analysis,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     for (final method in analysis.methods) {
       final returnType = method.returnType;
       if (returnType is NamedType) {
-        final typeName = returnType.name.lexeme;
+        final typeName = returnType.name2.lexeme;
 
         // Check if returning domain entities instead of data models
         if (_isDomainEntityType(typeName)) {
@@ -196,7 +192,7 @@ class DataSourceNamingRule extends DartLintRule {
 
   void _checkErrorHandling(
     DataSourceAnalysis analysis,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     if (!analysis.hasErrorHandling && analysis.methods.isNotEmpty) {
@@ -211,9 +207,7 @@ class DataSourceNamingRule extends DartLintRule {
 
   bool _isDataSourceFile(String filePath) {
     return (filePath.contains('/data/') || filePath.contains('\\data\\')) &&
-        (filePath.contains('/datasources/') ||
-            filePath.contains('\\datasources\\') ||
-            filePath.contains('datasource'));
+        (filePath.contains('/datasources/') || filePath.contains('\\datasources\\') || filePath.contains('datasource'));
   }
 
   bool _hasValidDataSourceSuffix(String className) {
@@ -230,34 +224,33 @@ class DataSourceNamingRule extends DartLintRule {
   }
 
   bool _isHttpClientType(String typeName) {
-    final httpTypes = [
-      'Client', 'HttpClient', 'Dio', 'Http',
-      'RestClient', 'ApiClient', 'NetworkClient'
-    ];
+    final httpTypes = ['Client', 'HttpClient', 'Dio', 'Http', 'RestClient', 'ApiClient', 'NetworkClient'];
     return httpTypes.any((type) => typeName.contains(type));
   }
 
   bool _isDatabaseType(String typeName) {
-    final dbTypes = [
-      'Database', 'DB', 'Sqlite', 'Hive', 'Box',
-      'DatabaseExecutor', 'DatabaseClient'
-    ];
+    final dbTypes = ['Database', 'DB', 'Sqlite', 'Hive', 'Box', 'DatabaseExecutor', 'DatabaseClient'];
     return dbTypes.any((type) => typeName.contains(type));
   }
 
   bool _isCacheType(String typeName) {
-    final cacheTypes = [
-      'Cache', 'SharedPreferences', 'Storage',
-      'CacheManager', 'CacheClient'
-    ];
+    final cacheTypes = ['Cache', 'SharedPreferences', 'Storage', 'CacheManager', 'CacheClient'];
     return cacheTypes.any((type) => typeName.contains(type));
   }
 
   bool _containsExternalCommunication(String bodyString) {
     final patterns = [
-      '.get(', '.post(', '.put(', '.delete(', '.patch(',
-      'http.', 'dio.', 'client.',
-      'query(', 'rawQuery(', 'execute(',
+      '.get(',
+      '.post(',
+      '.put(',
+      '.delete(',
+      '.patch(',
+      'http.',
+      'dio.',
+      'client.',
+      'query(',
+      'rawQuery(',
+      'execute(',
       'getApplicationDocumentsDirectory',
       'SharedPreferences.getInstance',
     ];
@@ -267,9 +260,9 @@ class DataSourceNamingRule extends DartLintRule {
   bool _isDomainEntityType(String typeName) {
     // Check if type name suggests it's a domain entity
     return typeName.endsWith('Entity') ||
-           typeName.endsWith('ValueObject') ||
-           typeName.endsWith('DomainModel') ||
-           (!typeName.endsWith('Model') &&
+        typeName.endsWith('ValueObject') ||
+        typeName.endsWith('DomainModel') ||
+        (!typeName.endsWith('Model') &&
             !typeName.endsWith('DTO') &&
             !typeName.endsWith('Response') &&
             !typeName.endsWith('Request') &&

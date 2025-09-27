@@ -30,7 +30,7 @@ class UseCaseApplicationRulesRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -48,7 +48,7 @@ class UseCaseApplicationRulesRule extends DartLintRule {
 
   void _checkApplicationRules(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -61,8 +61,7 @@ class UseCaseApplicationRulesRule extends DartLintRule {
       final code = LintCode(
         name: 'usecase_application_rules',
         problemMessage: 'Use Case name suggests enterprise-level rules: $className',
-        correctionMessage:
-            'Use application-specific names. Enterprise rules belong in entities.',
+        correctionMessage: 'Use application-specific names. Enterprise rules belong in entities.',
       );
       reporter.atNode(node, code);
     }
@@ -72,8 +71,7 @@ class UseCaseApplicationRulesRule extends DartLintRule {
       final code = LintCode(
         name: 'usecase_application_rules',
         problemMessage: 'Use Case name is too generic for application-specific rules: $className',
-        correctionMessage:
-            'Use more specific names that reflect the application\'s particular workflow.',
+        correctionMessage: 'Use more specific names that reflect the application\'s particular workflow.',
       );
       reporter.atNode(node, code);
     }
@@ -84,7 +82,7 @@ class UseCaseApplicationRulesRule extends DartLintRule {
 
   void _checkUseCaseImports(
     ImportDirective node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -106,7 +104,7 @@ class UseCaseApplicationRulesRule extends DartLintRule {
 
   void _checkMethodApplicationRules(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -130,8 +128,7 @@ class UseCaseApplicationRulesRule extends DartLintRule {
       final code = LintCode(
         name: 'usecase_application_rules',
         problemMessage: 'Method "$methodName" contains infrastructure concerns',
-        correctionMessage:
-            'Use Case should be isolated from infrastructure. Use repository abstractions.',
+        correctionMessage: 'Use Case should be isolated from infrastructure. Use repository abstractions.',
       );
       reporter.atNode(method, code);
     }
@@ -141,8 +138,7 @@ class UseCaseApplicationRulesRule extends DartLintRule {
       final code = LintCode(
         name: 'usecase_application_rules',
         problemMessage: 'Method "$methodName" contains UI concerns',
-        correctionMessage:
-            'Use Case should be isolated from UI. Move presentation logic to presentation layer.',
+        correctionMessage: 'Use Case should be isolated from UI. Move presentation logic to presentation layer.',
       );
       reporter.atNode(method, code);
     }
@@ -156,18 +152,17 @@ class UseCaseApplicationRulesRule extends DartLintRule {
 
   void _analyzeClassForApplicationRules(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     // Check inheritance - Use Cases shouldn't extend entities or infrastructure
     final superclass = node.extendsClause?.superclass;
     if (superclass is NamedType) {
-      final superTypeName = superclass.name.lexeme;
+      final superTypeName = superclass.name2.lexeme;
       if (_isEntityClass(superTypeName)) {
         final code = LintCode(
           name: 'usecase_application_rules',
           problemMessage: 'Use Case should not extend entity class: $superTypeName',
-          correctionMessage:
-              'Use Cases should coordinate entities, not inherit from them. Use composition instead.',
+          correctionMessage: 'Use Cases should coordinate entities, not inherit from them. Use composition instead.',
         );
         reporter.atNode(superclass, code);
       }
@@ -176,8 +171,7 @@ class UseCaseApplicationRulesRule extends DartLintRule {
         final code = LintCode(
           name: 'usecase_application_rules',
           problemMessage: 'Use Case should not extend infrastructure class: $superTypeName',
-          correctionMessage:
-              'Use Cases should be isolated from infrastructure. Use dependency injection instead.',
+          correctionMessage: 'Use Cases should be isolated from infrastructure. Use dependency injection instead.',
         );
         reporter.atNode(superclass, code);
       }
@@ -193,19 +187,18 @@ class UseCaseApplicationRulesRule extends DartLintRule {
 
   void _checkFieldForApplicationRules(
     FieldDeclaration field,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     final type = field.fields.type;
     if (type is NamedType) {
-      final typeName = type.name.lexeme;
+      final typeName = type.name2.lexeme;
 
       // Check for entity fields (usually bad - should be parameters/returns)
       if (_isEntityClass(typeName) && field.fields.isFinal) {
         final code = LintCode(
           name: 'usecase_application_rules',
           problemMessage: 'Use Case should not store entity as field: $typeName',
-          correctionMessage:
-              'Entities should be created, received from repositories, or passed as parameters.',
+          correctionMessage: 'Entities should be created, received from repositories, or passed as parameters.',
         );
         reporter.atNode(type, code);
       }
@@ -215,8 +208,7 @@ class UseCaseApplicationRulesRule extends DartLintRule {
         final code = LintCode(
           name: 'usecase_application_rules',
           problemMessage: 'Use Case should not depend on infrastructure: $typeName',
-          correctionMessage:
-              'Use repository abstractions instead of direct infrastructure dependencies.',
+          correctionMessage: 'Use repository abstractions instead of direct infrastructure dependencies.',
         );
         reporter.atNode(type, code);
       }
@@ -225,16 +217,20 @@ class UseCaseApplicationRulesRule extends DartLintRule {
 
   void _checkMethodBodyForApplicationRules(
     BlockFunctionBody body,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     MethodDeclaration method,
   ) {
     final bodyString = body.toString();
 
     // Check for enterprise rule implementation patterns
     final enterprisePatterns = [
-      'validate()', 'isValid()', 'calculate()',
-      'applyBusinessRule()', 'enforceRule()',
-      'validateInvariant()', 'checkBusinessRule()',
+      'validate()',
+      'isValid()',
+      'calculate()',
+      'applyBusinessRule()',
+      'enforceRule()',
+      'validateInvariant()',
+      'checkBusinessRule()',
     ];
 
     for (final pattern in enterprisePatterns) {
@@ -242,8 +238,7 @@ class UseCaseApplicationRulesRule extends DartLintRule {
         final code = LintCode(
           name: 'usecase_application_rules',
           problemMessage: 'Use Case implementing enterprise business rule: $pattern',
-          correctionMessage:
-              'Move enterprise business rules to entity methods. Use Case should call entity methods.',
+          correctionMessage: 'Move enterprise business rules to entity methods. Use Case should call entity methods.',
         );
         reporter.atNode(body, code);
         break;
@@ -252,8 +247,12 @@ class UseCaseApplicationRulesRule extends DartLintRule {
 
     // Check for framework dependencies
     final frameworkPatterns = [
-      'flutter.', 'material.', 'cupertino.',
-      'angular.', 'react.', 'vue.',
+      'flutter.',
+      'material.',
+      'cupertino.',
+      'angular.',
+      'react.',
+      'vue.',
     ];
 
     for (final pattern in frameworkPatterns) {
@@ -261,8 +260,7 @@ class UseCaseApplicationRulesRule extends DartLintRule {
         final code = LintCode(
           name: 'usecase_application_rules',
           problemMessage: 'Use Case contains framework dependencies',
-          correctionMessage:
-              'Use Cases should be framework-agnostic. Remove framework dependencies.',
+          correctionMessage: 'Use Cases should be framework-agnostic. Remove framework dependencies.',
         );
         reporter.atNode(body, code);
         break;
@@ -309,9 +307,7 @@ class UseCaseApplicationRulesRule extends DartLintRule {
     }
 
     // Check for presentation layer imports
-    if (importUri.contains('/presentation/') ||
-        importUri.contains('/ui/') ||
-        importUri.contains('/widgets/')) {
+    if (importUri.contains('/presentation/') || importUri.contains('/ui/') || importUri.contains('/widgets/')) {
       return IsolationViolation(
         message: 'Use Case imports from presentation layer: $importUri',
         suggestion: 'Use Cases should be isolated from presentation concerns.',
@@ -323,73 +319,122 @@ class UseCaseApplicationRulesRule extends DartLintRule {
 
   bool _hasEnterpriseLevelNaming(String className) {
     final enterprisePatterns = [
-      'Validate', 'Calculate', 'Process', 'Transform',
-      'BusinessRule', 'CoreRule', 'DomainRule',
-      'EntityValidator', 'BusinessLogic',
+      'Validate',
+      'Calculate',
+      'Process',
+      'Transform',
+      'BusinessRule',
+      'CoreRule',
+      'DomainRule',
+      'EntityValidator',
+      'BusinessLogic',
     ];
     return enterprisePatterns.any((pattern) => className.contains(pattern));
   }
 
   bool _isTooGenericForApplication(String className) {
     final genericPatterns = [
-      'GenericUseCase', 'BaseUseCase', 'CommonUseCase',
-      'UtilUseCase', 'HelperUseCase', 'SharedUseCase',
+      'GenericUseCase',
+      'BaseUseCase',
+      'CommonUseCase',
+      'UtilUseCase',
+      'HelperUseCase',
+      'SharedUseCase',
     ];
     return genericPatterns.any((pattern) => className.contains(pattern));
   }
 
   bool _isEnterpriseLevelBusinessRule(String methodName) {
     final enterpriseRulePatterns = [
-      'validateBusinessRule', 'applyBusinessRule', 'enforceBusinessRule',
-      'validateDomainRule', 'applyDomainRule', 'enforceDomainRule',
-      'validateInvariant', 'enforceInvariant', 'checkInvariant',
-      'calculateTax', 'calculateInterest', 'calculateCommission',
-      'validatePayment', 'processPayment', 'calculatePayment',
+      'validateBusinessRule',
+      'applyBusinessRule',
+      'enforceBusinessRule',
+      'validateDomainRule',
+      'applyDomainRule',
+      'enforceDomainRule',
+      'validateInvariant',
+      'enforceInvariant',
+      'checkInvariant',
+      'calculateTax',
+      'calculateInterest',
+      'calculateCommission',
+      'validatePayment',
+      'processPayment',
+      'calculatePayment',
     ];
-    return enterpriseRulePatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern.toLowerCase()));
+    return enterpriseRulePatterns.any((pattern) => methodName.toLowerCase().contains(pattern.toLowerCase()));
   }
 
   bool _hasInfrastructureConcerns(String methodName) {
     final infraPatterns = [
-      'database', 'db', 'sql', 'cache', 'storage',
-      'http', 'rest', 'api', 'network', 'connection',
-      'file', 'disk', 'serialize', 'deserialize',
+      'database',
+      'db',
+      'sql',
+      'cache',
+      'storage',
+      'http',
+      'rest',
+      'api',
+      'network',
+      'connection',
+      'file',
+      'disk',
+      'serialize',
+      'deserialize',
     ];
-    return infraPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return infraPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _hasUIConcerns(String methodName) {
     final uiPatterns = [
-      'render', 'display', 'show', 'hide', 'navigate',
-      'widget', 'component', 'view', 'screen', 'page',
-      'click', 'tap', 'touch', 'gesture', 'animation',
+      'render',
+      'display',
+      'show',
+      'hide',
+      'navigate',
+      'widget',
+      'component',
+      'view',
+      'screen',
+      'page',
+      'click',
+      'tap',
+      'touch',
+      'gesture',
+      'animation',
     ];
-    return uiPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return uiPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _isEntityClass(String typeName) {
-    return typeName.endsWith('Entity') ||
-           typeName.endsWith('DomainObject') ||
-           typeName.endsWith('BusinessObject');
+    return typeName.endsWith('Entity') || typeName.endsWith('DomainObject') || typeName.endsWith('BusinessObject');
   }
 
   bool _isInfrastructureClass(String typeName) {
     final infraTypes = [
-      'Database', 'Cache', 'Storage', 'FileSystem',
-      'HttpClient', 'RestClient', 'ApiClient', 'NetworkClient',
-      'Serializer', 'Deserializer', 'Mapper',
+      'Database',
+      'Cache',
+      'Storage',
+      'FileSystem',
+      'HttpClient',
+      'RestClient',
+      'ApiClient',
+      'NetworkClient',
+      'Serializer',
+      'Deserializer',
+      'Mapper',
     ];
     return infraTypes.any((type) => typeName.contains(type));
   }
 
   bool _isUseCaseFile(String filePath) {
     return (filePath.contains('/domain/') || filePath.contains('\\domain\\')) &&
-        (filePath.contains('/usecases/') || filePath.contains('\\usecases\\') ||
-         filePath.contains('/use_cases/') || filePath.contains('\\use_cases\\') ||
-         filePath.endsWith('_usecase.dart') || filePath.endsWith('usecase.dart'));
+        (filePath.contains('/usecases/') ||
+            filePath.contains('\\usecases\\') ||
+            filePath.contains('/use_cases/') ||
+            filePath.contains('\\use_cases\\') ||
+            filePath.endsWith('_usecase.dart') ||
+            filePath.endsWith('usecase.dart'));
   }
 }
 

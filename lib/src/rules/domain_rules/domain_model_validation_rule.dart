@@ -36,7 +36,7 @@ class DomainModelValidationRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -46,7 +46,7 @@ class DomainModelValidationRule extends DartLintRule {
 
   void _checkDomainModelValidation(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -111,7 +111,7 @@ class DomainModelValidationRule extends DartLintRule {
 
   void _checkBasicValidation(
     DomainModelAnalysis analysis,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     // Only suggest for high complexity models (score > 6, not > 3)
     if (analysis.complexityScore > 6 && analysis.validationMethods.isEmpty) {
@@ -135,7 +135,7 @@ class DomainModelValidationRule extends DartLintRule {
 
   void _checkBusinessRules(
     DomainModelAnalysis analysis,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     // Only suggest for very complex entities (8+ fields, not 3+)
     if (analysis.isEntity &&
@@ -158,7 +158,7 @@ class DomainModelValidationRule extends DartLintRule {
 
   void _checkValueObjectValidation(
     DomainModelAnalysis analysis,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     // Value objects should have validation, but only suggest gently
     if (analysis.isValueObject &&
@@ -182,7 +182,7 @@ class DomainModelValidationRule extends DartLintRule {
 
   void _checkFactoryMethodValidation(
     DomainModelAnalysis analysis,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     // Check if factory methods have proper validation
     for (final factory in analysis.factoryMethods) {
@@ -201,7 +201,7 @@ class DomainModelValidationRule extends DartLintRule {
 
   void _checkInvariantEnforcement(
     DomainModelAnalysis analysis,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     // Only check for very complex models (score > 8)
     if (analysis.complexityScore > 8 &&

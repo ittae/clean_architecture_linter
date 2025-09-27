@@ -26,16 +26,14 @@ class ModelStructureRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'model_structure',
-    problemMessage:
-        'Data model violates Clean Architecture principles.',
-    correctionMessage:
-        'Ensure data model has serialization, domain conversion, and no business logic.',
+    problemMessage: 'Data model violates Clean Architecture principles.',
+    correctionMessage: 'Ensure data model has serialization, domain conversion, and no business logic.',
   );
 
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -49,7 +47,7 @@ class ModelStructureRule extends DartLintRule {
 
   void _checkModelStructure(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -88,7 +86,7 @@ class ModelStructureRule extends DartLintRule {
 
   void _checkModelImports(
     ImportDirective node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -98,8 +96,7 @@ class ModelStructureRule extends DartLintRule {
     if (importUri == null) return;
 
     // Data models should not import domain entities
-    if (importUri.contains('/domain/entities/') ||
-        importUri.contains('/domain/models/')) {
+    if (importUri.contains('/domain/entities/') || importUri.contains('/domain/models/')) {
       final code = LintCode(
         name: 'model_structure',
         problemMessage: 'Data model imports domain entities directly',
@@ -229,7 +226,7 @@ class ModelStructureRule extends DartLintRule {
     // Check inheritance - should not extend domain objects
     final extendsClause = node.extendsClause;
     if (extendsClause != null) {
-      final superName = extendsClause.superclass.name.lexeme;
+      final superName = extendsClause.superclass.name2.lexeme;
       if (_isDomainType(superName)) {
         violations.add(ModelViolation(
           type: ViolationType.purity,
@@ -268,12 +265,18 @@ class ModelStructureRule extends DartLintRule {
         filePath.contains('\\models\\');
   }
 
-
   bool _isBusinessLogicMethod(String methodName) {
     final businessPatterns = [
-      'validate', 'calculate', 'compute', 'process',
-      'canPerform', 'shouldAllow', 'isValid',
-      'apply', 'execute', 'handle'
+      'validate',
+      'calculate',
+      'compute',
+      'process',
+      'canPerform',
+      'shouldAllow',
+      'isValid',
+      'apply',
+      'execute',
+      'handle'
     ];
     final lower = methodName.toLowerCase();
     return businessPatterns.any((pattern) => lower.contains(pattern));
@@ -296,9 +299,7 @@ class ModelStructureRule extends DartLintRule {
   }
 
   bool _isDomainType(String typeName) {
-    return typeName.endsWith('Entity') ||
-           typeName.endsWith('ValueObject') ||
-           typeName.endsWith('DomainModel');
+    return typeName.endsWith('Entity') || typeName.endsWith('ValueObject') || typeName.endsWith('DomainModel');
   }
 }
 

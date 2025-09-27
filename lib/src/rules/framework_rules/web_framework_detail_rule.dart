@@ -21,16 +21,14 @@ class WebFrameworkDetailRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'web_framework_detail',
-    problemMessage:
-        'Web framework is a detail and must be isolated to framework layer.',
-    correctionMessage:
-        'Move web-specific code to framework layer. Use abstractions in inner layers.',
+    problemMessage: 'Web framework is a detail and must be isolated to framework layer.',
+    correctionMessage: 'Move web-specific code to framework layer. Use abstractions in inner layers.',
   );
 
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addImportDirective((node) {
@@ -48,7 +46,7 @@ class WebFrameworkDetailRule extends DartLintRule {
 
   void _checkWebImports(
     ImportDirective node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -64,8 +62,7 @@ class WebFrameworkDetailRule extends DartLintRule {
         final code = LintCode(
           name: 'web_framework_detail',
           problemMessage: 'Web framework import leaked into $layerType layer: $importUri',
-          correctionMessage:
-              'Move web dependencies to framework layer. Use abstractions in $layerType layer.',
+          correctionMessage: 'Move web dependencies to framework layer. Use abstractions in $layerType layer.',
         );
         reporter.atNode(node, code);
       }
@@ -77,8 +74,7 @@ class WebFrameworkDetailRule extends DartLintRule {
       final code = LintCode(
         name: 'web_framework_detail',
         problemMessage: 'Platform web import found in $layerType layer: $importUri',
-        correctionMessage:
-            'Keep platform-specific web code in framework layer. Use platform-agnostic abstractions.',
+        correctionMessage: 'Keep platform-specific web code in framework layer. Use platform-agnostic abstractions.',
       );
       reporter.atNode(node, code);
     }
@@ -86,7 +82,7 @@ class WebFrameworkDetailRule extends DartLintRule {
 
   void _checkWebClass(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -101,7 +97,7 @@ class WebFrameworkDetailRule extends DartLintRule {
 
   void _checkWebMethod(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -114,8 +110,7 @@ class WebFrameworkDetailRule extends DartLintRule {
         final code = LintCode(
           name: 'web_framework_detail',
           problemMessage: 'HTTP operation found in $layerType layer: $methodName',
-          correctionMessage:
-              'Move HTTP operations to framework layer. Use service abstractions in $layerType layer.',
+          correctionMessage: 'Move HTTP operations to framework layer. Use service abstractions in $layerType layer.',
         );
         reporter.atNode(method, code);
       }
@@ -126,8 +121,7 @@ class WebFrameworkDetailRule extends DartLintRule {
         final code = LintCode(
           name: 'web_framework_detail',
           problemMessage: 'Web routing found in $layerType layer: $methodName',
-          correctionMessage:
-              'Move web routing to framework layer. Use navigation abstractions in $layerType layer.',
+          correctionMessage: 'Move web routing to framework layer. Use navigation abstractions in $layerType layer.',
         );
         reporter.atNode(method, code);
       }
@@ -138,8 +132,7 @@ class WebFrameworkDetailRule extends DartLintRule {
         final code = LintCode(
           name: 'web_framework_detail',
           problemMessage: 'Session management found in $layerType layer: $methodName',
-          correctionMessage:
-              'Move session management to framework layer. Use user context abstractions.',
+          correctionMessage: 'Move session management to framework layer. Use user context abstractions.',
         );
         reporter.atNode(method, code);
       }
@@ -150,8 +143,7 @@ class WebFrameworkDetailRule extends DartLintRule {
         final code = LintCode(
           name: 'web_framework_detail',
           problemMessage: 'Request/Response handling found in $layerType layer: $methodName',
-          correctionMessage:
-              'Move HTTP request/response handling to framework layer. Use data transfer objects.',
+          correctionMessage: 'Move HTTP request/response handling to framework layer. Use data transfer objects.',
         );
         reporter.atNode(method, code);
       }
@@ -171,7 +163,7 @@ class WebFrameworkDetailRule extends DartLintRule {
 
   void _checkFrameworkWebClass(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     final className = node.name.lexeme;
 
@@ -184,8 +176,7 @@ class WebFrameworkDetailRule extends DartLintRule {
           final code = LintCode(
             name: 'web_framework_detail',
             problemMessage: 'Web class contains business logic: $methodName in $className',
-            correctionMessage:
-                'Move business logic to inner layers. Web should only handle HTTP concerns.',
+            correctionMessage: 'Move business logic to inner layers. Web should only handle HTTP concerns.',
           );
           reporter.atNode(member, code);
         }
@@ -195,8 +186,7 @@ class WebFrameworkDetailRule extends DartLintRule {
           final code = LintCode(
             name: 'web_framework_detail',
             problemMessage: 'HTTP handler contains domain logic: $methodName in $className',
-            correctionMessage:
-                'Move domain logic to use cases. HTTP handler should only coordinate.',
+            correctionMessage: 'Move domain logic to use cases. HTTP handler should only coordinate.',
           );
           reporter.atNode(member, code);
         }
@@ -209,7 +199,7 @@ class WebFrameworkDetailRule extends DartLintRule {
 
   void _checkInnerLayerWebClass(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String filePath,
   ) {
     final className = node.name.lexeme;
@@ -220,8 +210,7 @@ class WebFrameworkDetailRule extends DartLintRule {
       final code = LintCode(
         name: 'web_framework_detail',
         problemMessage: 'Web class found in $layerType layer: $className',
-        correctionMessage:
-            'Move web classes to framework layer. Use abstractions in $layerType layer.',
+        correctionMessage: 'Move web classes to framework layer. Use abstractions in $layerType layer.',
       );
       reporter.atNode(node, code);
     }
@@ -231,13 +220,12 @@ class WebFrameworkDetailRule extends DartLintRule {
       if (member is FieldDeclaration) {
         final type = member.fields.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
           if (_isWebFrameworkType(typeName)) {
             final code = LintCode(
               name: 'web_framework_detail',
               problemMessage: '$layerType class depends on web framework type: $typeName',
-              correctionMessage:
-                  'Use service abstractions instead of direct web framework dependencies.',
+              correctionMessage: 'Use service abstractions instead of direct web framework dependencies.',
             );
             reporter.atNode(type, code);
           }
@@ -248,13 +236,12 @@ class WebFrameworkDetailRule extends DartLintRule {
     // Check inheritance from web classes
     final extendsClause = node.extendsClause;
     if (extendsClause != null) {
-      final superTypeName = extendsClause.superclass.name.lexeme;
+      final superTypeName = extendsClause.superclass.name2.lexeme;
       if (_isWebFrameworkType(superTypeName)) {
         final code = LintCode(
           name: 'web_framework_detail',
           problemMessage: '$layerType class extends web framework class: $superTypeName',
-          correctionMessage:
-              'Use composition instead of inheritance from web framework classes.',
+          correctionMessage: 'Use composition instead of inheritance from web framework classes.',
         );
         reporter.atNode(extendsClause, code);
       }
@@ -263,7 +250,7 @@ class WebFrameworkDetailRule extends DartLintRule {
 
   void _checkWebFrameworkResponsibilities(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     final className = node.name.lexeme;
 
@@ -276,8 +263,7 @@ class WebFrameworkDetailRule extends DartLintRule {
           final code = LintCode(
             name: 'web_framework_detail',
             problemMessage: 'Web framework contains data conversion logic: $methodName in $className',
-            correctionMessage:
-                'Move data conversion to adapter layer. Web framework should only handle HTTP.',
+            correctionMessage: 'Move data conversion to adapter layer. Web framework should only handle HTTP.',
           );
           reporter.atNode(member, code);
         }
@@ -287,13 +273,22 @@ class WebFrameworkDetailRule extends DartLintRule {
 
   bool _containsHTTPOperation(MethodDeclaration method, String methodName) {
     final httpPatterns = [
-      'get', 'post', 'put', 'delete', 'patch',
-      'request', 'response', 'http', 'fetch',
-      'send', 'receive', 'download', 'upload',
+      'get',
+      'post',
+      'put',
+      'delete',
+      'patch',
+      'request',
+      'response',
+      'http',
+      'fetch',
+      'send',
+      'receive',
+      'download',
+      'upload',
     ];
 
-    final hasHTTPName = httpPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    final hasHTTPName = httpPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
 
     if (hasHTTPName) return true;
 
@@ -302,8 +297,13 @@ class WebFrameworkDetailRule extends DartLintRule {
     if (body is BlockFunctionBody) {
       final bodyString = body.toString().toLowerCase();
       final httpBodyPatterns = [
-        'http.', 'request.', 'response.',
-        'get(', 'post(', 'put(', 'delete(',
+        'http.',
+        'request.',
+        'response.',
+        'get(',
+        'post(',
+        'put(',
+        'delete(',
       ];
 
       return httpBodyPatterns.any((pattern) => bodyString.contains(pattern));
@@ -314,56 +314,88 @@ class WebFrameworkDetailRule extends DartLintRule {
 
   bool _containsWebRouting(MethodDeclaration method, String methodName) {
     final routingPatterns = [
-      'route', 'navigate', 'redirect', 'forward',
-      'handler', 'middleware', 'endpoint',
-      'path', 'url', 'uri',
+      'route',
+      'navigate',
+      'redirect',
+      'forward',
+      'handler',
+      'middleware',
+      'endpoint',
+      'path',
+      'url',
+      'uri',
     ];
 
-    return routingPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return routingPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _containsSessionManagement(MethodDeclaration method, String methodName) {
     final sessionPatterns = [
-      'session', 'cookie', 'authentication', 'login',
-      'logout', 'auth', 'token', 'credential',
-      'signin', 'signout', 'authorize',
+      'session',
+      'cookie',
+      'authentication',
+      'login',
+      'logout',
+      'auth',
+      'token',
+      'credential',
+      'signin',
+      'signout',
+      'authorize',
     ];
 
-    return sessionPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return sessionPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _containsRequestResponseHandling(MethodDeclaration method, String methodName) {
     final reqResPatterns = [
-      'request', 'response', 'header', 'body',
-      'query', 'param', 'form', 'json',
-      'xml', 'payload', 'content',
+      'request',
+      'response',
+      'header',
+      'body',
+      'query',
+      'param',
+      'form',
+      'json',
+      'xml',
+      'payload',
+      'content',
     ];
 
-    return reqResPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return reqResPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _containsBusinessLogicInWeb(MethodDeclaration method, String methodName) {
     final businessLogicPatterns = [
-      'validate', 'calculate', 'process', 'apply',
-      'business', 'rule', 'policy', 'workflow',
-      'approve', 'reject', 'verify', 'check',
+      'validate',
+      'calculate',
+      'process',
+      'apply',
+      'business',
+      'rule',
+      'policy',
+      'workflow',
+      'approve',
+      'reject',
+      'verify',
+      'check',
     ];
 
-    return businessLogicPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return businessLogicPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _containsDomainLogicInHandler(MethodDeclaration method, String methodName) {
     final domainLogicPatterns = [
-      'entity', 'aggregate', 'domain', 'usecase',
-      'repository', 'service', 'interactor',
+      'entity',
+      'aggregate',
+      'domain',
+      'usecase',
+      'repository',
+      'service',
+      'interactor',
     ];
 
-    final hasDirectDomainReference = domainLogicPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    final hasDirectDomainReference = domainLogicPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
 
     if (hasDirectDomainReference) return true;
 
@@ -372,8 +404,12 @@ class WebFrameworkDetailRule extends DartLintRule {
     if (body is BlockFunctionBody) {
       final bodyString = body.toString();
       final domainBodyPatterns = [
-        'new Entity', 'new UseCase', 'new Service',
-        '.validate(', '.calculate(', '.process(',
+        'new Entity',
+        'new UseCase',
+        'new Service',
+        '.validate(',
+        '.calculate(',
+        '.process(',
       ];
 
       return domainBodyPatterns.any((pattern) => bodyString.contains(pattern));
@@ -384,13 +420,21 @@ class WebFrameworkDetailRule extends DartLintRule {
 
   bool _containsDataConversionLogic(MethodDeclaration method, String methodName) {
     final conversionPatterns = [
-      'convert', 'map', 'transform', 'adapt',
-      'toDto', 'fromDto', 'serialize', 'deserialize',
-      'encode', 'decode', 'parse', 'format',
+      'convert',
+      'map',
+      'transform',
+      'adapt',
+      'toDto',
+      'fromDto',
+      'serialize',
+      'deserialize',
+      'encode',
+      'decode',
+      'parse',
+      'format',
     ];
 
-    return conversionPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return conversionPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _isWebFrameworkImport(String importUri) {
@@ -405,8 +449,7 @@ class WebFrameworkDetailRule extends DartLintRule {
     ];
 
     // Allow shelf_test in test files
-    if (importUri.startsWith('package:shelf_test/') ||
-        importUri.startsWith('package:test/')) {
+    if (importUri.startsWith('package:shelf_test/') || importUri.startsWith('package:test/')) {
       return false;
     }
 
@@ -428,10 +471,18 @@ class WebFrameworkDetailRule extends DartLintRule {
 
   bool _isWebClassName(String className) {
     final webClassNames = [
-      'HttpServer', 'HttpClient', 'WebServer',
-      'Request', 'Response', 'Handler',
-      'Router', 'Route', 'Middleware',
-      'Session', 'Cookie', 'Header',
+      'HttpServer',
+      'HttpClient',
+      'WebServer',
+      'Request',
+      'Response',
+      'Handler',
+      'Router',
+      'Route',
+      'Middleware',
+      'Session',
+      'Cookie',
+      'Header',
     ];
 
     return webClassNames.any((name) => className.contains(name));
@@ -439,10 +490,21 @@ class WebFrameworkDetailRule extends DartLintRule {
 
   bool _isWebFrameworkType(String typeName) {
     final webTypes = [
-      'HttpServer', 'HttpClient', 'HttpRequest', 'HttpResponse',
-      'Request', 'Response', 'Handler', 'Middleware',
-      'Router', 'Route', 'Context', 'Session',
-      'WebSocket', 'ServerSocket', 'Socket',
+      'HttpServer',
+      'HttpClient',
+      'HttpRequest',
+      'HttpResponse',
+      'Request',
+      'Response',
+      'Handler',
+      'Middleware',
+      'Router',
+      'Route',
+      'Context',
+      'Session',
+      'WebSocket',
+      'ServerSocket',
+      'Socket',
     ];
 
     return webTypes.any((type) => typeName.contains(type));
@@ -450,14 +512,22 @@ class WebFrameworkDetailRule extends DartLintRule {
 
   bool _isFrameworkLayer(String filePath) {
     final frameworkPaths = [
-      '/framework/', '\\framework\\',
-      '/frameworks/', '\\frameworks\\',
-      '/infrastructure/', '\\infrastructure\\',
-      '/web/', '\\web\\',
-      '/http/', '\\http\\',
-      '/server/', '\\server\\',
-      '/api/', '\\api\\',
-      '/main.dart', '\\main.dart',
+      '/framework/',
+      '\\framework\\',
+      '/frameworks/',
+      '\\frameworks\\',
+      '/infrastructure/',
+      '\\infrastructure\\',
+      '/web/',
+      '\\web\\',
+      '/http/',
+      '\\http\\',
+      '/server/',
+      '\\server\\',
+      '/api/',
+      '\\api\\',
+      '/main.dart',
+      '\\main.dart',
     ];
 
     return frameworkPaths.any((path) => filePath.contains(path));
@@ -467,15 +537,19 @@ class WebFrameworkDetailRule extends DartLintRule {
     if (filePath.contains('/domain/') || filePath.contains('\\domain\\')) {
       return 'domain';
     }
-    if (filePath.contains('/adapters/') || filePath.contains('\\adapters\\') ||
-        filePath.contains('/interface_adapters/') || filePath.contains('\\interface_adapters\\')) {
+    if (filePath.contains('/adapters/') ||
+        filePath.contains('\\adapters\\') ||
+        filePath.contains('/interface_adapters/') ||
+        filePath.contains('\\interface_adapters\\')) {
       return 'adapter';
     }
     if (filePath.contains('/data/') || filePath.contains('\\data\\')) {
       return 'data';
     }
-    if (filePath.contains('/presentation/') || filePath.contains('\\presentation\\') ||
-        filePath.contains('/ui/') || filePath.contains('\\ui\\')) {
+    if (filePath.contains('/presentation/') ||
+        filePath.contains('\\presentation\\') ||
+        filePath.contains('/ui/') ||
+        filePath.contains('\\ui\\')) {
       return 'presentation';
     }
     return 'unknown';
@@ -483,16 +557,16 @@ class WebFrameworkDetailRule extends DartLintRule {
 
   bool _isTestFile(String filePath) {
     return filePath.contains('/test/') ||
-           filePath.contains('\\test\\') ||
-           filePath.endsWith('_test.dart') ||
-           filePath.contains('/integration_test/') ||
-           filePath.contains('\\integration_test\\');
+        filePath.contains('\\test\\') ||
+        filePath.endsWith('_test.dart') ||
+        filePath.contains('/integration_test/') ||
+        filePath.contains('\\integration_test\\');
   }
 
   bool _isFlutterWebFile(String filePath) {
     return filePath.contains('/web/') ||
-           filePath.contains('\\web\\') ||
-           filePath.endsWith('_web.dart') ||
-           filePath.contains('web_');
+        filePath.contains('\\web\\') ||
+        filePath.endsWith('_web.dart') ||
+        filePath.contains('web_');
   }
 }

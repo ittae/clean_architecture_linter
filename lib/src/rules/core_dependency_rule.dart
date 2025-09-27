@@ -20,10 +20,8 @@ class CoreDependencyRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'core_dependency_rule',
-    problemMessage:
-        'Dependency Rule violation: {0}',
-    correctionMessage:
-        'Dependencies must always point inward. Use Dependency Inversion to correct the direction.',
+    problemMessage: 'Dependency Rule violation: {0}',
+    correctionMessage: 'Dependencies must always point inward. Use Dependency Inversion to correct the direction.',
   );
 
   // Dependency tracking for comprehensive analysis
@@ -33,7 +31,7 @@ class CoreDependencyRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     final filePath = resolver.path;
@@ -76,7 +74,7 @@ class CoreDependencyRule extends DartLintRule {
 
   void _validateDependencyDirection(
     ImportDirective node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -111,7 +109,7 @@ class CoreDependencyRule extends DartLintRule {
 
   void _validateClassDependencies(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -135,7 +133,7 @@ class CoreDependencyRule extends DartLintRule {
 
   void _validateConstructorDependencies(
     ConstructorDeclaration constructor,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String filePath,
     String className,
   ) {
@@ -146,16 +144,14 @@ class CoreDependencyRule extends DartLintRule {
       if (param is SimpleFormalParameter) {
         final type = param.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
           final dependencyAbstraction = _inferTypeAbstraction(typeName);
 
           if (currentAbstraction > dependencyAbstraction) {
             final code = LintCode(
               name: 'core_dependency_rule',
-              problemMessage:
-                  'Constructor dependency violation: $className depends on lower abstraction $typeName',
-              correctionMessage:
-                  'Use an interface or abstract class to invert the dependency.',
+              problemMessage: 'Constructor dependency violation: $className depends on lower abstraction $typeName',
+              correctionMessage: 'Use an interface or abstract class to invert the dependency.',
             );
             reporter.atNode(param, code);
           }
@@ -166,23 +162,21 @@ class CoreDependencyRule extends DartLintRule {
 
   void _validateFieldDependencies(
     FieldDeclaration field,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String filePath,
     String className,
   ) {
     final type = field.fields.type;
     if (type is NamedType) {
-      final typeName = type.name.lexeme;
+      final typeName = type.name2.lexeme;
       final currentAbstraction = _detectAbstractionLevel(filePath);
       final dependencyAbstraction = _inferTypeAbstraction(typeName);
 
       if (currentAbstraction > dependencyAbstraction) {
         final code = LintCode(
           name: 'core_dependency_rule',
-          problemMessage:
-              'Field dependency violation: $className field depends on lower abstraction $typeName',
-          correctionMessage:
-              'Use dependency injection with an abstraction.',
+          problemMessage: 'Field dependency violation: $className field depends on lower abstraction $typeName',
+          correctionMessage: 'Use dependency injection with an abstraction.',
         );
         reporter.atNode(field, code);
       }
@@ -191,7 +185,7 @@ class CoreDependencyRule extends DartLintRule {
 
   void _validateMethodDependencies(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String filePath,
     String className,
   ) {
@@ -204,7 +198,7 @@ class CoreDependencyRule extends DartLintRule {
       if (param is SimpleFormalParameter) {
         final type = param.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
           final dependencyAbstraction = _inferTypeAbstraction(typeName);
 
           if (currentAbstraction > dependencyAbstraction) {
@@ -212,8 +206,7 @@ class CoreDependencyRule extends DartLintRule {
               name: 'core_dependency_rule',
               problemMessage:
                   'Method dependency violation: $className.$methodName depends on lower abstraction $typeName',
-              correctionMessage:
-                  'Pass abstractions as parameters instead of concrete types.',
+              correctionMessage: 'Pass abstractions as parameters instead of concrete types.',
             );
             reporter.atNode(param, code);
           }
@@ -227,7 +220,7 @@ class CoreDependencyRule extends DartLintRule {
 
   void _validateMethodBody(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String filePath,
     String className,
     String methodName,
@@ -244,10 +237,8 @@ class CoreDependencyRule extends DartLintRule {
       if (currentAbstraction > dependencyAbstraction) {
         final code = LintCode(
           name: 'core_dependency_rule',
-          problemMessage:
-              'Method creates concrete dependency: $className.$methodName instantiates $concrete',
-          correctionMessage:
-              'Use dependency injection or factory pattern to avoid direct instantiation.',
+          problemMessage: 'Method creates concrete dependency: $className.$methodName instantiates $concrete',
+          correctionMessage: 'Use dependency injection or factory pattern to avoid direct instantiation.',
         );
         reporter.atNode(method, code);
       }
@@ -255,7 +246,7 @@ class CoreDependencyRule extends DartLintRule {
   }
 
   void _performGlobalDependencyAnalysis(
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     // Check for circular dependencies that violate The Dependency Rule
@@ -292,13 +283,27 @@ class CoreDependencyRule extends DartLintRule {
   int _inferTypeAbstraction(String typeName) {
     // Analyze type name to infer abstraction level
     final abstractIndicators = [
-      'Interface', 'Abstract', 'Policy', 'Rule', 'Entity',
-      'ValueObject', 'Service', 'Repository', 'UseCase'
+      'Interface',
+      'Abstract',
+      'Policy',
+      'Rule',
+      'Entity',
+      'ValueObject',
+      'Service',
+      'Repository',
+      'UseCase'
     ];
 
     final concreteIndicators = [
-      'Implementation', 'Concrete', 'Adapter', 'Client',
-      'Database', 'Http', 'File', 'Network', 'Driver'
+      'Implementation',
+      'Concrete',
+      'Adapter',
+      'Client',
+      'Database',
+      'Http',
+      'File',
+      'Network',
+      'Driver'
     ];
 
     if (abstractIndicators.any((indicator) => typeName.contains(indicator))) {
@@ -329,8 +334,16 @@ class CoreDependencyRule extends DartLintRule {
 
   bool _isConcreteType(String typeName) {
     final concretePatterns = [
-      'Database', 'Http', 'File', 'Network', 'Socket',
-      'Client', 'Server', 'Driver', 'Adapter', 'Implementation'
+      'Database',
+      'Http',
+      'File',
+      'Network',
+      'Socket',
+      'Client',
+      'Server',
+      'Driver',
+      'Adapter',
+      'Implementation'
     ];
 
     return concretePatterns.any((pattern) => typeName.contains(pattern));
@@ -378,7 +391,7 @@ class CoreDependencyRule extends DartLintRule {
     return [];
   }
 
-  void _validateAbstractionHierarchy(DiagnosticReporter reporter) {
+  void _validateAbstractionHierarchy(ErrorReporter reporter) {
     // Check that abstraction levels are properly ordered
     for (final node in _dependencyGraph.values) {
       for (final dependency in node.dependencies) {
@@ -392,7 +405,7 @@ class CoreDependencyRule extends DartLintRule {
 
   void _checkSpecificAntiPatterns(
     ImportDirective node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String filePath,
     String importUri,
   ) {
@@ -400,10 +413,8 @@ class CoreDependencyRule extends DartLintRule {
     if (_isDomainLayer(filePath) && _isInfrastructureImport(importUri)) {
       final code = LintCode(
         name: 'core_dependency_rule',
-        problemMessage:
-            'Domain layer cannot import infrastructure: $importUri',
-        correctionMessage:
-            'Define an interface in domain and implement it in infrastructure.',
+        problemMessage: 'Domain layer cannot import infrastructure: $importUri',
+        correctionMessage: 'Define an interface in domain and implement it in infrastructure.',
       );
       reporter.atNode(node, code);
     }
@@ -412,10 +423,8 @@ class CoreDependencyRule extends DartLintRule {
     if (_isApplicationLayer(filePath) && _isAdapterImport(importUri)) {
       final code = LintCode(
         name: 'core_dependency_rule',
-        problemMessage:
-            'Use cases cannot import adapters: $importUri',
-        correctionMessage:
-            'Use repository interfaces instead of adapter implementations.',
+        problemMessage: 'Use cases cannot import adapters: $importUri',
+        correctionMessage: 'Use repository interfaces instead of adapter implementations.',
       );
       reporter.atNode(node, code);
     }
@@ -424,10 +433,8 @@ class CoreDependencyRule extends DartLintRule {
     if (_isEntityFile(filePath) && !_isEntityImport(importUri) && !_isDartCore(importUri)) {
       final code = LintCode(
         name: 'core_dependency_rule',
-        problemMessage:
-            'Entity imports non-entity dependency: $importUri',
-        correctionMessage:
-            'Entities should only depend on other entities and value objects.',
+        problemMessage: 'Entity imports non-entity dependency: $importUri',
+        correctionMessage: 'Entities should only depend on other entities and value objects.',
       );
       reporter.atNode(node, code);
     }
@@ -435,7 +442,7 @@ class CoreDependencyRule extends DartLintRule {
 
   void _reportDependencyViolation(
     ImportDirective node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String filePath,
     String importUri,
     int currentAbstraction,
@@ -446,8 +453,7 @@ class CoreDependencyRule extends DartLintRule {
 
     final code = LintCode(
       name: 'core_dependency_rule',
-      problemMessage:
-          'Dependency direction violation: $currentLayer → $importedLayer ($importUri)',
+      problemMessage: 'Dependency direction violation: $currentLayer → $importedLayer ($importUri)',
       correctionMessage:
           'Use Dependency Inversion: create an interface in $currentLayer and implement it in $importedLayer.',
     );
@@ -456,23 +462,21 @@ class CoreDependencyRule extends DartLintRule {
 
   void _reportFrameworkLeakage(
     ImportDirective node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String importUri,
     String filePath,
   ) {
     final code = LintCode(
       name: 'core_dependency_rule',
-      problemMessage:
-          'Framework dependency leaked to inner layer: $importUri',
-      correctionMessage:
-          'Isolate framework dependencies in outer layer and use abstractions.',
+      problemMessage: 'Framework dependency leaked to inner layer: $importUri',
+      correctionMessage: 'Isolate framework dependencies in outer layer and use abstractions.',
     );
     reporter.atNode(node, code);
   }
 
   void _reportCircularDependency(
     List<DependencyNode> cycle,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     // Note: We can't report on specific nodes here since we don't have them
     // This would need to be enhanced to track original AST nodes
@@ -482,12 +486,18 @@ class CoreDependencyRule extends DartLintRule {
 
   String _getLayerName(int abstractionLevel) {
     switch (abstractionLevel) {
-      case 4: return 'Domain';
-      case 3: return 'Application';
-      case 2: return 'Adapter';
-      case 1: return 'Framework';
-      case 0: return 'External';
-      default: return 'Unknown';
+      case 4:
+        return 'Domain';
+      case 3:
+        return 'Application';
+      case 2:
+        return 'Adapter';
+      case 1:
+        return 'Framework';
+      case 0:
+        return 'External';
+      default:
+        return 'Unknown';
     }
   }
 
@@ -501,8 +511,7 @@ class CoreDependencyRule extends DartLintRule {
   }
 
   bool _isAdapterLayer(String path) {
-    return path.contains('/adapters/') || path.contains('/controllers/') ||
-           path.contains('/presenters/');
+    return path.contains('/adapters/') || path.contains('/controllers/') || path.contains('/presenters/');
   }
 
   bool _isFrameworkLayer(String path) {
@@ -519,35 +528,34 @@ class CoreDependencyRule extends DartLintRule {
 
   bool _isFrameworkDependency(String importUri) {
     final frameworkPackages = [
-      'package:flutter/', 'package:sqflite/', 'package:http/',
-      'package:dio/', 'dart:io', 'dart:html'
+      'package:flutter/',
+      'package:sqflite/',
+      'package:http/',
+      'package:dio/',
+      'dart:io',
+      'dart:html'
     ];
     return frameworkPackages.any((pkg) => importUri.startsWith(pkg));
   }
 
   bool _isInfrastructureImport(String importUri) {
-    return importUri.contains('/infrastructure/') ||
-           importUri.contains('/framework/');
+    return importUri.contains('/infrastructure/') || importUri.contains('/framework/');
   }
 
   bool _isAdapterImport(String importUri) {
-    return importUri.contains('/adapters/') ||
-           importUri.contains('/controllers/');
+    return importUri.contains('/adapters/') || importUri.contains('/controllers/');
   }
 
   bool _isEntityImport(String importUri) {
-    return importUri.contains('/entities/') ||
-           importUri.contains('/domain/');
+    return importUri.contains('/entities/') || importUri.contains('/domain/');
   }
 
   bool _isDartCore(String importUri) {
-    return importUri.startsWith('dart:core') ||
-           importUri.startsWith('dart:async');
+    return importUri.startsWith('dart:core') || importUri.startsWith('dart:async');
   }
 
   bool _isInternalPackage(String importUri) {
-    return importUri.startsWith('package:flutter/') ||
-           importUri.startsWith('package:dart');
+    return importUri.startsWith('package:flutter/') || importUri.startsWith('package:dart');
   }
 }
 

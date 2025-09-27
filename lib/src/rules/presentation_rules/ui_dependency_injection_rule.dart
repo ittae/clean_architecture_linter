@@ -32,16 +32,14 @@ class UiDependencyInjectionRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'ui_dependency_injection',
-    problemMessage:
-        'UI component violates dependency injection principles.',
-    correctionMessage:
-        'Use proper dependency injection patterns for accessing business logic.',
+    problemMessage: 'UI component violates dependency injection principles.',
+    correctionMessage: 'Use proper dependency injection patterns for accessing business logic.',
   );
 
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addInstanceCreationExpression((node) {
@@ -63,7 +61,7 @@ class UiDependencyInjectionRule extends DartLintRule {
 
   void _checkUIConstructorUsage(
     InstanceCreationExpression node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -71,7 +69,7 @@ class UiDependencyInjectionRule extends DartLintRule {
     // Only check files in presentation layer
     if (!_isPresentationLayerFile(filePath)) return;
 
-    final constructorName = node.constructorName.type.name.lexeme;
+    final constructorName = node.constructorName.type.name2.lexeme;
 
     // Check if creating instances of domain or data layer classes directly
     if (_isDomainOrDataLayerClass(constructorName)) {
@@ -83,7 +81,7 @@ class UiDependencyInjectionRule extends DartLintRule {
 
   void _checkDependencyInjectionSetup(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -117,7 +115,7 @@ class UiDependencyInjectionRule extends DartLintRule {
 
   void _checkServiceLocatorUsage(
     MethodInvocation node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -152,7 +150,7 @@ class UiDependencyInjectionRule extends DartLintRule {
 
   void _checkDependencyImports(
     ImportDirective node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -201,7 +199,7 @@ class UiDependencyInjectionRule extends DartLintRule {
 
         // Check if field is a business dependency
         final type = member.fields.type;
-        if (type is NamedType && _isBusinessDependencyType(type.name.lexeme)) {
+        if (type is NamedType && _isBusinessDependencyType(type.name2.lexeme)) {
           hasBusinessDependencies = true;
 
           // Check if it's properly injected or hard-coded
@@ -209,7 +207,7 @@ class UiDependencyInjectionRule extends DartLintRule {
             final initializer = variable.initializer;
             if (initializer is InstanceCreationExpression) {
               hardCodedDependencies.add(HardCodedDependency(
-                dependencyName: type.name.lexeme,
+                dependencyName: type.name2.lexeme,
                 node: initializer,
               ));
             }
@@ -242,9 +240,16 @@ class UiDependencyInjectionRule extends DartLintRule {
   bool _isDomainOrDataLayerClass(String className) {
     // Common patterns for domain/data layer classes that shouldn't be instantiated in UI
     final domainDataPatterns = [
-      'UseCase', 'Repository', 'DataSource', 'Service',
-      'ApiService', 'NetworkService', 'DatabaseService',
-      'AuthService', 'StorageService', 'CacheService'
+      'UseCase',
+      'Repository',
+      'DataSource',
+      'Service',
+      'ApiService',
+      'NetworkService',
+      'DatabaseService',
+      'AuthService',
+      'StorageService',
+      'CacheService'
     ];
 
     return domainDataPatterns.any((pattern) => className.contains(pattern)) ||
@@ -279,7 +284,7 @@ class UiDependencyInjectionRule extends DartLintRule {
     // Check field type for DI patterns
     final type = field.fields.type;
     if (type is NamedType) {
-      final typeName = type.name.lexeme;
+      final typeName = type.name2.lexeme;
       return _isDIType(typeName);
     }
 
@@ -302,7 +307,7 @@ class UiDependencyInjectionRule extends DartLintRule {
     for (final param in parameters.parameters) {
       if (param is SimpleFormalParameter) {
         final type = param.type;
-        if (type is NamedType && _isBusinessDependencyType(type.name.lexeme)) {
+        if (type is NamedType && _isBusinessDependencyType(type.name2.lexeme)) {
           return true;
         }
       }
@@ -320,7 +325,7 @@ class UiDependencyInjectionRule extends DartLintRule {
     // Check inheritance
     final extendsClause = node.extendsClause;
     if (extendsClause != null) {
-      final superclass = extendsClause.superclass.name.lexeme;
+      final superclass = extendsClause.superclass.name2.lexeme;
       return _isFlutterWidgetClass(superclass);
     }
 
@@ -329,9 +334,13 @@ class UiDependencyInjectionRule extends DartLintRule {
 
   bool _isFlutterWidgetClass(String className) {
     final widgetClasses = [
-      'StatelessWidget', 'StatefulWidget', 'InheritedWidget',
-      'PreferredSizeWidget', 'SingleChildRenderObjectWidget',
-      'MultiChildRenderObjectWidget', 'LeafRenderObjectWidget'
+      'StatelessWidget',
+      'StatefulWidget',
+      'InheritedWidget',
+      'PreferredSizeWidget',
+      'SingleChildRenderObjectWidget',
+      'MultiChildRenderObjectWidget',
+      'LeafRenderObjectWidget'
     ];
     return widgetClasses.contains(className) || className.endsWith('Widget');
   }
@@ -438,17 +447,17 @@ class UiDependencyInjectionRule extends DartLintRule {
 
   bool _isWidgetFile(String filePath) {
     return filePath.contains('widget') ||
-           filePath.contains('page') ||
-           filePath.contains('screen') ||
-           filePath.contains('view');
+        filePath.contains('page') ||
+        filePath.contains('screen') ||
+        filePath.contains('view');
   }
 
   bool _isBusinessLayerImport(String importUri) {
     return importUri.contains('/domain/') ||
-           importUri.contains('/data/') ||
-           importUri.contains('repository') ||
-           importUri.contains('usecase') ||
-           importUri.contains('service');
+        importUri.contains('/data/') ||
+        importUri.contains('repository') ||
+        importUri.contains('usecase') ||
+        importUri.contains('service');
   }
 
   bool _isTypeOnlyImport(ImportDirective importDirective) {
@@ -456,9 +465,7 @@ class UiDependencyInjectionRule extends DartLintRule {
     for (final combinator in importDirective.combinators) {
       if (combinator is ShowCombinator) {
         // If all shown names are type names (start with capital letter), it's likely type-only
-        return combinator.shownNames.every((name) =>
-          name.name.startsWith(RegExp(r'[A-Z]'))
-        );
+        return combinator.shownNames.every((name) => name.name.startsWith(RegExp(r'[A-Z]')));
       }
     }
 
@@ -501,4 +508,3 @@ enum DependencyViolationType {
   service,
   general,
 }
-

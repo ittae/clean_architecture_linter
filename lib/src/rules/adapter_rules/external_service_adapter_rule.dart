@@ -22,8 +22,7 @@ class ExternalServiceAdapterRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'external_service_adapter',
-    problemMessage:
-        'External service adapter must properly isolate internal layers from external service details.',
+    problemMessage: 'External service adapter must properly isolate internal layers from external service details.',
     correctionMessage:
         'Ensure adapter handles conversion, error mapping, and shields internal layers from external changes.',
   );
@@ -31,7 +30,7 @@ class ExternalServiceAdapterRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -49,7 +48,7 @@ class ExternalServiceAdapterRule extends DartLintRule {
 
   void _checkExternalServiceAdapter(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -73,7 +72,7 @@ class ExternalServiceAdapterRule extends DartLintRule {
 
   void _checkExternalServiceImports(
     ImportDirective node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -93,8 +92,7 @@ class ExternalServiceAdapterRule extends DartLintRule {
       final code = LintCode(
         name: 'external_service_adapter',
         problemMessage: 'External adapter imports domain details: $importUri',
-        correctionMessage:
-            'External adapters should only import necessary domain interfaces, not implementations.',
+        correctionMessage: 'External adapters should only import necessary domain interfaces, not implementations.',
       );
       reporter.atNode(node, code);
     }
@@ -102,7 +100,7 @@ class ExternalServiceAdapterRule extends DartLintRule {
 
   void _checkExternalServiceMethod(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -129,7 +127,7 @@ class ExternalServiceAdapterRule extends DartLintRule {
 
   void _checkErrorHandling(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     final methods = node.members.whereType<MethodDeclaration>().toList();
 
@@ -140,8 +138,7 @@ class ExternalServiceAdapterRule extends DartLintRule {
       final code = LintCode(
         name: 'external_service_adapter',
         problemMessage: 'External adapter lacks error handling',
-        correctionMessage:
-            'Add error handling to convert external service errors to domain errors.',
+        correctionMessage: 'Add error handling to convert external service errors to domain errors.',
       );
       reporter.atNode(node, code);
     }
@@ -156,7 +153,7 @@ class ExternalServiceAdapterRule extends DartLintRule {
 
   void _checkDataConversion(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     final methods = node.members.whereType<MethodDeclaration>().toList();
 
@@ -168,8 +165,7 @@ class ExternalServiceAdapterRule extends DartLintRule {
       final code = LintCode(
         name: 'external_service_adapter',
         problemMessage: 'External adapter lacks data conversion methods',
-        correctionMessage:
-            'Add methods to convert between internal and external data formats.',
+        correctionMessage: 'Add methods to convert between internal and external data formats.',
       );
       reporter.atNode(node, code);
     }
@@ -177,7 +173,7 @@ class ExternalServiceAdapterRule extends DartLintRule {
 
   void _checkBusinessLogicLeakage(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     for (final member in node.members) {
       if (member is MethodDeclaration) {
@@ -199,8 +195,7 @@ class ExternalServiceAdapterRule extends DartLintRule {
           final code = LintCode(
             name: 'external_service_adapter',
             problemMessage: 'External adapter enforces domain rules: $methodName',
-            correctionMessage:
-                'Move domain rule enforcement to entity. Adapter should be passive converter.',
+            correctionMessage: 'Move domain rule enforcement to entity. Adapter should be passive converter.',
           );
           reporter.atNode(member, code);
         }
@@ -210,7 +205,7 @@ class ExternalServiceAdapterRule extends DartLintRule {
 
   void _checkAdapterInterface(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     // Check if adapter implements proper interfaces
     final implementsClause = node.implementsClause;
@@ -218,8 +213,7 @@ class ExternalServiceAdapterRule extends DartLintRule {
       final code = LintCode(
         name: 'external_service_adapter',
         problemMessage: 'External adapter should implement domain interface',
-        correctionMessage:
-            'Implement domain interface to enable dependency inversion.',
+        correctionMessage: 'Implement domain interface to enable dependency inversion.',
       );
       reporter.atNode(node, code);
       return;
@@ -227,13 +221,12 @@ class ExternalServiceAdapterRule extends DartLintRule {
 
     // Check if implemented interfaces are domain interfaces
     for (final interface in implementsClause.interfaces) {
-      final interfaceName = interface.name.lexeme;
+      final interfaceName = interface.name2.lexeme;
       if (!_isDomainInterface(interfaceName)) {
         final code = LintCode(
           name: 'external_service_adapter',
           problemMessage: 'External adapter implements non-domain interface: $interfaceName',
-          correctionMessage:
-              'Implement domain interfaces to maintain dependency inversion.',
+          correctionMessage: 'Implement domain interfaces to maintain dependency inversion.',
         );
         reporter.atNode(interface, code);
       }
@@ -242,7 +235,7 @@ class ExternalServiceAdapterRule extends DartLintRule {
 
   void _checkExternalMethodImplementation(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     final body = method.body;
     if (body is BlockFunctionBody) {
@@ -253,8 +246,7 @@ class ExternalServiceAdapterRule extends DartLintRule {
         final code = LintCode(
           name: 'external_service_adapter',
           problemMessage: 'Method should handle external service communication properly',
-          correctionMessage:
-              'Ensure method handles external calls, errors, and data conversion.',
+          correctionMessage: 'Ensure method handles external calls, errors, and data conversion.',
         );
         reporter.atNode(method, code);
       }
@@ -264,8 +256,7 @@ class ExternalServiceAdapterRule extends DartLintRule {
         final code = LintCode(
           name: 'external_service_adapter',
           problemMessage: 'External service method lacks error handling',
-          correctionMessage:
-              'Add try-catch or error handling for external service calls.',
+          correctionMessage: 'Add try-catch or error handling for external service calls.',
         );
         reporter.atNode(method, code);
       }
@@ -274,7 +265,7 @@ class ExternalServiceAdapterRule extends DartLintRule {
 
   void _checkMethodErrorHandling(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     final body = method.body;
     if (body is BlockFunctionBody) {
@@ -284,8 +275,7 @@ class ExternalServiceAdapterRule extends DartLintRule {
         final code = LintCode(
           name: 'external_service_adapter',
           problemMessage: 'External service method lacks error handling',
-          correctionMessage:
-              'Add error handling to convert external errors to domain errors.',
+          correctionMessage: 'Add error handling to convert external errors to domain errors.',
         );
         reporter.atNode(method, code);
       }
@@ -294,9 +284,17 @@ class ExternalServiceAdapterRule extends DartLintRule {
 
   bool _isExternalServiceAdapter(String className) {
     final adapterPatterns = [
-      'Adapter', 'Gateway', 'Client', 'Service',
-      'Api', 'Rest', 'Http', 'Grpc',
-      'External', 'Remote', 'Web',
+      'Adapter',
+      'Gateway',
+      'Client',
+      'Service',
+      'Api',
+      'Rest',
+      'Http',
+      'Grpc',
+      'External',
+      'Remote',
+      'Web',
     ];
 
     return adapterPatterns.any((pattern) => className.contains(pattern));
@@ -304,63 +302,88 @@ class ExternalServiceAdapterRule extends DartLintRule {
 
   bool _isExternalServiceMethod(String methodName) {
     final serviceMethodPatterns = [
-      'call', 'request', 'send', 'fetch',
-      'get', 'post', 'put', 'delete',
-      'invoke', 'execute', 'query',
+      'call',
+      'request',
+      'send',
+      'fetch',
+      'get',
+      'post',
+      'put',
+      'delete',
+      'invoke',
+      'execute',
+      'query',
     ];
 
-    return serviceMethodPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return serviceMethodPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _isErrorHandlingMethod(String methodName) {
     final errorPatterns = [
-      'handleError', 'mapError', 'convertError',
-      'onError', 'catchError', 'errorHandler',
+      'handleError',
+      'mapError',
+      'convertError',
+      'onError',
+      'catchError',
+      'errorHandler',
     ];
 
-    return errorPatterns.any((pattern) =>
-        methodName.contains(pattern));
+    return errorPatterns.any((pattern) => methodName.contains(pattern));
   }
 
   bool _isToExternalMethod(String methodName) {
     final toExternalPatterns = [
-      'toRequest', 'toApi', 'toExternal',
-      'serialize', 'encode', 'format',
+      'toRequest',
+      'toApi',
+      'toExternal',
+      'serialize',
+      'encode',
+      'format',
     ];
 
-    return toExternalPatterns.any((pattern) =>
-        methodName.contains(pattern));
+    return toExternalPatterns.any((pattern) => methodName.contains(pattern));
   }
 
   bool _isFromExternalMethod(String methodName) {
     final fromExternalPatterns = [
-      'fromResponse', 'fromApi', 'fromExternal',
-      'deserialize', 'decode', 'parse',
+      'fromResponse',
+      'fromApi',
+      'fromExternal',
+      'deserialize',
+      'decode',
+      'parse',
     ];
 
-    return fromExternalPatterns.any((pattern) =>
-        methodName.contains(pattern));
+    return fromExternalPatterns.any((pattern) => methodName.contains(pattern));
   }
 
   bool _implementsBusinessLogic(MethodDeclaration method, String methodName) {
     final businessPatterns = [
-      'validate', 'calculate', 'process', 'apply',
-      'business', 'rule', 'policy', 'logic',
+      'validate',
+      'calculate',
+      'process',
+      'apply',
+      'business',
+      'rule',
+      'policy',
+      'logic',
     ];
 
-    return businessPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return businessPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _enforcesDomainRules(MethodDeclaration method, String methodName) {
     final rulePatterns = [
-      'enforce', 'check', 'verify', 'ensure',
-      'domainRule', 'businessRule', 'invariant',
+      'enforce',
+      'check',
+      'verify',
+      'ensure',
+      'domainRule',
+      'businessRule',
+      'invariant',
     ];
 
-    return rulePatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return rulePatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _hasExternalServiceMethods(List<MethodDeclaration> methods) {
@@ -369,8 +392,14 @@ class ExternalServiceAdapterRule extends DartLintRule {
 
   bool _hasExternalServicePatterns(String bodyString) {
     final patterns = [
-      'http', 'client', 'request', 'response',
-      'api', 'service', 'call', 'invoke',
+      'http',
+      'client',
+      'request',
+      'response',
+      'api',
+      'service',
+      'call',
+      'invoke',
     ];
 
     return patterns.any((pattern) => bodyString.toLowerCase().contains(pattern));
@@ -378,9 +407,14 @@ class ExternalServiceAdapterRule extends DartLintRule {
 
   bool _hasErrorHandlingPatterns(String bodyString) {
     final patterns = [
-      'try', 'catch', 'finally',
-      'error', 'exception', 'failure',
-      'onError', 'handleError',
+      'try',
+      'catch',
+      'finally',
+      'error',
+      'exception',
+      'failure',
+      'onError',
+      'handleError',
     ];
 
     return patterns.any((pattern) => bodyString.toLowerCase().contains(pattern));
@@ -401,36 +435,44 @@ class ExternalServiceAdapterRule extends DartLintRule {
   }
 
   bool _isDomainImport(String importUri) {
-    return importUri.contains('/domain/') ||
-           importUri.contains('\\domain\\');
+    return importUri.contains('/domain/') || importUri.contains('\\domain\\');
   }
 
   bool _isAllowedDomainImport(String importUri) {
     // Allow imports of interfaces, entities for conversion, but not use cases
     return importUri.contains('/entities/') ||
-           importUri.contains('/repositories/') ||
-           importUri.contains('/interfaces/') ||
-           !importUri.contains('/usecases/');
+        importUri.contains('/repositories/') ||
+        importUri.contains('/interfaces/') ||
+        !importUri.contains('/usecases/');
   }
 
   bool _isDomainInterface(String interfaceName) {
     final domainPatterns = [
-      'Repository', 'Gateway', 'Service',
-      'Interface', 'Port', 'Contract',
+      'Repository',
+      'Gateway',
+      'Service',
+      'Interface',
+      'Port',
+      'Contract',
     ];
 
-    return domainPatterns.any((pattern) => interfaceName.contains(pattern)) ||
-           interfaceName.startsWith('I');
+    return domainPatterns.any((pattern) => interfaceName.contains(pattern)) || interfaceName.startsWith('I');
   }
 
   bool _isAdapterLayerFile(String filePath) {
     final adapterPaths = [
-      '/adapters/', '\\adapters\\',
-      '/interface_adapters/', '\\interface_adapters\\',
-      '/external/', '\\external\\',
-      '/infrastructure/', '\\infrastructure\\',
-      '/gateways/', '\\gateways\\',
-      '/services/', '\\services\\',
+      '/adapters/',
+      '\\adapters\\',
+      '/interface_adapters/',
+      '\\interface_adapters\\',
+      '/external/',
+      '\\external\\',
+      '/infrastructure/',
+      '\\infrastructure\\',
+      '/gateways/',
+      '\\gateways\\',
+      '/services/',
+      '\\services\\',
     ];
 
     return adapterPaths.any((path) => filePath.contains(path));

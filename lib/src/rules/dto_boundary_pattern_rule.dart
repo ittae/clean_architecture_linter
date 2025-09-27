@@ -30,16 +30,14 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'dto_boundary_pattern',
-    problemMessage:
-        'DTO boundary pattern violation: {0}',
-    correctionMessage:
-        'Follow DTO design patterns for proper boundary data transfer.',
+    problemMessage: 'DTO boundary pattern violation: {0}',
+    correctionMessage: 'Follow DTO design patterns for proper boundary data transfer.',
   );
 
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -57,7 +55,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   void _analyzeDTOClass(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -80,7 +78,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   void _analyzeDTOUsage(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -100,7 +98,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   void _analyzeDTOConstructor(
     ConstructorDeclaration constructor,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -124,7 +122,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   void _validateDTODesign(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -143,7 +141,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   void _validateDTOStructure(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     final fields = node.members.whereType<FieldDeclaration>();
@@ -153,25 +151,20 @@ class DTOBoundaryPatternRule extends DartLintRule {
     if (fields.length > 15) {
       final code = LintCode(
         name: 'dto_boundary_pattern',
-        problemMessage:
-            'DTO $className has too many fields (${fields.length})',
-        correctionMessage:
-            'Consider breaking down into smaller, focused DTOs.',
+        problemMessage: 'DTO $className has too many fields (${fields.length})',
+        correctionMessage: 'Consider breaking down into smaller, focused DTOs.',
       );
       reporter.atNode(node, code);
     }
 
     // Check for inappropriate method count
-    final businessMethods = methods.where((m) =>
-        !_isAllowedDTOMethod(m.name.lexeme)).length;
+    final businessMethods = methods.where((m) => !_isAllowedDTOMethod(m.name.lexeme)).length;
 
     if (businessMethods > 2) {
       final code = LintCode(
         name: 'dto_boundary_pattern',
-        problemMessage:
-            'DTO $className has too much behavior ($businessMethods methods)',
-        correctionMessage:
-            'DTOs should be simple data containers with minimal behavior.',
+        problemMessage: 'DTO $className has too much behavior ($businessMethods methods)',
+        correctionMessage: 'DTOs should be simple data containers with minimal behavior.',
       );
       reporter.atNode(node, code);
     }
@@ -179,7 +172,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   void _validateDTOFields(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     final fields = node.members.whereType<FieldDeclaration>();
@@ -187,16 +180,14 @@ class DTOBoundaryPatternRule extends DartLintRule {
     for (final field in fields) {
       final type = field.fields.type;
       if (type is NamedType) {
-        final typeName = type.name.lexeme;
+        final typeName = type.name2.lexeme;
 
         // Check for inappropriate field types
         if (_isInappropriateDTOFieldType(typeName)) {
           final code = LintCode(
             name: 'dto_boundary_pattern',
-            problemMessage:
-                'DTO $className has inappropriate field type: $typeName',
-            correctionMessage:
-                'Use primitive types, other DTOs, or simple collections in DTOs.',
+            problemMessage: 'DTO $className has inappropriate field type: $typeName',
+            correctionMessage: 'Use primitive types, other DTOs, or simple collections in DTOs.',
           );
           reporter.atNode(field, code);
         }
@@ -205,10 +196,8 @@ class DTOBoundaryPatternRule extends DartLintRule {
         if (_isEntityType(typeName)) {
           final code = LintCode(
             name: 'dto_boundary_pattern',
-            problemMessage:
-                'DTO $className contains entity reference: $typeName',
-            correctionMessage:
-                'Replace entity reference with entity ID or nested DTO.',
+            problemMessage: 'DTO $className contains entity reference: $typeName',
+            correctionMessage: 'Replace entity reference with entity ID or nested DTO.',
           );
           reporter.atNode(field, code);
         }
@@ -217,10 +206,8 @@ class DTOBoundaryPatternRule extends DartLintRule {
         if (_isFrameworkType(typeName)) {
           final code = LintCode(
             name: 'dto_boundary_pattern',
-            problemMessage:
-                'DTO $className depends on framework type: $typeName',
-            correctionMessage:
-                'Remove framework dependencies from DTOs.',
+            problemMessage: 'DTO $className depends on framework type: $typeName',
+            correctionMessage: 'Remove framework dependencies from DTOs.',
           );
           reporter.atNode(field, code);
         }
@@ -229,10 +216,8 @@ class DTOBoundaryPatternRule extends DartLintRule {
         if (_isOverlyComplexType(typeName)) {
           final code = LintCode(
             name: 'dto_boundary_pattern',
-            problemMessage:
-                'DTO $className has overly complex field: $typeName',
-            correctionMessage:
-                'Simplify complex types or create separate DTOs.',
+            problemMessage: 'DTO $className has overly complex field: $typeName',
+            correctionMessage: 'Simplify complex types or create separate DTOs.',
           );
           reporter.atNode(field, code);
         }
@@ -242,10 +227,8 @@ class DTOBoundaryPatternRule extends DartLintRule {
       if (!field.fields.isFinal && !field.fields.isLate) {
         final code = LintCode(
           name: 'dto_boundary_pattern',
-          problemMessage:
-              'DTO $className has mutable field - DTOs should be immutable',
-          correctionMessage:
-              'Make DTO fields final for immutable data transfer.',
+          problemMessage: 'DTO $className has mutable field - DTOs should be immutable',
+          correctionMessage: 'Make DTO fields final for immutable data transfer.',
         );
         reporter.atNode(field, code);
       }
@@ -254,7 +237,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   void _validateDTOMethods(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     final methods = node.members.whereType<MethodDeclaration>();
@@ -266,10 +249,8 @@ class DTOBoundaryPatternRule extends DartLintRule {
       if (_isBusinessLogicMethod(methodName)) {
         final code = LintCode(
           name: 'dto_boundary_pattern',
-          problemMessage:
-              'DTO $className contains business logic method: $methodName',
-          correctionMessage:
-              'Move business logic to appropriate domain or use case layer.',
+          problemMessage: 'DTO $className contains business logic method: $methodName',
+          correctionMessage: 'Move business logic to appropriate domain or use case layer.',
         );
         reporter.atNode(method, code);
       }
@@ -278,10 +259,8 @@ class DTOBoundaryPatternRule extends DartLintRule {
       if (!_isAllowedDTOMethod(methodName) && !_isUtilityMethod(methodName)) {
         final code = LintCode(
           name: 'dto_boundary_pattern',
-          problemMessage:
-              'DTO $className has inappropriate method: $methodName',
-          correctionMessage:
-              'DTOs should only have data access and utility methods.',
+          problemMessage: 'DTO $className has inappropriate method: $methodName',
+          correctionMessage: 'DTOs should only have data access and utility methods.',
         );
         reporter.atNode(method, code);
       }
@@ -290,10 +269,8 @@ class DTOBoundaryPatternRule extends DartLintRule {
       if (_isStatefulOperation(method)) {
         final code = LintCode(
           name: 'dto_boundary_pattern',
-          problemMessage:
-              'DTO $className method $methodName performs stateful operations',
-          correctionMessage:
-              'DTOs should be stateless data containers.',
+          problemMessage: 'DTO $className method $methodName performs stateful operations',
+          correctionMessage: 'DTOs should be stateless data containers.',
         );
         reporter.atNode(method, code);
       }
@@ -302,20 +279,18 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   void _validateDTOInheritance(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     final extendsClause = node.extendsClause;
     if (extendsClause != null) {
-      final superclassName = extendsClause.superclass.name.lexeme;
+      final superclassName = extendsClause.superclass.name2.lexeme;
 
       if (!_isDTOClass(superclassName) && !_isAllowedDTOSuperclass(superclassName)) {
         final code = LintCode(
           name: 'dto_boundary_pattern',
-          problemMessage:
-              'DTO $className extends non-DTO class: $superclassName',
-          correctionMessage:
-              'DTOs should only extend other DTOs or allowed base classes.',
+          problemMessage: 'DTO $className extends non-DTO class: $superclassName',
+          correctionMessage: 'DTOs should only extend other DTOs or allowed base classes.',
         );
         reporter.atNode(extendsClause, code);
       }
@@ -324,7 +299,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   void _validateDTOResponsibilities(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     final dtoType = _classifyDTOType(className);
@@ -353,7 +328,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   void _validateDTODependencies(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     // Check imports in the file
@@ -365,10 +340,8 @@ class DTOBoundaryPatternRule extends DartLintRule {
           if (importUri != null && _isInappropriateDTOImport(importUri)) {
             final code = LintCode(
               name: 'dto_boundary_pattern',
-              problemMessage:
-                  'DTO file imports inappropriate dependency: $importUri',
-              correctionMessage:
-                  'DTOs should only import primitive types and other DTOs.',
+              problemMessage: 'DTO file imports inappropriate dependency: $importUri',
+              correctionMessage: 'DTOs should only import primitive types and other DTOs.',
             );
             reporter.atNode(directive, code);
           }
@@ -379,7 +352,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   void _validateDTOImmutability(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     // Check for setters
@@ -388,10 +361,8 @@ class DTOBoundaryPatternRule extends DartLintRule {
       if (method.isSetter) {
         final code = LintCode(
           name: 'dto_boundary_pattern',
-          problemMessage:
-              'DTO $className has setter - DTOs should be immutable',
-          correctionMessage:
-              'Remove setters and use constructor or copyWith for data setting.',
+          problemMessage: 'DTO $className has setter - DTOs should be immutable',
+          correctionMessage: 'Remove setters and use constructor or copyWith for data setting.',
         );
         reporter.atNode(method, code);
       }
@@ -402,10 +373,8 @@ class DTOBoundaryPatternRule extends DartLintRule {
       if (_modifiesState(method)) {
         final code = LintCode(
           name: 'dto_boundary_pattern',
-          problemMessage:
-              'DTO $className method ${method.name.lexeme} modifies state',
-          correctionMessage:
-              'DTOs should be immutable - return new instance instead of modifying.',
+          problemMessage: 'DTO $className method ${method.name.lexeme} modifies state',
+          correctionMessage: 'DTOs should be immutable - return new instance instead of modifying.',
         );
         reporter.atNode(method, code);
       }
@@ -414,17 +383,15 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   void _validateDTONaming(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     if (!_hasProperDTONaming(className)) {
       final dtoType = _classifyDTOType(className);
       final code = LintCode(
         name: 'dto_boundary_pattern',
-        problemMessage:
-            'DTO $className should follow naming convention for ${dtoType.name}',
-        correctionMessage:
-            _getDTONamingAdvice(dtoType),
+        problemMessage: 'DTO $className should follow naming convention for ${dtoType.name}',
+        correctionMessage: _getDTONamingAdvice(dtoType),
       );
       reporter.atNode(node, code);
     }
@@ -432,7 +399,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   void _validateBoundaryMethodDTOUsage(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String methodName,
   ) {
@@ -445,7 +412,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
       if (param is SimpleFormalParameter) {
         final type = param.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
 
           if (_isDTOClass(typeName)) {
             hasDTOParameter = true;
@@ -462,7 +429,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
     var hasInappropriateReturn = false;
 
     if (returnType is NamedType) {
-      final typeName = returnType.name.lexeme;
+      final typeName = returnType.name2.lexeme;
 
       if (_isDTOClass(typeName)) {
         hasDTOReturn = true;
@@ -475,10 +442,8 @@ class DTOBoundaryPatternRule extends DartLintRule {
     if (hasInappropriateParameter && !hasDTOParameter) {
       final code = LintCode(
         name: 'dto_boundary_pattern',
-        problemMessage:
-            'Boundary method $methodName should use DTOs for parameters',
-        correctionMessage:
-            'Create appropriate DTOs for boundary data transfer.',
+        problemMessage: 'Boundary method $methodName should use DTOs for parameters',
+        correctionMessage: 'Create appropriate DTOs for boundary data transfer.',
       );
       reporter.atNode(method, code);
     }
@@ -486,10 +451,8 @@ class DTOBoundaryPatternRule extends DartLintRule {
     if (hasInappropriateReturn && !hasDTOReturn) {
       final code = LintCode(
         name: 'dto_boundary_pattern',
-        problemMessage:
-            'Boundary method $methodName should return DTO',
-        correctionMessage:
-            'Return DTO instead of entity or complex object.',
+        problemMessage: 'Boundary method $methodName should return DTO',
+        correctionMessage: 'Return DTO instead of entity or complex object.',
       );
       reporter.atNode(method, code);
     }
@@ -497,7 +460,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   void _validateDTOTransformationPatterns(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String methodName,
   ) {
@@ -510,10 +473,8 @@ class DTOBoundaryPatternRule extends DartLintRule {
     if (_needsDTOTransformation(method, layer)) {
       final code = LintCode(
         name: 'dto_boundary_pattern',
-        problemMessage:
-            'Method $methodName should include DTO transformation',
-        correctionMessage:
-            'Add proper DTO to entity or entity to DTO transformation.',
+        problemMessage: 'Method $methodName should include DTO transformation',
+        correctionMessage: 'Add proper DTO to entity or entity to DTO transformation.',
       );
       reporter.atNode(method, code);
     }
@@ -521,7 +482,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   void _validateDTOConstructorPattern(
     ConstructorDeclaration constructor,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     // Check for proper DTO constructor patterns
@@ -530,10 +491,8 @@ class DTOBoundaryPatternRule extends DartLintRule {
     if (parameters.isEmpty) {
       final code = LintCode(
         name: 'dto_boundary_pattern',
-        problemMessage:
-            'DTO $className has empty constructor - should initialize all fields',
-        correctionMessage:
-            'Provide constructor parameters for all DTO fields.',
+        problemMessage: 'DTO $className has empty constructor - should initialize all fields',
+        correctionMessage: 'Provide constructor parameters for all DTO fields.',
       );
       reporter.atNode(constructor, code);
     }
@@ -542,10 +501,8 @@ class DTOBoundaryPatternRule extends DartLintRule {
     if (_hasValidationInConstructor(constructor)) {
       final code = LintCode(
         name: 'dto_boundary_pattern',
-        problemMessage:
-            'DTO $className constructor contains validation logic',
-        correctionMessage:
-            'Move validation to domain layer - DTOs should be simple data containers.',
+        problemMessage: 'DTO $className constructor contains validation logic',
+        correctionMessage: 'Move validation to domain layer - DTOs should be simple data containers.',
       );
       reporter.atNode(constructor, code);
     }
@@ -554,7 +511,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
   // DTO Type-specific validation methods
   void _validateRequestDTOPattern(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     // Request DTOs should contain input data for operations
@@ -563,7 +520,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   void _validateResponseDTOPattern(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     // Response DTOs should contain output data
@@ -572,7 +529,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   void _validateCommandDTOPattern(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     // Command DTOs should represent actions
@@ -581,7 +538,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   void _validateQueryDTOPattern(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     // Query DTOs should represent read operations
@@ -590,7 +547,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   void _validateEventDTOPattern(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     // Event DTOs should represent domain events
@@ -599,7 +556,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   void _validateGenericDTOPattern(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     // Generic DTOs should follow general DTO principles
@@ -608,7 +565,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   void _checkShouldBeDTO(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -616,10 +573,8 @@ class DTOBoundaryPatternRule extends DartLintRule {
     if (_isUsedForBoundaryCrossing(node, layer) && !_isDTOClass(className)) {
       final code = LintCode(
         name: 'dto_boundary_pattern',
-        problemMessage:
-            'Class $className is used for boundary crossing but is not structured as DTO',
-        correctionMessage:
-            'Restructure as proper DTO or create separate DTO for boundary crossing.',
+        problemMessage: 'Class $className is used for boundary crossing but is not structured as DTO',
+        correctionMessage: 'Restructure as proper DTO or create separate DTO for boundary crossing.',
       );
       reporter.atNode(node, code);
     }
@@ -640,10 +595,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
   }
 
   bool _isDTOClass(String className) {
-    final dtoIndicators = [
-      'DTO', 'Data', 'Request', 'Response', 'Command',
-      'Query', 'Message', 'Payload', 'Event'
-    ];
+    final dtoIndicators = ['DTO', 'Data', 'Request', 'Response', 'Command', 'Query', 'Message', 'Payload', 'Event'];
     return dtoIndicators.any((indicator) => className.contains(indicator));
   }
 
@@ -657,17 +609,12 @@ class DTOBoundaryPatternRule extends DartLintRule {
   }
 
   bool _isBoundaryMethod(ArchitecturalLayer layer, String methodName) {
-    final boundaryIndicators = [
-      'handle', 'process', 'execute', 'present', 'convert', 'transform'
-    ];
+    final boundaryIndicators = ['handle', 'process', 'execute', 'present', 'convert', 'transform'];
     return boundaryIndicators.any((indicator) => methodName.contains(indicator));
   }
 
   bool _isInappropriateDTOFieldType(String typeName) {
-    final inappropriateTypes = [
-      'Service', 'Repository', 'Manager', 'Handler',
-      'Context', 'Connection', 'Session'
-    ];
+    final inappropriateTypes = ['Service', 'Repository', 'Manager', 'Handler', 'Context', 'Connection', 'Session'];
     return inappropriateTypes.any((type) => typeName.contains(type));
   }
 
@@ -677,39 +624,35 @@ class DTOBoundaryPatternRule extends DartLintRule {
   }
 
   bool _isFrameworkType(String typeName) {
-    final frameworkTypes = [
-      'HttpRequest', 'HttpResponse', 'Context', 'Intent',
-      'Bundle', 'Activity', 'Fragment'
-    ];
+    final frameworkTypes = ['HttpRequest', 'HttpResponse', 'Context', 'Intent', 'Bundle', 'Activity', 'Fragment'];
     return frameworkTypes.any((type) => typeName.contains(type));
   }
 
   bool _isOverlyComplexType(String typeName) {
-    return typeName.contains('Builder') ||
-           typeName.contains('Factory') ||
-           typeName.contains('Manager');
+    return typeName.contains('Builder') || typeName.contains('Factory') || typeName.contains('Manager');
   }
 
   bool _isBusinessLogicMethod(String methodName) {
     final businessPatterns = [
-      'calculate', 'validate', 'process', 'execute',
-      'apply', 'transform', 'compute', 'evaluate'
+      'calculate',
+      'validate',
+      'process',
+      'execute',
+      'apply',
+      'transform',
+      'compute',
+      'evaluate'
     ];
     return businessPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _isAllowedDTOMethod(String methodName) {
-    final allowedMethods = [
-      'toString', 'equals', 'hashCode', 'copyWith',
-      'toJson', 'fromJson', 'toMap', 'fromMap'
-    ];
+    final allowedMethods = ['toString', 'equals', 'hashCode', 'copyWith', 'toJson', 'fromJson', 'toMap', 'fromMap'];
     return allowedMethods.any((method) => methodName.contains(method));
   }
 
   bool _isUtilityMethod(String methodName) {
-    final utilityMethods = [
-      'isEmpty', 'isValid', 'hasValue', 'isPresent'
-    ];
+    final utilityMethods = ['isEmpty', 'isValid', 'hasValue', 'isPresent'];
     return utilityMethods.any((method) => methodName.contains(method));
   }
 
@@ -717,7 +660,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
     final body = method.body;
     final bodyString = body.toString();
     return bodyString.contains('this.') &&
-           (bodyString.contains(' = ') || bodyString.contains('add(') || bodyString.contains('remove('));
+        (bodyString.contains(' = ') || bodyString.contains('add(') || bodyString.contains('remove('));
   }
 
   bool _isAllowedDTOSuperclass(String superclassName) {
@@ -752,10 +695,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
   }
 
   bool _isInappropriateDTOImport(String importUri) {
-    final inappropriateImports = [
-      '/domain/entities/', '/domain/services/',
-      '/infrastructure/', '/database/', '/http/'
-    ];
+    final inappropriateImports = ['/domain/entities/', '/domain/services/', '/infrastructure/', '/database/', '/http/'];
     return inappropriateImports.any((import) => importUri.contains(import));
   }
 
@@ -766,34 +706,26 @@ class DTOBoundaryPatternRule extends DartLintRule {
   }
 
   bool _isTransformationMethod(String methodName) {
-    final transformationMethods = [
-      'toDTO', 'fromDTO', 'toEntity', 'fromEntity',
-      'transform', 'convert', 'map'
-    ];
+    final transformationMethods = ['toDTO', 'fromDTO', 'toEntity', 'fromEntity', 'transform', 'convert', 'map'];
     return transformationMethods.any((method) => methodName.contains(method));
   }
 
   bool _needsDTOTransformation(MethodDeclaration method, ArchitecturalLayer layer) {
     // Check if method crosses boundaries but doesn't transform data
-    return _isBoundaryMethod(layer, method.name.lexeme) &&
-           !_hasTransformationLogic(method);
+    return _isBoundaryMethod(layer, method.name.lexeme) && !_hasTransformationLogic(method);
   }
 
   bool _hasTransformationLogic(MethodDeclaration method) {
     final body = method.body;
     final bodyString = body.toString();
-    final transformationPatterns = [
-      'toDTO', 'fromDTO', 'toEntity', 'fromEntity'
-    ];
+    final transformationPatterns = ['toDTO', 'fromDTO', 'toEntity', 'fromEntity'];
     return transformationPatterns.any((pattern) => bodyString.contains(pattern));
   }
 
   bool _hasValidationInConstructor(ConstructorDeclaration constructor) {
     final body = constructor.body;
     final bodyString = body.toString();
-    final validationPatterns = [
-      'if (', 'throw ', 'assert', 'validate', 'check'
-    ];
+    final validationPatterns = ['if (', 'throw ', 'assert', 'validate', 'check'];
     return validationPatterns.any((pattern) => bodyString.contains(pattern));
   }
 
@@ -806,7 +738,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
 
   void _validateTransformationImplementation(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String methodName,
   ) {
     // Validate that transformation methods follow proper patterns
@@ -816,10 +748,8 @@ class DTOBoundaryPatternRule extends DartLintRule {
     if (!_hasProperTransformationPattern(bodyString)) {
       final code = LintCode(
         name: 'dto_boundary_pattern',
-        problemMessage:
-            'Transformation method $methodName lacks proper transformation pattern',
-        correctionMessage:
-            'Implement proper field-by-field transformation between DTO and entity.',
+        problemMessage: 'Transformation method $methodName lacks proper transformation pattern',
+        correctionMessage: 'Implement proper field-by-field transformation between DTO and entity.',
       );
       reporter.atNode(method, code);
     }
@@ -831,12 +761,12 @@ class DTOBoundaryPatternRule extends DartLintRule {
   }
 
   // Placeholder methods for DTO type-specific validations
-  void _checkRequestDTOFields(ClassDeclaration node, DiagnosticReporter reporter, String className) {}
-  void _checkResponseDTOFields(ClassDeclaration node, DiagnosticReporter reporter, String className) {}
-  void _checkCommandDTOStructure(ClassDeclaration node, DiagnosticReporter reporter, String className) {}
-  void _checkQueryDTOStructure(ClassDeclaration node, DiagnosticReporter reporter, String className) {}
-  void _checkEventDTOStructure(ClassDeclaration node, DiagnosticReporter reporter, String className) {}
-  void _checkGenericDTOStructure(ClassDeclaration node, DiagnosticReporter reporter, String className) {}
+  void _checkRequestDTOFields(ClassDeclaration node, ErrorReporter reporter, String className) {}
+  void _checkResponseDTOFields(ClassDeclaration node, ErrorReporter reporter, String className) {}
+  void _checkCommandDTOStructure(ClassDeclaration node, ErrorReporter reporter, String className) {}
+  void _checkQueryDTOStructure(ClassDeclaration node, ErrorReporter reporter, String className) {}
+  void _checkEventDTOStructure(ClassDeclaration node, ErrorReporter reporter, String className) {}
+  void _checkGenericDTOStructure(ClassDeclaration node, ErrorReporter reporter, String className) {}
 }
 
 class ArchitecturalLayer {

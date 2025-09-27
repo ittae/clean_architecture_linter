@@ -21,16 +21,14 @@ class InterfaceBoundaryRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'interface_boundary',
-    problemMessage:
-        'Interface boundary violation: {0}',
-    correctionMessage:
-        'Ensure interfaces are properly defined and implemented at architectural boundaries.',
+    problemMessage: 'Interface boundary violation: {0}',
+    correctionMessage: 'Ensure interfaces are properly defined and implemented at architectural boundaries.',
   );
 
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -44,7 +42,7 @@ class InterfaceBoundaryRule extends DartLintRule {
 
   void _analyzeInterfaceBoundary(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -71,7 +69,7 @@ class InterfaceBoundaryRule extends DartLintRule {
 
   void _analyzeInterfaceMethod(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -95,7 +93,7 @@ class InterfaceBoundaryRule extends DartLintRule {
 
   void _validateInterfaceDefinition(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -111,7 +109,7 @@ class InterfaceBoundaryRule extends DartLintRule {
 
   void _validateInterfaceLocation(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -122,10 +120,8 @@ class InterfaceBoundaryRule extends DartLintRule {
         if (layer.name != 'use_case' && layer.name != 'application') {
           final code = LintCode(
             name: 'interface_boundary',
-            problemMessage:
-                'Output port interface $className should be defined in use case layer, not ${layer.name}',
-            correctionMessage:
-                'Move output port interface to use case or application layer.',
+            problemMessage: 'Output port interface $className should be defined in use case layer, not ${layer.name}',
+            correctionMessage: 'Move output port interface to use case or application layer.',
           );
           reporter.atNode(node, code);
         }
@@ -135,10 +131,8 @@ class InterfaceBoundaryRule extends DartLintRule {
         if (layer.name != 'domain') {
           final code = LintCode(
             name: 'interface_boundary',
-            problemMessage:
-                'Repository interface $className should be defined in domain layer, not ${layer.name}',
-            correctionMessage:
-                'Move repository interface to domain layer.',
+            problemMessage: 'Repository interface $className should be defined in domain layer, not ${layer.name}',
+            correctionMessage: 'Move repository interface to domain layer.',
           );
           reporter.atNode(node, code);
         }
@@ -150,8 +144,7 @@ class InterfaceBoundaryRule extends DartLintRule {
             name: 'interface_boundary',
             problemMessage:
                 'Gateway interface $className should be defined in application or domain layer, not ${layer.name}',
-            correctionMessage:
-                'Move gateway interface to application or domain layer.',
+            correctionMessage: 'Move gateway interface to application or domain layer.',
           );
           reporter.atNode(node, code);
         }
@@ -161,10 +154,8 @@ class InterfaceBoundaryRule extends DartLintRule {
         if (layer.name != 'application' && layer.name != 'use_case') {
           final code = LintCode(
             name: 'interface_boundary',
-            problemMessage:
-                'Use case interface $className should be defined in application layer, not ${layer.name}',
-            correctionMessage:
-                'Move use case interface to application layer.',
+            problemMessage: 'Use case interface $className should be defined in application layer, not ${layer.name}',
+            correctionMessage: 'Move use case interface to application layer.',
           );
           reporter.atNode(node, code);
         }
@@ -178,7 +169,7 @@ class InterfaceBoundaryRule extends DartLintRule {
 
   void _validateInterfaceContract(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     final methods = node.members.whereType<MethodDeclaration>();
@@ -194,7 +185,7 @@ class InterfaceBoundaryRule extends DartLintRule {
 
   void _validateBoundaryImplementation(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -202,7 +193,7 @@ class InterfaceBoundaryRule extends DartLintRule {
     if (implementsClause == null) return;
 
     for (final interface in implementsClause.interfaces) {
-      final interfaceName = interface.name.lexeme;
+      final interfaceName = interface.name2.lexeme;
       final interfaceType = _classifyInterface(interfaceName);
 
       _validateImplementationLocation(
@@ -226,7 +217,7 @@ class InterfaceBoundaryRule extends DartLintRule {
 
   void _validateImplementationLocation(
     NamedType interface,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
     String interfaceName,
@@ -239,8 +230,7 @@ class InterfaceBoundaryRule extends DartLintRule {
             name: 'interface_boundary',
             problemMessage:
                 'Output port $interfaceName should be implemented by presenter, not ${layer.name} class $className',
-            correctionMessage:
-                'Move implementation to presenter layer.',
+            correctionMessage: 'Move implementation to presenter layer.',
           );
           reporter.atNode(interface, code);
         }
@@ -252,8 +242,7 @@ class InterfaceBoundaryRule extends DartLintRule {
             name: 'interface_boundary',
             problemMessage:
                 'Repository interface $interfaceName should be implemented in infrastructure layer, not ${layer.name}',
-            correctionMessage:
-                'Move repository implementation to infrastructure layer.',
+            correctionMessage: 'Move repository implementation to infrastructure layer.',
           );
           reporter.atNode(interface, code);
         }
@@ -265,8 +254,7 @@ class InterfaceBoundaryRule extends DartLintRule {
             name: 'interface_boundary',
             problemMessage:
                 'Gateway interface $interfaceName should be implemented in infrastructure layer, not ${layer.name}',
-            correctionMessage:
-                'Move gateway implementation to infrastructure layer.',
+            correctionMessage: 'Move gateway implementation to infrastructure layer.',
           );
           reporter.atNode(interface, code);
         }
@@ -278,8 +266,7 @@ class InterfaceBoundaryRule extends DartLintRule {
             name: 'interface_boundary',
             problemMessage:
                 'Use case interface $interfaceName should be implemented in use case layer, not ${layer.name}',
-            correctionMessage:
-                'Move use case implementation to use case layer.',
+            correctionMessage: 'Move use case implementation to use case layer.',
           );
           reporter.atNode(interface, code);
         }
@@ -293,7 +280,7 @@ class InterfaceBoundaryRule extends DartLintRule {
 
   void _checkMissingBoundaryInterfaces(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -315,7 +302,7 @@ class InterfaceBoundaryRule extends DartLintRule {
 
   void _validateInterfaceNaming(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -325,10 +312,8 @@ class InterfaceBoundaryRule extends DartLintRule {
     if (!_hasProperInterfaceNaming(className, interfaceType)) {
       final code = LintCode(
         name: 'interface_boundary',
-        problemMessage:
-            'Interface $className does not follow naming conventions for ${interfaceType.name}',
-        correctionMessage:
-            _getInterfaceNamingAdvice(interfaceType),
+        problemMessage: 'Interface $className does not follow naming conventions for ${interfaceType.name}',
+        correctionMessage: _getInterfaceNamingAdvice(interfaceType),
       );
       reporter.atNode(node, code);
     }
@@ -336,7 +321,7 @@ class InterfaceBoundaryRule extends DartLintRule {
 
   void _validateInterfaceCompleteness(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     final methods = node.members.whereType<MethodDeclaration>();
@@ -344,25 +329,20 @@ class InterfaceBoundaryRule extends DartLintRule {
     if (methods.isEmpty) {
       final code = LintCode(
         name: 'interface_boundary',
-        problemMessage:
-            'Interface $className is empty - should define contract methods',
-        correctionMessage:
-            'Add abstract methods to define the interface contract.',
+        problemMessage: 'Interface $className is empty - should define contract methods',
+        correctionMessage: 'Add abstract methods to define the interface contract.',
       );
       reporter.atNode(node, code);
     }
 
     // Check for meaningful method names
-    final meaningfulMethods = methods.where((method) =>
-        _isMeaningfulMethodName(method.name.lexeme));
+    final meaningfulMethods = methods.where((method) => _isMeaningfulMethodName(method.name.lexeme));
 
     if (meaningfulMethods.length < methods.length * 0.8) {
       final code = LintCode(
         name: 'interface_boundary',
-        problemMessage:
-            'Interface $className has unclear method names',
-        correctionMessage:
-            'Use clear, intention-revealing method names in interface.',
+        problemMessage: 'Interface $className has unclear method names',
+        correctionMessage: 'Use clear, intention-revealing method names in interface.',
       );
       reporter.atNode(node, code);
     }
@@ -370,7 +350,7 @@ class InterfaceBoundaryRule extends DartLintRule {
 
   void _validateInterfacePurity(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     // Check for implementation details in interface
@@ -378,10 +358,8 @@ class InterfaceBoundaryRule extends DartLintRule {
       if (member is MethodDeclaration && !member.isAbstract) {
         final code = LintCode(
           name: 'interface_boundary',
-          problemMessage:
-              'Interface $className contains implementation details',
-          correctionMessage:
-              'Interfaces should only declare abstract methods.',
+          problemMessage: 'Interface $className contains implementation details',
+          correctionMessage: 'Interfaces should only declare abstract methods.',
         );
         reporter.atNode(member, code);
       }
@@ -389,10 +367,8 @@ class InterfaceBoundaryRule extends DartLintRule {
       if (member is FieldDeclaration) {
         final code = LintCode(
           name: 'interface_boundary',
-          problemMessage:
-              'Interface $className contains fields - should only have methods',
-          correctionMessage:
-              'Remove fields from interface, use abstract methods instead.',
+          problemMessage: 'Interface $className contains fields - should only have methods',
+          correctionMessage: 'Remove fields from interface, use abstract methods instead.',
         );
         reporter.atNode(member, code);
       }
@@ -401,7 +377,7 @@ class InterfaceBoundaryRule extends DartLintRule {
 
   void _validateInterfaceMethodSignature(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -422,7 +398,7 @@ class InterfaceBoundaryRule extends DartLintRule {
 
   void _validateInterfaceMethodContract(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     final methodName = method.name.lexeme;
@@ -431,10 +407,8 @@ class InterfaceBoundaryRule extends DartLintRule {
     if (_shouldBeAsync(methodName) && !_isAsyncMethod(method)) {
       final code = LintCode(
         name: 'interface_boundary',
-        problemMessage:
-            'Boundary method $methodName in $className should be async',
-        correctionMessage:
-            'Make method async and return Future for boundary operations.',
+        problemMessage: 'Boundary method $methodName in $className should be async',
+        correctionMessage: 'Make method async and return Future for boundary operations.',
       );
       reporter.atNode(method, code);
     }
@@ -447,7 +421,7 @@ class InterfaceBoundaryRule extends DartLintRule {
 
   void _validateInterfaceCohesion(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     final methods = node.members.whereType<MethodDeclaration>();
@@ -457,10 +431,8 @@ class InterfaceBoundaryRule extends DartLintRule {
     if (!_hasGoodCohesion(methodNames)) {
       final code = LintCode(
         name: 'interface_boundary',
-        problemMessage:
-            'Interface $className may have low cohesion - unrelated methods',
-        correctionMessage:
-            'Consider splitting into multiple focused interfaces.',
+        problemMessage: 'Interface $className may have low cohesion - unrelated methods',
+        correctionMessage: 'Consider splitting into multiple focused interfaces.',
       );
       reporter.atNode(node, code);
     }
@@ -468,7 +440,7 @@ class InterfaceBoundaryRule extends DartLintRule {
 
   void _checkMissingOutputPort(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     if (!_isUseCaseClass(className)) return;
@@ -480,10 +452,8 @@ class InterfaceBoundaryRule extends DartLintRule {
     if (hasPresenterLogic && !hasOutputPortDependency) {
       final code = LintCode(
         name: 'interface_boundary',
-        problemMessage:
-            'Use case $className should define output port for presenter interaction',
-        correctionMessage:
-            'Create output port interface to communicate with presenter.',
+        problemMessage: 'Use case $className should define output port for presenter interaction',
+        correctionMessage: 'Create output port interface to communicate with presenter.',
       );
       reporter.atNode(node, code);
     }
@@ -491,7 +461,7 @@ class InterfaceBoundaryRule extends DartLintRule {
 
   void _checkMissingOutputPortImplementation(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     if (!_isPresenterClass(className)) return;
@@ -501,10 +471,8 @@ class InterfaceBoundaryRule extends DartLintRule {
     if (!implementsOutputPort) {
       final code = LintCode(
         name: 'interface_boundary',
-        problemMessage:
-            'Presenter $className should implement output port interface',
-        correctionMessage:
-            'Implement the output port interface defined in use case layer.',
+        problemMessage: 'Presenter $className should implement output port interface',
+        correctionMessage: 'Implement the output port interface defined in use case layer.',
       );
       reporter.atNode(node, code);
     }
@@ -527,11 +495,11 @@ class InterfaceBoundaryRule extends DartLintRule {
 
   bool _isInterface(ClassDeclaration node, String className) {
     return node.abstractKeyword != null ||
-           className.startsWith('I') && className.length > 1 ||
-           className.contains('Interface') ||
-           className.contains('Contract') ||
-           className.contains('Port') ||
-           _hasOnlyAbstractMethods(node);
+        className.startsWith('I') && className.length > 1 ||
+        className.contains('Interface') ||
+        className.contains('Contract') ||
+        className.contains('Port') ||
+        _hasOnlyAbstractMethods(node);
   }
 
   bool _hasOnlyAbstractMethods(ClassDeclaration node) {
@@ -558,9 +526,7 @@ class InterfaceBoundaryRule extends DartLintRule {
   }
 
   bool _isInterfaceName(String className) {
-    return className.startsWith('I') ||
-           className.contains('Interface') ||
-           className.contains('Contract');
+    return className.startsWith('I') || className.contains('Interface') || className.contains('Contract');
   }
 
   bool _implementsBoundaryInterface(ClassDeclaration node) {
@@ -568,7 +534,7 @@ class InterfaceBoundaryRule extends DartLintRule {
     if (implementsClause == null) return false;
 
     return implementsClause.interfaces.any((interface) {
-      final interfaceName = interface.name.lexeme;
+      final interfaceName = interface.name2.lexeme;
       final interfaceType = _classifyInterface(interfaceName);
       return interfaceType != InterfaceType.other;
     });
@@ -607,30 +573,25 @@ class InterfaceBoundaryRule extends DartLintRule {
   bool _isMeaningfulMethodName(String methodName) {
     // Check if method name is descriptive
     return methodName.length > 3 &&
-           !methodName.startsWith('do') &&
-           !methodName.startsWith('get') && methodName.length <= 3;
+        !methodName.startsWith('do') &&
+        !methodName.startsWith('get') &&
+        methodName.length <= 3;
   }
 
   bool _shouldBeAsync(String methodName) {
-    final asyncPatterns = [
-      'save', 'load', 'fetch', 'send', 'process',
-      'execute', 'handle', 'call', 'invoke'
-    ];
+    final asyncPatterns = ['save', 'load', 'fetch', 'send', 'process', 'execute', 'handle', 'call', 'invoke'];
     return asyncPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _isAsyncMethod(MethodDeclaration method) {
     final returnType = method.returnType;
     return returnType.toString().contains('Future') ||
-           returnType.toString().contains('Stream') ||
-           method.body.toString().contains('async');
+        returnType.toString().contains('Stream') ||
+        method.body.toString().contains('async');
   }
 
   bool _requiresErrorHandling(String methodName) {
-    final errorPronePatterns = [
-      'save', 'load', 'send', 'process', 'execute',
-      'call', 'invoke', 'validate', 'parse'
-    ];
+    final errorPronePatterns = ['save', 'load', 'send', 'process', 'execute', 'call', 'invoke', 'validate', 'parse'];
     return errorPronePatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
@@ -657,7 +618,7 @@ class InterfaceBoundaryRule extends DartLintRule {
   // Additional helper methods
   void _validateBoundaryReturnType(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     TypeAnnotation returnType,
     String className,
     String methodName,
@@ -667,7 +628,7 @@ class InterfaceBoundaryRule extends DartLintRule {
 
   void _validateBoundaryParameterType(
     FormalParameter param,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
     String methodName,
   ) {
@@ -676,7 +637,7 @@ class InterfaceBoundaryRule extends DartLintRule {
 
   void _validateErrorHandlingPattern(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
     String methodName,
   ) {
@@ -685,7 +646,7 @@ class InterfaceBoundaryRule extends DartLintRule {
 
   void _validateImplementationCompleteness(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
     String interfaceName,
     InterfaceType interfaceType,
@@ -695,7 +656,7 @@ class InterfaceBoundaryRule extends DartLintRule {
 
   void _checkMissingRepositoryImplementation(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     // Implementation would check for repository interface implementation
@@ -703,7 +664,7 @@ class InterfaceBoundaryRule extends DartLintRule {
 
   void _checkControllerInterfaceUsage(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     // Implementation would check controller interface patterns
@@ -721,9 +682,7 @@ class InterfaceBoundaryRule extends DartLintRule {
     return node.members.any((member) {
       if (member is MethodDeclaration) {
         final methodName = member.name.lexeme;
-        return methodName.contains('present') ||
-               methodName.contains('display') ||
-               methodName.contains('show');
+        return methodName.contains('present') || methodName.contains('display') || methodName.contains('show');
       }
       return false;
     });
@@ -734,8 +693,7 @@ class InterfaceBoundaryRule extends DartLintRule {
       if (member is FieldDeclaration) {
         final type = member.fields.type;
         if (type is NamedType) {
-          return type.name.lexeme.contains('OutputPort') ||
-                 type.name.lexeme.contains('Port');
+          return (type.name2.lexeme.contains('OutputPort')) || (type.name2.lexeme.contains('Port'));
         }
       }
       return false;
@@ -747,7 +705,7 @@ class InterfaceBoundaryRule extends DartLintRule {
     if (implementsClause == null) return false;
 
     return implementsClause.interfaces.any((interface) {
-      final interfaceName = interface.name.lexeme;
+      final interfaceName = interface.name2.lexeme;
       return interfaceName.contains('OutputPort') || interfaceName.contains('Port');
     });
   }

@@ -21,16 +21,14 @@ class AbstractionProgressionRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'abstraction_progression',
-    problemMessage:
-        'Abstraction progression violation: {0}',
-    correctionMessage:
-        'Ensure abstraction increases as you move toward inner layers.',
+    problemMessage: 'Abstraction progression violation: {0}',
+    correctionMessage: 'Ensure abstraction increases as you move toward inner layers.',
   );
 
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addCompilationUnit((node) {
@@ -48,7 +46,7 @@ class AbstractionProgressionRule extends DartLintRule {
 
   void _analyzeFileAbstraction(
     CompilationUnit node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -61,10 +59,8 @@ class AbstractionProgressionRule extends DartLintRule {
     if (!_isAbstractionInRange(fileAbstraction, expectedRange)) {
       final code = LintCode(
         name: 'abstraction_progression',
-        problemMessage:
-            '${layer.name} layer file has inappropriate abstraction level: ${fileAbstraction.score}',
-        correctionMessage:
-            _getFileAbstractionAdvice(layer, fileAbstraction),
+        problemMessage: '${layer.name} layer file has inappropriate abstraction level: ${fileAbstraction.score}',
+        correctionMessage: _getFileAbstractionAdvice(layer, fileAbstraction),
       );
       // Note: Reporting on compilation unit for file-level issues
       reporter.atNode(node, code);
@@ -73,7 +69,7 @@ class AbstractionProgressionRule extends DartLintRule {
 
   void _analyzeClassAbstraction(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -89,8 +85,7 @@ class AbstractionProgressionRule extends DartLintRule {
         name: 'abstraction_progression',
         problemMessage:
             'Class $className has inappropriate abstraction for ${layer.name} layer: ${classAbstraction.score}',
-        correctionMessage:
-            _getClassAbstractionAdvice(layer, classAbstraction, className),
+        correctionMessage: _getClassAbstractionAdvice(layer, classAbstraction, className),
       );
       reporter.atNode(node, code);
     }
@@ -101,7 +96,7 @@ class AbstractionProgressionRule extends DartLintRule {
 
   void _analyzeMethodAbstraction(
     MethodDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -117,8 +112,7 @@ class AbstractionProgressionRule extends DartLintRule {
         name: 'abstraction_progression',
         problemMessage:
             'Method $methodName has inappropriate abstraction for ${layer.name} layer: ${methodAbstraction.score}',
-        correctionMessage:
-            _getMethodAbstractionAdvice(layer, methodAbstraction, methodName),
+        correctionMessage: _getMethodAbstractionAdvice(layer, methodAbstraction, methodName),
       );
       reporter.atNode(node, code);
     }
@@ -154,9 +148,7 @@ class AbstractionProgressionRule extends DartLintRule {
       }
     }
 
-    final score = totalElements > 0
-        ? (abstractScore - concreteScore) / totalElements
-        : 0.0;
+    final score = totalElements > 0 ? (abstractScore - concreteScore) / totalElements : 0.0;
 
     return FileAbstraction(
       score: score,
@@ -194,7 +186,7 @@ class AbstractionProgressionRule extends DartLintRule {
     final extendsClause = node.extendsClause;
     if (extendsClause != null) {
       totalMembers++;
-      final superclassName = extendsClause.superclass.name.lexeme;
+      final superclassName = extendsClause.superclass.name2.lexeme;
       if (_hasAbstractClassName(superclassName)) {
         abstractScore++;
       } else {
@@ -210,9 +202,7 @@ class AbstractionProgressionRule extends DartLintRule {
       }
     }
 
-    final score = totalMembers > 0
-        ? (abstractScore - concreteScore) / totalMembers
-        : 0.0;
+    final score = totalMembers > 0 ? (abstractScore - concreteScore) / totalMembers : 0.0;
 
     return ClassAbstraction(
       score: score,
@@ -256,7 +246,7 @@ class AbstractionProgressionRule extends DartLintRule {
         final type = param.type;
         if (type is NamedType) {
           totalElements++;
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
           if (_isConcreteType(typeName)) {
             concreteScore++;
           } else if (_isAbstractType(typeName)) {
@@ -266,9 +256,7 @@ class AbstractionProgressionRule extends DartLintRule {
       }
     }
 
-    final score = totalElements > 0
-        ? (abstractScore - concreteScore) / totalElements
-        : 0.0;
+    final score = totalElements > 0 ? (abstractScore - concreteScore) / totalElements : 0.0;
 
     return MethodAbstraction(
       score: score,
@@ -287,16 +275,30 @@ class AbstractionProgressionRule extends DartLintRule {
 
     // Concrete operations
     final concretePatterns = [
-      'http.', 'database.', 'file.', 'socket.',
-      'new ', 'print(', 'system.', '.execute(',
-      'connection.', 'transaction.', 'sql',
+      'http.',
+      'database.',
+      'file.',
+      'socket.',
+      'new ',
+      'print(',
+      'system.',
+      '.execute(',
+      'connection.',
+      'transaction.',
+      'sql',
     ];
 
     // Abstract operations
     final abstractPatterns = [
-      '.validate(', '.calculate(', '.apply(',
-      '.enforce(', '.decide(', '.evaluate(',
-      '.process(', '.handle(', '.manage(',
+      '.validate(',
+      '.calculate(',
+      '.apply(',
+      '.enforce(',
+      '.decide(',
+      '.evaluate(',
+      '.process(',
+      '.handle(',
+      '.manage(',
     ];
 
     for (final pattern in concretePatterns) {
@@ -320,15 +322,13 @@ class AbstractionProgressionRule extends DartLintRule {
 
   void _checkIntraClassAbstractionConsistency(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
   ) {
     final methods = node.members.whereType<MethodDeclaration>();
     if (methods.length < 2) return;
 
-    final methodAbstractions = methods
-        .map((m) => _analyzeMethodAbstractionLevel(m))
-        .toList();
+    final methodAbstractions = methods.map((m) => _analyzeMethodAbstractionLevel(m)).toList();
 
     // Check for inconsistent abstraction levels within the class
     final scores = methodAbstractions.map((m) => m.score).toList();
@@ -336,13 +336,12 @@ class AbstractionProgressionRule extends DartLintRule {
     final maxScore = scores.reduce((a, b) => a > b ? a : b);
     final range = maxScore - minScore;
 
-    if (range > 1.0) { // Threshold for inconsistency
+    if (range > 1.0) {
+      // Threshold for inconsistency
       final code = LintCode(
         name: 'abstraction_progression',
-        problemMessage:
-            'Class has inconsistent method abstraction levels (range: ${range.toStringAsFixed(2)})',
-        correctionMessage:
-            'Ensure all methods in a class operate at similar abstraction levels.',
+        problemMessage: 'Class has inconsistent method abstraction levels (range: ${range.toStringAsFixed(2)})',
+        correctionMessage: 'Ensure all methods in a class operate at similar abstraction levels.',
       );
       reporter.atNode(node, code);
     }
@@ -376,16 +375,18 @@ class AbstractionProgressionRule extends DartLintRule {
   // Classification methods
   bool _isConcreteImport(String importUri) {
     final concreteImports = [
-      'package:sqflite/', 'package:http/', 'package:dio/',
-      'dart:io', 'dart:html', 'package:flutter/'
+      'package:sqflite/',
+      'package:http/',
+      'package:dio/',
+      'dart:io',
+      'dart:html',
+      'package:flutter/'
     ];
     return concreteImports.any((import) => importUri.startsWith(import));
   }
 
   bool _isAbstractImport(String importUri) {
-    return importUri.contains('/domain/') ||
-           importUri.contains('/entities/') ||
-           importUri.contains('/interfaces/');
+    return importUri.contains('/domain/') || importUri.contains('/entities/') || importUri.contains('/interfaces/');
   }
 
   bool _isConcreteDeclaration(AstNode declaration) {
@@ -398,24 +399,36 @@ class AbstractionProgressionRule extends DartLintRule {
 
   bool _isAbstractDeclaration(AstNode declaration) {
     if (declaration is ClassDeclaration) {
-      return declaration.abstractKeyword != null ||
-             _hasAbstractClassName(declaration.name.lexeme);
+      return declaration.abstractKeyword != null || _hasAbstractClassName(declaration.name.lexeme);
     }
     return false;
   }
 
   bool _hasConcreteClassName(String className) {
     final concreteIndicators = [
-      'Implementation', 'Concrete', 'Adapter', 'Client',
-      'Database', 'Http', 'File', 'Driver', 'Manager'
+      'Implementation',
+      'Concrete',
+      'Adapter',
+      'Client',
+      'Database',
+      'Http',
+      'File',
+      'Driver',
+      'Manager'
     ];
     return concreteIndicators.any((indicator) => className.contains(indicator));
   }
 
   bool _hasAbstractClassName(String className) {
     final abstractIndicators = [
-      'Interface', 'Abstract', 'Policy', 'Rule', 'Entity',
-      'ValueObject', 'Service', 'Repository'
+      'Interface',
+      'Abstract',
+      'Policy',
+      'Rule',
+      'Entity',
+      'ValueObject',
+      'Service',
+      'Repository'
     ];
     return abstractIndicators.any((indicator) => className.contains(indicator));
   }
@@ -428,7 +441,7 @@ class AbstractionProgressionRule extends DartLintRule {
     if (member is FieldDeclaration) {
       final type = member.fields.type;
       if (type is NamedType) {
-        return _isConcreteType(type.name.lexeme);
+        return _isConcreteType(type.name2.lexeme);
       }
     }
     return false;
@@ -441,7 +454,7 @@ class AbstractionProgressionRule extends DartLintRule {
     if (member is FieldDeclaration) {
       final type = member.fields.type;
       if (type is NamedType) {
-        return _isAbstractType(type.name.lexeme);
+        return _isAbstractType(type.name2.lexeme);
       }
     }
     return false;
@@ -449,37 +462,57 @@ class AbstractionProgressionRule extends DartLintRule {
 
   bool _hasConcreteMethodName(String methodName) {
     final concretePatterns = [
-      'connect', 'read', 'write', 'save', 'load',
-      'serialize', 'deserialize', 'parse', 'format',
-      'http', 'sql', 'file', 'download', 'upload'
+      'connect',
+      'read',
+      'write',
+      'save',
+      'load',
+      'serialize',
+      'deserialize',
+      'parse',
+      'format',
+      'http',
+      'sql',
+      'file',
+      'download',
+      'upload'
     ];
-    return concretePatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return concretePatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _hasAbstractMethodName(String methodName) {
     final abstractPatterns = [
-      'validate', 'calculate', 'process', 'apply',
-      'enforce', 'decide', 'evaluate', 'assess',
-      'determine', 'authorize', 'approve'
+      'validate',
+      'calculate',
+      'process',
+      'apply',
+      'enforce',
+      'decide',
+      'evaluate',
+      'assess',
+      'determine',
+      'authorize',
+      'approve'
     ];
-    return abstractPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return abstractPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _isConcreteType(String typeName) {
     final concreteTypes = [
-      'Database', 'HttpClient', 'File', 'Socket',
-      'Connection', 'Driver', 'Adapter', 'Implementation'
+      'Database',
+      'HttpClient',
+      'File',
+      'Socket',
+      'Connection',
+      'Driver',
+      'Adapter',
+      'Implementation'
     ];
     return concreteTypes.any((type) => typeName.contains(type));
   }
 
   bool _isAbstractType(String typeName) {
-    final abstractTypes = [
-      'Interface', 'Abstract', 'Repository', 'Service',
-      'Policy', 'Rule', 'Entity', 'ValueObject'
-    ];
+    final abstractTypes = ['Interface', 'Abstract', 'Repository', 'Service', 'Policy', 'Rule', 'Entity', 'ValueObject'];
     return abstractTypes.any((type) => typeName.contains(type));
   }
 

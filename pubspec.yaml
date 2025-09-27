@@ -22,10 +22,10 @@ platforms:
   windows:
 
 dependencies:
-  analyzer: ^8.1.1
-  custom_lint_builder: ^0.8.1
+  analyzer: ^7.4.5
+  custom_lint_builder: ^0.7.6
 
 dev_dependencies:
-  custom_lint: ^0.8.1
+  custom_lint: ^0.7.6
   lints: ^6.0.0
   test: ^1.26.3

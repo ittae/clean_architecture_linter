@@ -29,7 +29,7 @@ class ConsolidatedUseCaseRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -43,7 +43,7 @@ class ConsolidatedUseCaseRule extends DartLintRule {
 
   void _validateUseCase(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -76,7 +76,7 @@ class ConsolidatedUseCaseRule extends DartLintRule {
 
   void _validateImports(
     ImportDirective node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -118,7 +118,7 @@ class ConsolidatedUseCaseRule extends DartLintRule {
 
         final type = member.fields.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
           if (typeName.contains('Repository')) hasRepositoryDep = true;
           if (_isExternalDependencyType(typeName)) hasExternalDep = true;
         }
@@ -201,7 +201,7 @@ class ConsolidatedUseCaseRule extends DartLintRule {
     final extendsClause = node.extendsClause;
     if (extendsClause != null) {
       final superclass = extendsClause.superclass;
-      final superName = superclass.name.lexeme;
+      final superName = superclass.name2.lexeme;
       if (_isFrameworkClass(superName)) {
         violations.add(UseCaseViolation(
           type: ViolationType.independence,
@@ -216,7 +216,7 @@ class ConsolidatedUseCaseRule extends DartLintRule {
     final implementsClause = node.implementsClause;
     if (implementsClause != null) {
       for (final interface in implementsClause.interfaces) {
-        final interfaceName = interface.name.lexeme;
+        final interfaceName = interface.name2.lexeme;
         if (_isFrameworkInterface(interfaceName)) {
           violations.add(UseCaseViolation(
             type: ViolationType.independence,
@@ -368,7 +368,7 @@ class ConsolidatedUseCaseRule extends DartLintRule {
   // Helper methods
   bool _isUseCaseFile(String filePath) {
     return (filePath.contains('/domain/') || filePath.contains('\\domain\\')) &&
-           (filePath.contains('/usecases/') ||
+        (filePath.contains('/usecases/') ||
             filePath.contains('\\usecases\\') ||
             filePath.contains('/use_cases/') ||
             filePath.contains('\\use_cases\\') ||
@@ -378,78 +378,82 @@ class ConsolidatedUseCaseRule extends DartLintRule {
 
   bool _isAllowedMethod(String methodName) {
     // Some methods are allowed as helpers
-    return methodName == 'dispose' ||
-           methodName == 'close' ||
-           methodName.startsWith('validate');
+    return methodName == 'dispose' || methodName == 'close' || methodName.startsWith('validate');
   }
 
   bool _isFrameworkClass(String className) {
     return className.contains('Widget') ||
-           className.contains('State') ||
-           className.contains('Controller') ||
-           className.contains('Bloc');
+        className.contains('State') ||
+        className.contains('Controller') ||
+        className.contains('Bloc');
   }
 
   bool _isFrameworkInterface(String interfaceName) {
     return interfaceName.contains('Listener') ||
-           interfaceName.contains('Observer') ||
-           interfaceName.contains('Delegate');
+        interfaceName.contains('Observer') ||
+        interfaceName.contains('Delegate');
   }
 
   bool _isExternalDependencyType(String typeName) {
     return typeName.contains('Client') ||
-           typeName.contains('Service') ||
-           typeName.contains('Manager') ||
-           typeName.contains('Provider');
+        typeName.contains('Service') ||
+        typeName.contains('Manager') ||
+        typeName.contains('Provider');
   }
 
   bool _containsEntityUsage(String bodyString) {
     return bodyString.contains('Entity') ||
-           bodyString.contains('ValueObject') ||
-           bodyString.contains('.validate') ||
-           bodyString.contains('.isValid');
+        bodyString.contains('ValueObject') ||
+        bodyString.contains('.validate') ||
+        bodyString.contains('.isValid');
   }
 
   bool _containsExternalDependency(String bodyString) {
     return bodyString.contains('http.') ||
-           bodyString.contains('dio.') ||
-           bodyString.contains('File(') ||
-           bodyString.contains('Database');
+        bodyString.contains('dio.') ||
+        bodyString.contains('File(') ||
+        bodyString.contains('Database');
   }
 
   bool _suggestsDataOperation(String bodyString) {
-    final dataPatterns = [
-      'get', 'fetch', 'save', 'update', 'delete',
-      'find', 'search', 'load', 'store', 'retrieve'
-    ];
+    final dataPatterns = ['get', 'fetch', 'save', 'update', 'delete', 'find', 'search', 'load', 'store', 'retrieve'];
     final lower = bodyString.toLowerCase();
     return dataPatterns.any((pattern) => lower.contains(pattern));
   }
 
   bool _containsDirectInfrastructureCall(String bodyString) {
     final infraPatterns = [
-      '.get(', '.post(', '.put(', '.delete(',
-      'query(', 'execute(', 'runTransaction(',
-      'File(', 'Directory(', 'Socket('
+      '.get(',
+      '.post(',
+      '.put(',
+      '.delete(',
+      'query(',
+      'execute(',
+      'runTransaction(',
+      'File(',
+      'Directory(',
+      'Socket('
     ];
     return infraPatterns.any((pattern) => bodyString.contains(pattern));
   }
 
   bool _isEnterpriseRule(String methodName) {
     // Enterprise rules are general business rules
-    final enterprisePatterns = [
-      'calculate', 'compute', 'derive',
-      'validateCore', 'checkInvariant'
-    ];
+    final enterprisePatterns = ['calculate', 'compute', 'derive', 'validateCore', 'checkInvariant'];
     final lower = methodName.toLowerCase();
     return enterprisePatterns.any((pattern) => lower.contains(pattern));
   }
 
   bool _containsPresentationLogic(String bodyString) {
     final uiPatterns = [
-      'Navigator', 'BuildContext', 'showDialog',
-      'setState', 'Widget', 'Color',
-      'Theme', 'MediaQuery'
+      'Navigator',
+      'BuildContext',
+      'showDialog',
+      'setState',
+      'Widget',
+      'Color',
+      'Theme',
+      'MediaQuery'
     ];
     return uiPatterns.any((pattern) => bodyString.contains(pattern));
   }

@@ -29,16 +29,14 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'clean_architecture_benefits',
-    problemMessage:
-        'Clean Architecture benefit violation: {0}',
-    correctionMessage:
-        'Maintain Clean Architecture benefits by preserving proper layer separation.',
+    problemMessage: 'Clean Architecture benefit violation: {0}',
+    correctionMessage: 'Maintain Clean Architecture benefits by preserving proper layer separation.',
   );
 
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -60,7 +58,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   void _analyzeClassArchitecturalBenefits(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -84,7 +82,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   void _analyzeMethodTestability(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -104,7 +102,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   void _analyzeConstructorDependencies(
     ConstructorDeclaration constructor,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -125,7 +123,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   void _analyzeImportIndependence(
     ImportDirective node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -141,7 +139,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   void _validateTestability(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -159,7 +157,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   void _validateFrameworkIndependence(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -174,7 +172,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   void _validateExternalComponentReplaceability(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -189,7 +187,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   void _validateBusinessLogicIsolation(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -204,7 +202,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   void _validateIntrinsicTestability(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String methodName,
   ) {
@@ -212,10 +210,8 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
     if (!_isIntrinsicallyTestable(method)) {
       final code = LintCode(
         name: 'clean_architecture_benefits',
-        problemMessage:
-            'Business logic method $methodName is not intrinsically testable',
-        correctionMessage:
-            'Remove external dependencies to make business logic testable in isolation.',
+        problemMessage: 'Business logic method $methodName is not intrinsically testable',
+        correctionMessage: 'Remove external dependencies to make business logic testable in isolation.',
       );
       reporter.atNode(method, code);
     }
@@ -226,7 +222,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   void _checkHardToTestPatterns(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String methodName,
   ) {
@@ -238,10 +234,8 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
     if (_hasHardCodedDependencies(bodyString)) {
       final code = LintCode(
         name: 'clean_architecture_benefits',
-        problemMessage:
-            'Method $methodName has hard-coded dependencies that hurt testability',
-        correctionMessage:
-            'Use dependency injection to improve testability.',
+        problemMessage: 'Method $methodName has hard-coded dependencies that hurt testability',
+        correctionMessage: 'Use dependency injection to improve testability.',
       );
       reporter.atNode(method, code);
     }
@@ -250,10 +244,8 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
     if (_hasStaticExternalCalls(bodyString)) {
       final code = LintCode(
         name: 'clean_architecture_benefits',
-        problemMessage:
-            'Method $methodName uses static calls that prevent testing',
-        correctionMessage:
-            'Inject dependencies instead of using static calls.',
+        problemMessage: 'Method $methodName uses static calls that prevent testing',
+        correctionMessage: 'Inject dependencies instead of using static calls.',
       );
       reporter.atNode(method, code);
     }
@@ -262,10 +254,8 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
     if (_accessesGlobalState(bodyString)) {
       final code = LintCode(
         name: 'clean_architecture_benefits',
-        problemMessage:
-            'Method $methodName accesses global state, hurting testability',
-        correctionMessage:
-            'Pass state as parameters or inject as dependencies.',
+        problemMessage: 'Method $methodName accesses global state, hurting testability',
+        correctionMessage: 'Pass state as parameters or inject as dependencies.',
       );
       reporter.atNode(method, code);
     }
@@ -273,7 +263,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   void _validateConstructorForTestability(
     ConstructorDeclaration constructor,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -283,10 +273,8 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
     if (_isBusinessLogicLayer(layer) && !_allowsTestDoubles(parameters)) {
       final code = LintCode(
         name: 'clean_architecture_benefits',
-        problemMessage:
-            'Constructor of $className doesn\'t allow test doubles for external dependencies',
-        correctionMessage:
-            'Accept interfaces instead of concrete classes to enable mocking.',
+        problemMessage: 'Constructor of $className doesn\'t allow test doubles for external dependencies',
+        correctionMessage: 'Accept interfaces instead of concrete classes to enable mocking.',
       );
       reporter.atNode(constructor, code);
     }
@@ -295,10 +283,8 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
     if (_hasComplexConstructorLogic(constructor)) {
       final code = LintCode(
         name: 'clean_architecture_benefits',
-        problemMessage:
-            'Constructor of $className has complex logic that hurts testability',
-        correctionMessage:
-            'Move complex logic to methods and keep constructor simple.',
+        problemMessage: 'Constructor of $className has complex logic that hurts testability',
+        correctionMessage: 'Move complex logic to methods and keep constructor simple.',
       );
       reporter.atNode(constructor, code);
     }
@@ -306,7 +292,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   void _validateImportIndependence(
     ImportDirective node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String importUri,
   ) {
@@ -314,10 +300,8 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
     if (_violatesFrameworkIndependence(layer, importUri)) {
       final code = LintCode(
         name: 'clean_architecture_benefits',
-        problemMessage:
-            'Import $importUri violates framework independence in ${layer.name} layer',
-        correctionMessage:
-            'Remove framework dependency to maintain replaceability.',
+        problemMessage: 'Import $importUri violates framework independence in ${layer.name} layer',
+        correctionMessage: 'Remove framework dependency to maintain replaceability.',
       );
       reporter.atNode(node, code);
     }
@@ -325,10 +309,8 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
     if (_violatesDatabaseIndependence(layer, importUri)) {
       final code = LintCode(
         name: 'clean_architecture_benefits',
-        problemMessage:
-            'Import $importUri violates database independence in ${layer.name} layer',
-        correctionMessage:
-            'Use repository abstractions instead of direct database imports.',
+        problemMessage: 'Import $importUri violates database independence in ${layer.name} layer',
+        correctionMessage: 'Use repository abstractions instead of direct database imports.',
       );
       reporter.atNode(node, code);
     }
@@ -336,10 +318,8 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
     if (_violatesUIIndependence(layer, importUri)) {
       final code = LintCode(
         name: 'clean_architecture_benefits',
-        problemMessage:
-            'Import $importUri violates UI independence in ${layer.name} layer',
-        correctionMessage:
-            'Keep UI dependencies in presentation layer only.',
+        problemMessage: 'Import $importUri violates UI independence in ${layer.name} layer',
+        correctionMessage: 'Keep UI dependencies in presentation layer only.',
       );
       reporter.atNode(node, code);
     }
@@ -347,7 +327,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   void _checkBusinessLogicTestability(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -359,10 +339,8 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
         if (!_isAbstractDependency(dependency)) {
           final code = LintCode(
             name: 'clean_architecture_benefits',
-            problemMessage:
-                'Business logic class $className depends on concrete external component: $dependency',
-            correctionMessage:
-                'Use interface to maintain testability and replaceability.',
+            problemMessage: 'Business logic class $className depends on concrete external component: $dependency',
+            correctionMessage: 'Use interface to maintain testability and replaceability.',
           );
           reporter.atNode(node, code);
         }
@@ -372,7 +350,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   void _checkExternalDependenciesImpactOnTestability(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -382,15 +360,14 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
       for (final field in fields) {
         final type = field.fields.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
 
           if (_isExternalDependencyType(typeName)) {
             final code = LintCode(
               name: 'clean_architecture_benefits',
               problemMessage:
                   'Business logic class $className has external dependency $typeName that hurts testability',
-              correctionMessage:
-                  'Inject interface instead of concrete external dependency.',
+              correctionMessage: 'Inject interface instead of concrete external dependency.',
             );
             reporter.atNode(field, code);
           }
@@ -401,7 +378,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   void _checkStaticDependencies(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -412,10 +389,8 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
         if (_usesStaticDependencies(method)) {
           final code = LintCode(
             name: 'clean_architecture_benefits',
-            problemMessage:
-                'Method ${method.name.lexeme} in $className uses static dependencies that prevent testing',
-            correctionMessage:
-                'Inject dependencies instead of using static references.',
+            problemMessage: 'Method ${method.name.lexeme} in $className uses static dependencies that prevent testing',
+            correctionMessage: 'Inject dependencies instead of using static references.',
           );
           reporter.atNode(method, code);
         }
@@ -425,7 +400,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   void _checkFrameworkCouplingInBusinessLogic(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     // Check for framework-specific annotations or inheritance
@@ -434,10 +409,8 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
       if (_isFrameworkAnnotation(annotation)) {
         final code = LintCode(
           name: 'clean_architecture_benefits',
-          problemMessage:
-              'Business logic class $className uses framework annotation',
-          correctionMessage:
-              'Remove framework coupling to maintain independence and replaceability.',
+          problemMessage: 'Business logic class $className uses framework annotation',
+          correctionMessage: 'Remove framework coupling to maintain independence and replaceability.',
         );
         reporter.atNode(annotation, code);
       }
@@ -446,14 +419,12 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
     // Check inheritance from framework classes
     final extendsClause = node.extendsClause;
     if (extendsClause != null) {
-      final superclassName = extendsClause.superclass.name.lexeme;
+      final superclassName = extendsClause.superclass.name2.lexeme;
       if (_isFrameworkClass(superclassName)) {
         final code = LintCode(
           name: 'clean_architecture_benefits',
-          problemMessage:
-              'Business logic class $className extends framework class $superclassName',
-          correctionMessage:
-              'Use composition instead of inheritance to maintain framework independence.',
+          problemMessage: 'Business logic class $className extends framework class $superclassName',
+          correctionMessage: 'Use composition instead of inheritance to maintain framework independence.',
         );
         reporter.atNode(extendsClause, code);
       }
@@ -462,7 +433,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   void _checkFrameworkReplacementBarriers(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -470,10 +441,8 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
     if (_hasFrameworkSpecificPatterns(node)) {
       final code = LintCode(
         name: 'clean_architecture_benefits',
-        problemMessage:
-            'Class $className has framework-specific patterns that prevent easy replacement',
-        correctionMessage:
-            'Use generic patterns to enable framework replacement with minimum fuss.',
+        problemMessage: 'Class $className has framework-specific patterns that prevent easy replacement',
+        correctionMessage: 'Use generic patterns to enable framework replacement with minimum fuss.',
       );
       reporter.atNode(node, code);
     }
@@ -481,17 +450,15 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   void _checkExternalComponentDesign(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     // Check if external component is designed for easy replacement
     if (!_isDesignedForReplacement(node)) {
       final code = LintCode(
         name: 'clean_architecture_benefits',
-        problemMessage:
-            'External component $className is not designed for easy replacement',
-        correctionMessage:
-            'Implement clear interfaces and minimize coupling for replaceability.',
+        problemMessage: 'External component $className is not designed for easy replacement',
+        correctionMessage: 'Implement clear interfaces and minimize coupling for replaceability.',
       );
       reporter.atNode(node, code);
     }
@@ -499,7 +466,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   void _checkTightCouplingToExternals(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -507,10 +474,8 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
     if (_hasTightCouplingToExternals(node, layer)) {
       final code = LintCode(
         name: 'clean_architecture_benefits',
-        problemMessage:
-            'Class $className has tight coupling to external components',
-        correctionMessage:
-            'Reduce coupling to enable easy replacement of external components.',
+        problemMessage: 'Class $className has tight coupling to external components',
+        correctionMessage: 'Reduce coupling to enable easy replacement of external components.',
       );
       reporter.atNode(node, code);
     }
@@ -518,17 +483,15 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   void _checkBusinessLogicIsolation(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     // Check if business logic is properly isolated
     if (!_isProperlyIsolated(node)) {
       final code = LintCode(
         name: 'clean_architecture_benefits',
-        problemMessage:
-            'Business logic in $className is not properly isolated',
-        correctionMessage:
-            'Isolate business logic from external concerns for better testability.',
+        problemMessage: 'Business logic in $className is not properly isolated',
+        correctionMessage: 'Isolate business logic from external concerns for better testability.',
       );
       reporter.atNode(node, code);
     }
@@ -536,17 +499,15 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   void _checkBusinessLogicLeakage(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
     if (!_isBusinessLogicLayer(layer) && _containsBusinessLogic(node, layer)) {
       final code = LintCode(
         name: 'clean_architecture_benefits',
-        problemMessage:
-            'Business logic leaked to ${layer.name} layer in class $className',
-        correctionMessage:
-            'Move business logic to appropriate inner layer for better isolation.',
+        problemMessage: 'Business logic leaked to ${layer.name} layer in class $className',
+        correctionMessage: 'Move business logic to appropriate inner layer for better isolation.',
       );
       reporter.atNode(node, code);
     }
@@ -554,7 +515,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   void _checkTestabilityAntiPatterns(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String methodName,
   ) {
@@ -564,10 +525,8 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
     if (_usesSingleton(body)) {
       final code = LintCode(
         name: 'clean_architecture_benefits',
-        problemMessage:
-            'Method $methodName uses singleton pattern that hurts testability',
-        correctionMessage:
-            'Inject dependencies instead of using singletons.',
+        problemMessage: 'Method $methodName uses singleton pattern that hurts testability',
+        correctionMessage: 'Inject dependencies instead of using singletons.',
       );
       reporter.atNode(method, code);
     }
@@ -576,10 +535,8 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
     if (_isBusinessLogicLayer(layer) && _instantiatesDirectly(body)) {
       final code = LintCode(
         name: 'clean_architecture_benefits',
-        problemMessage:
-            'Business logic method $methodName directly instantiates dependencies',
-        correctionMessage:
-            'Use dependency injection or factory pattern for better testability.',
+        problemMessage: 'Business logic method $methodName directly instantiates dependencies',
+        correctionMessage: 'Use dependency injection or factory pattern for better testability.',
       );
       reporter.atNode(method, code);
     }
@@ -600,8 +557,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
   }
 
   bool _isBusinessLogicMethod(MethodDeclaration method, ArchitecturalLayer layer) {
-    return _isBusinessLogicLayer(layer) &&
-           _containsBusinessLogicPatterns(method.name.lexeme);
+    return _isBusinessLogicLayer(layer) && _containsBusinessLogicPatterns(method.name.lexeme);
   }
 
   bool _isBusinessLogicLayer(ArchitecturalLayer layer) {
@@ -614,17 +570,12 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   bool _containsBusinessLogic(ClassDeclaration node, ArchitecturalLayer layer) {
     final methods = node.members.whereType<MethodDeclaration>();
-    return methods.any((method) =>
-        _containsBusinessLogicPatterns(method.name.lexeme));
+    return methods.any((method) => _containsBusinessLogicPatterns(method.name.lexeme));
   }
 
   bool _containsBusinessLogicPatterns(String name) {
-    final businessPatterns = [
-      'calculate', 'validate', 'process', 'apply',
-      'execute', 'perform', 'handle', 'manage'
-    ];
-    return businessPatterns.any((pattern) =>
-        name.toLowerCase().contains(pattern));
+    final businessPatterns = ['calculate', 'validate', 'process', 'apply', 'execute', 'perform', 'handle', 'manage'];
+    return businessPatterns.any((pattern) => name.toLowerCase().contains(pattern));
   }
 
   bool _isIntrinsicallyTestable(MethodDeclaration method) {
@@ -633,30 +584,24 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
     // Method is testable if it doesn't depend on external systems
     return !_hasExternalDependencies(bodyString) &&
-           !_hasStaticDependencies(bodyString) &&
-           !_hasGlobalStateAccess(bodyString);
+        !_hasStaticDependencies(bodyString) &&
+        !_hasGlobalStateAccess(bodyString);
   }
 
   bool _hasHardCodedDependencies(String bodyString) {
     return bodyString.contains('new ') &&
-           !bodyString.contains('List(') &&
-           !bodyString.contains('Map(') &&
-           !bodyString.contains('String(');
+        !bodyString.contains('List(') &&
+        !bodyString.contains('Map(') &&
+        !bodyString.contains('String(');
   }
 
   bool _hasStaticExternalCalls(String bodyString) {
-    final staticPatterns = [
-      'Database.', 'HttpClient.', 'File.', 'Directory.',
-      'Logger.', 'Config.', 'System.'
-    ];
+    final staticPatterns = ['Database.', 'HttpClient.', 'File.', 'Directory.', 'Logger.', 'Config.', 'System.'];
     return staticPatterns.any((pattern) => bodyString.contains(pattern));
   }
 
   bool _accessesGlobalState(String bodyString) {
-    final globalPatterns = [
-      'global', 'Global', 'getInstance()', 'instance.',
-      'current.', 'shared.'
-    ];
+    final globalPatterns = ['global', 'Global', 'getInstance()', 'instance.', 'current.', 'shared.'];
     return globalPatterns.any((pattern) => bodyString.contains(pattern));
   }
 
@@ -665,7 +610,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
       if (param is SimpleFormalParameter) {
         final type = param.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
           return _isAbstractType(typeName);
         }
       }
@@ -679,17 +624,20 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
     // Check for complex logic indicators
     return bodyString.contains('if (') ||
-           bodyString.contains('for (') ||
-           bodyString.contains('while (') ||
-           bodyString.contains('switch (') ||
-           bodyString.split('\n').length > 10;
+        bodyString.contains('for (') ||
+        bodyString.contains('while (') ||
+        bodyString.contains('switch (') ||
+        bodyString.split('\n').length > 10;
   }
 
   bool _violatesFrameworkIndependence(ArchitecturalLayer layer, String importUri) {
     if (_isBusinessLogicLayer(layer)) {
       final frameworkImports = [
-        'package:flutter/', 'package:angular/', 'package:react/',
-        'package:spring/', 'package:express/'
+        'package:flutter/',
+        'package:angular/',
+        'package:react/',
+        'package:spring/',
+        'package:express/'
       ];
       return frameworkImports.any((framework) => importUri.startsWith(framework));
     }
@@ -699,8 +647,11 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
   bool _violatesDatabaseIndependence(ArchitecturalLayer layer, String importUri) {
     if (_isBusinessLogicLayer(layer)) {
       final databaseImports = [
-        'package:sqflite/', 'package:mysql/', 'package:postgres/',
-        'package:mongodb/', 'package:redis/'
+        'package:sqflite/',
+        'package:mysql/',
+        'package:postgres/',
+        'package:mongodb/',
+        'package:redis/'
       ];
       return databaseImports.any((db) => importUri.startsWith(db));
     }
@@ -709,10 +660,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   bool _violatesUIIndependence(ArchitecturalLayer layer, String importUri) {
     if (_isBusinessLogicLayer(layer)) {
-      final uiImports = [
-        'package:flutter/widgets', 'package:flutter/material',
-        '/ui/', '/widgets/', '/components/'
-      ];
+      final uiImports = ['package:flutter/widgets', 'package:flutter/material', '/ui/', '/widgets/', '/components/'];
       return uiImports.any((ui) => importUri.contains(ui));
     }
     return false;
@@ -725,7 +673,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
     for (final field in fields) {
       final type = field.fields.type;
       if (type is NamedType) {
-        final typeName = type.name.lexeme;
+        final typeName = type.name2.lexeme;
         if (_isExternalDependencyType(typeName)) {
           dependencies.add(typeName);
         }
@@ -741,20 +689,25 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
 
   bool _isAbstractType(String typeName) {
     return typeName.startsWith('I') ||
-           typeName.contains('Interface') ||
-           typeName.contains('Abstract') ||
-           typeName.contains('Contract');
+        typeName.contains('Interface') ||
+        typeName.contains('Abstract') ||
+        typeName.contains('Contract');
   }
 
   bool _isInterfaceType(String typeName) {
-    return typeName.startsWith('I') && typeName.length > 1 ||
-           typeName.contains('Interface');
+    return typeName.startsWith('I') && typeName.length > 1 || typeName.contains('Interface');
   }
 
   bool _isExternalDependencyType(String typeName) {
     final externalTypes = [
-      'Database', 'HttpClient', 'FileSystem', 'Logger',
-      'Cache', 'Queue', 'EmailService', 'NotificationService'
+      'Database',
+      'HttpClient',
+      'FileSystem',
+      'Logger',
+      'Cache',
+      'Queue',
+      'EmailService',
+      'NotificationService'
     ];
     return externalTypes.any((type) => typeName.contains(type));
   }
@@ -765,39 +718,26 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
   }
 
   bool _hasStaticDependencies(String bodyString) {
-    final staticPatterns = [
-      '.getInstance()', '.current', '.shared', '.global'
-    ];
+    final staticPatterns = ['.getInstance()', '.current', '.shared', '.global'];
     return staticPatterns.any((pattern) => bodyString.contains(pattern));
   }
 
   bool _isFrameworkAnnotation(Annotation annotation) {
-    final frameworkAnnotations = [
-      'Component', 'Service', 'Controller', 'Entity',
-      'Repository', 'Autowired', 'Inject'
-    ];
-    return frameworkAnnotations.any((annot) =>
-        annotation.toString().contains(annot));
+    final frameworkAnnotations = ['Component', 'Service', 'Controller', 'Entity', 'Repository', 'Autowired', 'Inject'];
+    return frameworkAnnotations.any((annot) => annotation.toString().contains(annot));
   }
 
   bool _isFrameworkClass(String className) {
-    final frameworkClasses = [
-      'Component', 'Service', 'Controller', 'HttpServlet',
-      'Activity', 'Fragment', 'Widget'
-    ];
+    final frameworkClasses = ['Component', 'Service', 'Controller', 'HttpServlet', 'Activity', 'Fragment', 'Widget'];
     return frameworkClasses.any((cls) => className.contains(cls));
   }
 
   bool _hasFrameworkSpecificPatterns(ClassDeclaration node) {
     // Check for framework-specific method names or patterns
     final methods = node.members.whereType<MethodDeclaration>();
-    final frameworkMethodPatterns = [
-      'onCreate', 'onDestroy', 'viewDidLoad', 'componentDidMount'
-    ];
+    final frameworkMethodPatterns = ['onCreate', 'onDestroy', 'viewDidLoad', 'componentDidMount'];
 
-    return methods.any((method) =>
-        frameworkMethodPatterns.any((pattern) =>
-            method.name.lexeme.contains(pattern)));
+    return methods.any((method) => frameworkMethodPatterns.any((pattern) => method.name.lexeme.contains(pattern)));
   }
 
   bool _isDesignedForReplacement(ClassDeclaration node) {
@@ -813,7 +753,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
     return fields.any((field) {
       final type = field.fields.type;
       if (type is NamedType) {
-        final typeName = type.name.lexeme;
+        final typeName = type.name2.lexeme;
         return _isExternalDependencyType(typeName) && !_isAbstractType(typeName);
       }
       return false;
@@ -827,10 +767,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
   }
 
   bool _hasExternalDependencies(String bodyString) {
-    final externalPatterns = [
-      'Database.', 'HttpClient.', 'File.', 'Network.',
-      'System.', 'Environment.'
-    ];
+    final externalPatterns = ['Database.', 'HttpClient.', 'File.', 'Network.', 'System.', 'Environment.'];
     return externalPatterns.any((pattern) => bodyString.contains(pattern));
   }
 
@@ -841,15 +778,13 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
   bool _usesSingleton(FunctionBody body) {
     final bodyString = body.toString();
     return bodyString.contains('getInstance()') ||
-           bodyString.contains('.instance') ||
-           bodyString.contains('Singleton.');
+        bodyString.contains('.instance') ||
+        bodyString.contains('Singleton.');
   }
 
   bool _instantiatesDirectly(FunctionBody body) {
     final bodyString = body.toString();
-    return bodyString.contains('new ') &&
-           !bodyString.contains('List(') &&
-           !bodyString.contains('Map(');
+    return bodyString.contains('new ') && !bodyString.contains('List(') && !bodyString.contains('Map(');
   }
 }
 

@@ -27,16 +27,14 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'polymorphic_flow_control',
-    problemMessage:
-        'Polymorphic flow control violation: {0}',
-    correctionMessage:
-        'Use dynamic polymorphism to invert source code dependencies.',
+    problemMessage: 'Polymorphic flow control violation: {0}',
+    correctionMessage: 'Use dynamic polymorphism to invert source code dependencies.',
   );
 
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addMethodInvocation((node) {
@@ -58,7 +56,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   void _analyzePolymorphicCall(
     MethodInvocation node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -75,20 +73,20 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   void _analyzeObjectCreation(
     InstanceCreationExpression node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
     final layer = _detectLayer(filePath);
     if (layer == null) return;
 
-    final typeName = node.constructorName.type.name.lexeme;
+    final typeName = node.constructorName.type.name2.lexeme;
     _validateObjectCreationPattern(node, reporter, layer, typeName);
   }
 
   void _analyzePolymorphicDesign(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -103,7 +101,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   void _analyzeMethodPolymorphism(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -116,7 +114,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   void _validatePolymorphicInvocation(
     MethodInvocation node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String methodName,
     Expression target,
@@ -127,10 +125,8 @@ class PolymorphicFlowControlRule extends DartLintRule {
     if (_isDirectConcreteCall(targetString, layer)) {
       final code = LintCode(
         name: 'polymorphic_flow_control',
-        problemMessage:
-            'Direct call to concrete class instead of polymorphic interface: $methodName on $targetString',
-        correctionMessage:
-            'Call through interface or abstract base class to enable polymorphism.',
+        problemMessage: 'Direct call to concrete class instead of polymorphic interface: $methodName on $targetString',
+        correctionMessage: 'Call through interface or abstract base class to enable polymorphism.',
       );
       reporter.atNode(node, code);
     }
@@ -144,7 +140,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   void _validateObjectCreationPattern(
     InstanceCreationExpression node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String typeName,
   ) {
@@ -152,10 +148,8 @@ class PolymorphicFlowControlRule extends DartLintRule {
     if (_shouldUseFactory(layer, typeName)) {
       final code = LintCode(
         name: 'polymorphic_flow_control',
-        problemMessage:
-            'Direct instantiation of $typeName in ${layer.name} layer should use factory pattern',
-        correctionMessage:
-            'Use abstract factory or factory method to enable polymorphic object creation.',
+        problemMessage: 'Direct instantiation of $typeName in ${layer.name} layer should use factory pattern',
+        correctionMessage: 'Use abstract factory or factory method to enable polymorphic object creation.',
       );
       reporter.atNode(node, code);
     }
@@ -169,7 +163,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   void _validateClassPolymorphicCapabilities(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -177,10 +171,8 @@ class PolymorphicFlowControlRule extends DartLintRule {
     if (_shouldBeAbstractForPolymorphism(node, layer, className)) {
       final code = LintCode(
         name: 'polymorphic_flow_control',
-        problemMessage:
-            'Class $className should be abstract to enable proper polymorphism',
-        correctionMessage:
-            'Make class abstract and define interface for implementations.',
+        problemMessage: 'Class $className should be abstract to enable proper polymorphism',
+        correctionMessage: 'Make class abstract and define interface for implementations.',
       );
       reporter.atNode(node, code);
     }
@@ -194,7 +186,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   void _validateInversionOpportunities(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -211,7 +203,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   void _validateMethodPolymorphicPattern(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String methodName,
   ) {
@@ -227,7 +219,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   void _validateBoundaryPolymorphism(
     MethodInvocation node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String methodName,
     String targetString,
@@ -247,7 +239,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   void _validateUseCasePolymorphism(
     MethodInvocation node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String methodName,
     String targetString,
   ) {
@@ -255,10 +247,8 @@ class PolymorphicFlowControlRule extends DartLintRule {
     if (_isDirectPresenterCall(targetString)) {
       final code = LintCode(
         name: 'polymorphic_flow_control',
-        problemMessage:
-            'Use case directly calls presenter method $methodName instead of using polymorphic output port',
-        correctionMessage:
-            'Define output port interface and call polymorphically.',
+        problemMessage: 'Use case directly calls presenter method $methodName instead of using polymorphic output port',
+        correctionMessage: 'Define output port interface and call polymorphically.',
       );
       reporter.atNode(node, code);
     }
@@ -267,10 +257,8 @@ class PolymorphicFlowControlRule extends DartLintRule {
     if (_isDirectRepositoryCall(targetString)) {
       final code = LintCode(
         name: 'polymorphic_flow_control',
-        problemMessage:
-            'Use case directly calls repository implementation instead of interface',
-        correctionMessage:
-            'Call through repository interface for polymorphic behavior.',
+        problemMessage: 'Use case directly calls repository implementation instead of interface',
+        correctionMessage: 'Call through repository interface for polymorphic behavior.',
       );
       reporter.atNode(node, code);
     }
@@ -278,7 +266,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   void _validateControllerPolymorphism(
     MethodInvocation node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String methodName,
     String targetString,
   ) {
@@ -286,10 +274,8 @@ class PolymorphicFlowControlRule extends DartLintRule {
     if (_isDirectUseCaseCall(targetString)) {
       final code = LintCode(
         name: 'polymorphic_flow_control',
-        problemMessage:
-            'Controller directly calls use case implementation instead of interface',
-        correctionMessage:
-            'Define use case interface for polymorphic invocation.',
+        problemMessage: 'Controller directly calls use case implementation instead of interface',
+        correctionMessage: 'Define use case interface for polymorphic invocation.',
       );
       reporter.atNode(node, code);
     }
@@ -297,7 +283,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   void _validateDomainPolymorphism(
     MethodInvocation node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String methodName,
     String targetString,
   ) {
@@ -305,10 +291,8 @@ class PolymorphicFlowControlRule extends DartLintRule {
     if (_isInfrastructureCall(targetString)) {
       final code = LintCode(
         name: 'polymorphic_flow_control',
-        problemMessage:
-            'Domain layer directly calls infrastructure instead of using polymorphic interface',
-        correctionMessage:
-            'Define interface in domain and call polymorphically.',
+        problemMessage: 'Domain layer directly calls infrastructure instead of using polymorphic interface',
+        correctionMessage: 'Define interface in domain and call polymorphically.',
       );
       reporter.atNode(node, code);
     }
@@ -316,7 +300,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   void _validateCreationBoundary(
     InstanceCreationExpression node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String typeName,
   ) {
@@ -325,10 +309,8 @@ class PolymorphicFlowControlRule extends DartLintRule {
     if (targetLayer != null && _violatesCreationBoundary(layer, targetLayer)) {
       final code = LintCode(
         name: 'polymorphic_flow_control',
-        problemMessage:
-            '${layer.name} layer directly instantiates ${targetLayer.name} layer class: $typeName',
-        correctionMessage:
-            'Use factory or dependency injection to maintain boundary separation.',
+        problemMessage: '${layer.name} layer directly instantiates ${targetLayer.name} layer class: $typeName',
+        correctionMessage: 'Use factory or dependency injection to maintain boundary separation.',
       );
       reporter.atNode(node, code);
     }
@@ -336,7 +318,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   void _checkStrategyPatternOpportunity(
     InstanceCreationExpression node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String typeName,
   ) {
@@ -344,10 +326,8 @@ class PolymorphicFlowControlRule extends DartLintRule {
     if (_indicatesStrategyPattern(typeName) && !_usesStrategyPattern(node)) {
       final code = LintCode(
         name: 'polymorphic_flow_control',
-        problemMessage:
-            'Direct instantiation of $typeName suggests strategy pattern opportunity',
-        correctionMessage:
-            'Consider using strategy pattern for polymorphic behavior.',
+        problemMessage: 'Direct instantiation of $typeName suggests strategy pattern opportunity',
+        correctionMessage: 'Consider using strategy pattern for polymorphic behavior.',
       );
       reporter.atNode(node, code);
     }
@@ -355,7 +335,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   void _validateVirtualMethods(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     // Check for methods that should be virtual (overridable)
@@ -365,10 +345,8 @@ class PolymorphicFlowControlRule extends DartLintRule {
       if (_shouldBeVirtual(method) && !_isVirtual(method)) {
         final code = LintCode(
           name: 'polymorphic_flow_control',
-          problemMessage:
-              'Method ${method.name.lexeme} in $className should be virtual for polymorphism',
-          correctionMessage:
-              'Make method abstract or overridable to enable polymorphic behavior.',
+          problemMessage: 'Method ${method.name.lexeme} in $className should be virtual for polymorphism',
+          correctionMessage: 'Make method abstract or overridable to enable polymorphic behavior.',
         );
         reporter.atNode(method, code);
       }
@@ -377,22 +355,20 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   void _validateInheritanceInversion(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
     final extendsClause = node.extendsClause;
     if (extendsClause != null) {
-      final superClassName = extendsClause.superclass.name.lexeme;
+      final superClassName = extendsClause.superclass.name2.lexeme;
       final superLayer = _inferLayerFromType(superClassName);
 
       if (superLayer != null && !_isValidInheritanceDirection(layer, superLayer)) {
         final code = LintCode(
           name: 'polymorphic_flow_control',
-          problemMessage:
-              '$className extends class from wrong layer: $superClassName',
-          correctionMessage:
-              'Inheritance should follow dependency rule - inner extends outer abstractions.',
+          problemMessage: '$className extends class from wrong layer: $superClassName',
+          correctionMessage: 'Inheritance should follow dependency rule - inner extends outer abstractions.',
         );
         reporter.atNode(extendsClause, code);
       }
@@ -401,7 +377,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   void _checkMethodInversionOpportunity(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -411,10 +387,8 @@ class PolymorphicFlowControlRule extends DartLintRule {
     if (_couldUseCallback(method) && !_usesCallback(method)) {
       final code = LintCode(
         name: 'polymorphic_flow_control',
-        problemMessage:
-            'Method $methodName in $className could use callback for inversion of control',
-        correctionMessage:
-            'Consider using callback or strategy parameter to invert control flow.',
+        problemMessage: 'Method $methodName in $className could use callback for inversion of control',
+        correctionMessage: 'Consider using callback or strategy parameter to invert control flow.',
       );
       reporter.atNode(method, code);
     }
@@ -422,7 +396,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   void _checkDependencyInjectionOpportunities(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -436,7 +410,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   void _checkTypeCheckingAntiPattern(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String methodName,
   ) {
     final body = method.body;
@@ -446,10 +420,8 @@ class PolymorphicFlowControlRule extends DartLintRule {
     if (_containsTypeChecking(bodyString)) {
       final code = LintCode(
         name: 'polymorphic_flow_control',
-        problemMessage:
-            'Method $methodName uses type checking instead of polymorphism',
-        correctionMessage:
-            'Replace type checking with polymorphic method calls.',
+        problemMessage: 'Method $methodName uses type checking instead of polymorphism',
+        correctionMessage: 'Replace type checking with polymorphic method calls.',
       );
       reporter.atNode(method, code);
     }
@@ -457,7 +429,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   void _checkSwitchStatementOpportunity(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String methodName,
   ) {
     final body = method.body;
@@ -467,7 +439,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   void _validateParameterPolymorphism(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String methodName,
   ) {
@@ -477,15 +449,13 @@ class PolymorphicFlowControlRule extends DartLintRule {
       if (param is SimpleFormalParameter) {
         final type = param.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
 
           if (_isConcreteType(typeName) && _shouldBeAbstract(typeName, layer)) {
             final code = LintCode(
               name: 'polymorphic_flow_control',
-              problemMessage:
-                  'Method $methodName parameter should accept abstract type instead of concrete $typeName',
-              correctionMessage:
-                  'Use interface or abstract base class for polymorphic parameter.',
+              problemMessage: 'Method $methodName parameter should accept abstract type instead of concrete $typeName',
+              correctionMessage: 'Use interface or abstract base class for polymorphic parameter.',
             );
             reporter.atNode(param, code);
           }
@@ -496,7 +466,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   void _checkMethodDependencyInjection(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     final body = method.body;
@@ -506,10 +476,8 @@ class PolymorphicFlowControlRule extends DartLintRule {
     if (_containsHardCodedDependencies(bodyString)) {
       final code = LintCode(
         name: 'polymorphic_flow_control',
-        problemMessage:
-            'Method ${method.name.lexeme} in $className has hard-coded dependencies',
-        correctionMessage:
-            'Use dependency injection to enable polymorphic substitution.',
+        problemMessage: 'Method ${method.name.lexeme} in $className has hard-coded dependencies',
+        correctionMessage: 'Use dependency injection to enable polymorphic substitution.',
       );
       reporter.atNode(method, code);
     }
@@ -536,8 +504,8 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   bool _isDirectConcreteCall(String targetString, ArchitecturalLayer layer) {
     return targetString.contains('Impl') ||
-           targetString.contains('Concrete') ||
-           (targetString.contains('Repository') && !targetString.startsWith('I'));
+        targetString.contains('Concrete') ||
+        (targetString.contains('Repository') && !targetString.startsWith('I'));
   }
 
   bool _shouldUseFactory(ArchitecturalLayer layer, String typeName) {
@@ -548,9 +516,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   bool _shouldBeAbstractForPolymorphism(ClassDeclaration node, ArchitecturalLayer layer, String className) {
     // Check if class has multiple implementations or serves as base
-    return _hasMultipleSubclasses(className) ||
-           _servesAsInterface(node) ||
-           _isStrategyBase(className);
+    return _hasMultipleSubclasses(className) || _servesAsInterface(node) || _isStrategyBase(className);
   }
 
   bool _violatesCreationBoundary(ArchitecturalLayer creator, ArchitecturalLayer created) {
@@ -558,9 +524,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
   }
 
   bool _indicatesStrategyPattern(String typeName) {
-    final strategyIndicators = [
-      'Strategy', 'Algorithm', 'Handler', 'Processor', 'Calculator'
-    ];
+    final strategyIndicators = ['Strategy', 'Algorithm', 'Handler', 'Processor', 'Calculator'];
     return strategyIndicators.any((indicator) => typeName.contains(indicator));
   }
 
@@ -582,15 +546,13 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   bool _shouldBeVirtual(MethodDeclaration method) {
     final methodName = method.name.lexeme;
-    final virtualCandidates = [
-      'process', 'handle', 'execute', 'calculate', 'validate'
-    ];
+    final virtualCandidates = ['process', 'handle', 'execute', 'calculate', 'validate'];
     return virtualCandidates.any((candidate) => methodName.toLowerCase().contains(candidate));
   }
 
   bool _isVirtual(MethodDeclaration method) {
     return method.isAbstract ||
-           method.parent is ClassDeclaration && (method.parent as ClassDeclaration).abstractKeyword != null;
+        method.parent is ClassDeclaration && (method.parent as ClassDeclaration).abstractKeyword != null;
   }
 
   bool _isValidInheritanceDirection(ArchitecturalLayer child, ArchitecturalLayer parent) {
@@ -615,9 +577,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
   }
 
   bool _containsTypeChecking(String bodyString) {
-    final typeCheckPatterns = [
-      'is ', 'as ', 'runtimeType', 'type ==', 'instanceof'
-    ];
+    final typeCheckPatterns = ['is ', 'as ', 'runtimeType', 'type ==', 'instanceof'];
     return typeCheckPatterns.any((pattern) => bodyString.contains(pattern));
   }
 
@@ -627,9 +587,9 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   bool _isAbstractType(String typeName) {
     return typeName.startsWith('I') ||
-           typeName.contains('Interface') ||
-           typeName.contains('Abstract') ||
-           typeName.contains('Base');
+        typeName.contains('Interface') ||
+        typeName.contains('Abstract') ||
+        typeName.contains('Base');
   }
 
   bool _shouldBeAbstract(String typeName, ArchitecturalLayer layer) {
@@ -659,8 +619,8 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   bool _isInfrastructureType(String typeName) {
     return typeName.contains('Repository') && typeName.contains('Impl') ||
-           typeName.contains('Database') ||
-           typeName.contains('Http');
+        typeName.contains('Database') ||
+        typeName.contains('Http');
   }
 
   bool _isDirectPresenterCall(String target) {
@@ -695,7 +655,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
 
   void _checkMissedPolymorphicOpportunities(
     MethodInvocation node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String methodName,
     String targetString,
@@ -704,10 +664,8 @@ class PolymorphicFlowControlRule extends DartLintRule {
     if (_couldBenefitFromPolymorphism(targetString, methodName)) {
       final code = LintCode(
         name: 'polymorphic_flow_control',
-        problemMessage:
-            'Method call $methodName could benefit from polymorphic design',
-        correctionMessage:
-            'Consider using polymorphic interface instead of direct method call.',
+        problemMessage: 'Method call $methodName could benefit from polymorphic design',
+        correctionMessage: 'Consider using polymorphic interface instead of direct method call.',
       );
       reporter.atNode(node, code);
     }
@@ -716,14 +674,14 @@ class PolymorphicFlowControlRule extends DartLintRule {
   bool _couldBenefitFromPolymorphism(String target, String methodName) {
     // Simple heuristic for polymorphism opportunities
     return target.contains('Impl') ||
-           target.contains('Concrete') ||
-           methodName.contains('switch') ||
-           methodName.contains('if');
+        target.contains('Concrete') ||
+        methodName.contains('switch') ||
+        methodName.contains('if');
   }
 }
 
 class SwitchStatementVisitor extends RecursiveAstVisitor<void> {
-  final DiagnosticReporter reporter;
+  final ErrorReporter reporter;
   final String methodName;
 
   SwitchStatementVisitor(this.reporter, this.methodName);
@@ -732,10 +690,8 @@ class SwitchStatementVisitor extends RecursiveAstVisitor<void> {
   void visitSwitchStatement(SwitchStatement node) {
     final code = LintCode(
       name: 'polymorphic_flow_control',
-      problemMessage:
-          'Switch statement in $methodName could be replaced with polymorphism',
-      correctionMessage:
-          'Consider using polymorphic method dispatch instead of switch statement.',
+      problemMessage: 'Switch statement in $methodName could be replaced with polymorphism',
+      correctionMessage: 'Consider using polymorphic method dispatch instead of switch statement.',
     );
     reporter.atNode(node, code);
     super.visitSwitchStatement(node);

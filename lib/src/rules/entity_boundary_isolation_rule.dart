@@ -28,16 +28,14 @@ class EntityBoundaryIsolationRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'entity_boundary_isolation',
-    problemMessage:
-        'Entity boundary isolation violation: {0}',
-    correctionMessage:
-        'Entities must remain in domain layer. Convert to DTOs for boundary crossing.',
+    problemMessage: 'Entity boundary isolation violation: {0}',
+    correctionMessage: 'Entities must remain in domain layer. Convert to DTOs for boundary crossing.',
   );
 
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addMethodDeclaration((node) {
@@ -63,7 +61,7 @@ class EntityBoundaryIsolationRule extends DartLintRule {
 
   void _analyzeMethodEntityUsage(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -84,7 +82,7 @@ class EntityBoundaryIsolationRule extends DartLintRule {
 
   void _analyzeVariableEntityUsage(
     VariableDeclaration variable,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -95,15 +93,13 @@ class EntityBoundaryIsolationRule extends DartLintRule {
     if (parent is VariableDeclarationList) {
       final type = parent.type;
       if (type is NamedType) {
-        final typeName = type.name.lexeme;
+        final typeName = type.name2.lexeme;
 
         if (_isEntityType(typeName)) {
           final code = LintCode(
             name: 'entity_boundary_isolation',
-            problemMessage:
-                'Entity $typeName used as variable in ${layer.name} layer',
-            correctionMessage:
-                'Use DTO instead of Entity outside domain layer.',
+            problemMessage: 'Entity $typeName used as variable in ${layer.name} layer',
+            correctionMessage: 'Use DTO instead of Entity outside domain layer.',
           );
           reporter.atNode(variable, code);
         }
@@ -113,7 +109,7 @@ class EntityBoundaryIsolationRule extends DartLintRule {
 
   void _analyzeFieldEntityUsage(
     FieldDeclaration field,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -122,15 +118,13 @@ class EntityBoundaryIsolationRule extends DartLintRule {
 
     final type = field.fields.type;
     if (type is NamedType) {
-      final typeName = type.name.lexeme;
+      final typeName = type.name2.lexeme;
 
       if (_isEntityType(typeName)) {
         final code = LintCode(
           name: 'entity_boundary_isolation',
-          problemMessage:
-              'Entity $typeName used as field in ${layer.name} layer',
-          correctionMessage:
-              'Store DTO instead of Entity in ${layer.name} layer.',
+          problemMessage: 'Entity $typeName used as field in ${layer.name} layer',
+          correctionMessage: 'Store DTO instead of Entity in ${layer.name} layer.',
         );
         reporter.atNode(field, code);
       }
@@ -138,10 +132,8 @@ class EntityBoundaryIsolationRule extends DartLintRule {
       if (_isEntityCollectionType(typeName)) {
         final code = LintCode(
           name: 'entity_boundary_isolation',
-          problemMessage:
-              'Entity collection $typeName used as field in ${layer.name} layer',
-          correctionMessage:
-              'Use collection of DTOs instead of entity collection.',
+          problemMessage: 'Entity collection $typeName used as field in ${layer.name} layer',
+          correctionMessage: 'Use collection of DTOs instead of entity collection.',
         );
         reporter.atNode(field, code);
       }
@@ -150,7 +142,7 @@ class EntityBoundaryIsolationRule extends DartLintRule {
 
   void _analyzeClassEntityDependency(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -171,7 +163,7 @@ class EntityBoundaryIsolationRule extends DartLintRule {
 
   void _analyzeMethodCallEntityPassing(
     MethodInvocation node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -189,7 +181,7 @@ class EntityBoundaryIsolationRule extends DartLintRule {
 
   void _checkMethodParametersForEntities(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String methodName,
   ) {
@@ -201,17 +193,15 @@ class EntityBoundaryIsolationRule extends DartLintRule {
       if (param is SimpleFormalParameter) {
         final type = param.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
           final paramName = param.name?.lexeme ?? '';
 
           if (_isEntityType(typeName)) {
             final violationType = _getEntityViolationType(layer, methodName);
             final code = LintCode(
               name: 'entity_boundary_isolation',
-              problemMessage:
-                  '${violationType.description}: Entity $typeName in parameter $paramName',
-              correctionMessage:
-                  violationType.correction,
+              problemMessage: '${violationType.description}: Entity $typeName in parameter $paramName',
+              correctionMessage: violationType.correction,
             );
             reporter.atNode(param, code);
           }
@@ -219,10 +209,8 @@ class EntityBoundaryIsolationRule extends DartLintRule {
           if (_isValueObjectType(typeName)) {
             final code = LintCode(
               name: 'entity_boundary_isolation',
-              problemMessage:
-                  'Value Object $typeName used in ${layer.name} layer parameter',
-              correctionMessage:
-                  'Extract primitive value or create DTO for value object data.',
+              problemMessage: 'Value Object $typeName used in ${layer.name} layer parameter',
+              correctionMessage: 'Extract primitive value or create DTO for value object data.',
             );
             reporter.atNode(param, code);
           }
@@ -230,10 +218,8 @@ class EntityBoundaryIsolationRule extends DartLintRule {
           if (_isDomainAggregateType(typeName)) {
             final code = LintCode(
               name: 'entity_boundary_isolation',
-              problemMessage:
-                  'Domain Aggregate $typeName passed to ${layer.name} layer',
-              correctionMessage:
-                  'Break down aggregate into DTOs for boundary crossing.',
+              problemMessage: 'Domain Aggregate $typeName passed to ${layer.name} layer',
+              correctionMessage: 'Break down aggregate into DTOs for boundary crossing.',
             );
             reporter.atNode(param, code);
           }
@@ -244,7 +230,7 @@ class EntityBoundaryIsolationRule extends DartLintRule {
 
   void _checkMethodReturnTypeForEntities(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String methodName,
   ) {
@@ -252,16 +238,14 @@ class EntityBoundaryIsolationRule extends DartLintRule {
 
     final returnType = method.returnType;
     if (returnType is NamedType) {
-      final typeName = returnType.name.lexeme;
+      final typeName = returnType.name2.lexeme;
 
       if (_isEntityType(typeName)) {
         final violationType = _getEntityViolationType(layer, methodName);
         final code = LintCode(
           name: 'entity_boundary_isolation',
-          problemMessage:
-              '${violationType.description}: Method returns Entity $typeName',
-          correctionMessage:
-              violationType.correction,
+          problemMessage: '${violationType.description}: Method returns Entity $typeName',
+          correctionMessage: violationType.correction,
         );
         reporter.atNode(method, code);
       }
@@ -269,10 +253,8 @@ class EntityBoundaryIsolationRule extends DartLintRule {
       if (_isEntityCollectionType(typeName)) {
         final code = LintCode(
           name: 'entity_boundary_isolation',
-          problemMessage:
-              'Method returns entity collection from ${layer.name} layer',
-          correctionMessage:
-              'Return collection of DTOs instead of entities.',
+          problemMessage: 'Method returns entity collection from ${layer.name} layer',
+          correctionMessage: 'Return collection of DTOs instead of entities.',
         );
         reporter.atNode(method, code);
       }
@@ -281,7 +263,7 @@ class EntityBoundaryIsolationRule extends DartLintRule {
 
   void _checkMethodBodyEntityManipulation(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String methodName,
   ) {
@@ -294,10 +276,8 @@ class EntityBoundaryIsolationRule extends DartLintRule {
     if (_containsEntityInstantiation(bodyString)) {
       final code = LintCode(
         name: 'entity_boundary_isolation',
-        problemMessage:
-            'Method $methodName in ${layer.name} layer instantiates entities',
-        correctionMessage:
-            'Entities should only be created in domain layer.',
+        problemMessage: 'Method $methodName in ${layer.name} layer instantiates entities',
+        correctionMessage: 'Entities should only be created in domain layer.',
       );
       reporter.atNode(method, code);
     }
@@ -306,10 +286,8 @@ class EntityBoundaryIsolationRule extends DartLintRule {
     if (_containsEntityStateModification(bodyString)) {
       final code = LintCode(
         name: 'entity_boundary_isolation',
-        problemMessage:
-            'Method $methodName in ${layer.name} layer modifies entity state',
-        correctionMessage:
-            'Entity state should only be modified in domain layer.',
+        problemMessage: 'Method $methodName in ${layer.name} layer modifies entity state',
+        correctionMessage: 'Entity state should only be modified in domain layer.',
       );
       reporter.atNode(method, code);
     }
@@ -318,10 +296,8 @@ class EntityBoundaryIsolationRule extends DartLintRule {
     if (_containsEntityBusinessRuleInvocation(bodyString)) {
       final code = LintCode(
         name: 'entity_boundary_isolation',
-        problemMessage:
-            'Method $methodName in ${layer.name} layer calls entity business rules',
-        correctionMessage:
-            'Call business rules through use cases, not directly on entities.',
+        problemMessage: 'Method $methodName in ${layer.name} layer calls entity business rules',
+        correctionMessage: 'Call business rules through use cases, not directly on entities.',
       );
       reporter.atNode(method, code);
     }
@@ -329,21 +305,19 @@ class EntityBoundaryIsolationRule extends DartLintRule {
 
   void _checkEntityInheritance(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
     final extendsClause = node.extendsClause;
     if (extendsClause != null) {
-      final superclassName = extendsClause.superclass.name.lexeme;
+      final superclassName = extendsClause.superclass.name2.lexeme;
 
       if (_isEntityType(superclassName)) {
         final code = LintCode(
           name: 'entity_boundary_isolation',
-          problemMessage:
-              '${layer.name} layer class $className extends entity $superclassName',
-          correctionMessage:
-              'Use composition instead of inheritance from entities.',
+          problemMessage: '${layer.name} layer class $className extends entity $superclassName',
+          correctionMessage: 'Use composition instead of inheritance from entities.',
         );
         reporter.atNode(extendsClause, code);
       }
@@ -352,22 +326,20 @@ class EntityBoundaryIsolationRule extends DartLintRule {
 
   void _checkEntityInterfaceImplementation(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
     final implementsClause = node.implementsClause;
     if (implementsClause != null) {
       for (final interface in implementsClause.interfaces) {
-        final interfaceName = interface.name.lexeme;
+        final interfaceName = interface.name2.lexeme;
 
         if (_isEntityInterface(interfaceName)) {
           final code = LintCode(
             name: 'entity_boundary_isolation',
-            problemMessage:
-                '${layer.name} layer class $className implements entity interface $interfaceName',
-            correctionMessage:
-                'Create boundary-specific interface instead of implementing entity interface.',
+            problemMessage: '${layer.name} layer class $className implements entity interface $interfaceName',
+            correctionMessage: 'Create boundary-specific interface instead of implementing entity interface.',
           );
           reporter.atNode(interface, code);
         }
@@ -377,7 +349,7 @@ class EntityBoundaryIsolationRule extends DartLintRule {
 
   void _checkEntityComposition(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String className,
   ) {
@@ -386,15 +358,13 @@ class EntityBoundaryIsolationRule extends DartLintRule {
     for (final field in fields) {
       final type = field.fields.type;
       if (type is NamedType) {
-        final typeName = type.name.lexeme;
+        final typeName = type.name2.lexeme;
 
         if (_isEntityType(typeName)) {
           final code = LintCode(
             name: 'entity_boundary_isolation',
-            problemMessage:
-                '${layer.name} layer class $className composes entity $typeName',
-            correctionMessage:
-                'Store entity ID or DTO instead of entity reference.',
+            problemMessage: '${layer.name} layer class $className composes entity $typeName',
+            correctionMessage: 'Store entity ID or DTO instead of entity reference.',
           );
           reporter.atNode(field, code);
         }
@@ -402,10 +372,8 @@ class EntityBoundaryIsolationRule extends DartLintRule {
         if (_isEntityAggregateType(typeName)) {
           final code = LintCode(
             name: 'entity_boundary_isolation',
-            problemMessage:
-                '${layer.name} layer class $className composes entity aggregate $typeName',
-            correctionMessage:
-                'Break down aggregate composition into DTOs.',
+            problemMessage: '${layer.name} layer class $className composes entity aggregate $typeName',
+            correctionMessage: 'Break down aggregate composition into DTOs.',
           );
           reporter.atNode(field, code);
         }
@@ -415,7 +383,7 @@ class EntityBoundaryIsolationRule extends DartLintRule {
 
   void _checkMethodArgumentsForEntities(
     MethodInvocation node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String methodName,
   ) {
@@ -428,10 +396,8 @@ class EntityBoundaryIsolationRule extends DartLintRule {
     if (_isEntityReference(target)) {
       final code = LintCode(
         name: 'entity_boundary_isolation',
-        problemMessage:
-            'Entity reference passed to method $methodName in ${layer.name} layer',
-        correctionMessage:
-            'Pass entity data as DTO instead of entity reference.',
+        problemMessage: 'Entity reference passed to method $methodName in ${layer.name} layer',
+        correctionMessage: 'Pass entity data as DTO instead of entity reference.',
       );
       reporter.atNode(node, code);
     }
@@ -439,7 +405,7 @@ class EntityBoundaryIsolationRule extends DartLintRule {
 
   void _checkEntityMethodCallsOutsideDomain(
     MethodInvocation node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ArchitecturalLayer layer,
     String methodName,
   ) {
@@ -450,10 +416,8 @@ class EntityBoundaryIsolationRule extends DartLintRule {
     if (_isEntityMethodCall(target, methodName)) {
       final code = LintCode(
         name: 'entity_boundary_isolation',
-        problemMessage:
-            'Entity method $methodName called in ${layer.name} layer',
-        correctionMessage:
-            'Entity methods should only be called from domain layer.',
+        problemMessage: 'Entity method $methodName called in ${layer.name} layer',
+        correctionMessage: 'Entity methods should only be called from domain layer.',
       );
       reporter.atNode(node, code);
     }
@@ -509,9 +473,7 @@ class EntityBoundaryIsolationRule extends DartLintRule {
 
   bool _isEntityType(String typeName) {
     // Entity indicators
-    final entityIndicators = [
-      'Entity', 'Aggregate', 'AggregateRoot', 'DomainEntity'
-    ];
+    final entityIndicators = ['Entity', 'Aggregate', 'AggregateRoot', 'DomainEntity'];
 
     if (entityIndicators.any((indicator) => typeName.contains(indicator))) {
       return true;
@@ -522,25 +484,20 @@ class EntityBoundaryIsolationRule extends DartLintRule {
   }
 
   bool _isValueObjectType(String typeName) {
-    final valueObjectIndicators = [
-      'ValueObject', 'Value', 'Id', 'Identifier'
-    ];
+    final valueObjectIndicators = ['ValueObject', 'Value', 'Id', 'Identifier'];
 
-    return valueObjectIndicators.any((indicator) => typeName.contains(indicator)) ||
-           _hasValueObjectPattern(typeName);
+    return valueObjectIndicators.any((indicator) => typeName.contains(indicator)) || _hasValueObjectPattern(typeName);
   }
 
   bool _isDomainAggregateType(String typeName) {
-    final aggregateIndicators = [
-      'Aggregate', 'AggregateRoot', 'Root'
-    ];
+    final aggregateIndicators = ['Aggregate', 'AggregateRoot', 'Root'];
 
     return aggregateIndicators.any((indicator) => typeName.contains(indicator));
   }
 
   bool _isEntityCollectionType(String typeName) {
     return (typeName.startsWith('List<') || typeName.startsWith('Set<') || typeName.startsWith('Collection<')) &&
-           _containsEntityType(typeName);
+        _containsEntityType(typeName);
   }
 
   bool _isEntityAggregateType(String typeName) {
@@ -548,9 +505,7 @@ class EntityBoundaryIsolationRule extends DartLintRule {
   }
 
   bool _isEntityInterface(String interfaceName) {
-    final entityInterfaceIndicators = [
-      'IEntity', 'EntityInterface', 'DomainEntity', 'Aggregate'
-    ];
+    final entityInterfaceIndicators = ['IEntity', 'EntityInterface', 'DomainEntity', 'Aggregate'];
 
     return entityInterfaceIndicators.any((indicator) => interfaceName.contains(indicator));
   }
@@ -558,29 +513,32 @@ class EntityBoundaryIsolationRule extends DartLintRule {
   bool _isDomainModelClass(String typeName) {
     // Heuristic: domain model classes often have business-oriented names
     final businessTerms = [
-      'User', 'Order', 'Product', 'Customer', 'Account',
-      'Payment', 'Invoice', 'Contract', 'Policy'
+      'User',
+      'Order',
+      'Product',
+      'Customer',
+      'Account',
+      'Payment',
+      'Invoice',
+      'Contract',
+      'Policy'
     ];
 
     return businessTerms.any((term) => typeName.contains(term)) &&
-           !typeName.contains('DTO') &&
-           !typeName.contains('Request') &&
-           !typeName.contains('Response');
+        !typeName.contains('DTO') &&
+        !typeName.contains('Request') &&
+        !typeName.contains('Response');
   }
 
   bool _isDataTransferObject(String typeName) {
-    final dtoIndicators = [
-      'DTO', 'Data', 'Request', 'Response', 'Command', 'Query'
-    ];
+    final dtoIndicators = ['DTO', 'Data', 'Request', 'Response', 'Command', 'Query'];
 
     return dtoIndicators.any((indicator) => typeName.contains(indicator));
   }
 
   bool _hasValueObjectPattern(String typeName) {
     // Value objects often end with specific suffixes
-    final valueObjectSuffixes = [
-      'Id', 'Code', 'Number', 'Address', 'Email', 'Phone'
-    ];
+    final valueObjectSuffixes = ['Id', 'Code', 'Number', 'Address', 'Email', 'Phone'];
 
     return valueObjectSuffixes.any((suffix) => typeName.endsWith(suffix));
   }
@@ -597,50 +555,48 @@ class EntityBoundaryIsolationRule extends DartLintRule {
 
   bool _containsEntityInstantiation(String bodyString) {
     final entityInstantiationPatterns = [
-      'new Entity', 'new.*Entity', r'Entity\(',
-      'new.*Aggregate', r'AggregateRoot\('
+      'new Entity',
+      'new.*Entity',
+      r'Entity\(',
+      'new.*Aggregate',
+      r'AggregateRoot\('
     ];
 
-    return entityInstantiationPatterns.any((pattern) =>
-        RegExp(pattern).hasMatch(bodyString));
+    return entityInstantiationPatterns.any((pattern) => RegExp(pattern).hasMatch(bodyString));
   }
 
   bool _containsEntityStateModification(String bodyString) {
-    final stateModificationPatterns = [
-      '\\.set', '\\.update', '\\.change', '\\.modify',
-      '\\.apply', '\\.assign'
-    ];
+    final stateModificationPatterns = ['\\.set', '\\.update', '\\.change', '\\.modify', '\\.apply', '\\.assign'];
 
-    return stateModificationPatterns.any((pattern) =>
-        RegExp(pattern).hasMatch(bodyString));
+    return stateModificationPatterns.any((pattern) => RegExp(pattern).hasMatch(bodyString));
   }
 
   bool _containsEntityBusinessRuleInvocation(String bodyString) {
     final businessRulePatterns = [
-      '\\.validate', '\\.check', '\\.verify', '\\.enforce',
-      '\\.calculatee', '\\.compute', '\\.evaluate'
+      '\\.validate',
+      '\\.check',
+      '\\.verify',
+      '\\.enforce',
+      '\\.calculatee',
+      '\\.compute',
+      '\\.evaluate'
     ];
 
-    return businessRulePatterns.any((pattern) =>
-        RegExp(pattern).hasMatch(bodyString));
+    return businessRulePatterns.any((pattern) => RegExp(pattern).hasMatch(bodyString));
   }
 
   bool _isEntityReference(String target) {
-    final entityReferencePatterns = [
-      'entity', 'aggregate', 'domainObject', 'businessObject'
-    ];
+    final entityReferencePatterns = ['entity', 'aggregate', 'domainObject', 'businessObject'];
 
-    return entityReferencePatterns.any((pattern) =>
-        target.toLowerCase().contains(pattern));
+    return entityReferencePatterns.any((pattern) => target.toLowerCase().contains(pattern));
   }
 
   bool _isEntityMethodCall(String target, String methodName) {
-    return _isEntityReference(target) && (
-        methodName.contains('validate') ||
-        methodName.contains('calculate') ||
-        methodName.contains('apply') ||
-        methodName.contains('process')
-    );
+    return _isEntityReference(target) &&
+        (methodName.contains('validate') ||
+            methodName.contains('calculate') ||
+            methodName.contains('apply') ||
+            methodName.contains('process'));
   }
 }
 

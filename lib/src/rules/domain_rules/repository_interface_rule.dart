@@ -20,8 +20,7 @@ class RepositoryInterfaceRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'repository_interface',
-    problemMessage:
-        'Domain layer must depend only on repository abstractions, not concrete implementations.',
+    problemMessage: 'Domain layer must depend only on repository abstractions, not concrete implementations.',
     correctionMessage:
         'Use abstract repository interfaces and ensure proper separation between domain and data layers.',
   );
@@ -29,7 +28,7 @@ class RepositoryInterfaceRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     // Check import statements for data layer repository implementations
@@ -55,7 +54,7 @@ class RepositoryInterfaceRule extends DartLintRule {
 
   void _checkRepositoryImports(
     ImportDirective node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -80,7 +79,7 @@ class RepositoryInterfaceRule extends DartLintRule {
 
   void _checkRepositoryInterface(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -94,10 +93,8 @@ class RepositoryInterfaceRule extends DartLintRule {
       // This is a concrete repository in domain layer - should be abstract
       final code = LintCode(
         name: 'repository_interface',
-        problemMessage:
-            'Repository in domain layer should be abstract: $className',
-        correctionMessage:
-            'Make repository abstract or move implementation to data layer.',
+        problemMessage: 'Repository in domain layer should be abstract: $className',
+        correctionMessage: 'Make repository abstract or move implementation to data layer.',
       );
       reporter.atNode(node, code);
     }
@@ -112,7 +109,7 @@ class RepositoryInterfaceRule extends DartLintRule {
 
   void _checkRepositoryDependencies(
     ConstructorDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -124,14 +121,12 @@ class RepositoryInterfaceRule extends DartLintRule {
       if (param is SimpleFormalParameter) {
         final type = param.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
           if (_isConcreteRepositoryType(typeName)) {
             final code = LintCode(
               name: 'repository_interface',
-              problemMessage:
-                  'Constructor depends on concrete repository implementation: $typeName',
-              correctionMessage:
-                  'Use abstract repository interface instead of concrete implementation.',
+              problemMessage: 'Constructor depends on concrete repository implementation: $typeName',
+              correctionMessage: 'Use abstract repository interface instead of concrete implementation.',
             );
             reporter.atNode(type, code);
           }
@@ -142,7 +137,7 @@ class RepositoryInterfaceRule extends DartLintRule {
 
   void _checkRepositoryFields(
     FieldDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -150,14 +145,12 @@ class RepositoryInterfaceRule extends DartLintRule {
 
     final type = node.fields.type;
     if (type is NamedType) {
-      final typeName = type.name.lexeme;
+      final typeName = type.name2.lexeme;
       if (_isConcreteRepositoryType(typeName)) {
         final code = LintCode(
           name: 'repository_interface',
-          problemMessage:
-              'Field depends on concrete repository implementation: $typeName',
-          correctionMessage:
-              'Use abstract repository interface instead of concrete implementation.',
+          problemMessage: 'Field depends on concrete repository implementation: $typeName',
+          correctionMessage: 'Use abstract repository interface instead of concrete implementation.',
         );
         reporter.atNode(type, code);
       }
@@ -166,7 +159,7 @@ class RepositoryInterfaceRule extends DartLintRule {
 
   void _checkRepositoryMethod(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     final methodName = method.name.lexeme;
@@ -174,14 +167,12 @@ class RepositoryInterfaceRule extends DartLintRule {
 
     // Check if repository method returns domain entities (not data models)
     if (returnType is NamedType) {
-      final returnTypeName = returnType.name.lexeme;
+      final returnTypeName = returnType.name2.lexeme;
       if (_isDataLayerModel(returnTypeName)) {
         final code = LintCode(
           name: 'repository_interface',
-          problemMessage:
-              'Repository method returns data layer model: $returnTypeName',
-          correctionMessage:
-              'Repository methods should return domain entities, not data models.',
+          problemMessage: 'Repository method returns data layer model: $returnTypeName',
+          correctionMessage: 'Repository methods should return domain entities, not data models.',
         );
         reporter.atNode(returnType, code);
       }
@@ -191,8 +182,7 @@ class RepositoryInterfaceRule extends DartLintRule {
     if (!_isValidRepositoryMethodName(methodName)) {
       final code = LintCode(
         name: 'repository_interface',
-        problemMessage:
-            'Repository method name should follow domain language: $methodName',
+        problemMessage: 'Repository method name should follow domain language: $methodName',
         correctionMessage:
             'Use domain-specific method names (get, save, find, create, delete) instead of technical terms.',
       );
@@ -203,14 +193,11 @@ class RepositoryInterfaceRule extends DartLintRule {
   RepositoryViolation? _analyzeRepositoryImport(String importUri) {
     // Check for data layer repository implementations
     if ((importUri.contains('/data/') || importUri.contains('\\data\\')) &&
-        (importUri.contains('repository') ||
-            importUri.contains('Repository'))) {
+        (importUri.contains('repository') || importUri.contains('Repository'))) {
       if (importUri.contains('impl') || importUri.contains('Impl')) {
         return RepositoryViolation(
-          message:
-              'Importing concrete repository implementation from data layer',
-          suggestion:
-              'Import only abstract repository interfaces. Move concrete implementations to data layer.',
+          message: 'Importing concrete repository implementation from data layer',
+          suggestion: 'Import only abstract repository interfaces. Move concrete implementations to data layer.',
         );
       }
     }
@@ -226,10 +213,8 @@ class RepositoryInterfaceRule extends DartLintRule {
     for (final pattern in infraPatterns) {
       if (importUri.startsWith(pattern)) {
         return RepositoryViolation(
-          message:
-              'Direct infrastructure dependency detected in domain repository',
-          suggestion:
-              'Use repository abstractions instead of direct infrastructure dependencies.',
+          message: 'Direct infrastructure dependency detected in domain repository',
+          suggestion: 'Use repository abstractions instead of direct infrastructure dependencies.',
         );
       }
     }

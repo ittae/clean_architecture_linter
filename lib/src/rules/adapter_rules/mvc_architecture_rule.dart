@@ -20,8 +20,7 @@ class MVCArchitectureRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'mvc_architecture',
-    problemMessage:
-        'MVC component must follow its architectural responsibilities.',
+    problemMessage: 'MVC component must follow its architectural responsibilities.',
     correctionMessage:
         'Separate concerns: Controllers handle input, Views render UI, Presenters format data, Models hold data.',
   );
@@ -29,7 +28,7 @@ class MVCArchitectureRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -39,7 +38,7 @@ class MVCArchitectureRule extends DartLintRule {
 
   void _checkMVCComponent(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -60,7 +59,7 @@ class MVCArchitectureRule extends DartLintRule {
 
   void _checkControllerResponsibilities(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     final className = node.name.lexeme;
 
@@ -74,8 +73,7 @@ class MVCArchitectureRule extends DartLintRule {
           final code = LintCode(
             name: 'mvc_architecture',
             problemMessage: 'Controller implements business logic: $methodName in $className',
-            correctionMessage:
-                'Move business logic to use case. Controller should only coordinate.',
+            correctionMessage: 'Move business logic to use case. Controller should only coordinate.',
           );
           reporter.atNode(member, code);
         }
@@ -85,8 +83,7 @@ class MVCArchitectureRule extends DartLintRule {
           final code = LintCode(
             name: 'mvc_architecture',
             problemMessage: 'Controller implements UI rendering: $methodName in $className',
-            correctionMessage:
-                'Move UI rendering to View. Controller should only handle input and coordination.',
+            correctionMessage: 'Move UI rendering to View. Controller should only handle input and coordination.',
           );
           reporter.atNode(member, code);
         }
@@ -96,8 +93,7 @@ class MVCArchitectureRule extends DartLintRule {
           final code = LintCode(
             name: 'mvc_architecture',
             problemMessage: 'Controller implements data formatting: $methodName in $className',
-            correctionMessage:
-                'Move data formatting to Presenter. Controller should delegate to presenter.',
+            correctionMessage: 'Move data formatting to Presenter. Controller should delegate to presenter.',
           );
           reporter.atNode(member, code);
         }
@@ -110,7 +106,7 @@ class MVCArchitectureRule extends DartLintRule {
 
   void _checkViewResponsibilities(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     final className = node.name.lexeme;
 
@@ -123,8 +119,7 @@ class MVCArchitectureRule extends DartLintRule {
           final code = LintCode(
             name: 'mvc_architecture',
             problemMessage: 'View implements business logic: $methodName in $className',
-            correctionMessage:
-                'Move business logic to use case. View should only render UI.',
+            correctionMessage: 'Move business logic to use case. View should only render UI.',
           );
           reporter.atNode(member, code);
         }
@@ -134,8 +129,7 @@ class MVCArchitectureRule extends DartLintRule {
           final code = LintCode(
             name: 'mvc_architecture',
             problemMessage: 'View implements data processing: $methodName in $className',
-            correctionMessage:
-                'Move data processing to Presenter. View should receive formatted data.',
+            correctionMessage: 'Move data processing to Presenter. View should receive formatted data.',
           );
           reporter.atNode(member, code);
         }
@@ -145,8 +139,7 @@ class MVCArchitectureRule extends DartLintRule {
           final code = LintCode(
             name: 'mvc_architecture',
             problemMessage: 'View directly calls use cases: $methodName in $className',
-            correctionMessage:
-                'Use Controller to call use cases. View should delegate user actions.',
+            correctionMessage: 'Use Controller to call use cases. View should delegate user actions.',
           );
           reporter.atNode(member, code);
         }
@@ -156,7 +149,7 @@ class MVCArchitectureRule extends DartLintRule {
 
   void _checkPresenterResponsibilities(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     final className = node.name.lexeme;
 
@@ -169,8 +162,7 @@ class MVCArchitectureRule extends DartLintRule {
           final code = LintCode(
             name: 'mvc_architecture',
             problemMessage: 'Presenter implements business logic: $methodName in $className',
-            correctionMessage:
-                'Move business logic to use case. Presenter should only format data for display.',
+            correctionMessage: 'Move business logic to use case. Presenter should only format data for display.',
           );
           reporter.atNode(member, code);
         }
@@ -180,8 +172,7 @@ class MVCArchitectureRule extends DartLintRule {
           final code = LintCode(
             name: 'mvc_architecture',
             problemMessage: 'Presenter renders UI: $methodName in $className',
-            correctionMessage:
-                'Move UI rendering to View. Presenter should only format data.',
+            correctionMessage: 'Move UI rendering to View. Presenter should only format data.',
           );
           reporter.atNode(member, code);
         }
@@ -191,8 +182,7 @@ class MVCArchitectureRule extends DartLintRule {
           final code = LintCode(
             name: 'mvc_architecture',
             problemMessage: 'Presenter handles user input: $methodName in $className',
-            correctionMessage:
-                'Move input handling to Controller. Presenter should only format output.',
+            correctionMessage: 'Move input handling to Controller. Presenter should only format output.',
           );
           reporter.atNode(member, code);
         }
@@ -202,7 +192,7 @@ class MVCArchitectureRule extends DartLintRule {
 
   void _checkModelResponsibilities(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     final className = node.name.lexeme;
 
@@ -215,8 +205,7 @@ class MVCArchitectureRule extends DartLintRule {
           final code = LintCode(
             name: 'mvc_architecture',
             problemMessage: 'Model implements business logic: $methodName in $className',
-            correctionMessage:
-                'Models should be simple DTOs. Move business logic to entities or use cases.',
+            correctionMessage: 'Models should be simple DTOs. Move business logic to entities or use cases.',
           );
           reporter.atNode(member, code);
         }
@@ -226,8 +215,7 @@ class MVCArchitectureRule extends DartLintRule {
           final code = LintCode(
             name: 'mvc_architecture',
             problemMessage: 'Model implements UI logic: $methodName in $className',
-            correctionMessage:
-                'Models should be data containers. Move UI logic to View or Presenter.',
+            correctionMessage: 'Models should be data containers. Move UI logic to View or Presenter.',
           );
           reporter.atNode(member, code);
         }
@@ -237,8 +225,7 @@ class MVCArchitectureRule extends DartLintRule {
           final code = LintCode(
             name: 'mvc_architecture',
             problemMessage: 'Model implements persistence logic: $methodName in $className',
-            correctionMessage:
-                'Models should be data containers. Move persistence logic to repository.',
+            correctionMessage: 'Models should be data containers. Move persistence logic to repository.',
           );
           reporter.atNode(member, code);
         }
@@ -248,13 +235,13 @@ class MVCArchitectureRule extends DartLintRule {
 
   void _checkControllerDependencies(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     for (final member in node.members) {
       if (member is FieldDeclaration) {
         final type = member.fields.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
 
           // Controllers should depend on use cases and presenters
           if (!_isValidControllerDependency(typeName)) {
@@ -273,46 +260,76 @@ class MVCArchitectureRule extends DartLintRule {
 
   bool _implementsBusinessLogic(MethodDeclaration method, String methodName) {
     final businessLogicPatterns = [
-      'validate', 'calculate', 'process', 'apply',
-      'enforce', 'check', 'verify', 'ensure',
-      'business', 'rule', 'policy', 'constraint',
+      'validate',
+      'calculate',
+      'process',
+      'apply',
+      'enforce',
+      'check',
+      'verify',
+      'ensure',
+      'business',
+      'rule',
+      'policy',
+      'constraint',
     ];
 
-    return businessLogicPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return businessLogicPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _implementsUIRendering(MethodDeclaration method, String methodName) {
     final uiPatterns = [
-      'render', 'draw', 'paint', 'display',
-      'show', 'hide', 'animate', 'transition',
-      'build', 'create', 'widget', 'component',
+      'render',
+      'draw',
+      'paint',
+      'display',
+      'show',
+      'hide',
+      'animate',
+      'transition',
+      'build',
+      'create',
+      'widget',
+      'component',
     ];
 
-    return uiPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return uiPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _implementsDataFormatting(MethodDeclaration method, String methodName) {
     final formattingPatterns = [
-      'format', 'parse', 'convert', 'transform',
-      'serialize', 'deserialize', 'encode', 'decode',
-      'toString', 'toDisplay', 'toView',
+      'format',
+      'parse',
+      'convert',
+      'transform',
+      'serialize',
+      'deserialize',
+      'encode',
+      'decode',
+      'toString',
+      'toDisplay',
+      'toView',
     ];
 
-    return formattingPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return formattingPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _implementsDataProcessing(MethodDeclaration method, String methodName) {
     final processingPatterns = [
-      'process', 'transform', 'aggregate', 'filter',
-      'sort', 'group', 'reduce', 'map',
-      'calculate', 'compute', 'analyze',
+      'process',
+      'transform',
+      'aggregate',
+      'filter',
+      'sort',
+      'group',
+      'reduce',
+      'map',
+      'calculate',
+      'compute',
+      'analyze',
     ];
 
-    return processingPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return processingPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _callsUseCases(MethodDeclaration method, String methodName) {
@@ -320,47 +337,72 @@ class MVCArchitectureRule extends DartLintRule {
     if (body is BlockFunctionBody) {
       final bodyString = body.toString();
       final useCasePatterns = [
-        'UseCase', 'execute(', 'call(',
-        'Service', 'Interactor',
+        'UseCase',
+        'execute(',
+        'call(',
+        'Service',
+        'Interactor',
       ];
 
-      return useCasePatterns.any((pattern) =>
-          bodyString.contains(pattern));
+      return useCasePatterns.any((pattern) => bodyString.contains(pattern));
     }
     return false;
   }
 
   bool _handlesUserInput(MethodDeclaration method, String methodName) {
     final inputPatterns = [
-      'onClick', 'onTap', 'onPress', 'onSubmit',
-      'handle', 'input', 'action', 'event',
-      'gesture', 'touch', 'click', 'tap',
+      'onClick',
+      'onTap',
+      'onPress',
+      'onSubmit',
+      'handle',
+      'input',
+      'action',
+      'event',
+      'gesture',
+      'touch',
+      'click',
+      'tap',
     ];
 
-    return inputPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return inputPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _implementsUILogic(MethodDeclaration method, String methodName) {
     final uiLogicPatterns = [
-      'navigation', 'navigate', 'route',
-      'dialog', 'popup', 'modal', 'alert',
-      'theme', 'style', 'color', 'layout',
+      'navigation',
+      'navigate',
+      'route',
+      'dialog',
+      'popup',
+      'modal',
+      'alert',
+      'theme',
+      'style',
+      'color',
+      'layout',
     ];
 
-    return uiLogicPatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return uiLogicPatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _implementsPersistenceLogic(MethodDeclaration method, String methodName) {
     final persistencePatterns = [
-      'save', 'load', 'store', 'retrieve',
-      'database', 'db', 'sql', 'query',
-      'insert', 'update', 'delete', 'select',
+      'save',
+      'load',
+      'store',
+      'retrieve',
+      'database',
+      'db',
+      'sql',
+      'query',
+      'insert',
+      'update',
+      'delete',
+      'select',
     ];
 
-    return persistencePatterns.any((pattern) =>
-        methodName.toLowerCase().contains(pattern));
+    return persistencePatterns.any((pattern) => methodName.toLowerCase().contains(pattern));
   }
 
   bool _isValidControllerDependency(String typeName) {
@@ -371,44 +413,48 @@ class MVCArchitectureRule extends DartLintRule {
     ];
 
     return validDependencies.any((dep) => typeName.contains(dep)) ||
-           typeName.startsWith('I') || // Interface prefix
-           typeName.endsWith('Interface'); // Interface suffix
+        typeName.startsWith('I') || // Interface prefix
+        typeName.endsWith('Interface'); // Interface suffix
   }
 
   bool _isController(String className) {
-    return className.endsWith('Controller') ||
-           className.contains('Controller');
+    return className.endsWith('Controller') || className.contains('Controller');
   }
 
   bool _isView(String className) {
     return className.endsWith('View') ||
-           className.endsWith('Widget') ||
-           className.endsWith('Screen') ||
-           className.endsWith('Page');
+        className.endsWith('Widget') ||
+        className.endsWith('Screen') ||
+        className.endsWith('Page');
   }
 
   bool _isPresenter(String className) {
-    return className.endsWith('Presenter') ||
-           className.endsWith('ViewModel') ||
-           className.endsWith('Formatter');
+    return className.endsWith('Presenter') || className.endsWith('ViewModel') || className.endsWith('Formatter');
   }
 
   bool _isModel(String className) {
     return className.endsWith('Model') ||
-           className.endsWith('DTO') ||
-           className.endsWith('Data') ||
-           className.endsWith('Info');
+        className.endsWith('DTO') ||
+        className.endsWith('Data') ||
+        className.endsWith('Info');
   }
 
   bool _isAdapterLayerFile(String filePath) {
     final adapterPaths = [
-      '/adapters/', '\\adapters\\',
-      '/interface_adapters/', '\\interface_adapters\\',
-      '/controllers/', '\\controllers\\',
-      '/presenters/', '\\presenters\\',
-      '/views/', '\\views\\',
-      '/ui/', '\\ui\\',
-      '/presentation/', '\\presentation\\',
+      '/adapters/',
+      '\\adapters\\',
+      '/interface_adapters/',
+      '\\interface_adapters\\',
+      '/controllers/',
+      '\\controllers\\',
+      '/presenters/',
+      '\\presenters\\',
+      '/views/',
+      '\\views\\',
+      '/ui/',
+      '\\ui\\',
+      '/presentation/',
+      '\\presentation\\',
     ];
 
     return adapterPaths.any((path) => filePath.contains(path));

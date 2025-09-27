@@ -20,16 +20,14 @@ class FlexibleLayerDetectionRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'flexible_layer_detection',
-    problemMessage:
-        'Custom architecture layer violation: {0}',
-    correctionMessage:
-        'Ensure dependencies point inward and maintain proper layer separation.',
+    problemMessage: 'Custom architecture layer violation: {0}',
+    correctionMessage: 'Ensure dependencies point inward and maintain proper layer separation.',
   );
 
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addImportDirective((node) {
@@ -43,7 +41,7 @@ class FlexibleLayerDetectionRule extends DartLintRule {
 
   void _checkLayerDependency(
     ImportDirective node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -69,7 +67,7 @@ class FlexibleLayerDetectionRule extends DartLintRule {
 
   void _checkLayerResponsibility(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -122,28 +120,18 @@ class FlexibleLayerDetectionRule extends DartLintRule {
   }
 
   bool _isHexagonalPattern(String filePath) {
-    final hexagonalIndicators = [
-      '/ports/', '/adapters/', '/hexagon/', '/application/core'
-    ];
-    return hexagonalIndicators.any((indicator) =>
-        filePath.contains(indicator));
+    final hexagonalIndicators = ['/ports/', '/adapters/', '/hexagon/', '/application/core'];
+    return hexagonalIndicators.any((indicator) => filePath.contains(indicator));
   }
 
   bool _isOnionPattern(String filePath) {
-    final onionIndicators = [
-      '/core/', '/application/services/', '/infrastructure/services',
-      '/domain/services'
-    ];
-    return onionIndicators.any((indicator) =>
-        filePath.contains(indicator));
+    final onionIndicators = ['/core/', '/application/services/', '/infrastructure/services', '/domain/services'];
+    return onionIndicators.any((indicator) => filePath.contains(indicator));
   }
 
   bool _isTraditionalCleanPattern(String filePath) {
-    final traditionalIndicators = [
-      '/entities/', '/use_cases/', '/interface_adapters/', '/frameworks'
-    ];
-    return traditionalIndicators.any((indicator) =>
-        filePath.contains(indicator));
+    final traditionalIndicators = ['/entities/', '/use_cases/', '/interface_adapters/', '/frameworks'];
+    return traditionalIndicators.any((indicator) => filePath.contains(indicator));
   }
 
   CustomLayer? _detectHexagonalLayer(String filePath) {
@@ -269,8 +257,14 @@ class FlexibleLayerDetectionRule extends DartLintRule {
   CustomLayer? _detectByCommonIndicators(String filePath) {
     // Infrastructure layer indicators (outermost)
     final infrastructurePatterns = [
-      '/infrastructure/', '/persistence/', '/database/', '/network/',
-      '/http/', '/api/client/', '/external/', '/third_party/'
+      '/infrastructure/',
+      '/persistence/',
+      '/database/',
+      '/network/',
+      '/http/',
+      '/api/client/',
+      '/external/',
+      '/third_party/'
     ];
 
     for (final pattern in infrastructurePatterns) {
@@ -286,8 +280,14 @@ class FlexibleLayerDetectionRule extends DartLintRule {
 
     // Adapter layer indicators
     final adapterPatterns = [
-      '/adapters/', '/controllers/', '/presenters/', '/gateways/',
-      '/ui/', '/web/', '/api/handlers/', '/cli/'
+      '/adapters/',
+      '/controllers/',
+      '/presenters/',
+      '/gateways/',
+      '/ui/',
+      '/web/',
+      '/api/handlers/',
+      '/cli/'
     ];
 
     for (final pattern in adapterPatterns) {
@@ -303,8 +303,13 @@ class FlexibleLayerDetectionRule extends DartLintRule {
 
     // Application layer indicators
     final applicationPatterns = [
-      '/application/', '/use_cases/', '/usecases/', '/services/',
-      '/workflows/', '/processes/', '/handlers/'
+      '/application/',
+      '/use_cases/',
+      '/usecases/',
+      '/services/',
+      '/workflows/',
+      '/processes/',
+      '/handlers/'
     ];
 
     for (final pattern in applicationPatterns) {
@@ -319,10 +324,7 @@ class FlexibleLayerDetectionRule extends DartLintRule {
     }
 
     // Domain layer indicators (innermost)
-    final domainPatterns = [
-      '/domain/', '/entities/', '/models/', '/core/',
-      '/business/', '/rules/', '/policies/'
-    ];
+    final domainPatterns = ['/domain/', '/entities/', '/models/', '/core/', '/business/', '/rules/', '/policies/'];
 
     for (final pattern in domainPatterns) {
       if (filePath.contains(pattern)) {
@@ -380,10 +382,8 @@ class FlexibleLayerDetectionRule extends DartLintRule {
     if (_containsBusinessLogic(node)) {
       violations.add(LintCode(
         name: 'flexible_layer_detection',
-        problemMessage:
-            '${layer.name} layer contains business logic: $className',
-        correctionMessage:
-            'Move business logic to application or domain layers.',
+        problemMessage: '${layer.name} layer contains business logic: $className',
+        correctionMessage: 'Move business logic to application or domain layers.',
       ));
     }
 
@@ -401,10 +401,8 @@ class FlexibleLayerDetectionRule extends DartLintRule {
     if (_lackConversionFocus(node)) {
       violations.add(LintCode(
         name: 'flexible_layer_detection',
-        problemMessage:
-            '${layer.name} layer class lacks clear conversion responsibility: $className',
-        correctionMessage:
-            'Focus adapter on data/protocol conversion between layers.',
+        problemMessage: '${layer.name} layer class lacks clear conversion responsibility: $className',
+        correctionMessage: 'Focus adapter on data/protocol conversion between layers.',
       ));
     }
 
@@ -422,10 +420,8 @@ class FlexibleLayerDetectionRule extends DartLintRule {
     if (_containsImplementationDetails(node)) {
       violations.add(LintCode(
         name: 'flexible_layer_detection',
-        problemMessage:
-            '${layer.name} layer contains implementation details: $className',
-        correctionMessage:
-            'Move implementation details to infrastructure layer.',
+        problemMessage: '${layer.name} layer contains implementation details: $className',
+        correctionMessage: 'Move implementation details to infrastructure layer.',
       ));
     }
 
@@ -443,10 +439,8 @@ class FlexibleLayerDetectionRule extends DartLintRule {
     if (_containsInfrastructureConcerns(node)) {
       violations.add(LintCode(
         name: 'flexible_layer_detection',
-        problemMessage:
-            '${layer.name} layer contains infrastructure concerns: $className',
-        correctionMessage:
-            'Keep domain layer pure - remove infrastructure dependencies.',
+        problemMessage: '${layer.name} layer contains infrastructure concerns: $className',
+        correctionMessage: 'Keep domain layer pure - remove infrastructure dependencies.',
       ));
     }
 
@@ -455,15 +449,12 @@ class FlexibleLayerDetectionRule extends DartLintRule {
 
   bool _isExternalPackage(String importUri) {
     return importUri.startsWith('package:') &&
-           !importUri.startsWith('package:flutter/') &&
-           !importUri.startsWith('package:dart');
+        !importUri.startsWith('package:flutter/') &&
+        !importUri.startsWith('package:dart');
   }
 
   bool _containsBusinessLogic(ClassDeclaration node) {
-    final businessPatterns = [
-      'validate', 'calculate', 'process', 'apply',
-      'business', 'rule', 'policy', 'workflow'
-    ];
+    final businessPatterns = ['validate', 'calculate', 'process', 'apply', 'business', 'rule', 'policy', 'workflow'];
 
     return node.members.any((member) {
       if (member is MethodDeclaration) {
@@ -475,10 +466,7 @@ class FlexibleLayerDetectionRule extends DartLintRule {
   }
 
   bool _lackConversionFocus(ClassDeclaration node) {
-    final conversionPatterns = [
-      'convert', 'transform', 'adapt', 'map',
-      'to', 'from', 'parse', 'serialize'
-    ];
+    final conversionPatterns = ['convert', 'transform', 'adapt', 'map', 'to', 'from', 'parse', 'serialize'];
 
     final hasConversionMethods = node.members.any((member) {
       if (member is MethodDeclaration) {
@@ -492,10 +480,7 @@ class FlexibleLayerDetectionRule extends DartLintRule {
   }
 
   bool _containsImplementationDetails(ClassDeclaration node) {
-    final detailPatterns = [
-      'http', 'sql', 'file', 'network', 'database',
-      'connection', 'socket', 'stream'
-    ];
+    final detailPatterns = ['http', 'sql', 'file', 'network', 'database', 'connection', 'socket', 'stream'];
 
     return node.members.any((member) {
       if (member is MethodDeclaration) {
@@ -508,15 +493,21 @@ class FlexibleLayerDetectionRule extends DartLintRule {
 
   bool _containsInfrastructureConcerns(ClassDeclaration node) {
     final infrastructurePatterns = [
-      'database', 'http', 'file', 'cache', 'logger',
-      'configuration', 'environment', 'system'
+      'database',
+      'http',
+      'file',
+      'cache',
+      'logger',
+      'configuration',
+      'environment',
+      'system'
     ];
 
     return node.members.any((member) {
       if (member is FieldDeclaration) {
         final type = member.fields.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme.toLowerCase();
+          final typeName = type.name2.lexeme.toLowerCase();
           return infrastructurePatterns.any((pattern) => typeName.contains(pattern));
         }
       }
@@ -541,7 +532,7 @@ class CustomLayer {
 
 enum LayerType {
   infrastructure, // Framework details, external dependencies
-  adapter,       // Interface adapters, controllers, presenters
-  application,   // Use cases, application services
-  domain,        // Entities, business rules
+  adapter, // Interface adapters, controllers, presenters
+  application, // Use cases, application services
+  domain, // Entities, business rules
 }

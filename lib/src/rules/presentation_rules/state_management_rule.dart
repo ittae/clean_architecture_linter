@@ -22,16 +22,14 @@ class StateManagementRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'state_management_pattern',
-    problemMessage:
-        'State management violates Clean Architecture principles.',
-    correctionMessage:
-        'Use proper state management patterns and separate business logic from UI components.',
+    problemMessage: 'State management violates Clean Architecture principles.',
+    correctionMessage: 'Use proper state management patterns and separate business logic from UI components.',
   );
 
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -49,7 +47,7 @@ class StateManagementRule extends DartLintRule {
 
   void _checkStateManagementPattern(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -70,7 +68,7 @@ class StateManagementRule extends DartLintRule {
 
   void _checkStateMethodUsage(
     MethodInvocation node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -83,7 +81,8 @@ class StateManagementRule extends DartLintRule {
       final code = LintCode(
         name: 'state_management_pattern',
         problemMessage: 'setState called with business logic or complex operations',
-        correctionMessage: 'Move business logic to state management classes. Use setState only for simple UI state changes.',
+        correctionMessage:
+            'Move business logic to state management classes. Use setState only for simple UI state changes.',
       );
       reporter.atNode(node, code);
     }
@@ -101,7 +100,7 @@ class StateManagementRule extends DartLintRule {
 
   void _checkStateManagementImports(
     ImportDirective node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -134,15 +133,11 @@ class StateManagementRule extends DartLintRule {
     // Check if extends StatefulWidget or StatelessWidget
     final extendsClause = node.extendsClause;
     if (extendsClause != null) {
-      final superclass = extendsClause.superclass.name.lexeme;
-      return superclass == 'StatefulWidget' ||
-          superclass == 'StatelessWidget' ||
-          superclass.endsWith('Widget');
+      final superclass = extendsClause.superclass.name2.lexeme;
+      return superclass == 'StatefulWidget' || superclass == 'StatelessWidget' || superclass.endsWith('Widget');
     }
 
-    return className.endsWith('Widget') ||
-        className.endsWith('Page') ||
-        className.endsWith('Screen');
+    return className.endsWith('Widget') || className.endsWith('Page') || className.endsWith('Screen');
   }
 
   StateManagementAnalysis _analyzeClassForStateManagement(ClassDeclaration node) {
@@ -156,7 +151,7 @@ class StateManagementRule extends DartLintRule {
     // Check inheritance
     final extendsClause = node.extendsClause;
     if (extendsClause != null) {
-      final superclass = extendsClause.superclass.name.lexeme;
+      final superclass = extendsClause.superclass.name2.lexeme;
       extendsStateManagementClass = _isRecognizedStateManagementClass(superclass);
     }
 
@@ -191,7 +186,7 @@ class StateManagementRule extends DartLintRule {
 
   void _checkWidgetStateManagement(
     StateManagementAnalysis analysis,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ClassDeclaration node,
   ) {
     // Widget should not have complex business logic
@@ -231,7 +226,7 @@ class StateManagementRule extends DartLintRule {
 
   void _checkStateManagementClassCompliance(
     StateManagementAnalysis analysis,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     ClassDeclaration node,
   ) {
     // State management classes should follow proper patterns
@@ -239,7 +234,8 @@ class StateManagementRule extends DartLintRule {
       final code = LintCode(
         name: 'state_management_pattern',
         problemMessage: 'State management class "${analysis.className}" should extend recognized pattern',
-        correctionMessage: 'Extend ChangeNotifier, StateNotifier, Bloc, or implement proper state management interface.',
+        correctionMessage:
+            'Extend ChangeNotifier, StateNotifier, Bloc, or implement proper state management interface.',
       );
       reporter.atNode(node, code);
     }
@@ -266,7 +262,7 @@ class StateManagementRule extends DartLintRule {
   bool _isStateManagementField(FieldDeclaration field) {
     final type = field.fields.type;
     if (type is NamedType) {
-      final typeName = type.name.lexeme;
+      final typeName = type.name2.lexeme;
       return _isRecognizedStateManagementType(typeName);
     }
     return false;
@@ -275,8 +271,15 @@ class StateManagementRule extends DartLintRule {
   bool _isStateManagementClass(String className, ClassDeclaration node) {
     // Check class naming patterns
     final stateManagementSuffixes = [
-      'Provider', 'Notifier', 'Controller', 'Bloc', 'Cubit',
-      'Store', 'ViewModel', 'Manager', 'StateManager'
+      'Provider',
+      'Notifier',
+      'Controller',
+      'Bloc',
+      'Cubit',
+      'Store',
+      'ViewModel',
+      'Manager',
+      'StateManager'
     ];
 
     if (stateManagementSuffixes.any((suffix) => className.endsWith(suffix))) {
@@ -286,7 +289,7 @@ class StateManagementRule extends DartLintRule {
     // Check inheritance
     final extendsClause = node.extendsClause;
     if (extendsClause != null) {
-      final superclass = extendsClause.superclass.name.lexeme;
+      final superclass = extendsClause.superclass.name2.lexeme;
       return _isRecognizedStateManagementClass(superclass);
     }
 
@@ -295,16 +298,28 @@ class StateManagementRule extends DartLintRule {
 
   bool _isRecognizedStateManagementClass(String className) {
     final recognizedClasses = [
-      'ChangeNotifier', 'ValueNotifier', 'StateNotifier',
-      'Bloc', 'Cubit', 'Store', 'GetxController'
+      'ChangeNotifier',
+      'ValueNotifier',
+      'StateNotifier',
+      'Bloc',
+      'Cubit',
+      'Store',
+      'GetxController'
     ];
     return recognizedClasses.contains(className);
   }
 
   bool _isRecognizedStateManagementType(String typeName) {
     final recognizedTypes = [
-      'ChangeNotifier', 'ValueNotifier', 'StateNotifier', 'Provider',
-      'Bloc', 'Cubit', 'StateProvider', 'FutureProvider', 'StreamProvider'
+      'ChangeNotifier',
+      'ValueNotifier',
+      'StateNotifier',
+      'Provider',
+      'Bloc',
+      'Cubit',
+      'StateProvider',
+      'FutureProvider',
+      'StreamProvider'
     ];
     return recognizedTypes.any((type) => typeName.contains(type));
   }
@@ -313,7 +328,7 @@ class StateManagementRule extends DartLintRule {
     final implementsClause = node.implementsClause;
     if (implementsClause != null) {
       for (final interface in implementsClause.interfaces) {
-        final interfaceName = interface.name.lexeme;
+        final interfaceName = interface.name2.lexeme;
         if (_isRecognizedStateManagementClass(interfaceName)) {
           return true;
         }
@@ -337,8 +352,18 @@ class StateManagementRule extends DartLintRule {
 
   bool _isBusinessLogicCall(String methodName, MethodInvocation node) {
     final businessMethods = [
-      'save', 'update', 'delete', 'create', 'fetch', 'load',
-      'post', 'get', 'put', 'patch', 'call', 'execute'
+      'save',
+      'update',
+      'delete',
+      'create',
+      'fetch',
+      'load',
+      'post',
+      'get',
+      'put',
+      'patch',
+      'call',
+      'execute'
     ];
 
     // Check method name
@@ -350,9 +375,7 @@ class StateManagementRule extends DartLintRule {
     final target = node.target;
     if (target is SimpleIdentifier) {
       final targetName = target.name.toLowerCase();
-      return targetName.contains('usecase') ||
-             targetName.contains('repository') ||
-             targetName.contains('service');
+      return targetName.contains('usecase') || targetName.contains('repository') || targetName.contains('service');
     }
 
     return false;
@@ -373,16 +396,16 @@ class StateManagementRule extends DartLintRule {
 
   bool _isWidgetFile(String filePath) {
     return filePath.contains('widget') ||
-           filePath.contains('page') ||
-           filePath.contains('screen') ||
-           filePath.contains('view');
+        filePath.contains('page') ||
+        filePath.contains('screen') ||
+        filePath.contains('view');
   }
 
   bool _isBusinessLayerImport(String importUri) {
     return importUri.contains('/domain/') ||
-           importUri.contains('/data/') ||
-           importUri.contains('repository') ||
-           importUri.contains('usecase');
+        importUri.contains('/data/') ||
+        importUri.contains('repository') ||
+        importUri.contains('usecase');
   }
 }
 
@@ -441,9 +464,22 @@ class _EnhancedBusinessLogicVisitor extends RecursiveAstVisitor<void> {
 
   bool _isBusinessLogicMethod(String methodName) {
     final businessLogicMethods = [
-      'save', 'update', 'delete', 'create', 'fetch', 'load',
-      'post', 'get', 'put', 'patch', 'call', 'execute',
-      'validate', 'calculate', 'compute', 'process'
+      'save',
+      'update',
+      'delete',
+      'create',
+      'fetch',
+      'load',
+      'post',
+      'get',
+      'put',
+      'patch',
+      'call',
+      'execute',
+      'validate',
+      'calculate',
+      'compute',
+      'process'
     ];
 
     return businessLogicMethods.any(
@@ -457,9 +493,7 @@ class _EnhancedBusinessLogicVisitor extends RecursiveAstVisitor<void> {
 
     if (target is SimpleIdentifier) {
       final targetName = target.name.toLowerCase();
-      return targetName.contains('client') ||
-             targetName.contains('dio') ||
-             targetName.contains('http');
+      return targetName.contains('client') || targetName.contains('dio') || targetName.contains('http');
     }
     return false;
   }
@@ -488,7 +522,8 @@ class _StateComplexityVisitor extends RecursiveAstVisitor<void> {
   void visitIfStatement(IfStatement node) {
     // Complex conditional state logic
     final condition = node.expression.toString();
-    if (condition.length > 50) { // Arbitrary complexity threshold
+    if (condition.length > 50) {
+      // Arbitrary complexity threshold
       hasComplexState = true;
     }
     super.visitIfStatement(node);
@@ -496,12 +531,16 @@ class _StateComplexityVisitor extends RecursiveAstVisitor<void> {
 
   bool _isStateModification(String methodName) {
     final stateModificationMethods = [
-      'setstate', 'notifylisteners', 'emit', 'add', 'sink',
-      'update', 'refresh', 'invalidate'
+      'setstate',
+      'notifylisteners',
+      'emit',
+      'add',
+      'sink',
+      'update',
+      'refresh',
+      'invalidate'
     ];
-    return stateModificationMethods.any(
-      (method) => methodName.toLowerCase().contains(method)
-    );
+    return stateModificationMethods.any((method) => methodName.toLowerCase().contains(method));
   }
 }
 
@@ -529,12 +568,20 @@ class _SideEffectVisitor extends RecursiveAstVisitor<void> {
 
   bool _isSideEffect(String methodName) {
     final sideEffectMethods = [
-      'setstate', 'add', 'remove', 'clear', 'update',
-      'post', 'get', 'fetch', 'save', 'delete',
-      'print', 'log', 'debug'
+      'setstate',
+      'add',
+      'remove',
+      'clear',
+      'update',
+      'post',
+      'get',
+      'fetch',
+      'save',
+      'delete',
+      'print',
+      'log',
+      'debug'
     ];
-    return sideEffectMethods.any(
-      (method) => methodName.toLowerCase().contains(method)
-    );
+    return sideEffectMethods.any((method) => methodName.toLowerCase().contains(method));
   }
 }

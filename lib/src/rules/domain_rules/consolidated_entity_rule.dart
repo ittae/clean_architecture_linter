@@ -35,7 +35,7 @@ class ConsolidatedEntityRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     // Skip if rule is disabled
@@ -52,7 +52,7 @@ class ConsolidatedEntityRule extends DartLintRule {
 
   void _validateEntity(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -81,7 +81,7 @@ class ConsolidatedEntityRule extends DartLintRule {
 
   void _validateImports(
     ImportDirective node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -122,7 +122,7 @@ class ConsolidatedEntityRule extends DartLintRule {
         // Check for mutable collection types
         final type = fields.type;
         if (type is NamedType && fields.isFinal) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
           if (_isMutableCollectionType(typeName)) {
             violations.add(EntityViolation(
               type: ViolationType.immutability,
@@ -199,7 +199,7 @@ class ConsolidatedEntityRule extends DartLintRule {
       } else if (member is FieldDeclaration) {
         final type = member.fields.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
 
           // Check for non-domain types
           if (_isInfrastructureType(typeName) || _isApplicationSpecificType(typeName)) {
@@ -274,10 +274,7 @@ class ConsolidatedEntityRule extends DartLintRule {
     }
 
     // Infrastructure imports
-    final infraLibs = [
-      'package:http/', 'package:dio/', 'package:sqflite/',
-      'package:shared_preferences/', 'dart:io'
-    ];
+    final infraLibs = ['package:http/', 'package:dio/', 'package:sqflite/', 'package:shared_preferences/', 'dart:io'];
     for (final lib in infraLibs) {
       if (importUri.startsWith(lib)) {
         return EntityViolation(
@@ -319,47 +316,35 @@ class ConsolidatedEntityRule extends DartLintRule {
   }
 
   bool _isMutatingMethodName(String methodName) {
-    final mutatingPatterns = [
-      'set', 'update', 'modify', 'change', 'add', 'remove', 'delete', 'clear'
-    ];
+    final mutatingPatterns = ['set', 'update', 'modify', 'change', 'add', 'remove', 'delete', 'clear'];
     final lower = methodName.toLowerCase();
     return mutatingPatterns.any((pattern) => lower.startsWith(pattern));
   }
 
   bool _isApplicationSpecificMethod(String methodName) {
-    final patterns = [
-      'navigate', 'route', 'login', 'authenticate', 'cache', 'sync'
-    ];
+    final patterns = ['navigate', 'route', 'login', 'authenticate', 'cache', 'sync'];
     final lower = methodName.toLowerCase();
     return patterns.any((pattern) => lower.contains(pattern));
   }
 
   bool _isInfrastructureMethod(String methodName) {
-    final patterns = [
-      'database', 'query', 'http', 'api', 'file', 'serialize'
-    ];
+    final patterns = ['database', 'query', 'http', 'api', 'file', 'serialize'];
     final lower = methodName.toLowerCase();
     return patterns.any((pattern) => lower.contains(pattern));
   }
 
   bool _isUIMethod(String methodName) {
-    final patterns = [
-      'render', 'draw', 'widget', 'click', 'tap', 'animation'
-    ];
+    final patterns = ['render', 'draw', 'widget', 'click', 'tap', 'animation'];
     final lower = methodName.toLowerCase();
     return patterns.any((pattern) => lower.contains(pattern));
   }
 
   bool _isInfrastructureType(String typeName) {
-    return typeName.contains('Database') ||
-           typeName.contains('HttpClient') ||
-           typeName.contains('Storage');
+    return typeName.contains('Database') || typeName.contains('HttpClient') || typeName.contains('Storage');
   }
 
   bool _isApplicationSpecificType(String typeName) {
-    return typeName.contains('Controller') ||
-           typeName.contains('Service') ||
-           typeName.contains('Manager');
+    return typeName.contains('Controller') || typeName.contains('Service') || typeName.contains('Manager');
   }
 
   bool _isTechnologySpecificClassName(String className) {

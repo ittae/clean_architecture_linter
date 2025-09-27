@@ -21,8 +21,7 @@ class RepositoryImplementationRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'repository_implementation',
-    problemMessage:
-        'Repository must properly implement domain interfaces with data transformation.',
+    problemMessage: 'Repository must properly implement domain interfaces with data transformation.',
     correctionMessage:
         'Ensure repository implements domain interface, transforms data models to entities, and delegates to data sources.',
   );
@@ -30,7 +29,7 @@ class RepositoryImplementationRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -44,7 +43,7 @@ class RepositoryImplementationRule extends DartLintRule {
 
   void _checkRepositoryImplementation(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -75,7 +74,7 @@ class RepositoryImplementationRule extends DartLintRule {
 
   void _checkRepositoryImports(
     ImportDirective node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -110,7 +109,7 @@ class RepositoryImplementationRule extends DartLintRule {
 
         final type = member.fields.type;
         if (type is NamedType) {
-          final typeName = type.name.lexeme;
+          final typeName = type.name2.lexeme;
           if (typeName.contains('DataSource')) hasDataSourceDep = true;
           if (typeName.contains('Mapper') || typeName.contains('Converter')) {
             hasMapperOrConverter = true;
@@ -133,7 +132,7 @@ class RepositoryImplementationRule extends DartLintRule {
 
   void _checkDomainInterfaceImplementation(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     final implementsClause = node.implementsClause;
@@ -150,7 +149,7 @@ class RepositoryImplementationRule extends DartLintRule {
       // Check if implementing from domain layer
       bool implementsDomainInterface = false;
       for (final interface in implementsClause.interfaces) {
-        final interfaceName = interface.name.lexeme;
+        final interfaceName = interface.name2.lexeme;
         if (!interfaceName.contains('Impl') && interfaceName.contains('Repository')) {
           implementsDomainInterface = true;
           break;
@@ -170,7 +169,7 @@ class RepositoryImplementationRule extends DartLintRule {
 
   void _checkDataSourceDependencies(
     RepositoryAnalysis analysis,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     if (!analysis.hasDataSourceDep) {
@@ -185,7 +184,7 @@ class RepositoryImplementationRule extends DartLintRule {
 
   void _checkDataTransformation(
     RepositoryAnalysis analysis,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     // Check if repository has transformation logic or mappers
@@ -223,7 +222,7 @@ class RepositoryImplementationRule extends DartLintRule {
 
   void _checkNoBusinessLogic(
     RepositoryAnalysis analysis,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     String className,
   ) {
     for (final method in analysis.methods) {
@@ -247,16 +246,22 @@ class RepositoryImplementationRule extends DartLintRule {
   }
 
   bool _isRepositoryImplementation(String className) {
-    return className.endsWith('Repository') ||
-        className.endsWith('RepositoryImpl') ||
-        className.contains('Repository');
+    return className.endsWith('Repository') || className.endsWith('RepositoryImpl') || className.contains('Repository');
   }
 
   bool _containsTransformationPattern(String bodyString) {
     final patterns = [
-      'toEntity', 'fromModel', 'toDomain', 'fromData',
-      'map(', 'mapper.', 'converter.', 'transform',
-      '.toEntity()', '.toDomain()', '.fromJson(',
+      'toEntity',
+      'fromModel',
+      'toDomain',
+      'fromData',
+      'map(',
+      'mapper.',
+      'converter.',
+      'transform',
+      '.toEntity()',
+      '.toDomain()',
+      '.fromJson(',
     ];
     return patterns.any((pattern) => bodyString.contains(pattern));
   }
@@ -264,16 +269,20 @@ class RepositoryImplementationRule extends DartLintRule {
   bool _isEntityType(String typeName) {
     // Check if return type is likely a domain entity
     return !typeName.contains('Model') &&
-           !typeName.contains('DTO') &&
-           !typeName.contains('Response') &&
-           !typeName.contains('void') &&
-           !typeName.contains('DataSource');
+        !typeName.contains('DTO') &&
+        !typeName.contains('Response') &&
+        !typeName.contains('void') &&
+        !typeName.contains('DataSource');
   }
 
   bool _containsModelToEntityConversion(String bodyString) {
     final conversionPatterns = [
-      'toEntity', 'toDomain', '.map(', 'fromModel',
-      'return Entity', 'return domain',
+      'toEntity',
+      'toDomain',
+      '.map(',
+      'fromModel',
+      'return Entity',
+      'return domain',
     ];
     return conversionPatterns.any((pattern) => bodyString.contains(pattern));
   }

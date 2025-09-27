@@ -32,7 +32,7 @@ class GlueCodeRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -50,7 +50,7 @@ class GlueCodeRule extends DartLintRule {
 
   void _checkGlueCodeClass(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -87,7 +87,7 @@ class GlueCodeRule extends DartLintRule {
 
   void _checkGlueCodeMethod(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -124,7 +124,7 @@ class GlueCodeRule extends DartLintRule {
 
   void _checkGlueCodeFunction(
     FunctionDeclaration function,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -147,7 +147,7 @@ class GlueCodeRule extends DartLintRule {
 
   void _checkFrameworkClassForBusinessLogic(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     for (final member in node.members) {
       if (member is MethodDeclaration) {
@@ -178,7 +178,7 @@ class GlueCodeRule extends DartLintRule {
 
   void _checkGlueMethodAntiPatterns(
     MethodDeclaration method,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     final methodName = method.name.lexeme;
 

@@ -23,8 +23,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
 
   static const _code = LintCode(
     name: 'business_logic_isolation',
-    problemMessage:
-        'Business logic must be isolated in domain layer, not mixed with UI components.',
+    problemMessage: 'Business logic must be isolated in domain layer, not mixed with UI components.',
     correctionMessage:
         'Move business logic to UseCases, Entities, or domain services. Keep UI components focused on presentation.',
   );
@@ -32,7 +31,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintContext context,
   ) {
     // Check class declarations for business logic in UI components
@@ -58,7 +57,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
 
   void _checkBusinessLogicIsolation(
     ClassDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -84,7 +83,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
 
   void _checkDirectBusinessLogicCalls(
     MethodInvocation node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -97,8 +96,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
     if (_isRepositoryCall(methodName, target)) {
       final code = LintCode(
         name: 'business_logic_isolation',
-        problemMessage:
-            'Direct repository call detected in UI component: $methodName',
+        problemMessage: 'Direct repository call detected in UI component: $methodName',
         correctionMessage:
             'Use UseCases or state management to handle data operations instead of direct repository calls.',
       );
@@ -110,8 +108,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
       final code = LintCode(
         name: 'business_logic_isolation',
         problemMessage: 'UseCase called directly in UI context: $methodName',
-        correctionMessage:
-            'Handle UseCase calls through proper state management or event handlers.',
+        correctionMessage: 'Handle UseCase calls through proper state management or event handlers.',
       );
       reporter.atNode(node, code);
     }
@@ -119,7 +116,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
 
   void _checkBusinessLogicDependencies(
     FieldDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -127,14 +124,13 @@ class BusinessLogicIsolationRule extends DartLintRule {
 
     final type = node.fields.type;
     if (type is NamedType) {
-      final typeName = type.name.lexeme;
+      final typeName = type.name2.lexeme;
 
       // Check for direct repository dependencies
       if (_isRepositoryType(typeName)) {
         final code = LintCode(
           name: 'business_logic_isolation',
-          problemMessage:
-              'Direct repository dependency in UI component: $typeName',
+          problemMessage: 'Direct repository dependency in UI component: $typeName',
           correctionMessage:
               'Remove direct repository dependencies. Use state management or dependency injection patterns.',
         );
@@ -145,8 +141,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
       if (_isDomainServiceType(typeName)) {
         final code = LintCode(
           name: 'business_logic_isolation',
-          problemMessage:
-              'Domain service dependency in UI component: $typeName',
+          problemMessage: 'Domain service dependency in UI component: $typeName',
           correctionMessage:
               'UI components should not depend directly on domain services. Use proper architectural patterns.',
         );
@@ -157,7 +152,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
 
   void _checkBusinessLogicComputations(
     VariableDeclaration node,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -170,10 +165,8 @@ class BusinessLogicIsolationRule extends DartLintRule {
       if (hasComplexCalculation) {
         final code = LintCode(
           name: 'business_logic_isolation',
-          problemMessage:
-              'Complex business calculation detected in UI component',
-          correctionMessage:
-              'Move calculations to domain layer and provide computed values to UI.',
+          problemMessage: 'Complex business calculation detected in UI component',
+          correctionMessage: 'Move calculations to domain layer and provide computed values to UI.',
         );
         reporter.atNode(initializer, code);
       }
@@ -201,7 +194,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
 
   void _checkComplexBusinessLogic(
     UIComponentAnalysis analysis,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     for (final method in analysis.methods) {
       final body = method.body;
@@ -210,10 +203,8 @@ class BusinessLogicIsolationRule extends DartLintRule {
         if (complexity.hasComplexBusinessLogic) {
           final code = LintCode(
             name: 'business_logic_isolation',
-            problemMessage:
-                'Complex business logic detected in UI method: ${method.name.lexeme}',
-            correctionMessage:
-                'Extract business logic to domain layer UseCases or services.',
+            problemMessage: 'Complex business logic detected in UI method: ${method.name.lexeme}',
+            correctionMessage: 'Extract business logic to domain layer UseCases or services.',
           );
           reporter.atNode(method, code);
         }
@@ -223,16 +214,14 @@ class BusinessLogicIsolationRule extends DartLintRule {
 
   void _checkValidationLogic(
     UIComponentAnalysis analysis,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     for (final method in analysis.methods) {
       if (_hasValidationLogic(method)) {
         final code = LintCode(
           name: 'business_logic_isolation',
-          problemMessage:
-              'Business validation logic in UI component: ${method.name.lexeme}',
-          correctionMessage:
-              'Move validation logic to domain entities or validation services.',
+          problemMessage: 'Business validation logic in UI component: ${method.name.lexeme}',
+          correctionMessage: 'Move validation logic to domain entities or validation services.',
         );
         reporter.atNode(method, code);
       }
@@ -241,16 +230,14 @@ class BusinessLogicIsolationRule extends DartLintRule {
 
   void _checkCalculationLogic(
     UIComponentAnalysis analysis,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     for (final method in analysis.methods) {
       if (_hasCalculationLogic(method)) {
         final code = LintCode(
           name: 'business_logic_isolation',
-          problemMessage:
-              'Business calculation logic in UI component: ${method.name.lexeme}',
-          correctionMessage:
-              'Move calculation logic to domain layer and provide computed values.',
+          problemMessage: 'Business calculation logic in UI component: ${method.name.lexeme}',
+          correctionMessage: 'Move calculation logic to domain layer and provide computed values.',
         );
         reporter.atNode(method, code);
       }
@@ -259,16 +246,14 @@ class BusinessLogicIsolationRule extends DartLintRule {
 
   void _checkDataTransformation(
     UIComponentAnalysis analysis,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     for (final method in analysis.methods) {
       if (_hasDataTransformation(method)) {
         final code = LintCode(
           name: 'business_logic_isolation',
-          problemMessage:
-              'Data transformation logic in UI component: ${method.name.lexeme}',
-          correctionMessage:
-              'Move data transformation to domain layer or use proper data mapping patterns.',
+          problemMessage: 'Data transformation logic in UI component: ${method.name.lexeme}',
+          correctionMessage: 'Move data transformation to domain layer or use proper data mapping patterns.',
         );
         reporter.atNode(method, code);
       }
@@ -277,16 +262,14 @@ class BusinessLogicIsolationRule extends DartLintRule {
 
   void _checkStateManagementLogic(
     UIComponentAnalysis analysis,
-    DiagnosticReporter reporter,
+    ErrorReporter reporter,
   ) {
     for (final method in analysis.methods) {
       if (_hasComplexStateLogic(method)) {
         final code = LintCode(
           name: 'business_logic_isolation',
-          problemMessage:
-              'Complex state management logic in UI component: ${method.name.lexeme}',
-          correctionMessage:
-              'Move complex state logic to dedicated state management classes or UseCases.',
+          problemMessage: 'Complex state management logic in UI component: ${method.name.lexeme}',
+          correctionMessage: 'Move complex state logic to dedicated state management classes or UseCases.',
         );
         reporter.atNode(method, code);
       }
@@ -341,9 +324,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
   }
 
   bool _isUseCaseCall(String methodName, Expression? target) {
-    return methodName == 'call' ||
-        methodName == 'execute' ||
-        (target != null && _isUseCaseTarget(target));
+    return methodName == 'call' || methodName == 'execute' || (target != null && _isUseCaseTarget(target));
   }
 
   bool _isUseCaseTarget(Expression target) {
@@ -396,10 +377,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
       conditionalComplexity: visitor.ifCount,
       loopComplexity: visitor.loopCount,
       methodCallComplexity: visitor.methodCallCount,
-      hasComplexBusinessLogic:
-          visitor.ifCount > 3 ||
-          visitor.loopCount > 1 ||
-          visitor.methodCallCount > 5,
+      hasComplexBusinessLogic: visitor.ifCount > 3 || visitor.loopCount > 1 || visitor.methodCallCount > 5,
     );
   }
 
