@@ -584,6 +584,10 @@ class PolymorphicFlowControlRule extends CleanArchitectureLintRule {
   }
 
   bool _isConcreteType(String typeName) {
+    // Dart built-in types should not be considered as concrete types needing abstraction
+    if (_isDartBuiltInType(typeName)) {
+      return false;
+    }
     return !_isAbstractType(typeName);
   }
 
@@ -592,6 +596,41 @@ class PolymorphicFlowControlRule extends CleanArchitectureLintRule {
         typeName.contains('Interface') ||
         typeName.contains('Abstract') ||
         typeName.contains('Base');
+  }
+
+  bool _isDartBuiltInType(String typeName) {
+    // Common Dart built-in types from dart:core and other core libraries
+    const dartBuiltInTypes = {
+      'DateTime',
+      'String',
+      'int',
+      'double',
+      'bool',
+      'num',
+      'Duration',
+      'Uri',
+      'List',
+      'Map',
+      'Set',
+      'Iterable',
+      'Future',
+      'Stream',
+      'Object',
+      'dynamic',
+      'void',
+      'Null',
+      'BigInt',
+      'Symbol',
+      'Type',
+      'RegExp',
+      'StackTrace',
+      'Stopwatch',
+      'StringBuffer',
+    };
+
+    // Handle generic types like List<T>, Map<K,V>, etc.
+    final baseTypeName = typeName.split('<').first.trim();
+    return dartBuiltInTypes.contains(baseTypeName);
   }
 
   bool _shouldBeAbstract(String typeName, ArchitecturalLayer layer) {
