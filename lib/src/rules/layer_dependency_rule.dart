@@ -46,6 +46,11 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
     final importUri = node.uri.stringValue;
     if (importUri == null) return;
 
+    // Skip dependency checking for DI/provider files - they act as composition root
+    if (_isDependencyInjectionFile(filePath)) {
+      return;
+    }
+
     final sourceLayer = _identifyLayer(filePath);
     final targetLayer = _identifyLayer(importUri);
 
@@ -258,6 +263,29 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
     ];
 
     return allowedForPresentation.any((allowed) => path.startsWith(allowed));
+  }
+
+  bool _isDependencyInjectionFile(String filePath) {
+    // Normalize path separators
+    final normalizedPath = filePath.replaceAll('\\', '/').toLowerCase();
+
+    // Check for common DI/provider file patterns
+    final diPatterns = [
+      '/providers.dart',
+      '/provider.dart',
+      '/providers/',
+      '/di.dart',
+      '/di/',
+      '/injection.dart',
+      '/injection_container.dart',
+      '/dependency_injection.dart',
+      '/get_it.dart',
+      '/locator.dart',
+      '/service_locator.dart',
+      'main.dart',  // main.dart often contains DI setup
+    ];
+
+    return diPatterns.any((pattern) => normalizedPath.endsWith(pattern) || normalizedPath.contains(pattern));
   }
 }
 

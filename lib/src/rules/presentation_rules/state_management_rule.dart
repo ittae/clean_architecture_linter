@@ -124,7 +124,24 @@ class StateManagementRule extends CleanArchitectureLintRule {
       return superclass == 'StatefulWidget' || superclass == 'StatelessWidget' || superclass.endsWith('Widget');
     }
 
-    return className.endsWith('Widget') || className.endsWith('Page') || className.endsWith('Screen');
+    // Check for common widget naming patterns
+    final widgetSuffixes = [
+      'Widget',
+      'Page',
+      'Screen',
+      'Dialog',
+      'Modal',
+      'Popup',
+      'Sheet',
+      'BottomSheet',
+      'Card',
+      'Item',
+      'Tile',
+      'View',
+      'Component'
+    ];
+
+    return widgetSuffixes.any((suffix) => className.endsWith(suffix));
   }
 
   StateManagementAnalysis _analyzeClassForStateManagement(ClassDeclaration node) {
@@ -176,6 +193,11 @@ class StateManagementRule extends CleanArchitectureLintRule {
     ErrorReporter reporter,
     ClassDeclaration node,
   ) {
+    // Skip simple UI components that don't need state management
+    if (_isSimpleUIComponent(analysis.className)) {
+      return;
+    }
+
     // Widget should not have complex business logic
     if (analysis.hasBusinessLogicCalls && !analysis.hasStateManagementPattern) {
       final code = LintCode(
@@ -454,6 +476,46 @@ class StateManagementRule extends CleanArchitectureLintRule {
 
     return uiMethodPatterns.any((pattern) =>
         methodName == pattern || methodName.startsWith(pattern));
+  }
+
+  bool _isSimpleUIComponent(String className) {
+    // Simple UI components that typically don't need complex state management
+    final simpleComponentSuffixes = [
+      'Dialog',
+      'Modal',
+      'Popup',
+      'Sheet',
+      'BottomSheet',
+      'AlertDialog',
+      'ConfirmationDialog',
+      'Card',
+      'Item',
+      'Tile',
+      'Button',
+      'Icon',
+      'Text',
+      'Image',
+      'Avatar',
+      'Badge',
+      'Chip',
+      'Tag',
+      'Label',
+      'Divider',
+      'Spacer'
+    ];
+
+    // Also check for patterns that indicate simple components
+    final simplePatterns = [
+      'Confirmation',
+      'Alert',
+      'Info',
+      'Warning',
+      'Error',
+      'Success'
+    ];
+
+    return simpleComponentSuffixes.any((suffix) => className.endsWith(suffix)) ||
+           simplePatterns.any((pattern) => className.contains(pattern));
   }
 
   bool _isDirectlyInWidget(MethodInvocation node) {
