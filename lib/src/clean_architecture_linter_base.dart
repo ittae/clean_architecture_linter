@@ -122,33 +122,13 @@ class CleanArchitectureUtils {
     final parent = method.parent;
     if (parent is! ClassDeclaration) return false;
 
-    final className = parent.name.lexeme;
-
-    // Check if class name suggests it's a repository interface
-    final repositoryPatterns = [
-      'Repository',
-      'DataSource',
-      'Gateway',
-      'Port',
-    ];
-
-    final isRepositoryClass = repositoryPatterns.any((pattern) =>
-        className.contains(pattern));
-
-    if (!isRepositoryClass) return false;
-
-    // Check if the class is abstract (interface) or has only abstract methods
-    final isAbstractClass = parent.abstractKeyword != null;
-
-    // Check if all methods in the class are abstract (interface pattern)
-    final hasOnlyAbstractMethods = parent.members
-        .whereType<MethodDeclaration>()
-        .every((method) => method.isAbstract || method.isGetter || method.isSetter);
-
-    return isRepositoryClass && (isAbstractClass || hasOnlyAbstractMethods);
+    return isRepositoryInterface(parent);
   }
 
   /// Checks if a class is a repository interface.
+  ///
+  /// Repository interfaces are domain layer abstractions that define
+  /// data access contracts without implementation details.
   static bool isRepositoryInterface(ClassDeclaration classDeclaration) {
     final className = classDeclaration.name.lexeme;
 

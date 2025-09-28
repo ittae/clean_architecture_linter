@@ -17,10 +17,10 @@ dart pub get
 dart pub test
 
 # Run the linter on example project
-cd example && dart pub custom_lint
+cd example && dart run custom_lint
 
 # Check linting on the package itself
-dart pub custom_lint
+dart run custom_lint
 
 # Analyze the package
 dart analyze

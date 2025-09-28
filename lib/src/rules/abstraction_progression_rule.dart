@@ -78,6 +78,11 @@ class AbstractionProgressionRule extends CleanArchitectureLintRule {
     final layer = _detectLayer(filePath);
     if (layer == null) return;
 
+    // Skip repository interfaces - they are inherently appropriate for domain layer
+    if (CleanArchitectureUtils.isRepositoryInterface(node)) {
+      return;
+    }
+
     final className = node.name.lexeme;
     final classAbstraction = _analyzeClassAbstractionLevel(node);
     final expectedRange = _getExpectedAbstractionRange(layer);

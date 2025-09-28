@@ -548,8 +548,28 @@ class _SideEffectVisitor extends RecursiveAstVisitor<void> {
 
   @override
   void visitAssignmentExpression(AssignmentExpression node) {
-    // Any assignment in build method is a side effect
-    hasSideEffects = true;
+    // Only consider assignments to external state as side effects
+    // Local variable declarations and computations are not side effects
+    final leftSide = node.leftHandSide;
+
+    // Skip local variable declarations (final/var assignments)
+    if (leftSide is SimpleIdentifier) {
+      final parent = node.parent;
+      if (parent is VariableDeclaration) {
+        // This is a local variable declaration, not a side effect
+        super.visitAssignmentExpression(node);
+        return;
+      }
+
+      // Check if this is modifying external state/fields
+      if (_isExternalStateModification(leftSide.name)) {
+        hasSideEffects = true;
+      }
+    } else {
+      // Property assignments (obj.property = value) are side effects
+      hasSideEffects = true;
+    }
+
     super.visitAssignmentExpression(node);
   }
 
@@ -570,5 +590,23 @@ class _SideEffectVisitor extends RecursiveAstVisitor<void> {
       'debug'
     ];
     return sideEffectMethods.any((method) => methodName.toLowerCase().contains(method));
+  }
+
+  bool _isExternalStateModification(String variableName) {
+    // Check if this is modifying widget state/fields that would be side effects
+    final externalStatePatterns = [
+      '_', // Private fields that might be widget state
+      'widget.', // Widget properties
+      'state.', // State properties
+    ];
+
+    // Skip if it looks like a local variable (starts with lowercase, no underscores for private)
+    if (variableName.isNotEmpty &&
+        variableName[0] == variableName[0].toLowerCase() &&
+        !variableName.startsWith('_')) {
+      return false;
+    }
+
+    return externalStatePatterns.any((pattern) => variableName.startsWith(pattern));
   }
 }
