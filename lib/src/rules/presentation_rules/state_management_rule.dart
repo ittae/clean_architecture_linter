@@ -338,6 +338,29 @@ class StateManagementRule extends CleanArchitectureLintRule {
   }
 
   bool _isBusinessLogicCall(String methodName, MethodInvocation node) {
+    // First check if this is a UI utility class - these are not business logic
+    final target = node.target;
+    if (target is SimpleIdentifier) {
+      final targetName = target.name;
+      if (_isUIUtilityClass(targetName)) {
+        return false;
+      }
+
+      // Check if target is a business object
+      final targetNameLower = targetName.toLowerCase();
+      if (targetNameLower.contains('usecase') ||
+          targetNameLower.contains('repository') ||
+          targetNameLower.contains('service')) {
+        return true;
+      }
+    }
+
+    // Check if method name indicates UI utility (should not be business logic)
+    if (_isUIUtilityMethod(methodName)) {
+      return false;
+    }
+
+    // More specific business method patterns
     final businessMethods = [
       'save',
       'update',
@@ -346,26 +369,91 @@ class StateManagementRule extends CleanArchitectureLintRule {
       'fetch',
       'load',
       'post',
-      'get',
       'put',
       'patch',
       'call',
       'execute'
     ];
 
-    // Check method name
-    if (businessMethods.any((method) => methodName.toLowerCase().contains(method))) {
+    // Check for exact matches or starts with pattern (more precise than contains)
+    final methodNameLower = methodName.toLowerCase();
+    if (businessMethods.any((method) =>
+        methodNameLower == method ||
+        methodNameLower.startsWith(method) && methodNameLower.length > method.length)) {
       return true;
     }
 
-    // Check if target is a business object
-    final target = node.target;
-    if (target is SimpleIdentifier) {
-      final targetName = target.name.toLowerCase();
-      return targetName.contains('usecase') || targetName.contains('repository') || targetName.contains('service');
+    // Special handling for 'get' - only consider it business logic if it's data-related
+    if (methodNameLower.startsWith('get')) {
+      // UI-related getters are not business logic
+      if (methodNameLower.contains('color') ||
+          methodNameLower.contains('theme') ||
+          methodNameLower.contains('style') ||
+          methodNameLower.contains('config') ||
+          methodNameLower.contains('button') ||
+          methodNameLower.contains('icon') ||
+          methodNameLower.contains('font') ||
+          methodNameLower.contains('size') ||
+          methodNameLower.contains('padding') ||
+          methodNameLower.contains('margin')) {
+        return false;
+      }
+
+      // Data-related getters are business logic
+      if (methodNameLower.contains('user') ||
+          methodNameLower.contains('data') ||
+          methodNameLower.contains('model') ||
+          methodNameLower.contains('entity') ||
+          methodNameLower.contains('list') ||
+          methodNameLower.contains('item') ||
+          methodNameLower.contains('record')) {
+        return true;
+      }
     }
 
     return false;
+  }
+
+  bool _isUIUtilityClass(String className) {
+    final uiUtilityPatterns = [
+      'UIConfig',
+      'Theme',
+      'Style',
+      'Colors',
+      'Color',
+      'Assets',
+      'Icons',
+      'Fonts',
+      'Decoration',
+      'TextStyle',
+      'ButtonStyle',
+      'AppBar',
+      'Scaffold'
+    ];
+
+    return uiUtilityPatterns.any((pattern) => className.contains(pattern));
+  }
+
+  bool _isUIUtilityMethod(String methodName) {
+    final uiMethodPatterns = [
+      'getColor',
+      'getTheme',
+      'getStyle',
+      'getIcon',
+      'getFont',
+      'getDecoration',
+      'getButtonColors',
+      'getTextStyle',
+      'getButtonStyle',
+      'getPadding',
+      'getMargin',
+      'getSize',
+      'getHeight',
+      'getWidth'
+    ];
+
+    return uiMethodPatterns.any((pattern) =>
+        methodName == pattern || methodName.startsWith(pattern));
   }
 
   bool _isDirectlyInWidget(MethodInvocation node) {
