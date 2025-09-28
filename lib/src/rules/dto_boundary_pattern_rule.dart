@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../clean_architecture_linter_base.dart';
+
 /// Enforces proper Data Transfer Object (DTO) patterns for boundary crossing.
 ///
 /// Uncle Bob: "You can use basic structs or simple Data Transfer objects if
@@ -25,7 +27,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// - Command DTOs for actions
 /// - Query DTOs for read operations
 /// - Event DTOs for domain events
-class DTOBoundaryPatternRule extends DartLintRule {
+class DTOBoundaryPatternRule extends CleanArchitectureLintRule {
   const DTOBoundaryPatternRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -35,7 +37,7 @@ class DTOBoundaryPatternRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,

@@ -17,7 +17,7 @@ import '../clean_architecture_linter_base.dart';
 /// - Abstraction increases as you move inward
 /// - Policy is separated from detail
 /// - The Dependency Inversion Principle at architectural boundaries
-class CoreDependencyRule extends DartLintRule {
+class CoreDependencyRule extends CleanArchitectureLintRule {
   const CoreDependencyRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -31,7 +31,7 @@ class CoreDependencyRule extends DartLintRule {
   static final Map<String, DependencyNode> _dependencyGraph = {};
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,

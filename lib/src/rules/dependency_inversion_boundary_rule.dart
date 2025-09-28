@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../clean_architecture_linter_base.dart';
+
 /// Enforces the Dependency Inversion Principle at architectural boundaries.
 ///
 /// Uncle Bob: "We arrange interfaces and inheritance relationships such that
@@ -20,7 +22,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// - Controller depends on Use Case Interface ← Use Case implements
 /// - Domain defines Repository Interface ← Infrastructure implements
 /// - Gateway Interface ← External Service Adapter implements
-class DependencyInversionBoundaryRule extends DartLintRule {
+class DependencyInversionBoundaryRule extends CleanArchitectureLintRule {
   const DependencyInversionBoundaryRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -30,7 +32,7 @@ class DependencyInversionBoundaryRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,

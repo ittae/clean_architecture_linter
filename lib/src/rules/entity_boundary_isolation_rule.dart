@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../clean_architecture_linter_base.dart';
+
 /// Prevents Entity leakage across architectural boundaries.
 ///
 /// Uncle Bob: "We don't want to cheat and pass Entities or Database rows.
@@ -23,7 +25,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// - Value Objects in adapter layer
 /// - Domain aggregates in infrastructure layer
 /// - Entity collections crossing boundaries
-class EntityBoundaryIsolationRule extends DartLintRule {
+class EntityBoundaryIsolationRule extends CleanArchitectureLintRule {
   const EntityBoundaryIsolationRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -33,7 +35,7 @@ class EntityBoundaryIsolationRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,

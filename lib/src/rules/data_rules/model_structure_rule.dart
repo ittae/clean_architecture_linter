@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../clean_architecture_linter_base.dart';
+
 /// Enforces proper data model structure in Clean Architecture.
 ///
 /// This rule ensures that data models:
@@ -21,7 +23,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// - Business logic
 /// - Domain rules
 /// - Complex validations
-class ModelStructureRule extends DartLintRule {
+class ModelStructureRule extends CleanArchitectureLintRule {
   const ModelStructureRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -31,7 +33,7 @@ class ModelStructureRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,

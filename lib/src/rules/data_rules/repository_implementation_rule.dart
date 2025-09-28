@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../clean_architecture_linter_base.dart';
+
 /// Enforces proper repository implementation patterns in the data layer.
 ///
 /// This rule ensures that repository implementations:
@@ -16,7 +18,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// - Caching strategies and data freshness
 /// - Converting between data models and domain entities
 /// - Error translation from technical to domain exceptions
-class RepositoryImplementationRule extends DartLintRule {
+class RepositoryImplementationRule extends CleanArchitectureLintRule {
   const RepositoryImplementationRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -27,7 +29,7 @@ class RepositoryImplementationRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,

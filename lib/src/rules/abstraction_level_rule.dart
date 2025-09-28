@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../clean_architecture_linter_base.dart';
+
 /// Enforces that abstraction levels increase as you move inward in the architecture.
 ///
 /// This rule validates that:
@@ -15,7 +17,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// 2. Interface Adapters: Conversion logic, adapters, controllers
 /// 3. Application/Use Cases: Application-specific business rules
 /// 4. Domain/Entities: Enterprise-wide business rules, most abstract
-class AbstractionLevelRule extends DartLintRule {
+class AbstractionLevelRule extends CleanArchitectureLintRule {
   const AbstractionLevelRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -27,7 +29,7 @@ class AbstractionLevelRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,
@@ -108,6 +110,11 @@ class AbstractionLevelRule extends DartLintRule {
     final filePath = resolver.path;
     final layer = _detectLayer(filePath);
     if (layer == null) return;
+
+    // Skip abstract methods and repository interface methods
+    if (method.isAbstract || CleanArchitectureUtils.isRepositoryInterfaceMethod(method)) {
+      return; // Repository interface methods are inherently appropriate for domain layer
+    }
 
     final methodName = method.name.lexeme;
     final methodAbstraction = _analyzeMethodAbstraction(method);
@@ -462,6 +469,7 @@ class AbstractionLevelRule extends DartLintRule {
     return importUri.contains('/domain/') ||
            importUri.contains('/entities/');
   }
+
 }
 
 enum ArchitectureLayer {

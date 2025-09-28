@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../clean_architecture_linter_base.dart';
+
 /// Validates that abstraction levels progress naturally from concrete details
 /// in outer layers to abstract policies in inner layers.
 ///
@@ -16,7 +18,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// - Abstract policies dominate the inner layers
 /// - The progression is smooth and consistent
 /// - No abstraction inversions occur
-class AbstractionProgressionRule extends DartLintRule {
+class AbstractionProgressionRule extends CleanArchitectureLintRule {
   const AbstractionProgressionRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -26,7 +28,7 @@ class AbstractionProgressionRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,

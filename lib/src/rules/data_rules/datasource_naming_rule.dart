@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../clean_architecture_linter_base.dart';
+
 /// Enforces proper DataSource implementation patterns in the data layer.
 ///
 /// This rule ensures that DataSource classes:
@@ -16,7 +18,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// - Converting external responses to data models
 /// - Handling low-level errors and retries
 /// - Managing connection and authentication details
-class DataSourceNamingRule extends DartLintRule {
+class DataSourceNamingRule extends CleanArchitectureLintRule {
   const DataSourceNamingRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -27,7 +29,7 @@ class DataSourceNamingRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,

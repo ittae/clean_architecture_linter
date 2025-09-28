@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../clean_architecture_linter_base.dart';
+
 /// Enforces proper glue code patterns in the framework layer.
 ///
 /// This rule ensures that framework layer contains only glue code:
@@ -18,7 +20,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// - Handle framework-specific configuration
 /// - Bootstrap the application
 /// - Delegate to inner layers for any logic
-class GlueCodeRule extends DartLintRule {
+class GlueCodeRule extends CleanArchitectureLintRule {
   const GlueCodeRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -30,7 +32,7 @@ class GlueCodeRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,
@@ -462,16 +464,9 @@ class GlueCodeRule extends DartLintRule {
     ];
 
     return frameworkPaths.any((path) => filePath.contains(path)) ||
-           _isTestFile(filePath); // Allow complexity in test files
+           CleanArchitectureUtils.shouldExcludeFile(filePath); // Allow complexity in test files
   }
 
-  bool _isTestFile(String filePath) {
-    return filePath.contains('/test/') ||
-           filePath.contains('\\test\\') ||
-           filePath.endsWith('_test.dart') ||
-           filePath.contains('/test_') ||
-           filePath.contains('\\test_');
-  }
 }
 
 class GlueCodeComplexity {

@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../clean_architecture_linter_base.dart';
+
 /// Enforces proper boundary crossing patterns in Clean Architecture.
 ///
 /// Uncle Bob: "We usually resolve this apparent contradiction by using the
@@ -22,7 +24,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// - Use Case → Output Port Interface ← Presenter Implementation
 /// - Repository Interface ← Repository Implementation
 /// - Gateway Interface ← External Service Adapter
-class BoundaryCrossingRule extends DartLintRule {
+class BoundaryCrossingRule extends CleanArchitectureLintRule {
   const BoundaryCrossingRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -32,7 +34,7 @@ class BoundaryCrossingRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,

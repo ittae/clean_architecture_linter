@@ -18,7 +18,7 @@ import '../../clean_architecture_linter_base.dart';
 /// - Easier to understand and modify
 /// - Promotes composition over complex inheritance
 /// - Enables better dependency injection patterns
-class UseCaseSingleResponsibilityRule extends DartLintRule {
+class UseCaseSingleResponsibilityRule extends CleanArchitectureLintRule {
   const UseCaseSingleResponsibilityRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -30,7 +30,7 @@ class UseCaseSingleResponsibilityRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,

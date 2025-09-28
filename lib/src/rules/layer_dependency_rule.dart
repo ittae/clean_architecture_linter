@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../clean_architecture_linter_base.dart';
+
 /// Enforces proper dependency direction between architectural layers.
 ///
 /// This rule ensures that dependencies only flow inward according to Clean Architecture:
@@ -14,7 +16,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// - Data layer from accessing Presentation layer
 /// - Domain layer from accessing Data or Presentation layers
 /// - Circular dependencies between layers
-class LayerDependencyRule extends DartLintRule {
+class LayerDependencyRule extends CleanArchitectureLintRule {
   const LayerDependencyRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -25,7 +27,7 @@ class LayerDependencyRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,

@@ -24,7 +24,7 @@ import '../../clean_architecture_linter_base.dart';
 /// - Invalid states CANNOT exist in the system
 /// - Data integrity is maintained at ALL times
 /// - Business logic is centralized and testable
-class DomainModelValidationRule extends DartLintRule {
+class DomainModelValidationRule extends CleanArchitectureLintRule {
   const DomainModelValidationRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -36,7 +36,7 @@ class DomainModelValidationRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,

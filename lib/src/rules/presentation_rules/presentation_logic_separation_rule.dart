@@ -5,7 +5,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
 
-class PresentationLogicSeparationRule extends DartLintRule {
+class PresentationLogicSeparationRule extends CleanArchitectureLintRule {
   const PresentationLogicSeparationRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -15,7 +15,7 @@ class PresentationLogicSeparationRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,
@@ -30,10 +30,6 @@ class PresentationLogicSeparationRule extends DartLintRule {
     ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
-    final filePath = resolver.path;
-
-    // Only check files in presentation layer
-    if (!CleanArchitectureUtils.isPresentationLayerFile(filePath)) return;
 
     final className = node.name.lexeme;
 

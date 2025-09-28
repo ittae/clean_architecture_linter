@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../clean_architecture_linter_base.dart';
+
 /// Detects circular dependencies between files and architectural layers.
 ///
 /// This rule prevents:
@@ -14,7 +16,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// - Making testing difficult
 /// - Preventing clear separation of concerns
 /// - Making the codebase harder to understand and maintain
-class CircularDependencyRule extends DartLintRule {
+class CircularDependencyRule extends CleanArchitectureLintRule {
   const CircularDependencyRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -29,7 +31,7 @@ class CircularDependencyRule extends DartLintRule {
   static final Map<String, String> _fileToLayer = {};
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,

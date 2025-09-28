@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../clean_architecture_linter_base.dart';
+
 /// Validates proper interface usage at architectural boundaries.
 ///
 /// This rule ensures that:
@@ -16,7 +18,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// - Repository Interfaces: Defined in domain layer, implemented in infrastructure
 /// - Gateway Interfaces: Defined in application layer, implemented in infrastructure
 /// - Controller Interfaces: For testability and flexibility
-class InterfaceBoundaryRule extends DartLintRule {
+class InterfaceBoundaryRule extends CleanArchitectureLintRule {
   const InterfaceBoundaryRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -26,7 +28,7 @@ class InterfaceBoundaryRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,

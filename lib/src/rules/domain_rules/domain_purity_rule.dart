@@ -16,7 +16,7 @@ import '../../clean_architecture_linter_base.dart';
 /// - Dart core libraries (with restrictions)
 /// - Other domain layer code
 /// - Pure business logic abstractions
-class DomainPurityRule extends DartLintRule {
+class DomainPurityRule extends CleanArchitectureLintRule {
   const DomainPurityRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -27,7 +27,7 @@ class DomainPurityRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,

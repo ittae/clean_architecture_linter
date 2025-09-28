@@ -19,7 +19,7 @@ import '../../clean_architecture_linter_base.dart';
 /// - Riverpod providers
 /// - BLoC pattern (flutter_bloc)
 /// - Custom state management with proper separation
-class StateManagementRule extends DartLintRule {
+class StateManagementRule extends CleanArchitectureLintRule {
   const StateManagementRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -29,7 +29,7 @@ class StateManagementRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,
@@ -52,10 +52,6 @@ class StateManagementRule extends DartLintRule {
     ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
-    final filePath = resolver.path;
-
-    // Only check files in presentation layer
-    if (!CleanArchitectureUtils.isPresentationLayerFile(filePath)) return;
 
     final className = node.name.lexeme;
     final analysis = _analyzeClassForStateManagement(node);
@@ -73,8 +69,6 @@ class StateManagementRule extends DartLintRule {
     ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
-    final filePath = resolver.path;
-    if (!CleanArchitectureUtils.isPresentationLayerFile(filePath)) return;
 
     final methodName = node.methodName.name;
 
@@ -106,7 +100,6 @@ class StateManagementRule extends DartLintRule {
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
-    if (!CleanArchitectureUtils.isPresentationLayerFile(filePath)) return;
 
     final importUri = node.uri.stringValue;
     if (importUri == null) return;

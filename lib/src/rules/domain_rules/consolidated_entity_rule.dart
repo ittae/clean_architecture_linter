@@ -1,7 +1,8 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
-import '../../config/clean_architecture_config.dart';
+
+import '../../clean_architecture_linter_base.dart';
 
 /// Consolidated rule for domain entity validation.
 ///
@@ -14,17 +15,8 @@ import '../../config/clean_architecture_config.dart';
 /// - Consistent error reporting
 /// - Simplified configuration
 /// - Single pass validation
-class ConsolidatedEntityRule extends DartLintRule {
+class ConsolidatedEntityRule extends CleanArchitectureLintRule {
   const ConsolidatedEntityRule() : super(code: _code);
-
-  // Default configuration - can be customized through analysis_options.yaml
-  static const _defaultConfig = CleanArchitectureConfig();
-
-  // Configuration getters
-  CleanArchitectureConfig get config => _defaultConfig;
-  LayerPaths get layerPaths => config.layerPaths;
-  RuleSeverity get severity => config.getSeverityForRule(code.name);
-  bool get isRuleEnabled => config.isRuleEnabled(code.name);
 
   static const _code = LintCode(
     name: 'consolidated_entity_rule',
@@ -33,14 +25,11 @@ class ConsolidatedEntityRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,
   ) {
-    // Skip if rule is disabled
-    if (!isRuleEnabled) return;
-
     context.registry.addClassDeclaration((node) {
       _validateEntity(node, reporter, resolver);
     });
@@ -57,8 +46,9 @@ class ConsolidatedEntityRule extends DartLintRule {
   ) {
     final filePath = resolver.path;
 
-    // Use configured paths
-    if (!layerPaths.isEntityFile(filePath)) return;
+    // Check if this is a domain layer entity file
+    if (!CleanArchitectureUtils.isDomainLayerFile(filePath)) return;
+    if (!_isEntityFile(filePath)) return;
 
     // final className = node.name.lexeme; // Will use when needed
     final violations = <EntityViolation>[];
@@ -85,7 +75,8 @@ class ConsolidatedEntityRule extends DartLintRule {
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
-    if (!layerPaths.isEntityFile(filePath)) return;
+    if (!CleanArchitectureUtils.isDomainLayerFile(filePath)) return;
+    if (!_isEntityFile(filePath)) return;
 
     final importUri = node.uri.stringValue;
     if (importUri == null) return;
@@ -289,15 +280,21 @@ class ConsolidatedEntityRule extends DartLintRule {
   }
 
   LintCode _createLintCode(EntityViolation violation) {
-    final severityPrefix = severity.messagePrefix;
     return LintCode(
       name: 'consolidated_entity_rule',
-      problemMessage: '$severityPrefix${violation.message}',
+      problemMessage: violation.message,
       correctionMessage: violation.suggestion,
     );
   }
 
   // Helper methods
+  bool _isEntityFile(String filePath) {
+    return filePath.contains('/entities/') ||
+        filePath.contains('\\entities\\') ||
+        filePath.endsWith('_entity.dart') ||
+        filePath.endsWith('entity.dart');
+  }
+
   bool _isFreezedClass(ClassDeclaration node) {
     // Check for @freezed annotation
     for (final metadata in node.metadata) {

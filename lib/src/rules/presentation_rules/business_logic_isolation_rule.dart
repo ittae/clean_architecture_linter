@@ -20,7 +20,7 @@ import '../../clean_architecture_linter_base.dart';
 /// - Business logic can be reused across different UIs
 /// - Easier to maintain and modify business rules
 /// - Clear separation of concerns
-class BusinessLogicIsolationRule extends DartLintRule {
+class BusinessLogicIsolationRule extends CleanArchitectureLintRule {
   const BusinessLogicIsolationRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -31,7 +31,7 @@ class BusinessLogicIsolationRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,
@@ -62,10 +62,6 @@ class BusinessLogicIsolationRule extends DartLintRule {
     ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
-    final filePath = resolver.path;
-
-    // Only check files in presentation layer
-    if (!CleanArchitectureUtils.isPresentationLayerFile(filePath)) return;
 
     final className = node.name.lexeme;
 
@@ -88,8 +84,6 @@ class BusinessLogicIsolationRule extends DartLintRule {
     ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
-    final filePath = resolver.path;
-    if (!CleanArchitectureUtils.isPresentationLayerFile(filePath)) return;
 
     final methodName = node.methodName.name;
     final target = node.target;
@@ -121,8 +115,6 @@ class BusinessLogicIsolationRule extends DartLintRule {
     ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
-    final filePath = resolver.path;
-    if (!CleanArchitectureUtils.isPresentationLayerFile(filePath)) return;
 
     final type = node.fields.type;
     if (type is NamedType) {
@@ -157,8 +149,6 @@ class BusinessLogicIsolationRule extends DartLintRule {
     ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
-    final filePath = resolver.path;
-    if (!CleanArchitectureUtils.isPresentationLayerFile(filePath)) return;
 
     final initializer = node.initializer;
     if (initializer != null) {

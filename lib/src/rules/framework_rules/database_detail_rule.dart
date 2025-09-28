@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../clean_architecture_linter_base.dart';
+
 /// Enforces that database details remain isolated in the framework layer.
 ///
 /// This rule ensures that database is treated as a detail:
@@ -16,7 +18,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// - No database schema knowledge in inner layers
 /// - No database connection management in business logic
 /// - Database can be replaced without affecting inner layers
-class DatabaseDetailRule extends DartLintRule {
+class DatabaseDetailRule extends CleanArchitectureLintRule {
   const DatabaseDetailRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -26,7 +28,7 @@ class DatabaseDetailRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,
@@ -58,7 +60,7 @@ class DatabaseDetailRule extends DartLintRule {
     if (importUri == null) return;
 
     // Skip test files and migration files
-    if (_isTestFile(filePath) || _isMigrationFile(filePath)) return;
+    if (CleanArchitectureUtils.shouldExcludeFile(filePath) || _isMigrationFile(filePath)) return;
 
     if (_isDatabaseImport(importUri)) {
       if (!_isFrameworkLayer(filePath)) {
@@ -141,7 +143,7 @@ class DatabaseDetailRule extends DartLintRule {
     final filePath = resolver.path;
 
     // Skip test files and migration files
-    if (_isTestFile(filePath) || _isMigrationFile(filePath)) return;
+    if (CleanArchitectureUtils.shouldExcludeFile(filePath) || _isMigrationFile(filePath)) return;
 
     if (!_isFrameworkLayer(filePath)) {
       // Check for SQL strings in inner layers
@@ -422,13 +424,6 @@ class DatabaseDetailRule extends DartLintRule {
     return frameworkPaths.any((path) => filePath.contains(path));
   }
 
-  bool _isTestFile(String filePath) {
-    return filePath.contains('/test/') ||
-        filePath.contains('\\test\\') ||
-        filePath.endsWith('_test.dart') ||
-        filePath.contains('/integration_test/') ||
-        filePath.contains('\\integration_test\\');
-  }
 
   bool _isMigrationFile(String filePath) {
     return filePath.contains('/migrations/') ||

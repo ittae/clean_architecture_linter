@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../clean_architecture_linter_base.dart';
+
 /// Enforces proper data crossing boundaries in Clean Architecture.
 ///
 /// Uncle Bob: "Typically the data that crosses the boundaries is simple data
@@ -25,7 +27,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// - Framework-specific objects in boundary methods
 /// - Complex objects with behavior crossing boundaries
 /// - ORM objects leaking to inner layers
-class DataBoundaryCrossingRule extends DartLintRule {
+class DataBoundaryCrossingRule extends CleanArchitectureLintRule {
   const DataBoundaryCrossingRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -35,7 +37,7 @@ class DataBoundaryCrossingRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,

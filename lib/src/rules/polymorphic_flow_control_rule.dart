@@ -3,6 +3,8 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../clean_architecture_linter_base.dart';
+
 /// Validates polymorphic patterns for flow control inversion.
 ///
 /// Uncle Bob: "We take advantage of dynamic polymorphism to create source code
@@ -22,7 +24,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// - Controller → Use Case Interface ← Use Case Implementation
 /// - Domain → Repository Interface ← Repository Implementation
 /// - Abstract Factory patterns for object creation
-class PolymorphicFlowControlRule extends DartLintRule {
+class PolymorphicFlowControlRule extends CleanArchitectureLintRule {
   const PolymorphicFlowControlRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -32,7 +34,7 @@ class PolymorphicFlowControlRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,

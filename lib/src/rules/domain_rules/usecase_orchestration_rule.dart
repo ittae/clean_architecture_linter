@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../clean_architecture_linter_base.dart';
+
 /// Enforces proper orchestration pattern in Use Cases.
 ///
 /// This rule ensures that Use Cases follow Clean Architecture principles:
@@ -16,7 +18,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// - Coordinate multiple entities if needed
 /// - Apply application-specific business rules
 /// - Return output data in a form suitable for the delivery mechanism
-class UseCaseOrchestrationRule extends DartLintRule {
+class UseCaseOrchestrationRule extends CleanArchitectureLintRule {
   const UseCaseOrchestrationRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -27,7 +29,7 @@ class UseCaseOrchestrationRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,
@@ -330,7 +332,7 @@ class UseCaseOrchestrationRule extends DartLintRule {
   }
 
   bool _isUseCaseFile(String filePath) {
-    return (filePath.contains('/domain/') || filePath.contains('\\domain\\')) &&
+    return CleanArchitectureUtils.isDomainLayerFile(filePath) &&
         (filePath.contains('/usecases/') ||
             filePath.contains('\\usecases\\') ||
             filePath.contains('/use_cases/') ||

@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../clean_architecture_linter_base.dart';
+
 /// Consolidated rule for UseCase validation in Clean Architecture.
 ///
 /// This rule combines multiple UseCase checks:
@@ -16,7 +18,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// - Orchestrate business flow without containing enterprise rules
 /// - Be independent of UI, database, and framework concerns
 /// - Be easily testable with mock dependencies
-class ConsolidatedUseCaseRule extends DartLintRule {
+class ConsolidatedUseCaseRule extends CleanArchitectureLintRule {
   const ConsolidatedUseCaseRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -27,7 +29,7 @@ class ConsolidatedUseCaseRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,
@@ -367,7 +369,7 @@ class ConsolidatedUseCaseRule extends DartLintRule {
 
   // Helper methods
   bool _isUseCaseFile(String filePath) {
-    return (filePath.contains('/domain/') || filePath.contains('\\domain\\')) &&
+    return CleanArchitectureUtils.isDomainLayerFile(filePath) &&
         (filePath.contains('/usecases/') ||
             filePath.contains('\\usecases\\') ||
             filePath.contains('/use_cases/') ||

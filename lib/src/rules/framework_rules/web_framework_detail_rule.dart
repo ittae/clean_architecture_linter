@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../clean_architecture_linter_base.dart';
+
 /// Enforces that web framework details remain isolated in the framework layer.
 ///
 /// This rule ensures that web frameworks are treated as details:
@@ -16,7 +18,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// - No web session management in inner layers
 /// - No web routing knowledge in business logic
 /// - Web framework can be replaced without affecting inner layers
-class WebFrameworkDetailRule extends DartLintRule {
+class WebFrameworkDetailRule extends CleanArchitectureLintRule {
   const WebFrameworkDetailRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -26,7 +28,7 @@ class WebFrameworkDetailRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,
@@ -53,8 +55,8 @@ class WebFrameworkDetailRule extends DartLintRule {
     final importUri = node.uri.stringValue;
     if (importUri == null) return;
 
-    // Skip test files
-    if (_isTestFile(filePath)) return;
+    // Skip excluded files (tests, generated files, etc.)
+    if (CleanArchitectureUtils.shouldExcludeFile(filePath)) return;
 
     if (_isWebFrameworkImport(importUri)) {
       if (!_isFrameworkLayer(filePath)) {
@@ -278,7 +280,7 @@ class WebFrameworkDetailRule extends DartLintRule {
     }
 
     // Check if it's in a repository interface
-    if (_isRepositoryInterface(method)) {
+    if (CleanArchitectureUtils.isRepositoryInterfaceMethod(method)) {
       return false; // Repository interfaces can have get/post etc. method names
     }
 
@@ -595,13 +597,6 @@ class WebFrameworkDetailRule extends DartLintRule {
     return 'unknown';
   }
 
-  bool _isTestFile(String filePath) {
-    return filePath.contains('/test/') ||
-        filePath.contains('\\test\\') ||
-        filePath.endsWith('_test.dart') ||
-        filePath.contains('/integration_test/') ||
-        filePath.contains('\\integration_test\\');
-  }
 
   bool _isFlutterWebFile(String filePath) {
     return filePath.contains('/web/') ||
@@ -610,34 +605,4 @@ class WebFrameworkDetailRule extends DartLintRule {
         filePath.contains('web_');
   }
 
-  bool _isRepositoryInterface(MethodDeclaration method) {
-    // Get the parent class declaration
-    final parent = method.parent;
-    if (parent is! ClassDeclaration) return false;
-
-    final className = parent.name.lexeme;
-
-    // Check if class name suggests it's a repository interface
-    final repositoryPatterns = [
-      'Repository',
-      'DataSource',
-      'Gateway',
-      'Port',
-    ];
-
-    final isRepositoryClass = repositoryPatterns.any((pattern) =>
-        className.contains(pattern));
-
-    if (!isRepositoryClass) return false;
-
-    // Check if the class is abstract (interface)
-    final isAbstractClass = parent.abstractKeyword != null;
-
-    // Check if all methods in the class are abstract (interface pattern)
-    final hasOnlyAbstractMethods = parent.members
-        .whereType<MethodDeclaration>()
-        .every((method) => method.isAbstract || method.isGetter || method.isSetter);
-
-    return isRepositoryClass && (isAbstractClass || hasOnlyAbstractMethods);
-  }
 }

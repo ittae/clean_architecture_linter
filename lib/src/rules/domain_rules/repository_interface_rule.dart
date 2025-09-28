@@ -17,7 +17,7 @@ import '../../clean_architecture_linter_base.dart';
 /// - Independence from data layer changes
 /// - Clear contract definition
 /// - Supports multiple data source strategies
-class RepositoryInterfaceRule extends DartLintRule {
+class RepositoryInterfaceRule extends CleanArchitectureLintRule {
   const RepositoryInterfaceRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -28,7 +28,7 @@ class RepositoryInterfaceRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,

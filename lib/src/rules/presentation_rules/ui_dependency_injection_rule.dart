@@ -29,7 +29,7 @@ import '../../clean_architecture_linter_base.dart';
 /// - Use dependency injection frameworks
 /// - Access services through proper abstractions
 /// - Avoid direct instantiation of business logic
-class UiDependencyInjectionRule extends DartLintRule {
+class UiDependencyInjectionRule extends CleanArchitectureLintRule {
   const UiDependencyInjectionRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -39,7 +39,7 @@ class UiDependencyInjectionRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,
@@ -66,10 +66,6 @@ class UiDependencyInjectionRule extends DartLintRule {
     ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
-    final filePath = resolver.path;
-
-    // Only check files in presentation layer
-    if (!CleanArchitectureUtils.isPresentationLayerFile(filePath)) return;
 
     final constructorName = node.constructorName.type.name2.lexeme;
 
@@ -86,8 +82,6 @@ class UiDependencyInjectionRule extends DartLintRule {
     ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
-    final filePath = resolver.path;
-    if (!CleanArchitectureUtils.isPresentationLayerFile(filePath)) return;
 
     final className = node.name.lexeme;
     if (!_isUIComponent(className, node)) return;
@@ -120,8 +114,6 @@ class UiDependencyInjectionRule extends DartLintRule {
     ErrorReporter reporter,
     CustomLintResolver resolver,
   ) {
-    final filePath = resolver.path;
-    if (!CleanArchitectureUtils.isPresentationLayerFile(filePath)) return;
 
     final methodName = node.methodName.name;
     final target = node.target?.toString() ?? '';
@@ -156,7 +148,6 @@ class UiDependencyInjectionRule extends DartLintRule {
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
-    if (!CleanArchitectureUtils.isPresentationLayerFile(filePath)) return;
 
     final importUri = node.uri.stringValue;
     if (importUri == null) return;

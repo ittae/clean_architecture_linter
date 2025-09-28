@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../clean_architecture_linter_base.dart';
+
 /// Validates that Clean Architecture benefits are preserved in the system.
 ///
 /// Uncle Bob: "By separating the software into layers, and conforming to The
@@ -24,7 +26,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// - System remains flexible and maintainable
 /// - Architecture supports long-term evolution
 /// - Clean boundaries enable independent development
-class CleanArchitectureBenefitsRule extends DartLintRule {
+class CleanArchitectureBenefitsRule extends CleanArchitectureLintRule {
   const CleanArchitectureBenefitsRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -34,7 +36,7 @@ class CleanArchitectureBenefitsRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,

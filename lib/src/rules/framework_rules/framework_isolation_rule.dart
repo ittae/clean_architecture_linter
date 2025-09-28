@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../clean_architecture_linter_base.dart';
+
 /// Enforces proper framework isolation in the outermost layer.
 ///
 /// This rule ensures that frameworks and drivers remain in the outermost layer:
@@ -16,7 +18,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// - Provide glue code to connect frameworks to adapters
 /// - Keep all framework details isolated from business logic
 /// - Be easily replaceable without affecting inner layers
-class FrameworkIsolationRule extends DartLintRule {
+class FrameworkIsolationRule extends CleanArchitectureLintRule {
   const FrameworkIsolationRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -26,7 +28,7 @@ class FrameworkIsolationRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,
@@ -54,7 +56,7 @@ class FrameworkIsolationRule extends DartLintRule {
     if (importUri == null) return;
 
     // Skip test files - they may need direct framework access
-    if (_isTestFile(filePath)) return;
+    if (CleanArchitectureUtils.shouldExcludeFile(filePath)) return;
 
     // Check if framework imports are leaking into inner layers
     if (_isFrameworkImport(importUri)) {
@@ -246,7 +248,7 @@ class FrameworkIsolationRule extends DartLintRule {
     }
 
     // UI framework violations (more strict)
-    if (_isUIFramework(importUri) && _isDomainLayer(filePath) && !_isTestFile(filePath)) {
+    if (_isUIFramework(importUri) && _isDomainLayer(filePath) && !CleanArchitectureUtils.shouldExcludeFile(filePath)) {
       return FrameworkViolation(
         message: 'UI framework leaked into domain layer: $importUri',
         suggestion: 'Domain layer must be UI-independent. Remove UI framework dependencies.',
@@ -494,15 +496,6 @@ class FrameworkIsolationRule extends DartLintRule {
     return frameworkPaths.any((path) => filePath.contains(path));
   }
 
-  bool _isTestFile(String filePath) {
-    return filePath.contains('/test/') ||
-        filePath.contains('\\test\\') ||
-        filePath.endsWith('_test.dart') ||
-        filePath.contains('/integration_test/') ||
-        filePath.contains('\\integration_test\\') ||
-        filePath.contains('/test_driver/') ||
-        filePath.contains('\\test_driver\\');
-  }
 
   bool _isFlutterWebImport(String importUri) {
     return importUri.startsWith('dart:html') || importUri.startsWith('dart:js') || importUri.startsWith('dart:js_util');

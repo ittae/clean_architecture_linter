@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../clean_architecture_linter_base.dart';
+
 /// Flexible layer detection that adapts to custom Clean Architecture implementations.
 ///
 /// This rule recognizes that projects may have:
@@ -15,7 +17,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// - Inner layers are more abstract than outer layers
 /// - Layer responsibilities remain distinct
 /// - Custom configurations can define layer hierarchies
-class FlexibleLayerDetectionRule extends DartLintRule {
+class FlexibleLayerDetectionRule extends CleanArchitectureLintRule {
   const FlexibleLayerDetectionRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -25,7 +27,7 @@ class FlexibleLayerDetectionRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,

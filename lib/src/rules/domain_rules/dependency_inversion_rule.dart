@@ -19,7 +19,7 @@ import '../../clean_architecture_linter_base.dart';
 /// - Reduced coupling between layers
 /// - Better adherence to SOLID principles
 /// - Easier mocking and unit testing
-class DependencyInversionRule extends DartLintRule {
+class DependencyInversionRule extends CleanArchitectureLintRule {
   const DependencyInversionRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -29,7 +29,7 @@ class DependencyInversionRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,

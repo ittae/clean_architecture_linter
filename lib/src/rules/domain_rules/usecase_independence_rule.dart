@@ -2,6 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../clean_architecture_linter_base.dart';
+
 /// Enforces Use Case layer independence from external concerns.
 ///
 /// This rule ensures that Use Cases remain isolated as defined in Clean Architecture:
@@ -18,7 +20,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 /// - Independent of external frameworks
 /// - Independent of delivery mechanisms
 /// - Dependent only on entities and abstractions
-class UseCaseIndependenceRule extends DartLintRule {
+class UseCaseIndependenceRule extends CleanArchitectureLintRule {
   const UseCaseIndependenceRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -29,7 +31,7 @@ class UseCaseIndependenceRule extends DartLintRule {
   );
 
   @override
-  void run(
+  void runRule(
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext context,
@@ -513,7 +515,7 @@ class UseCaseIndependenceRule extends DartLintRule {
   }
 
   bool _isUseCaseFile(String filePath) {
-    return (filePath.contains('/domain/') || filePath.contains('\\domain\\')) &&
+    return CleanArchitectureUtils.isDomainLayerFile(filePath) &&
         (filePath.contains('/usecases/') ||
             filePath.contains('\\usecases\\') ||
             filePath.contains('/use_cases/') ||
