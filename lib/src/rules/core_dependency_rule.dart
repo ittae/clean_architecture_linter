@@ -93,6 +93,11 @@ class CoreDependencyRule extends CleanArchitectureLintRule {
 
     // Core rule: dependencies must point toward higher abstraction
     if (currentAbstraction > importedAbstraction) {
+      // Exception: Data sources are allowed to depend on external infrastructure
+      if (_isDataSourceFile(filePath) && _isExternalInfrastructure(importUri)) {
+        return; // Allow data sources to import external packages
+      }
+
       _reportDependencyViolation(
         node,
         reporter,
@@ -294,6 +299,11 @@ class CoreDependencyRule extends CleanArchitectureLintRule {
   }
 
   int _inferTypeAbstraction(String typeName) {
+    // Dart built-in types should not be considered in abstraction analysis
+    if (_isDartBuiltInType(typeName)) {
+      return 5; // Highest abstraction - never considered violation
+    }
+
     // Analyze type name to infer abstraction level
     final abstractIndicators = [
       'Interface',
@@ -328,6 +338,71 @@ class CoreDependencyRule extends CleanArchitectureLintRule {
     }
 
     return 2; // Medium abstraction
+  }
+
+  bool _isDartBuiltInType(String typeName) {
+    // Common Dart built-in types from dart:core and other core libraries
+    const dartBuiltInTypes = {
+      'DateTime',
+      'String',
+      'int',
+      'double',
+      'bool',
+      'num',
+      'Duration',
+      'Uri',
+      'List',
+      'Map',
+      'Set',
+      'Iterable',
+      'Future',
+      'Stream',
+      'Object',
+      'dynamic',
+      'void',
+      'Null',
+      'BigInt',
+      'Symbol',
+      'Type',
+      'RegExp',
+      'StackTrace',
+      'Stopwatch',
+      'StringBuffer',
+    };
+
+    // Handle generic types like List<T>, Map<K,V>, etc.
+    final baseTypeName = typeName.split('<').first.trim();
+    return dartBuiltInTypes.contains(baseTypeName);
+  }
+
+  bool _isDataSourceFile(String filePath) {
+    // Check if this is a data source file
+    final normalizedPath = filePath.replaceAll('\\', '/').toLowerCase();
+    return normalizedPath.contains('/datasource') ||
+           normalizedPath.contains('_datasource.dart') ||
+           normalizedPath.contains('/data/');
+  }
+
+  bool _isExternalInfrastructure(String importUri) {
+    // Check if this is an external infrastructure package
+    if (!importUri.startsWith('package:')) return false;
+
+    // Common external infrastructure packages that data sources should be able to use
+    final allowedExternalPackages = [
+      'package:firebase_',
+      'package:cloud_',
+      'package:http/',
+      'package:dio/',
+      'package:sqflite/',
+      'package:hive/',
+      'package:isar/',
+      'package:drift/',
+      'package:supabase/',
+      'package:aws_',
+      'package:google_',
+    ];
+
+    return allowedExternalPackages.any((pkg) => importUri.startsWith(pkg));
   }
 
   List<String> _findConcreteInstantiations(String bodyString) {

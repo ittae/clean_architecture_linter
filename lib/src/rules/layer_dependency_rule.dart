@@ -243,6 +243,10 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
       'package:hive/',
       'package:shared_preferences/',
       'package:drift/',
+      'package:firebase_',  // Firebase packages
+      'package:cloud_',     // Cloud services
+      'package:supabase_',  // Supabase
+      'package:isar/',      // Database packages
       'dart:convert',
       'dart:async',
     ];

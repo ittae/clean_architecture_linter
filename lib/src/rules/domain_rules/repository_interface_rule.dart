@@ -180,16 +180,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule {
       }
     }
 
-    // Check for proper repository method naming patterns
-    if (!_isValidRepositoryMethodName(methodName)) {
-      final code = LintCode(
-        name: 'repository_interface',
-        problemMessage: 'Repository method name should follow domain language: $methodName',
-        correctionMessage:
-            'Use domain-specific method names (get, save, find, create, delete) instead of technical terms.',
-      );
-      reporter.atNode(method, code);
-    }
+    // Method names are domain-specific and should not be enforced by linter
   }
 
   RepositoryViolation? _analyzeRepositoryImport(String importUri) {
@@ -242,30 +233,6 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule {
         typeName.endsWith('Entity') && typeName.contains('Data');
   }
 
-  bool _isValidRepositoryMethodName(String methodName) {
-    final validPrefixes = [
-      'get',
-      'find',
-      'search',
-      'fetch',
-      'save',
-      'create',
-      'add',
-      'insert',
-      'update',
-      'modify',
-      'change',
-      'delete',
-      'remove',
-      'clear',
-      'exists',
-      'count',
-      'has',
-    ];
-
-    final lowerMethodName = methodName.toLowerCase();
-    return validPrefixes.any((prefix) => lowerMethodName.startsWith(prefix));
-  }
 }
 
 /// Represents a repository interface violation

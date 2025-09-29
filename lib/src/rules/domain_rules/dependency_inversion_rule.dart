@@ -326,19 +326,33 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
   }
 
   bool _isConcreteImplementation(String typeName) {
+    // Only flag obviously concrete implementations, not legitimate domain classes
     final concretePatterns = [
-      'Impl',
-      'Implementation',
-      'Concrete',
-      'Service',
-      'Manager',
-      'Handler',
-      'Provider',
-      'Client',
-      'Adapter',
-      'Gateway',
+      'Impl',           // UserRepositoryImpl
+      'Implementation', // UserRepositoryImplementation
+      'Concrete',       // ConcreteUserService
     ];
-    return concretePatterns.any((pattern) => typeName.endsWith(pattern));
+
+    // Infrastructure-specific suffixes (these should be abstractions in domain)
+    final infrastructurePatterns = [
+      'Client',         // HttpClient, DatabaseClient
+      'Adapter',        // DatabaseAdapter
+      'Gateway',        // PaymentGateway
+    ];
+
+    // Check for obvious concrete implementations
+    if (concretePatterns.any((pattern) => typeName.endsWith(pattern))) {
+      return true;
+    }
+
+    // Check for infrastructure patterns only if they seem like concrete implementations
+    if (infrastructurePatterns.any((pattern) => typeName.endsWith(pattern))) {
+      return true;
+    }
+
+    // Domain Services, Managers, Handlers, Providers are legitimate domain classes
+    // They should NOT be considered concrete implementations requiring abstraction
+    return false;
   }
 
   bool _isInfrastructureDependency(String typeName) {

@@ -1,53 +1,19 @@
-/// A comprehensive custom lint package that enforces Clean Architecture principles in Flutter projects.
+/// A focused custom lint package that enforces core Clean Architecture principles in Flutter projects.
 ///
-/// This package provides lint rules to ensure proper separation of concerns,
-/// dependency inversion, and architectural boundaries in Flutter applications
-/// following Clean Architecture patterns.
+/// This package provides essential lint rules to ensure proper dependency direction,
+/// layer separation, and architectural boundaries following Clean Architecture patterns.
+/// Simplified to focus on core principles with minimal false positives.
 library;
 
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
-import 'src/rules/domain_rules/domain_purity_rule.dart';
-import 'src/rules/domain_rules/repository_interface_rule.dart';
-import 'src/rules/domain_rules/domain_model_validation_rule.dart';
-import 'src/rules/domain_rules/dependency_inversion_rule.dart';
-import 'src/rules/domain_rules/consolidated_entity_rule.dart';
-import 'src/rules/domain_rules/consolidated_usecase_rule.dart';
-// Removed individual UseCase rules - replaced by ConsolidatedUseCaseRule
-// import 'src/rules/domain_rules/usecase_single_responsibility_rule.dart';
-// import 'src/rules/domain_rules/usecase_orchestration_rule.dart';
-// import 'src/rules/domain_rules/usecase_application_rules_rule.dart';
-// import 'src/rules/domain_rules/usecase_independence_rule.dart';
-// import 'src/rules/domain_rules/business_logic_isolation_rule.dart'; // Moved to presentation
-import 'src/rules/data_rules/datasource_naming_rule.dart';
-import 'src/rules/data_rules/repository_implementation_rule.dart';
-import 'src/rules/data_rules/model_structure_rule.dart';
-import 'src/rules/presentation_rules/ui_dependency_injection_rule.dart';
-import 'src/rules/presentation_rules/state_management_rule.dart';
-import 'src/rules/presentation_rules/presentation_logic_separation_rule.dart';
-import 'src/rules/presentation_rules/business_logic_isolation_rule.dart';
+// Core Clean Architecture Rules (6 essential rules)
 import 'src/rules/layer_dependency_rule.dart';
+import 'src/rules/domain_rules/domain_purity_rule.dart';
+import 'src/rules/domain_rules/dependency_inversion_rule.dart';
+import 'src/rules/domain_rules/repository_interface_rule.dart';
 import 'src/rules/circular_dependency_rule.dart';
-import 'src/rules/adapter_rules/data_conversion_adapter_rule.dart';
-import 'src/rules/adapter_rules/mvc_architecture_rule.dart';
-import 'src/rules/adapter_rules/external_service_adapter_rule.dart';
-import 'src/rules/framework_rules/framework_isolation_rule.dart';
-import 'src/rules/framework_rules/database_detail_rule.dart';
-import 'src/rules/framework_rules/web_framework_detail_rule.dart';
-import 'src/rules/framework_rules/glue_code_rule.dart';
-import 'src/rules/abstraction_level_rule.dart';
-import 'src/rules/flexible_layer_detection_rule.dart';
-import 'src/rules/core_dependency_rule.dart';
-import 'src/rules/abstraction_progression_rule.dart';
 import 'src/rules/boundary_crossing_rule.dart';
-import 'src/rules/dependency_inversion_boundary_rule.dart';
-import 'src/rules/interface_boundary_rule.dart';
-import 'src/rules/polymorphic_flow_control_rule.dart';
-import 'src/rules/data_boundary_crossing_rule.dart';
-import 'src/rules/entity_boundary_isolation_rule.dart';
-import 'src/rules/dto_boundary_pattern_rule.dart';
-import 'src/rules/database_row_boundary_rule.dart';
-import 'src/rules/clean_architecture_benefits_rule.dart';
 
 /// Plugin entry point for Clean Architecture Linter.
 PluginBase createPlugin() => _CleanArchitectureLinterPlugin();
@@ -55,59 +21,24 @@ PluginBase createPlugin() => _CleanArchitectureLinterPlugin();
 class _CleanArchitectureLinterPlugin extends PluginBase {
   @override
   List<LintRule> getLintRules(CustomLintConfigs configs) => [
-    // Domain Layer Rules
+    // Core Clean Architecture Principles (6 essential rules)
+
+    // 1. Dependency Direction Rule - 의존성 방향 검증
+    LayerDependencyRule(),
+
+    // 2. Domain Purity Rule - Domain 레이어 순수성
     DomainPurityRule(),
-    ConsolidatedEntityRule(),
-    ConsolidatedUseCaseRule(),
-    RepositoryInterfaceRule(),
-    DomainModelValidationRule(), 
+
+    // 3. Dependency Inversion Principle - 추상화에 의존
     DependencyInversionRule(),
 
-    // Data Layer Rules
-    DataSourceNamingRule(),
-    RepositoryImplementationRule(),
-    ModelStructureRule(),
+    // 4. Repository Pattern - Repository 인터페이스 정의
+    RepositoryInterfaceRule(),
 
-    // Presentation Layer Rules
-    UiDependencyInjectionRule(),
-    StateManagementRule(),
-    PresentationLogicSeparationRule(),
-    BusinessLogicIsolationRule(),
-
-    // Cross-Layer Rules
-    LayerDependencyRule(),
+    // 5. Circular Dependency Prevention - 순환 의존성 방지
     CircularDependencyRule(),
 
-    // Interface Adapter Rules
-    DataConversionAdapterRule(),
-    MVCArchitectureRule(),
-    ExternalServiceAdapterRule(),
-
-    // Framework & Driver Rules
-    FrameworkIsolationRule(),
-    DatabaseDetailRule(),
-    WebFrameworkDetailRule(),
-    GlueCodeRule(),
-
-    // Advanced Clean Architecture Rules
-    AbstractionLevelRule(),
-    FlexibleLayerDetectionRule(),
-    CoreDependencyRule(),
-    AbstractionProgressionRule(),
-
-    // Boundary Crossing Rules
+    // 6. Boundary Crossing Validation - 레이어 경계 검증
     BoundaryCrossingRule(),
-    DependencyInversionBoundaryRule(),
-    InterfaceBoundaryRule(),
-    PolymorphicFlowControlRule(),
-
-    // Data Boundary Rules
-    DataBoundaryCrossingRule(),
-    EntityBoundaryIsolationRule(),
-    DTOBoundaryPatternRule(),
-    DatabaseRowBoundaryRule(),
-
-    // Clean Architecture Benefits
-    CleanArchitectureBenefitsRule(),
   ];
 }
