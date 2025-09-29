@@ -77,6 +77,11 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
     ArchitectureLayer target,
     String importPath,
   ) {
+    // Allow cross-cutting concerns in all layers
+    if (_isCrossCuttingConcern(importPath)) {
+      return null;
+    }
+
     switch (source) {
       case ArchitectureLayer.domain:
         if (target == ArchitectureLayer.data) {
@@ -290,6 +295,30 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
     ];
 
     return diPatterns.any((pattern) => normalizedPath.endsWith(pattern) || normalizedPath.contains(pattern));
+  }
+
+  bool _isCrossCuttingConcern(String importUri) {
+    // Cross-cutting concerns that can be used across all layers
+    final crossCuttingPatterns = [
+      // Utility packages
+      '/core/utils/',
+      '/shared/utils/',
+      '/common/utils/',
+      '/utils/',
+      // Logging
+      'package:logger/',
+      'package:logging/',
+      // Configuration
+      '/core/config/',
+      '/shared/config/',
+      // Constants
+      '/core/constants/',
+      '/shared/constants/',
+      // Dart core libraries
+      'dart:',
+    ];
+
+    return crossCuttingPatterns.any((pattern) => importUri.contains(pattern));
   }
 }
 
