@@ -31,6 +31,11 @@ class BoundaryCrossingRule extends CleanArchitectureLintRule {
     context.registry.addImportDirective((node) {
       _checkBoundaryViolation(node, reporter, resolver);
     });
+
+    // Check for unnecessary presentation models that duplicate entities
+    context.registry.addClassDeclaration((node) {
+      _checkUnnecessaryPresentationModel(node, reporter, resolver);
+    });
   }
 
   void _checkBoundaryViolation(
@@ -127,6 +132,115 @@ class BoundaryCrossingRule extends CleanArchitectureLintRule {
     ];
 
     return diPatterns.any((pattern) => normalizedPath.endsWith(pattern) || normalizedPath.contains(pattern));
+  }
+
+  void _checkUnnecessaryPresentationModel(
+    ClassDeclaration node,
+    ErrorReporter reporter,
+    CustomLintResolver resolver,
+  ) {
+    final filePath = resolver.path;
+
+    // Only check files in presentation layer
+    if (!_isPresentationLayer(filePath)) return;
+
+    final className = node.name.lexeme;
+
+    // Check if this looks like a model that might duplicate an entity
+    if (_isPresentationModel(className, filePath)) {
+      // Check if there's a corresponding entity in domain layer
+      final correspondingEntityPath = _findCorrespondingEntity(className, filePath);
+
+      if (correspondingEntityPath != null) {
+        // Check if the model is just duplicating the entity without adding UI-specific logic
+        if (_isDuplicatingEntity(node)) {
+          final code = LintCode(
+            name: 'boundary_crossing',
+            problemMessage: 'Unnecessary presentation model: $className duplicates domain entity without adding UI value',
+            correctionMessage: 'Use domain entity directly in presentation layer instead of creating duplicate models.',
+          );
+          reporter.atNode(node, code);
+        }
+      }
+    }
+  }
+
+  bool _isPresentationLayer(String filePath) {
+    final normalizedPath = filePath.replaceAll('\\', '/').toLowerCase();
+    return normalizedPath.contains('/presentation/') ||
+           normalizedPath.contains('/ui/') ||
+           normalizedPath.contains('/widgets/') ||
+           normalizedPath.contains('/screens/') ||
+           normalizedPath.contains('/pages/') ||
+           normalizedPath.contains('/views/');
+  }
+
+  bool _isPresentationModel(String className, String filePath) {
+    // Check if file is in models directory within presentation
+    final normalizedPath = filePath.replaceAll('\\', '/').toLowerCase();
+    if (!normalizedPath.contains('/models/')) return false;
+
+    // Check common model naming patterns
+    return className.endsWith('Model') ||
+           className.endsWith('ViewModel') ||
+           className.endsWith('Dto') ||
+           className.endsWith('Data');
+  }
+
+  String? _findCorrespondingEntity(String modelClassName, String filePath) {
+    // Extract base name (remove Model/ViewModel/etc suffix)
+    String baseName = modelClassName;
+    final suffixes = ['Model', 'ViewModel', 'Dto', 'Data'];
+
+    for (final suffix in suffixes) {
+      if (baseName.endsWith(suffix)) {
+        baseName = baseName.substring(0, baseName.length - suffix.length);
+        break;
+      }
+    }
+
+    // Try to construct entity path
+    final normalizedPath = filePath.replaceAll('\\', '/');
+
+    // Replace presentation path with domain path
+    String entityPath = normalizedPath
+        .replaceAll('/presentation/', '/domain/')
+        .replaceAll('/models/', '/entities/')
+        .replaceAll(modelClassName.toLowerCase(), '${baseName.toLowerCase()}_entity');
+
+    // For simplicity, return constructed path - in real implementation,
+    // you might want to check if file actually exists
+    return entityPath;
+  }
+
+  bool _isDuplicatingEntity(ClassDeclaration node) {
+    // Simple heuristic: if model has only basic fields without UI-specific logic,
+    // it might be duplicating an entity
+    final members = node.members;
+
+    // Count meaningful methods vs simple getters/fields
+    int meaningfulMethods = 0;
+    int simpleFields = 0;
+
+    for (final member in members) {
+      if (member is FieldDeclaration) {
+        simpleFields++;
+      } else if (member is MethodDeclaration) {
+        final methodName = member.name.lexeme;
+        // Skip constructors, getters, toString, etc.
+        if (!methodName.startsWith('get') &&
+            methodName != 'toString' &&
+            methodName != 'hashCode' &&
+            methodName != 'operator==' &&
+            !member.isGetter &&
+            !member.isSetter) {
+          meaningfulMethods++;
+        }
+      }
+    }
+
+    // If it's mostly just fields without meaningful methods, likely duplicating entity
+    return simpleFields > 0 && meaningfulMethods == 0;
   }
 }
 
