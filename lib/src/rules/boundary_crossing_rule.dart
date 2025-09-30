@@ -36,6 +36,11 @@ class BoundaryCrossingRule extends CleanArchitectureLintRule {
     context.registry.addClassDeclaration((node) {
       _checkUnnecessaryPresentationModel(node, reporter, resolver);
     });
+
+    // Check for missing data models when entities exist
+    context.registry.addClassDeclaration((node) {
+      _checkMissingDataModel(node, reporter, resolver);
+    });
   }
 
   void _checkBoundaryViolation(
@@ -241,6 +246,95 @@ class BoundaryCrossingRule extends CleanArchitectureLintRule {
 
     // If it's mostly just fields without meaningful methods, likely duplicating entity
     return simpleFields > 0 && meaningfulMethods == 0;
+  }
+
+  void _checkMissingDataModel(
+    ClassDeclaration node,
+    ErrorReporter reporter,
+    CustomLintResolver resolver,
+  ) {
+    final filePath = resolver.path;
+
+    // Only check files in domain/entities layer
+    if (!_isDomainEntitiesLayer(filePath)) return;
+
+    final className = node.name.lexeme;
+
+    // Check if this is an entity
+    if (_isEntityClass(className, filePath)) {
+      // Check if there's a corresponding data model
+      final correspondingModelPath = _findCorrespondingDataModel(className, filePath);
+
+      if (correspondingModelPath != null) {
+        // In a real implementation, you would check if the file actually exists
+        // For simplicity, we'll warn about potential missing models
+        if (_shouldHaveDataModel(className)) {
+          final code = LintCode(
+            name: 'boundary_crossing',
+            problemMessage: 'Entity $className exists but corresponding data model may be missing',
+            correctionMessage: 'Consider creating a data model in data/models/ for entity-to-external-format conversion.',
+          );
+          reporter.atNode(node, code);
+        }
+      }
+    }
+  }
+
+  bool _isDomainEntitiesLayer(String filePath) {
+    final normalizedPath = filePath.replaceAll('\\', '/').toLowerCase();
+    return normalizedPath.contains('/domain/') &&
+           (normalizedPath.contains('/entities/') || normalizedPath.endsWith('/entity.dart'));
+  }
+
+  bool _isEntityClass(String className, String filePath) {
+    final normalizedPath = filePath.replaceAll('\\', '/').toLowerCase();
+
+    // Check if file is in entities directory or ends with entity
+    if (normalizedPath.contains('/entities/') ||
+        filePath.toLowerCase().endsWith('_entity.dart') ||
+        filePath.toLowerCase().endsWith('entity.dart')) {
+      return true;
+    }
+
+    // Check common entity naming patterns
+    return className.endsWith('Entity') ||
+           (normalizedPath.contains('/domain/') &&
+            !className.endsWith('Service') &&
+            !className.endsWith('Repository') &&
+            !className.endsWith('UseCase'));
+  }
+
+  String? _findCorrespondingDataModel(String entityClassName, String filePath) {
+    // Extract base name (remove Entity suffix)
+    String baseName = entityClassName;
+    if (baseName.endsWith('Entity')) {
+      baseName = baseName.substring(0, baseName.length - 6); // Remove 'Entity'
+    }
+
+    // Construct potential data model path
+    final normalizedPath = filePath.replaceAll('\\', '/');
+
+    // Replace domain/entities path with data/models path
+    String modelPath = normalizedPath
+        .replaceAll('/domain/', '/data/')
+        .replaceAll('/entities/', '/models/')
+        .replaceAll(entityClassName.toLowerCase(), '${baseName.toLowerCase()}_model');
+
+    return modelPath;
+  }
+
+  bool _shouldHaveDataModel(String entityClassName) {
+    // Skip simple value objects or entities that don't need data layer representation
+    final skipPatterns = [
+      'Id',           // Value objects like UserId, ProductId
+      'Value',        // Simple value objects
+      'Enum',         // Enum-like entities
+      'Error',        // Error entities
+      'Exception',    // Exception entities
+      'Event',        // Domain events (may not need data models)
+    ];
+
+    return !skipPatterns.any((pattern) => entityClassName.contains(pattern));
   }
 }
 
