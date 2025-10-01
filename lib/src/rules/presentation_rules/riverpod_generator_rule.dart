@@ -71,30 +71,29 @@ class RiverpodGeneratorRule extends CleanArchitectureLintRule {
     final initializer = node.initializer;
     if (initializer == null) return;
 
-    final initializerString = initializer.toString();
+    // Only check if initializer is a method invocation (provider creation)
+    if (initializer is! MethodInvocation) return;
+
+    final methodName = initializer.methodName.name;
 
     // Check for manual providers
     final manualProviders = [
       'StateNotifierProvider',
       'ChangeNotifierProvider',
-      'Provider.family',
       'StateProvider',
       'FutureProvider',
       'StreamProvider',
     ];
 
-    for (final providerType in manualProviders) {
-      if (initializerString.contains(providerType)) {
-        final code = LintCode(
-          name: 'riverpod_generator',
-          problemMessage:
-              'Manual provider "$providerType" detected. Use @riverpod annotation instead.',
-          correctionMessage:
-              'Use riverpod_generator: Create a class with @riverpod annotation instead of manual provider declaration.',
-        );
-        reporter.atNode(node, code);
-        break;
-      }
+    if (manualProviders.contains(methodName)) {
+      final code = LintCode(
+        name: 'riverpod_generator',
+        problemMessage:
+            'Manual provider "$methodName" detected. Use @riverpod annotation instead.',
+        correctionMessage:
+            'Use riverpod_generator: Create a class with @riverpod annotation instead of manual provider declaration.',
+      );
+      reporter.atNode(node, code);
     }
   }
 }
