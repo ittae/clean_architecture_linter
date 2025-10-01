@@ -93,7 +93,7 @@ part 'ranking_model.freezed.dart';
 part 'ranking_model.g.dart';
 
 @freezed
-class RankingModel with _$RankingModel {
+sealed class RankingModel with _$RankingModel {
   const factory RankingModel({
     required Ranking entity,  // Contains Domain Entity
     // Only add fields here if you need API/DB metadata
@@ -137,7 +137,7 @@ extension RankingToModelX on Ranking {
 ```dart
 // Only use this pattern if you have API/DB specific metadata
 @freezed
-class UserModel with _$UserModel {
+sealed class UserModel with _$UserModel {
   const factory UserModel({
     required User entity,
     // API metadata
@@ -264,7 +264,7 @@ part 'ranking.freezed.dart';
 part 'ranking.g.dart';
 
 @freezed
-class Ranking with _$Ranking {
+sealed class Ranking with _$Ranking {
   const factory Ranking({
     required String id,
     required DateTime startTime,
@@ -366,7 +366,7 @@ class RankingViewModel extends ChangeNotifier {
 
 // ✅ NEW: State Pattern (Use this)
 @freezed
-class RankingState with _$RankingState {
+sealed class RankingState with _$RankingState {
   const factory RankingState({
     @Default([]) List<Ranking> rankings,  // Immutable
     @Default(false) bool isLoading,
@@ -396,7 +396,7 @@ import '../../domain/entities/ranking.dart';
 part 'ranking_state.freezed.dart';
 
 @freezed
-class RankingState with _$RankingState {
+sealed class RankingState with _$RankingState {
   const factory RankingState({
     @Default([]) List<Ranking> rankings,
     @Default(null) String? selectedRankingId,
@@ -603,7 +603,7 @@ import '../../domain/entities/ranking.dart';
 part 'ranking_state.freezed.dart';
 
 @freezed
-class RankingState with _$RankingState {
+sealed class RankingState with _$RankingState {
   const factory RankingState({
     @Default([]) List<Ranking> rankings,
     @Default(false) bool isLoading,
@@ -693,7 +693,7 @@ enum RankingFilter { all, highAttendance, selected }
 enum RankingSortOrder { byTime, byAttendance }
 
 @freezed
-class RankingUIState with _$RankingUIState {
+sealed class RankingUIState with _$RankingUIState {
   const factory RankingUIState({
     @Default([]) List<Ranking> rankings,
     @Default({}) Set<String> selectedIds,
@@ -759,7 +759,7 @@ import '../../domain/entities/ranking.dart';
 part 'ranking_state.freezed.dart';
 
 @freezed
-class RankingState with _$RankingState {
+sealed class RankingState with _$RankingState {
   const factory RankingState({
     @Default([]) List<Ranking> rankings,  // Domain Entities
     @Default({}) Set<String> selectedIds,  // UI state
@@ -920,7 +920,7 @@ Need UI-specific data?
 ```dart
 // 1. Data Model (minimal - just Entity)
 @freezed
-class RankingModel with _$RankingModel {
+sealed class RankingModel with _$RankingModel {
   const factory RankingModel({
     required Ranking entity,  // Domain Entity inside
     // No duplicate fields - use entity data in toJson()
@@ -934,7 +934,7 @@ class RankingModel with _$RankingModel {
 
 // 2. Model with Metadata (only if needed)
 @freezed
-class UserModel with _$UserModel {
+sealed class UserModel with _$UserModel {
   const factory UserModel({
     required User entity,
     String? etag,      // API metadata
