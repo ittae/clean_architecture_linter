@@ -96,14 +96,12 @@ part 'ranking_model.g.dart';
 class RankingModel with _$RankingModel {
   const factory RankingModel({
     required Ranking entity,  // Contains Domain Entity
-    @JsonKey(name: 'start_time') required String startTime,  // API field
-    @JsonKey(name: 'end_time') required String endTime,  // API field
-    @JsonKey(name: 'attendee_count') required int attendeeCount,  // API field
+    // Only add fields here if you need API/DB metadata
+    // Examples: etag, version, cachedAt, syncStatus, etc.
   }) = _RankingModel;
 
-  // Custom fromJson that builds both Model and Entity
+  // Convert JSON to Model (builds Entity inside)
   factory RankingModel.fromJson(Map<String, dynamic> json) {
-    // Build Entity from JSON
     final entity = Ranking(
       id: json['id'] as String,
       startTime: DateTime.parse(json['start_time'] as String),
@@ -111,40 +109,64 @@ class RankingModel with _$RankingModel {
       attendeeCount: json['attendee_count'] as int,
     );
 
-    // Build Model with Entity
-    return RankingModel(
-      entity: entity,
-      startTime: json['start_time'] as String,
-      endTime: json['end_time'] as String,
-      attendeeCount: json['attendee_count'] as int,
-    );
+    return RankingModel(entity: entity);
   }
 
-  // Custom toJson for API requests
+  // Convert Model to JSON (uses Entity data)
   Map<String, dynamic> toJson() => {
     'id': entity.id,
-    'start_time': startTime,
-    'end_time': endTime,
-    'attendee_count': attendeeCount,
+    'start_time': entity.startTime.toIso8601String(),
+    'end_time': entity.endTime.toIso8601String(),
+    'attendee_count': entity.attendeeCount,
   };
 }
 
-// Model conversion extensions
+// Conversion extensions in the same file
 extension RankingModelX on RankingModel {
-  // Extract Domain Entity from Model (simple getter)
+  // Extract Domain Entity from Model
   Ranking toEntity() => entity;
 }
 
 extension RankingToModelX on Ranking {
   // Convert Domain Entity to Model
-  RankingModel toModel() {
-    return RankingModel(
-      entity: this,
-      startTime: startTime.toIso8601String(),
-      endTime: endTime.toIso8601String(),
-      attendeeCount: attendeeCount,
+  RankingModel toModel() => RankingModel(entity: this);
+}
+```
+
+**Example with Metadata (only if needed):**
+```dart
+// Only use this pattern if you have API/DB specific metadata
+@freezed
+class UserModel with _$UserModel {
+  const factory UserModel({
+    required User entity,
+    // API metadata
+    String? etag,              // HTTP caching
+    int? version,              // API version
+    // DB metadata
+    DateTime? cachedAt,        // Local cache time
+    String? syncStatus,        // 'pending', 'synced', 'failed'
+  }) = _UserModel;
+
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    final entity = User(
+      id: json['id'],
+      name: json['name'],
+    );
+
+    return UserModel(
+      entity: entity,
+      etag: json['_etag'],
+      version: json['_version'],
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': entity.id,
+    'name': entity.name,
+    if (etag != null) '_etag': etag,
+    if (version != null) '_version': version,
+  };
 }
 ```
 
@@ -254,8 +276,9 @@ class Ranking with _$Ranking {
       _$RankingFromJson(json);
 }
 
-// Business logic in extensions
+// Business logic extensions in the same file
 extension RankingX on Ranking {
+  // Business calculations
   Duration get duration => endTime.difference(startTime);
 
   bool get isHighAttendance => attendeeCount > 5;
@@ -265,11 +288,10 @@ extension RankingX on Ranking {
            endTime.isAfter(other.startTime);
   }
 
-  String get formattedDuration {
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    return '${hours}h ${minutes}m';
-  }
+  // Business validations
+  bool get isValidTimeRange => endTime.isAfter(startTime);
+
+  double get attendanceRate => attendeeCount / 10.0;
 }
 ```
 
@@ -383,7 +405,7 @@ class RankingState with _$RankingState {
   }) = _RankingState;
 }
 
-// Computed properties and UI logic in extensions
+// UI logic extensions in the same file
 extension RankingStateX on RankingState {
   List<Ranking> get highAttendanceRankings =>
       rankings.where((r) => r.isHighAttendance).toList();
@@ -566,16 +588,34 @@ return Text('Count: ${state.rankings.length}');     // Use Entity
 
 ## Common Patterns
 
-### Pattern 1: UI-Specific Logic (Extension Methods)
+### Pattern 1: UI-Specific Extensions on Entities
 
-When you need simple UI formatting or calculations, use extensions on Domain Entities:
+When you need UI formatting or calculations, add extensions in the **State file** or **Widget file**:
 
+**Option A: In State file (recommended for shared UI logic)**
 ```dart
-// presentation/extensions/ranking_ui_extensions.dart
+// presentation/states/ranking_state.dart
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../domain/entities/ranking.dart';
 
+part 'ranking_state.freezed.dart';
+
+@freezed
+class RankingState with _$RankingState {
+  const factory RankingState({
+    @Default([]) List<Ranking> rankings,
+    @Default(false) bool isLoading,
+  }) = _RankingState;
+}
+
+// State extensions
+extension RankingStateX on RankingState {
+  int get totalAttendees => rankings.fold(0, (sum, r) => sum + r.attendeeCount);
+}
+
+// Entity UI extensions in the same file (shared across widgets)
 extension RankingUIX on Ranking {
   String get formattedTimeRange {
     final start = DateFormat('HH:mm').format(startTime);
@@ -590,7 +630,7 @@ extension RankingUIX on Ranking {
   }
 
   IconData get attendanceIcon {
-    if (isHighAttendance) return Icons.group;
+    if (isHighAttendance) return Icons.group;  // Uses domain extension
     return Icons.person;
   }
 
@@ -600,11 +640,42 @@ extension RankingUIX on Ranking {
     return '$attendeeCount attendees';
   }
 }
+```
 
-// Usage in Widget
-Text(ranking.formattedTimeRange);
-Icon(ranking.attendanceIcon, color: ranking.attendanceColor);
-Text(ranking.attendanceLabel);
+**Option B: In Widget file (for widget-specific logic only)**
+```dart
+// presentation/widgets/ranking_card.dart
+import 'package:flutter/material.dart';
+import '../../domain/entities/ranking.dart';
+import '../states/ranking_state.dart';  // Imports shared UI extensions
+
+// Widget-specific extensions (only used in this widget)
+extension _RankingCardX on Ranking {
+  EdgeInsets get cardPadding {
+    return isHighAttendance
+      ? EdgeInsets.all(16.0)
+      : EdgeInsets.all(8.0);
+  }
+}
+
+class RankingCard extends StatelessWidget {
+  final Ranking ranking;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: ranking.cardPadding,  // Widget-specific extension
+        child: Column(
+          children: [
+            Text(ranking.formattedTimeRange),  // Shared UI extension from state file
+            Icon(ranking.attendanceIcon, color: ranking.attendanceColor),
+          ],
+        ),
+      ),
+    );
+  }
+}
 ```
 
 ### Pattern 2: Complex UI State (Freezed State + Extensions)
@@ -736,12 +807,12 @@ lib/features/rankings/
 │   │   ├── ranking_local_datasource.dart
 │   │   └── ranking_remote_datasource.dart
 │   ├── models/
-│   │   └── ranking_model.dart              # Freezed + extensions
+│   │   └── ranking_model.dart              # Freezed Model + conversion extensions (in same file)
 │   └── repositories/
 │       └── ranking_repository_impl.dart
 ├── domain/
 │   ├── entities/
-│   │   └── ranking.dart                    # Freezed + extensions
+│   │   └── ranking.dart                    # Freezed Entity + business logic extensions (in same file)
 │   ├── repositories/
 │   │   └── ranking_repository.dart
 │   └── usecases/
@@ -752,16 +823,16 @@ lib/features/rankings/
     ├── providers/
     │   └── ranking_provider.dart           # riverpod_generator (Notifier)
     ├── states/
-    │   └── ranking_state.dart              # Freezed State (uses Domain Entities)
-    ├── extensions/
-    │   └── ranking_ui_extensions.dart      # UI-specific extensions on Entities
+    │   └── ranking_state.dart              # Freezed State + UI extensions (State & Entity UI extensions)
     ├── pages/
     │   └── ranking_page.dart
     └── widgets/
         ├── ranking_list.dart
-        └── ranking_item.dart
+        └── ranking_card.dart               # Can include widget-specific extensions in same file
     # NOTE: No models/ directory - State uses Domain Entities directly
     # NOTE: No viewmodels/ directory - we use State pattern, not ViewModel pattern
+    # NOTE: No ui/ or extensions/ directory - put UI extensions in state file or widget files
+    # NOTE: Entity UI extensions go in ranking_state.dart along with State extensions
 ```
 
 ### Decision Tree: Which Pattern to Use?
@@ -782,9 +853,11 @@ Need UI-specific data?
 ```
 
 **Key Decision**:
-- **Entity Extension**: For UI formatting/calculations on single Entity
+- **Entity UI Extension in State file**: For shared UI formatting/calculations (Colors, Icons, Text)
+- **Entity UI Extension in Widget file**: For widget-specific formatting (only used in that widget)
 - **State Extension**: For UI logic involving multiple Entities or UI-specific state
 - **NO Presentation Models**: State already contains Entities + UI fields
+- **NO separate ui/extensions/ directory**: Put Entity UI extensions in State file
 
 ## Best Practices
 
@@ -793,12 +866,14 @@ Need UI-specific data?
 - **Use Freezed Models in Data Layer** - Model contains Entity + API fields
 - **Use Freezed Entities in Domain Layer** for business objects
 - **Use Extensions for functions** - keep Freezed classes pure data
+- **Write Extensions in the same file** - Model extensions in model file, Entity extensions in entity file
 - **Use riverpod_generator** for state management providers
 - **Use Freezed State in Presentation** for UI state management
 - **Models contain Entities** - `RankingModel` has `entity` field
 - **Extract Entities from Models** using `model.toEntity()` (returns `model.entity`)
-- **Keep business logic** in Domain entity extensions
-- **Keep UI logic** in Presentation extensions
+- **Keep business logic** in Domain entity extensions (in entity file)
+- **Keep shared UI logic** in Presentation State file (Entity UI extensions with State extensions)
+- **Widget-specific extensions** go in the widget file itself (use private extension with `_`)
 
 ### DON'T ❌
 
@@ -808,12 +883,15 @@ Need UI-specific data?
 - **Don't use ViewModels** - use State pattern with Riverpod instead
 - **Don't use ChangeNotifier** - use Freezed State + Notifier instead
 - **Don't put methods inside Freezed classes** - use extensions instead
+- **Don't create separate ui/ or extensions/ directories** - put extensions in state/widget files
 - **Don't put business logic** in Presentation layer
 - **Don't put UI logic** in Domain layer
 - **Don't mix layers** - respect dependency boundaries
 - **Don't use Equatable** - use Freezed for value equality
 - **Don't create presentation/models/ directory** - use states/ with Entities
 - **Don't create presentation/viewmodels/ directory** - use states/ + providers/
+- **Don't create domain/extensions/ directory** - put extensions in entity files
+- **Don't create data/extensions/ directory** - put extensions in model files
 
 ### When in Doubt
 
@@ -833,23 +911,45 @@ Need UI-specific data?
 **Tech Stack:**
 - **State Management**: Riverpod with `riverpod_generator`
 - **Immutability**: Freezed for all data classes (Models, Entities, States)
-- **Functions**: Extensions (never inside Freezed classes)
+- **Functions**: Extensions in the same file as the class
 - **JSON**: Custom `fromJson`/`toJson` in Models
-- **Model Structure**: Model contains Entity + API-specific fields
+- **Model Structure**: Model contains Entity only (no duplicate fields unless metadata needed)
 
-**Key Pattern:**
+**Key Patterns:**
+
 ```dart
-// Data Model contains Entity
+// 1. Data Model (minimal - just Entity)
 @freezed
-sealed class RankingModel with _$RankingModel {
+class RankingModel with _$RankingModel {
   const factory RankingModel({
     required Ranking entity,  // Domain Entity inside
-    required String startTime,  // API field
+    // No duplicate fields - use entity data in toJson()
   }) = _RankingModel;
+
+  Map<String, dynamic> toJson() => {
+    'id': entity.id,  // Access entity fields directly
+    'start_time': entity.startTime.toIso8601String(),
+  };
 }
 
-// Simple extraction
-Ranking entity = model.toEntity();  // Returns model.entity
+// 2. Model with Metadata (only if needed)
+@freezed
+class UserModel with _$UserModel {
+  const factory UserModel({
+    required User entity,
+    String? etag,      // API metadata
+    DateTime? cachedAt,  // DB metadata
+  }) = _UserModel;
+}
+
+// 3. Extensions in same file
+extension RankingModelX on RankingModel {
+  Ranking toEntity() => entity;
+}
 ```
 
-Remember: **Models contain Entities**, **Extensions for functions**, **Riverpod for state**.
+**Remember:**
+- **Models contain Entities** (no duplicate data)
+- **Extensions in same file** as the class
+- **Riverpod for state management**
+- **Metadata only when needed** (etag, version, cachedAt, etc.)
