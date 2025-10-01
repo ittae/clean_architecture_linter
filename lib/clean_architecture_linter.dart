@@ -1,13 +1,16 @@
-/// A focused custom lint package that enforces core Clean Architecture principles in Flutter projects.
+/// A focused custom lint package that enforces Clean Architecture principles in Flutter projects.
 ///
-/// This package provides essential lint rules to ensure proper dependency direction,
-/// layer separation, and architectural boundaries following Clean Architecture patterns.
-/// Simplified to focus on core principles with minimal false positives.
+/// Following CLEAN_ARCHITECTURE_GUIDE.md:
+/// - Freezed for Models, Entities, and States
+/// - Riverpod Generator for state management
+/// - Extensions in same file as the class
+/// - No Presentation Models or ViewModels
+/// - Models contain Entities (no duplicate data)
 library;
 
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
-// Core Clean Architecture Rules (6 essential rules)
+// Core Clean Architecture Rules
 import 'src/rules/layer_dependency_rule.dart';
 import 'src/rules/domain_rules/domain_purity_rule.dart';
 import 'src/rules/domain_rules/dependency_inversion_rule.dart';
@@ -15,13 +18,22 @@ import 'src/rules/domain_rules/repository_interface_rule.dart';
 import 'src/rules/circular_dependency_rule.dart';
 import 'src/rules/boundary_crossing_rule.dart';
 
+// Data Layer Rules
+import 'src/rules/data_rules/model_structure_rule.dart';
+
+// Presentation Layer Rules
+import 'src/rules/presentation_rules/no_presentation_models_rule.dart';
+import 'src/rules/presentation_rules/extension_location_rule.dart';
+import 'src/rules/presentation_rules/freezed_usage_rule.dart';
+import 'src/rules/presentation_rules/riverpod_generator_rule.dart';
+
 /// Plugin entry point for Clean Architecture Linter.
 PluginBase createPlugin() => _CleanArchitectureLinterPlugin();
 
 class _CleanArchitectureLinterPlugin extends PluginBase {
   @override
   List<LintRule> getLintRules(CustomLintConfigs configs) => [
-    // Core Clean Architecture Principles (6 essential rules)
+    // Core Clean Architecture Principles (6 rules)
 
     // 1. Dependency Direction Rule - 의존성 방향 검증
     LayerDependencyRule(),
@@ -40,5 +52,24 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
 
     // 6. Boundary Crossing Validation - 레이어 경계 검증
     BoundaryCrossingRule(),
+
+    // Data Layer Rules (1 rule)
+
+    // 7. Model Structure - Freezed Model with Entity
+    ModelStructureRule(),
+
+    // Presentation Layer Rules (4 rules)
+
+    // 8. No Presentation Models - Use Freezed State instead
+    NoPresentationModelsRule(),
+
+    // 9. Extension Location - Extensions in same file
+    ExtensionLocationRule(),
+
+    // 10. Freezed Usage - Use Freezed instead of Equatable
+    FreezedUsageRule(),
+
+    // 11. Riverpod Generator - Use @riverpod annotation
+    RiverpodGeneratorRule(),
   ];
 }

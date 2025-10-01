@@ -6,6 +6,94 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Dart package that provides custom lint rules for enforcing Clean Architecture principles in Flutter projects. It uses the `custom_lint_builder` framework to create static analysis rules that validate proper architectural boundaries and patterns.
 
+## Clean Architecture Principles
+
+This linter enforces the following Clean Architecture principles:
+
+### Layer Dependencies
+- ✅ **Allowed**: Presentation → Domain
+- ✅ **Allowed**: Data → Domain
+- ❌ **Violation**: Presentation → Data
+- ❌ **Violation**: Domain → Presentation
+- ❌ **Violation**: Domain → Data
+
+### Layer-Specific Patterns
+- **Data Layer**: Use **Freezed Models** (contains Entity + metadata only) with extensions in same file
+- **Domain Layer**: Use **Freezed Entities** with business logic extensions in same file
+- **Presentation Layer**: Use **Freezed State** (Riverpod) with UI extensions in same file - NO ViewModels
+
+**Key Rules**:
+- Presentation layer should NEVER import from Data layer - Always use Domain Entities
+- Models contain Entities (no duplicate data)
+- Extensions in same file as the class
+- NO separate extensions/ directories
+
+For detailed examples and implementation patterns, see [CLEAN_ARCHITECTURE_GUIDE.md](CLEAN_ARCHITECTURE_GUIDE.md).
+
+## Common Lint Violations & Solutions
+
+### ❌ Violation: Presentation imports Data Model
+
+**Problem**:
+```dart
+// presentation/widgets/ranking_list.dart
+import 'package:app/features/rankings/data/models/ranking_model.dart';  // ❌ WRONG
+```
+
+**Solution**:
+```dart
+// presentation/widgets/ranking_list.dart
+import 'package:app/features/rankings/domain/entities/ranking.dart';  // ✅ CORRECT
+```
+
+### When You Need UI-Specific Data
+
+**Option 1 - Entity UI Extensions in State file** (recommended for shared UI logic):
+```dart
+// presentation/states/ranking_state.dart
+@freezed
+class RankingState with _$RankingState {
+  const factory RankingState({
+    @Default([]) List<Ranking> rankings,
+    @Default(false) bool isLoading,
+  }) = _RankingState;
+}
+
+// State extensions
+extension RankingStateX on RankingState {
+  int get totalAttendees => rankings.fold(0, (sum, r) => sum + r.attendeeCount);
+}
+
+// Entity UI extensions in same file (shared across widgets)
+extension RankingUIX on Ranking {
+  String get formattedTime => DateFormat('HH:mm').format(startTime);
+  Color get statusColor => isHighAttendance ? Colors.green : Colors.grey;
+  IconData get icon => isHighAttendance ? Icons.group : Icons.person;
+}
+```
+
+**Option 2 - Widget-specific Extensions** (for widget-only logic):
+```dart
+// presentation/widgets/ranking_card.dart
+// Private extension (only used in this widget)
+extension _RankingCardX on Ranking {
+  EdgeInsets get cardPadding => isHighAttendance
+    ? EdgeInsets.all(16.0)
+    : EdgeInsets.all(8.0);
+}
+
+class RankingCard extends StatelessWidget {
+  // Uses shared UI extensions from state file + widget-specific extensions
+}
+```
+
+**❌ DON'T:**
+- Don't create Presentation Models
+- Don't create separate extensions/ or ui/ directories
+- Don't use ViewModels (use Freezed State + Riverpod instead)
+
+See [CLEAN_ARCHITECTURE_GUIDE.md](CLEAN_ARCHITECTURE_GUIDE.md) for complete examples.
+
 ## Common Commands
 
 ### Development
@@ -27,6 +115,15 @@ dart analyze
 
 # Format code
 dart format .
+```
+
+### Testing with External Project
+```bash
+# Test the package with the ittae project
+cd /Users/ittae/development/ittae && dart run custom_lint
+
+# Install the package locally in ittae project
+cd /Users/ittae/development/ittae && dart pub add dev:clean_architecture_linter --path=/Users/ittae/development/clean_architecture_linter
 ```
 
 ### Publishing
