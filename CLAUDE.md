@@ -94,6 +94,78 @@ class RankingCard extends StatelessWidget {
 
 See [CLEAN_ARCHITECTURE_GUIDE.md](CLEAN_ARCHITECTURE_GUIDE.md) for complete examples.
 
+## Test Coverage
+
+This linter can enforce test coverage for critical Clean Architecture components. **This rule is disabled by default.**
+
+### Enabling Test Coverage
+
+To enable test coverage checks, configure in `analysis_options.yaml`:
+
+```yaml
+# analysis_options.yaml
+custom_lint:
+  rules:
+    - clean_architecture_linter: true  # Enable the package
+      require_tests: true               # Enforce test file checks
+```
+
+### Configuration Options
+
+```yaml
+custom_lint:
+  rules:
+    # Option 1: Disable test coverage (default - omit the rule)
+    # (no clean_architecture_linter configuration)
+
+    # Option 2: Enable with test coverage enforcement
+    - clean_architecture_linter: true
+      require_tests: true
+
+    # Option 3: Package enabled but test checks disabled
+    - clean_architecture_linter: true
+      require_tests: false
+```
+
+### Components Requiring Tests
+
+1. **UseCase** (ERROR) - Core business logic must be tested
+2. **Repository Implementation** (ERROR) - Data layer integration must be tested
+3. **DataSource Implementation** (WARNING) - Either has tests OR abstract interface
+4. **Riverpod Notifier** (ERROR) - State management logic must be tested
+
+### Test File Naming Convention
+
+```
+lib/features/user/domain/usecases/get_user_usecase.dart
+→ test/features/user/domain/usecases/get_user_usecase_test.dart
+
+lib/features/user/data/repositories/user_repository_impl.dart
+→ test/features/user/data/repositories/user_repository_impl_test.dart
+```
+
+### DataSource Special Case
+
+DataSource can avoid the warning in two ways:
+1. ✅ Have a test file (direct testing)
+2. ✅ Have an abstract interface (mockable for repository tests)
+
+```dart
+// Option 1: With test file
+class UserRemoteDataSource {
+  Future<List<UserModel>> getUsers() { }
+}
+// ✅ test/data/datasources/user_remote_datasource_test.dart exists
+
+// Option 2: With abstract interface
+abstract class UserRemoteDataSource {
+  Future<List<UserModel>> getUsers();
+}
+class UserRemoteDataSourceImpl implements UserRemoteDataSource {
+  // ✅ Mockable in repository tests
+}
+```
+
 ## Common Commands
 
 ### Development

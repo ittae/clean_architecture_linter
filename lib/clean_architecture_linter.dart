@@ -17,6 +17,7 @@ import 'src/rules/domain_rules/dependency_inversion_rule.dart';
 import 'src/rules/domain_rules/repository_interface_rule.dart';
 import 'src/rules/circular_dependency_rule.dart';
 import 'src/rules/boundary_crossing_rule.dart';
+import 'src/rules/test_coverage_rule.dart';
 
 // Data Layer Rules
 import 'src/rules/data_rules/model_structure_rule.dart';
@@ -33,47 +34,62 @@ PluginBase createPlugin() => _CleanArchitectureLinterPlugin();
 
 class _CleanArchitectureLinterPlugin extends PluginBase {
   @override
-  List<LintRule> getLintRules(CustomLintConfigs configs) => [
-        // Core Clean Architecture Principles (6 rules)
+  List<LintRule> getLintRules(CustomLintConfigs configs) {
+    // Read package-specific configuration from analysis_options.yaml
+    // custom_lint:
+    //   rules:
+    //     - clean_architecture_linter:
+    //         require_tests: true
 
-        // 1. Dependency Direction Rule - 의존성 방향 검증
-        LayerDependencyRule(),
+    final packageConfig = configs.rules['clean_architecture_linter'];
+    final requireTests = packageConfig?.json['require_tests'] as bool? ?? false;
 
-        // 2. Domain Purity Rule - Domain 레이어 순수성
-        DomainPurityRule(),
+    return [
+      // Core Clean Architecture Principles (7 rules)
 
-        // 3. Dependency Inversion Principle - 추상화에 의존
-        DependencyInversionRule(),
+      // 1. Dependency Direction Rule - 의존성 방향 검증
+      LayerDependencyRule(),
 
-        // 4. Repository Pattern - Repository 인터페이스 정의
-        RepositoryInterfaceRule(),
+      // 2. Domain Purity Rule - Domain 레이어 순수성
+      DomainPurityRule(),
 
-        // 5. Circular Dependency Prevention - 순환 의존성 방지
-        CircularDependencyRule(),
+      // 3. Dependency Inversion Principle - 추상화에 의존
+      DependencyInversionRule(),
 
-        // 6. Boundary Crossing Validation - 레이어 경계 검증
-        BoundaryCrossingRule(),
+      // 4. Repository Pattern - Repository 인터페이스 정의
+      RepositoryInterfaceRule(),
 
-        // Data Layer Rules (2 rules)
+      // 5. Circular Dependency Prevention - 순환 의존성 방지
+      CircularDependencyRule(),
 
-        // 7. Model Structure - Freezed Model with Entity
-        ModelStructureRule(),
+      // 6. Boundary Crossing Validation - 레이어 경계 검증
+      BoundaryCrossingRule(),
 
-        // 8. DataSource Abstraction - Abstract DataSource with Implementation
-        DataSourceAbstractionRule(),
+      // 7. Test Coverage - Ensure critical components have tests
+      // Configure with: test_coverage: { require_tests: true }
+      TestCoverageRule(requireTests: requireTests),
 
-        // Presentation Layer Rules (4 rules)
+      // Data Layer Rules (2 rules)
 
-        // 9. No Presentation Models - Use Freezed State instead
-        NoPresentationModelsRule(),
+      // 8. Model Structure - Freezed Model with Entity
+      ModelStructureRule(),
 
-        // 10. Extension Location - Extensions in same file
-        ExtensionLocationRule(),
+      // 9. DataSource Abstraction - Abstract DataSource with Implementation
+      DataSourceAbstractionRule(),
 
-        // 11. Freezed Usage - Use Freezed instead of Equatable
-        FreezedUsageRule(),
+      // Presentation Layer Rules (4 rules)
 
-        // 12. Riverpod Generator - Use @riverpod annotation
-        RiverpodGeneratorRule(),
-      ];
+      // 10. No Presentation Models - Use Freezed State instead
+      NoPresentationModelsRule(),
+
+      // 11. Extension Location - Extensions in same file
+      ExtensionLocationRule(),
+
+      // 12. Freezed Usage - Use Freezed instead of Equatable
+      FreezedUsageRule(),
+
+      // 13. Riverpod Generator - Use @riverpod annotation
+      RiverpodGeneratorRule(),
+    ];
+  }
 }

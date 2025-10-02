@@ -8,6 +8,11 @@ analyzer:
 
 custom_lint:
   rules:
+    # Clean Architecture Linter Configuration
+    # Uncomment to enable test coverage checks:
+    # - clean_architecture_linter: true
+    #   require_tests: true
+
     # Framework Rules
     - framework_isolation
     - database_detail

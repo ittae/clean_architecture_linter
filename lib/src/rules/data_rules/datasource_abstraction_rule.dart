@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:path/path.dart' as path;
 
 import '../../clean_architecture_linter_base.dart';
 
@@ -88,14 +90,19 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
     // Check if concrete DataSource without abstract interface
     if (node.abstractKeyword == null && _isConcreteDataSource(className)) {
       // This is a concrete DataSource implementation
-      // Check if there's a corresponding abstract interface in the same file or nearby
+      // Check if there's a corresponding abstract interface or test file
+
+      // If test file exists, DataSource is testable - no warning needed
+      if (_hasTestFile(filePath)) {
+        return;
+      }
 
       final code = LintCode(
         name: 'datasource_abstraction',
         problemMessage:
             'Concrete DataSource "$className" should implement an abstract interface for testability',
         correctionMessage:
-            'Create abstract DataSource interface: ${_getAbstractName(className)}',
+            'Create abstract DataSource interface: ${_getAbstractName(className)} or add test file',
       );
       reporter.atNode(node, code);
     }
@@ -194,5 +201,31 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
     }
 
     return false;
+  }
+
+  bool _hasTestFile(String libFilePath) {
+    // Convert: lib/features/user/data/datasources/user_remote_datasource.dart
+    // To:      test/features/user/data/datasources/user_remote_datasource_test.dart
+
+    final normalized = libFilePath.replaceAll('\\', '/');
+
+    // Find the lib/ part
+    final libIndex = normalized.indexOf('/lib/');
+    if (libIndex == -1) {
+      // Fallback: just replace lib with test
+      final testPath = normalized
+          .replaceFirst('/lib/', '/test/')
+          .replaceFirst('.dart', '_test.dart');
+      return File(testPath).existsSync();
+    }
+
+    final projectRoot = normalized.substring(0, libIndex);
+    final relativePath = normalized.substring(libIndex + 5); // Skip '/lib/'
+
+    // Remove .dart extension and add _test.dart
+    final testRelativePath = relativePath.replaceFirst('.dart', '_test.dart');
+
+    final testPath = path.join(projectRoot, 'test', testRelativePath);
+    return File(testPath).existsSync();
   }
 }
