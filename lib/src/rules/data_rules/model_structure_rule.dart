@@ -119,15 +119,24 @@ class ModelStructureRule extends CleanArchitectureLintRule {
         for (final param in params) {
           if (param is SimpleFormalParameter) {
             final paramName = param.name?.toString() ?? '';
-            // Check if parameter name is 'entity' or ends with 'entity'
-            if (paramName == 'entity' || paramName.endsWith('Entity')) {
+            final typeName = param.type?.toString() ?? '';
+
+            // Check if parameter name is 'entity' or ends with 'Entity'
+            // OR if parameter type ends with 'Entity' (e.g., TimeSlot for TimeSlot entity)
+            if (paramName == 'entity' ||
+                paramName.endsWith('Entity') ||
+                _isEntityType(typeName)) {
               return true;
             }
           } else if (param is DefaultFormalParameter) {
             final normalParam = param.parameter;
             if (normalParam is SimpleFormalParameter) {
               final paramName = normalParam.name?.toString() ?? '';
-              if (paramName == 'entity' || paramName.endsWith('Entity')) {
+              final typeName = normalParam.type?.toString() ?? '';
+
+              if (paramName == 'entity' ||
+                  paramName.endsWith('Entity') ||
+                  _isEntityType(typeName)) {
                 return true;
               }
             }
@@ -136,5 +145,33 @@ class ModelStructureRule extends CleanArchitectureLintRule {
       }
     }
     return false;
+  }
+
+  bool _isEntityType(String typeName) {
+    // Check if type name indicates it's an entity
+    // Entities typically don't end with 'Model', 'Dto', 'Response', etc.
+    if (typeName.isEmpty) return false;
+
+    // Exclude common data layer types
+    if (typeName.endsWith('Model') ||
+        typeName.endsWith('Dto') ||
+        typeName.endsWith('Response') ||
+        typeName.endsWith('Request')) {
+      return false;
+    }
+
+    // Common domain entity patterns
+    // 1. Ends with 'Entity' explicitly
+    if (typeName.endsWith('Entity')) return true;
+
+    // 2. Domain entities are typically simple nouns (User, Product, Order, TimeSlot, etc.)
+    // If it's a custom type (not a primitive), it's likely an entity
+    final primitiveTypes = ['String', 'int', 'double', 'bool', 'DateTime', 'List', 'Map', 'Set'];
+    if (primitiveTypes.any((type) => typeName.startsWith(type))) {
+      return false;
+    }
+
+    // If we have a custom type in a Model, it's likely a domain entity
+    return true;
   }
 }

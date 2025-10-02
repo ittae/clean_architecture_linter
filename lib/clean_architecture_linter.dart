@@ -20,6 +20,7 @@ import 'src/rules/boundary_crossing_rule.dart';
 
 // Data Layer Rules
 import 'src/rules/data_rules/model_structure_rule.dart';
+import 'src/rules/data_rules/datasource_abstraction_rule.dart';
 
 // Presentation Layer Rules
 import 'src/rules/presentation_rules/no_presentation_models_rule.dart';
@@ -53,23 +54,26 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
         // 6. Boundary Crossing Validation - 레이어 경계 검증
         BoundaryCrossingRule(),
 
-        // Data Layer Rules (1 rule)
+        // Data Layer Rules (2 rules)
 
         // 7. Model Structure - Freezed Model with Entity
         ModelStructureRule(),
 
+        // 8. DataSource Abstraction - Abstract DataSource with Implementation
+        DataSourceAbstractionRule(),
+
         // Presentation Layer Rules (4 rules)
 
-        // 8. No Presentation Models - Use Freezed State instead
+        // 9. No Presentation Models - Use Freezed State instead
         NoPresentationModelsRule(),
 
-        // 9. Extension Location - Extensions in same file
+        // 10. Extension Location - Extensions in same file
         ExtensionLocationRule(),
 
-        // 10. Freezed Usage - Use Freezed instead of Equatable
+        // 11. Freezed Usage - Use Freezed instead of Equatable
         FreezedUsageRule(),
 
-        // 11. Riverpod Generator - Use @riverpod annotation
+        // 12. Riverpod Generator - Use @riverpod annotation
         RiverpodGeneratorRule(),
       ];
 }
