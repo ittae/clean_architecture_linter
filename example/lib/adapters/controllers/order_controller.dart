@@ -17,11 +17,13 @@ class OrderController {
       // GOOD: Convert UI input to use case format
       final request = CreateOrderRequest(
         userId: input.userId,
-        items: input.items.map((item) => OrderItem(
-          productId: item.productId,
-          quantity: item.quantity,
-          unitPrice: Money(item.price, 'USD'),
-        )).toList(),
+        items: input.items
+            .map((item) => OrderItem(
+                  productId: item.productId,
+                  quantity: item.quantity,
+                  unitPrice: Money(item.price, 'USD'),
+                ))
+            .toList(),
       );
 
       // GOOD: Call use case
@@ -86,5 +88,6 @@ class OrderItem {
     required this.unitPrice,
   });
 
-  Money get totalPrice => Money(unitPrice.amount * quantity, unitPrice.currency);
+  Money get totalPrice =>
+      Money(unitPrice.amount * quantity, unitPrice.currency);
 }

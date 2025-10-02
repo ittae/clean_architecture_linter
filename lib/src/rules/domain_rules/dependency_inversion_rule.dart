@@ -24,8 +24,10 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
 
   static const _code = LintCode(
     name: 'dependency_inversion',
-    problemMessage: 'Domain layer must depend on abstractions, not concrete implementations.',
-    correctionMessage: 'Use abstract interfaces or base classes instead of concrete implementations to follow DIP.',
+    problemMessage:
+        'Domain layer must depend on abstractions, not concrete implementations.',
+    correctionMessage:
+        'Use abstract interfaces or base classes instead of concrete implementations to follow DIP.',
   );
 
   @override
@@ -205,8 +207,10 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
     if (_isConcreteImplementation(typeName)) {
       return DependencyViolation(
         node: param,
-        message: 'Constructor parameter depends on concrete implementation: $typeName',
-        suggestion: 'Use abstract interface or base class instead of concrete implementation.',
+        message:
+            'Constructor parameter depends on concrete implementation: $typeName',
+        suggestion:
+            'Use abstract interface or base class instead of concrete implementation.',
       );
     }
 
@@ -215,7 +219,8 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
       return DependencyViolation(
         node: param,
         message: 'Domain layer directly depends on infrastructure: $typeName',
-        suggestion: 'Create domain interface and inject through dependency inversion.',
+        suggestion:
+            'Create domain interface and inject through dependency inversion.',
       );
     }
 
@@ -272,7 +277,8 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
         return DependencyViolation(
           node: null, // Will be set by caller
           message: 'Direct infrastructure import in domain layer: $importUri',
-          suggestion: 'Create domain abstraction and move infrastructure to data layer.',
+          suggestion:
+              'Create domain abstraction and move infrastructure to data layer.',
         );
       }
     }
@@ -284,12 +290,14 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
       return DependencyViolation(
         node: null,
         message: 'Domain layer importing from data layer: $importUri',
-        suggestion: 'Domain should not depend on data layer. Use dependency inversion.',
+        suggestion:
+            'Domain should not depend on data layer. Use dependency inversion.',
       );
     }
 
     // Check for presentation layer imports
-    if (importUri.contains('/presentation/') || importUri.contains('\\presentation\\')) {
+    if (importUri.contains('/presentation/') ||
+        importUri.contains('\\presentation\\')) {
       return DependencyViolation(
         node: null,
         message: 'Domain layer importing from presentation layer: $importUri',
@@ -309,7 +317,8 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
     if (_isConcreteImplementation(typeName)) {
       return DependencyViolation(
         node: type,
-        message: 'Domain class $relationship concrete implementation: $typeName',
+        message:
+            'Domain class $relationship concrete implementation: $typeName',
         suggestion: 'Use abstract base class or interface for inheritance.',
       );
     }
@@ -318,7 +327,8 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
       return DependencyViolation(
         node: type,
         message: 'Domain class $relationship framework type: $typeName',
-        suggestion: 'Create domain abstraction instead of depending on framework.',
+        suggestion:
+            'Create domain abstraction instead of depending on framework.',
       );
     }
 
@@ -328,16 +338,16 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
   bool _isConcreteImplementation(String typeName) {
     // Only flag obviously concrete implementations, not legitimate domain classes
     final concretePatterns = [
-      'Impl',           // UserRepositoryImpl
+      'Impl', // UserRepositoryImpl
       'Implementation', // UserRepositoryImplementation
-      'Concrete',       // ConcreteUserService
+      'Concrete', // ConcreteUserService
     ];
 
     // Infrastructure-specific suffixes (these should be abstractions in domain)
     final infrastructurePatterns = [
-      'Client',         // HttpClient, DatabaseClient
-      'Adapter',        // DatabaseAdapter
-      'Gateway',        // PaymentGateway
+      'Client', // HttpClient, DatabaseClient
+      'Adapter', // DatabaseAdapter
+      'Gateway', // PaymentGateway
     ];
 
     // Check for obvious concrete implementations
@@ -388,7 +398,6 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
     ];
     return frameworkTypes.contains(typeName);
   }
-
 }
 
 /// Analysis result for dependency inversion violations

@@ -6,11 +6,13 @@ import '../../domain/entities/user.dart';
 class Database {
   Future<void> connect() async {}
   Future<void> disconnect() async {}
-  Future<Map<String, dynamic>?> query(String sql, List<dynamic> params) async => {};
+  Future<Map<String, dynamic>?> query(String sql, List<dynamic> params) async =>
+      {};
   Future<void> execute(String sql, List<dynamic> params) async {}
 }
 
 class Connection {}
+
 class Transaction {}
 
 // GOOD: Database framework adapter implementing repository interface

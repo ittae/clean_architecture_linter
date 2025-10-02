@@ -33,43 +33,43 @@ PluginBase createPlugin() => _CleanArchitectureLinterPlugin();
 class _CleanArchitectureLinterPlugin extends PluginBase {
   @override
   List<LintRule> getLintRules(CustomLintConfigs configs) => [
-    // Core Clean Architecture Principles (6 rules)
+        // Core Clean Architecture Principles (6 rules)
 
-    // 1. Dependency Direction Rule - 의존성 방향 검증
-    LayerDependencyRule(),
+        // 1. Dependency Direction Rule - 의존성 방향 검증
+        LayerDependencyRule(),
 
-    // 2. Domain Purity Rule - Domain 레이어 순수성
-    DomainPurityRule(),
+        // 2. Domain Purity Rule - Domain 레이어 순수성
+        DomainPurityRule(),
 
-    // 3. Dependency Inversion Principle - 추상화에 의존
-    DependencyInversionRule(),
+        // 3. Dependency Inversion Principle - 추상화에 의존
+        DependencyInversionRule(),
 
-    // 4. Repository Pattern - Repository 인터페이스 정의
-    RepositoryInterfaceRule(),
+        // 4. Repository Pattern - Repository 인터페이스 정의
+        RepositoryInterfaceRule(),
 
-    // 5. Circular Dependency Prevention - 순환 의존성 방지
-    CircularDependencyRule(),
+        // 5. Circular Dependency Prevention - 순환 의존성 방지
+        CircularDependencyRule(),
 
-    // 6. Boundary Crossing Validation - 레이어 경계 검증
-    BoundaryCrossingRule(),
+        // 6. Boundary Crossing Validation - 레이어 경계 검증
+        BoundaryCrossingRule(),
 
-    // Data Layer Rules (1 rule)
+        // Data Layer Rules (1 rule)
 
-    // 7. Model Structure - Freezed Model with Entity
-    ModelStructureRule(),
+        // 7. Model Structure - Freezed Model with Entity
+        ModelStructureRule(),
 
-    // Presentation Layer Rules (4 rules)
+        // Presentation Layer Rules (4 rules)
 
-    // 8. No Presentation Models - Use Freezed State instead
-    NoPresentationModelsRule(),
+        // 8. No Presentation Models - Use Freezed State instead
+        NoPresentationModelsRule(),
 
-    // 9. Extension Location - Extensions in same file
-    ExtensionLocationRule(),
+        // 9. Extension Location - Extensions in same file
+        ExtensionLocationRule(),
 
-    // 10. Freezed Usage - Use Freezed instead of Equatable
-    FreezedUsageRule(),
+        // 10. Freezed Usage - Use Freezed instead of Equatable
+        FreezedUsageRule(),
 
-    // 11. Riverpod Generator - Use @riverpod annotation
-    RiverpodGeneratorRule(),
-  ];
+        // 11. Riverpod Generator - Use @riverpod annotation
+        RiverpodGeneratorRule(),
+      ];
 }

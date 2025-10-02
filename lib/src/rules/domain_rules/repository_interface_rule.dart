@@ -22,7 +22,8 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule {
 
   static const _code = LintCode(
     name: 'repository_interface',
-    problemMessage: 'Domain layer must depend only on repository abstractions, not concrete implementations.',
+    problemMessage:
+        'Domain layer must depend only on repository abstractions, not concrete implementations.',
     correctionMessage:
         'Use abstract repository interfaces and ensure proper separation between domain and data layers.',
   );
@@ -95,8 +96,10 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule {
       // This is a concrete repository in domain layer - should be abstract
       final code = LintCode(
         name: 'repository_interface',
-        problemMessage: 'Repository in domain layer should be abstract: $className',
-        correctionMessage: 'Make repository abstract or move implementation to data layer.',
+        problemMessage:
+            'Repository in domain layer should be abstract: $className',
+        correctionMessage:
+            'Make repository abstract or move implementation to data layer.',
       );
       reporter.atNode(node, code);
     }
@@ -127,8 +130,10 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule {
           if (_isConcreteRepositoryType(typeName)) {
             final code = LintCode(
               name: 'repository_interface',
-              problemMessage: 'Constructor depends on concrete repository implementation: $typeName',
-              correctionMessage: 'Use abstract repository interface instead of concrete implementation.',
+              problemMessage:
+                  'Constructor depends on concrete repository implementation: $typeName',
+              correctionMessage:
+                  'Use abstract repository interface instead of concrete implementation.',
             );
             reporter.atNode(type, code);
           }
@@ -151,8 +156,10 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule {
       if (_isConcreteRepositoryType(typeName)) {
         final code = LintCode(
           name: 'repository_interface',
-          problemMessage: 'Field depends on concrete repository implementation: $typeName',
-          correctionMessage: 'Use abstract repository interface instead of concrete implementation.',
+          problemMessage:
+              'Field depends on concrete repository implementation: $typeName',
+          correctionMessage:
+              'Use abstract repository interface instead of concrete implementation.',
         );
         reporter.atNode(type, code);
       }
@@ -164,7 +171,6 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule {
     ErrorReporter reporter,
     String className,
   ) {
-    final methodName = method.name.lexeme;
     final returnType = method.returnType;
 
     // Check if repository method returns domain entities (not data models)
@@ -173,8 +179,10 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule {
       if (_isDataLayerModel(returnTypeName)) {
         final code = LintCode(
           name: 'repository_interface',
-          problemMessage: 'Repository method returns data layer model: $returnTypeName',
-          correctionMessage: 'Repository methods should return domain entities, not data models.',
+          problemMessage:
+              'Repository method returns data layer model: $returnTypeName',
+          correctionMessage:
+              'Repository methods should return domain entities, not data models.',
         );
         reporter.atNode(returnType, code);
       }
@@ -186,11 +194,14 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule {
   RepositoryViolation? _analyzeRepositoryImport(String importUri) {
     // Check for data layer repository implementations
     if ((importUri.contains('/data/') || importUri.contains('\\data\\')) &&
-        (importUri.contains('repository') || importUri.contains('Repository'))) {
+        (importUri.contains('repository') ||
+            importUri.contains('Repository'))) {
       if (importUri.contains('impl') || importUri.contains('Impl')) {
         return RepositoryViolation(
-          message: 'Importing concrete repository implementation from data layer',
-          suggestion: 'Import only abstract repository interfaces. Move concrete implementations to data layer.',
+          message:
+              'Importing concrete repository implementation from data layer',
+          suggestion:
+              'Import only abstract repository interfaces. Move concrete implementations to data layer.',
         );
       }
     }
@@ -206,15 +217,16 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule {
     for (final pattern in infraPatterns) {
       if (importUri.startsWith(pattern)) {
         return RepositoryViolation(
-          message: 'Direct infrastructure dependency detected in domain repository',
-          suggestion: 'Use repository abstractions instead of direct infrastructure dependencies.',
+          message:
+              'Direct infrastructure dependency detected in domain repository',
+          suggestion:
+              'Use repository abstractions instead of direct infrastructure dependencies.',
         );
       }
     }
 
     return null;
   }
-
 
   bool _isRepositoryClass(String className) {
     return className.endsWith('Repository') || className.contains('Repository');
@@ -232,7 +244,6 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule {
         typeName.endsWith('Response') ||
         typeName.endsWith('Entity') && typeName.contains('Data');
   }
-
 }
 
 /// Represents a repository interface violation

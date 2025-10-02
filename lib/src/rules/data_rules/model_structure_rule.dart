@@ -40,7 +40,8 @@ class ModelStructureRule extends CleanArchitectureLintRule {
 
   static const _code = LintCode(
     name: 'model_structure',
-    problemMessage: 'Data model should use Freezed and contain Entity without duplicate fields',
+    problemMessage:
+        'Data model should use Freezed and contain Entity without duplicate fields',
     correctionMessage:
         'Use @freezed with required Entity field. Only add metadata fields if needed (etag, version, cachedAt).',
   );
@@ -75,8 +76,10 @@ class ModelStructureRule extends CleanArchitectureLintRule {
     if (!_hasFreezedAnnotation(node)) {
       final code = LintCode(
         name: 'model_structure',
-        problemMessage: 'Data model "$className" should use @freezed annotation',
-        correctionMessage: 'Add @freezed annotation above the class declaration.',
+        problemMessage:
+            'Data model "$className" should use @freezed annotation',
+        correctionMessage:
+            'Add @freezed annotation above the class declaration.',
       );
       reporter.atNode(node, code);
       return;

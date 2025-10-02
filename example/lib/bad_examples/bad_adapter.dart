@@ -3,7 +3,9 @@
 // Mock external service types
 class HttpClient {
   Future<Map<String, dynamic>> get(String url) async => {};
-  Future<Map<String, dynamic>> post(String url, Map<String, dynamic> data) async => {};
+  Future<Map<String, dynamic>> post(
+          String url, Map<String, dynamic> data) async =>
+      {};
 }
 
 class Database {
@@ -129,7 +131,8 @@ class BadOrderModel {
 
   // BAD: Business logic in model (should be data container only)
   double calculateTotal() {
-    return items.fold(0.0, (sum, item) => sum + (item['price'] * item['quantity']));
+    return items.fold(
+        0.0, (sum, item) => sum + (item['price'] * item['quantity']));
   }
 
   // BAD: Validation logic in model
@@ -192,11 +195,13 @@ class BadPaymentGateway {
 
 // Mock UI classes
 class Container {}
+
 class Widget {}
 
 // BAD: Adapter directly extending domain entities (tight coupling)
 class BadUserAdapter extends User {
-  BadUserAdapter(String id, String name) : super(id: id, name: name, email: '', createdAt: DateTime.now());
+  BadUserAdapter(String id, String name)
+      : super(id: id, name: name, email: '', createdAt: DateTime.now());
 
   // BAD: Adding persistence logic to domain entity
   Future<void> saveToDatabase() async {
@@ -210,5 +215,9 @@ class User {
   final String email;
   final DateTime createdAt;
 
-  User({required this.id, required this.name, required this.email, required this.createdAt});
+  User(
+      {required this.id,
+      required this.name,
+      required this.email,
+      required this.createdAt});
 }

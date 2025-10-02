@@ -108,9 +108,9 @@ class BadOrderItem {
 
   // BAD: Infrastructure method
   Map<String, dynamic> toJson() => {
-    'productId': productId,
-    'quantity': quantity,
-  };
+        'productId': productId,
+        'quantity': quantity,
+      };
 }
 
 // BAD: Technology-specific class name

@@ -60,9 +60,9 @@ class DependencyInjection {
     container = DIContainer();
     // GOOD: Simple wiring without business logic
     container.register<CreateOrderUseCase>(() => CreateOrderUseCase(
-      userRepository: container.get(),
-      orderRepository: container.get(),
-    ));
+          userRepository: container.get(),
+          orderRepository: container.get(),
+        ));
 
     // GOOD: Register other dependencies...
   }

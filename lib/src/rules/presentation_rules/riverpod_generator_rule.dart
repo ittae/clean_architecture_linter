@@ -64,7 +64,8 @@ class RiverpodGeneratorRule extends CleanArchitectureLintRule {
 
     // Only check in presentation/providers directory
     if (!normalized.contains('/presentation/')) return;
-    if (!normalized.contains('/providers/') && !normalized.endsWith('_provider.dart')) {
+    if (!normalized.contains('/providers/') &&
+        !normalized.endsWith('_provider.dart')) {
       return;
     }
 

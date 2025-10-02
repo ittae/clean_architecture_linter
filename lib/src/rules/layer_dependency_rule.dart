@@ -21,7 +21,8 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
 
   static const _code = LintCode(
     name: 'layer_dependency',
-    problemMessage: 'Improper dependency between architectural layers detected.',
+    problemMessage:
+        'Improper dependency between architectural layers detected.',
     correctionMessage:
         'Ensure dependencies flow inward: Presentation → Domain ← Data. Never skip layers or create circular dependencies.',
   );
@@ -155,7 +156,8 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
           return LayerViolation(
             message:
                 'Infrastructure cannot depend on Presentation layer. Found import: $importPath',
-            suggestion: 'Infrastructure should only provide services, not depend on UI.',
+            suggestion:
+                'Infrastructure should only provide services, not depend on UI.',
           );
         }
         break;
@@ -248,10 +250,10 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
       'package:hive/',
       'package:shared_preferences/',
       'package:drift/',
-      'package:firebase_',  // Firebase packages
-      'package:cloud_',     // Cloud services
-      'package:supabase_',  // Supabase
-      'package:isar/',      // Database packages
+      'package:firebase_', // Firebase packages
+      'package:cloud_', // Cloud services
+      'package:supabase_', // Supabase
+      'package:isar/', // Database packages
       'dart:convert',
       'dart:async',
     ];
@@ -291,10 +293,11 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
       '/get_it.dart',
       '/locator.dart',
       '/service_locator.dart',
-      'main.dart',  // main.dart often contains DI setup
+      'main.dart', // main.dart often contains DI setup
     ];
 
-    return diPatterns.any((pattern) => normalizedPath.endsWith(pattern) || normalizedPath.contains(pattern));
+    return diPatterns.any((pattern) =>
+        normalizedPath.endsWith(pattern) || normalizedPath.contains(pattern));
   }
 
   bool _isCrossCuttingConcern(String importUri) {

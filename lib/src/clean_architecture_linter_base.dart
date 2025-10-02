@@ -45,31 +45,31 @@ class CleanArchitectureUtils {
   /// Checks if a file is a test file.
   static bool _isTestFile(String filePath) {
     return filePath.contains('/test/') ||
-           filePath.contains('\\test\\') ||
-           filePath.endsWith('_test.dart') ||
-           filePath.contains('/integration_test/') ||
-           filePath.contains('\\integration_test\\');
+        filePath.contains('\\test\\') ||
+        filePath.endsWith('_test.dart') ||
+        filePath.contains('/integration_test/') ||
+        filePath.contains('\\integration_test\\');
   }
 
   /// Checks if a file is generated code.
   static bool _isGeneratedFile(String filePath) {
     return filePath.endsWith('.g.dart') ||
-           filePath.endsWith('.freezed.dart') ||
-           filePath.endsWith('.mocks.dart') ||
-           filePath.endsWith('.config.dart') ||
-           filePath.endsWith('.gr.dart') ||
-           filePath.endsWith('.localizely.dart') ||
-           filePath.contains('.pb.dart');
+        filePath.endsWith('.freezed.dart') ||
+        filePath.endsWith('.mocks.dart') ||
+        filePath.endsWith('.config.dart') ||
+        filePath.endsWith('.gr.dart') ||
+        filePath.endsWith('.localizely.dart') ||
+        filePath.contains('.pb.dart');
   }
 
   /// Checks if a file is a build artifact.
   static bool _isBuildArtifact(String filePath) {
     return filePath.contains('/build/') ||
-           filePath.contains('\\build\\') ||
-           filePath.contains('/.dart_tool/') ||
-           filePath.contains('\\.dart_tool\\') ||
-           filePath.contains('/.packages') ||
-           filePath.contains('\\.packages');
+        filePath.contains('\\build\\') ||
+        filePath.contains('/.dart_tool/') ||
+        filePath.contains('\\.dart_tool\\') ||
+        filePath.contains('/.packages') ||
+        filePath.contains('\\.packages');
   }
 
   /// Checks if a file is documentation without code.
@@ -110,7 +110,8 @@ class CleanArchitectureUtils {
   /// Checks if a file belongs to the presentation layer (excluding test files).
   static bool isPresentationLayerFile(String filePath) {
     if (shouldExcludeFile(filePath)) return false;
-    return filePath.contains('/presentation/') || filePath.contains('\\presentation\\');
+    return filePath.contains('/presentation/') ||
+        filePath.contains('\\presentation\\');
   }
 
   /// Checks if a method belongs to a repository interface.
@@ -140,8 +141,8 @@ class CleanArchitectureUtils {
       'Port',
     ];
 
-    final isRepositoryClass = repositoryPatterns.any((pattern) =>
-        className.contains(pattern));
+    final isRepositoryClass =
+        repositoryPatterns.any((pattern) => className.contains(pattern));
 
     if (!isRepositoryClass) return false;
 
@@ -151,7 +152,8 @@ class CleanArchitectureUtils {
     // Check if all methods in the class are abstract (interface pattern)
     final hasOnlyAbstractMethods = classDeclaration.members
         .whereType<MethodDeclaration>()
-        .every((method) => method.isAbstract || method.isGetter || method.isSetter);
+        .every((method) =>
+            method.isAbstract || method.isGetter || method.isSetter);
 
     return isRepositoryClass && (isAbstractClass || hasOnlyAbstractMethods);
   }

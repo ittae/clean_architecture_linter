@@ -93,7 +93,8 @@ class FreezedUsageRule extends CleanArchitectureLintRule {
             name: 'freezed_usage',
             problemMessage:
                 'Class "${node.name.lexeme}" implements Equatable. Use @freezed instead.',
-            correctionMessage: 'Use @freezed annotation for immutable data classes.',
+            correctionMessage:
+                'Use @freezed annotation for immutable data classes.',
           );
           reporter.atNode(implementsClause, code);
         }

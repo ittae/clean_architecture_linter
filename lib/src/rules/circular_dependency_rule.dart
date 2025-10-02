@@ -138,7 +138,8 @@ class CircularDependencyRule extends CleanArchitectureLintRule {
       } else if (recursionStack.contains(dependency)) {
         // Found a cycle
         final cycleStartIndex = recursionStack.indexOf(dependency);
-        return recursionStack.sublist(cycleStartIndex).toList()..add(dependency);
+        return recursionStack.sublist(cycleStartIndex).toList()
+          ..add(dependency);
       }
     }
 
@@ -209,14 +210,17 @@ class CircularDependencyRule extends CleanArchitectureLintRule {
   String _describeCycle(List<String> cycle, String currentFile) {
     final simplifiedCycle = cycle.map((path) {
       final parts = path.split('/');
-      return parts.length > 2 ? '${parts[parts.length - 2]}/${parts[parts.length - 1]}' : path;
+      return parts.length > 2
+          ? '${parts[parts.length - 2]}/${parts[parts.length - 1]}'
+          : path;
     }).toList();
 
     return simplifiedCycle.join(' → ');
   }
 
   String _getSuggestion(List<String> cycle) {
-    final layers = cycle.map((f) => _fileToLayer[f]).whereType<String>().toSet();
+    final layers =
+        cycle.map((f) => _fileToLayer[f]).whereType<String>().toSet();
 
     if (layers.length > 1) {
       return 'Break the cycle by using dependency inversion. Create abstractions in the inner layer that outer layers can implement.';

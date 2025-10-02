@@ -38,7 +38,8 @@ class BadDatabaseUserRepository {
       return null;
     }
 
-    final result = await _database.query('SELECT * FROM users WHERE id = "$userId"');
+    final result =
+        await _database.query('SELECT * FROM users WHERE id = "$userId"');
 
     // BAD: Business logic for user data processing
     if (result != null) {
@@ -65,7 +66,8 @@ class BadDatabaseUserRepository {
   // BAD: Complex business calculation in framework
   bool _calculatePremiumStatus(Map<String, dynamic> userData) {
     final registrationDate = DateTime.parse(userData['created_at']);
-    final daysSinceRegistration = DateTime.now().difference(registrationDate).inDays;
+    final daysSinceRegistration =
+        DateTime.now().difference(registrationDate).inDays;
     final orderCount = userData['order_count'] ?? 0;
 
     // Complex business logic that should be in domain
@@ -86,8 +88,7 @@ class BadDatabaseUserRepository {
 
     // Framework concern mixed with business logic
     await _database.execute(
-      'INSERT INTO users (name, email, age) VALUES ("${userData['name']}", "${userData['email']}", ${userData['age']})'
-    );
+        'INSERT INTO users (name, email, age) VALUES ("${userData['name']}", "${userData['email']}", ${userData['age']})');
 
     return true;
   }
@@ -105,7 +106,8 @@ class BadWebServer {
   }
 
   // BAD: HTTP handler with business logic
-  Future<void> handleCreateUser(HttpRequest request, HttpResponse response) async {
+  Future<void> handleCreateUser(
+      HttpRequest request, HttpResponse response) async {
     // BAD: Data processing in web framework
     final userData = _parseUserData(request);
 
@@ -121,8 +123,7 @@ class BadWebServer {
 
     // BAD: Direct database access in web handler
     await _database.execute(
-      'INSERT INTO users (id, name, email, password) VALUES ("$userId", "${userData['name']}", "${userData['email']}", "$hashedPassword")'
-    );
+        'INSERT INTO users (id, name, email, password) VALUES ("$userId", "${userData['name']}", "${userData['email']}", "$hashedPassword")');
 
     // BAD: Business logic for welcome message
     final welcomeMessage = _createWelcomeMessage(userData);
