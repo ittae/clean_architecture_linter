@@ -7,34 +7,13 @@ analyzer:
     - test/**
 
 custom_lint:
-  rules:
-    # Clean Architecture Linter Configuration
-    # Uncomment to enable test coverage checks:
-    # - clean_architecture_linter: true
-    #   require_tests: true
+  # All clean_architecture_linter rules are enabled by default.
+  # Only configure rules that need specific settings.
 
-    # Framework Rules
-    - framework_isolation
-    - database_detail
-    - web_framework_detail
-    - glue_code
-    # Domain Rules
-    - dependency_inversion
-    - entity_independence
-    - immutability
-    - entity_business_rules
-    - entity_stability
-    - usecase_orchestration
-    - usecase_application_rules
-    - usecase_independence
-    # Data Rules
-    - data_source_abstraction
-    - repository_implementation
-    - no_business_logic_in_data
-    # Adapter Rules
-    - data_conversion_adapter
-    - mvc_architecture
-    - external_service_adapter
-    # General Rules
-    - layer_dependency
-    - circular_dependency
+  # Optional: Enable test coverage checks
+  # rules:
+  #   - clean_architecture_linter_require_test: true
+  #     check_usecases: true
+  #     check_repositories: true
+  #     check_datasources: true
+  #     check_notifiers: true

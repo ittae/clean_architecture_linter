@@ -35,17 +35,26 @@ PluginBase createPlugin() => _CleanArchitectureLinterPlugin();
 class _CleanArchitectureLinterPlugin extends PluginBase {
   @override
   List<LintRule> getLintRules(CustomLintConfigs configs) {
-    // Read package-specific configuration from analysis_options.yaml
+    // Read test coverage configuration
     // custom_lint:
     //   rules:
-    //     - clean_architecture_linter:
-    //         require_tests: true
+    //     - clean_architecture_linter_require_test: true
+    //       check_usecases: true
+    //       check_repositories: true
+    //       check_datasources: true
+    //       check_notifiers: true
 
-    final packageConfig = configs.rules['clean_architecture_linter'];
-    final requireTests = packageConfig?.json['require_tests'] as bool? ?? false;
+    final testConfig = configs.rules['clean_architecture_linter_require_test'];
+    final testEnabled = testConfig?.enabled ?? false;
+    final checkUsecases = testConfig?.json['check_usecases'] as bool? ?? true;
+    final checkRepositories =
+        testConfig?.json['check_repositories'] as bool? ?? true;
+    final checkDatasources =
+        testConfig?.json['check_datasources'] as bool? ?? true;
+    final checkNotifiers = testConfig?.json['check_notifiers'] as bool? ?? true;
 
-    return [
-      // Core Clean Architecture Principles (7 rules)
+    final rules = <LintRule>[
+      // Core Clean Architecture Principles (6 rules)
 
       // 1. Dependency Direction Rule - 의존성 방향 검증
       LayerDependencyRule(),
@@ -64,10 +73,6 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
 
       // 6. Boundary Crossing Validation - 레이어 경계 검증
       BoundaryCrossingRule(),
-
-      // 7. Test Coverage - Ensure critical components have tests
-      // Configure with: test_coverage: { require_tests: true }
-      TestCoverageRule(requireTests: requireTests),
 
       // Data Layer Rules (2 rules)
 
@@ -91,5 +96,19 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
       // 13. Riverpod Generator - Use @riverpod annotation
       RiverpodGeneratorRule(),
     ];
+
+    // Conditionally add test coverage rule if enabled
+    if (testEnabled) {
+      rules.add(
+        TestCoverageRule(
+          checkUsecases: checkUsecases,
+          checkRepositories: checkRepositories,
+          checkDatasources: checkDatasources,
+          checkNotifiers: checkNotifiers,
+        ),
+      );
+    }
+
+    return rules;
   }
 }

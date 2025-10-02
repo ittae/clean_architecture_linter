@@ -10,31 +10,29 @@ The `test_coverage` rule ensures that critical components in your Clean Architec
 
 ## Enabling the Rule
 
-The `test_coverage` rule is disabled by default. To enable it, add to your `analysis_options.yaml`:
+The `clean_architecture_linter_require_test` rule is **disabled by default**. Enable it in `analysis_options.yaml`:
 
 ```yaml
 # analysis_options.yaml
 custom_lint:
   rules:
-    - clean_architecture_linter: true  # Enable package
-      require_tests: true               # Enforce test file checks
+    - clean_architecture_linter_require_test: true
 ```
 
-## Configuration Options
+All component types are checked by default (UseCases, Repositories, DataSources, Notifiers).
+
+## Selective Checking
+
+To check only specific component types:
 
 ```yaml
 custom_lint:
   rules:
-    # Option 1: Completely disabled (default)
-    # (omit clean_architecture_linter configuration)
-
-    # Option 2: Enabled with test coverage enforcement
-    - clean_architecture_linter: true
-      require_tests: true   # Will show warnings for missing tests
-
-    # Option 3: Enabled without test coverage
-    - clean_architecture_linter: true
-      require_tests: false  # Other rules active, test checks disabled
+    - clean_architecture_linter_require_test: true
+      check_usecases: true       # default: true
+      check_repositories: true   # default: true
+      check_datasources: false   # Skip DataSource checks
+      check_notifiers: false     # Skip Notifier checks
 ```
 
 ## Disabling in Specific Files
@@ -42,10 +40,10 @@ custom_lint:
 You can ignore the rule in specific files:
 
 ```dart
-// ignore_for_file: test_coverage
+// ignore_for_file: clean_architecture_linter_require_test
 
 class MyUseCase {
-  // This file won't trigger test_coverage warnings
+  // This file won't trigger test coverage warnings
 }
 ```
 

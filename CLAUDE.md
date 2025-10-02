@@ -94,37 +94,33 @@ class RankingCard extends StatelessWidget {
 
 See [CLEAN_ARCHITECTURE_GUIDE.md](CLEAN_ARCHITECTURE_GUIDE.md) for complete examples.
 
-## Test Coverage
+## Configuration
 
-This linter can enforce test coverage for critical Clean Architecture components. **This rule is disabled by default.**
+All Clean Architecture rules are **enabled by default**. No configuration needed in `analysis_options.yaml`.
 
-### Enabling Test Coverage
+### Optional: Test Coverage
 
-To enable test coverage checks, configure in `analysis_options.yaml`:
+The `clean_architecture_linter_require_test` rule is **disabled by default**. Enable it to enforce test files for critical components:
 
 ```yaml
 # analysis_options.yaml
 custom_lint:
   rules:
-    - clean_architecture_linter: true  # Enable the package
-      require_tests: true               # Enforce test file checks
+    - clean_architecture_linter_require_test: true
+      check_usecases: true       # Require tests for UseCases
+      check_repositories: true   # Require tests for Repositories
+      check_datasources: true    # Require tests for DataSources
+      check_notifiers: true      # Require tests for Notifiers
 ```
 
-### Configuration Options
+To disable specific checks:
 
 ```yaml
 custom_lint:
   rules:
-    # Option 1: Disable test coverage (default - omit the rule)
-    # (no clean_architecture_linter configuration)
-
-    # Option 2: Enable with test coverage enforcement
-    - clean_architecture_linter: true
-      require_tests: true
-
-    # Option 3: Package enabled but test checks disabled
-    - clean_architecture_linter: true
-      require_tests: false
+    - clean_architecture_linter_require_test: true
+      check_datasources: false   # Skip DataSource test checks
+      check_notifiers: false     # Skip Notifier test checks
 ```
 
 ### Components Requiring Tests

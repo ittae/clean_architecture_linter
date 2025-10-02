@@ -18,8 +18,11 @@ import '../clean_architecture_linter_base.dart';
 /// ```yaml
 /// custom_lint:
 ///   rules:
-///     - clean_architecture_linter: true
-///       require_tests: true
+///     - clean_architecture_linter_require_test: true
+///       check_usecases: true
+///       check_repositories: true
+///       check_datasources: true
+///       check_notifiers: true
 /// ```
 ///
 /// Test file naming convention:
@@ -32,16 +35,23 @@ import '../clean_architecture_linter_base.dart';
 /// - Documents expected behavior through tests
 /// - Enables safe refactoring
 class TestCoverageRule extends CleanArchitectureLintRule {
-  const TestCoverageRule({this.requireTests = false}) : super(code: _code);
+  const TestCoverageRule({
+    this.checkUsecases = true,
+    this.checkRepositories = true,
+    this.checkDatasources = true,
+    this.checkNotifiers = true,
+  }) : super(code: _code);
 
-  /// Whether test coverage is required. Controlled by analysis_options.yaml
-  final bool requireTests;
+  final bool checkUsecases;
+  final bool checkRepositories;
+  final bool checkDatasources;
+  final bool checkNotifiers;
 
   static const _code = LintCode(
-    name: 'test_coverage',
+    name: 'clean_architecture_linter_require_test',
     problemMessage: 'Critical components should have corresponding test files',
     correctionMessage:
-        'Create a test file for this component or disable require_tests in analysis_options.yaml',
+        'Create a test file for this component or disable this rule in analysis_options.yaml',
   );
 
   @override
@@ -50,11 +60,6 @@ class TestCoverageRule extends CleanArchitectureLintRule {
     ErrorReporter reporter,
     CustomLintContext context,
   ) {
-    // Skip if require_tests is false
-    if (!requireTests) {
-      return;
-    }
-
     // Check class declarations for testable components
     context.registry.addClassDeclaration((node) {
       _checkTestCoverage(node, reporter, resolver);
@@ -73,6 +78,19 @@ class TestCoverageRule extends CleanArchitectureLintRule {
     final componentType = _identifyComponentType(filePath, className, node);
     if (componentType == null) {
       // Not a testable component
+      return;
+    }
+
+    // Check if this component type should be checked
+    final shouldCheck = switch (componentType) {
+      ComponentType.useCase => checkUsecases,
+      ComponentType.repositoryImpl => checkRepositories,
+      ComponentType.dataSource => checkDatasources,
+      ComponentType.notifier => checkNotifiers,
+    };
+
+    if (!shouldCheck) {
+      // This component type is disabled
       return;
     }
 
@@ -232,7 +250,7 @@ class TestCoverageRule extends CleanArchitectureLintRule {
     final componentName = _getComponentDisplayName(type);
 
     final code = LintCode(
-      name: 'test_coverage',
+      name: 'clean_architecture_linter_require_test',
       problemMessage:
           '$componentName "$className" is missing a test file',
       correctionMessage:
