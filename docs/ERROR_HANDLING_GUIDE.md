@@ -34,7 +34,7 @@ UI에서 필요한 에러만 구분 → 나머지는 통합 처리
 ```
 
 **필수 구분 에러** (각 계층에서 4가지만 구분):
-- **NotFound**: "약속을 찾을 수 없습니다" 메시지
+- **NotFound**: "할 일을 찾을 수 없습니다" 메시지
 - **Unauthorized**: "권한이 없습니다" + 로그인 유도
 - **Network**: "네트워크 연결 확인" + 재시도 버튼
 - **Unknown/Server**: "오류가 발생했습니다" + 일반 에러 처리
@@ -62,19 +62,19 @@ UI에서 필요한 에러만 구분 → 나머지는 통합 처리
 │ Repository Layer                                                 │
 │ ↓ Transform to: Result<T, DomainFailure>                        │
 │   • Success(data)                                                │
-│   • Failure(WhenToMeetFailure.notFound)                         │
-│   • Failure(WhenToMeetFailure.unauthorized)                     │
-│   • Failure(WhenToMeetFailure.networkError)                     │
-│   • Failure(WhenToMeetFailure.serverError)                      │
+│   • Failure(TodoFailure.notFound)                         │
+│   • Failure(TodoFailure.unauthorized)                     │
+│   • Failure(TodoFailure.networkError)                     │
+│   • Failure(TodoFailure.serverError)                      │
 └─────────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────────┐
 │ UseCase Layer                                                    │
 │ ↓ Transform to: Domain Exceptions (throw)                       │
-│   • WhenToMeetNotFoundException                                  │
-│   • WhenToMeetUnauthorizedException                              │
-│   • WhenToMeetNetworkException                                   │
-│   • WhenToMeetServerException                                    │
+│   • TodoNotFoundException                                  │
+│   • TodoUnauthorizedException                              │
+│   • TodoNetworkException                                   │
+│   • TodoServerException                                    │
 └─────────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────────┐
@@ -136,23 +136,23 @@ class DataSourceException implements Exception {
 #### DataSource 구현 패턴
 
 ```dart
-class WhenToMeetFirestoreDataSource {
-  Future<WhenToMeet> getWhenToMeet({required String id}) async {
+class TodoFirestoreDataSource {
+  Future<Todo> getTodo({required String id}) async {
     try {
-      final doc = await _firestore.collection('when_to_meets').doc(id).get();
+      final doc = await _firestore.collection('todos').doc(id).get();
 
       if (!doc.exists) {
-        throw NotFoundException('WhenToMeet을 찾을 수 없습니다: $id');
+        throw NotFoundException('할 일을 찾을 수 없습니다: $id');
       }
 
       return model.toDomainEntity();
     } on FirebaseException catch (e) {
-      _handleFirebaseException(e, 'WhenToMeet 조회');
+      _handleFirebaseException(e, 'Todo 조회');
     } on NotFoundException {
       rethrow;  // 이미 구체적인 Exception이므로 그대로 전달
     } catch (e) {
       throw DataSourceException(
-        'WhenToMeet 조회 중 오류가 발생했습니다',
+        'Todo 조회 중 오류가 발생했습니다',
         originalError: e,
       );
     }
@@ -209,64 +209,64 @@ class WhenToMeetFirestoreDataSource {
 #### 구현 예제
 
 ```dart
-// domain/failures/when_to_meet_failure.dart
+// domain/failures/todo_failure.dart
 @freezed
-sealed class WhenToMeetFailure with _$WhenToMeetFailure {
-  const factory WhenToMeetFailure.notFound({
+sealed class TodoFailure with _$TodoFailure {
+  const factory TodoFailure.notFound({
     required String message,
-  }) = WhenToMeetNotFoundFailure;
+  }) = TodoNotFoundFailure;
 
-  const factory WhenToMeetFailure.unauthorized({
+  const factory TodoFailure.unauthorized({
     required String message,
-  }) = WhenToMeetUnauthorizedFailure;
+  }) = TodoUnauthorizedFailure;
 
-  const factory WhenToMeetFailure.networkError({
+  const factory TodoFailure.networkError({
     required String message,
-  }) = WhenToMeetNetworkErrorFailure;
+  }) = TodoNetworkErrorFailure;
 
-  const factory WhenToMeetFailure.serverError({
+  const factory TodoFailure.serverError({
     required String message,
-  }) = WhenToMeetServerErrorFailure;
+  }) = TodoServerErrorFailure;
 
-  const factory WhenToMeetFailure.unknown({
+  const factory TodoFailure.unknown({
     required String message,
-  }) = WhenToMeetUnknownFailure;
+  }) = TodoUnknownFailure;
 }
 ```
 
 #### Repository 구현 패턴
 
 ```dart
-class WhenToMeetRepositoryImpl implements WhenToMeetRepository {
-  final WhenToMeetDataSource _datasource;
+class TodoRepositoryImpl implements TodoRepository {
+  final TodoDataSource _datasource;
 
   @override
-  Future<Result<WhenToMeet, WhenToMeetFailure>> read(String id) async {
+  Future<Result<Todo, TodoFailure>> read(String id) async {
     try {
-      final result = await _datasource.getWhenToMeet(whenToMeetId: id);
+      final result = await _datasource.getTodo(todoId: id);
       return Success(result);
     } on Exception catch (e) {
-      return Failure(_mapExceptionToFailure(e, '약속 조회'));
+      return Failure(_mapExceptionToFailure(e, '할 일 조회'));
     }
   }
 
-  /// DataSource Exception을 WhenToMeetFailure로 변환하는 헬퍼 함수
-  WhenToMeetFailure _mapExceptionToFailure(Exception exception, String operation) {
+  /// DataSource Exception을 TodoFailure로 변환하는 헬퍼 함수
+  TodoFailure _mapExceptionToFailure(Exception exception, String operation) {
     if (exception is NotFoundException) {
       Log.error('$operation - Not found: $exception');
-      return WhenToMeetFailure.notFound(message: exception.message);
+      return TodoFailure.notFound(message: exception.message);
     } else if (exception is UnauthorizedException) {
       Log.error('$operation - Unauthorized: $exception');
-      return WhenToMeetFailure.unauthorized(message: exception.message);
+      return TodoFailure.unauthorized(message: exception.message);
     } else if (exception is NetworkException) {
       Log.error('$operation - Network error: $exception');
-      return WhenToMeetFailure.networkError(message: exception.message);
+      return TodoFailure.networkError(message: exception.message);
     } else if (exception is DataSourceException) {
       Log.error('$operation - DataSource error: $exception');
-      return WhenToMeetFailure.serverError(message: exception.message);
+      return TodoFailure.serverError(message: exception.message);
     } else {
       Log.error('$operation - Unexpected error: $exception');
-      return WhenToMeetFailure.unknown(message: '$operation 실패: ${exception.toString()}');
+      return TodoFailure.unknown(message: '$operation 실패: ${exception.toString()}');
     }
   }
 }
@@ -294,34 +294,34 @@ class WhenToMeetRepositoryImpl implements WhenToMeetRepository {
 #### 구현 예제
 
 ```dart
-// domain/exceptions/when_to_meet_exception.dart
-sealed class WhenToMeetException implements Exception {
+// domain/exceptions/todo_exception.dart
+sealed class TodoException implements Exception {
   final String message;
-  final WhenToMeetFailure failure;
-  const WhenToMeetException(this.message, this.failure);
+  final TodoFailure failure;
+  const TodoException(this.message, this.failure);
 }
 
-final class WhenToMeetNotFoundException extends WhenToMeetException {
-  const WhenToMeetNotFoundException(super.message, super.failure);
+final class TodoNotFoundException extends TodoException {
+  const TodoNotFoundException(super.message, super.failure);
 }
 
-final class WhenToMeetUnauthorizedException extends WhenToMeetException {
-  const WhenToMeetUnauthorizedException(super.message, super.failure);
+final class TodoUnauthorizedException extends TodoException {
+  const TodoUnauthorizedException(super.message, super.failure);
 }
 
-final class WhenToMeetNetworkException extends WhenToMeetException {
-  const WhenToMeetNetworkException(super.message, super.failure);
+final class TodoNetworkException extends TodoException {
+  const TodoNetworkException(super.message, super.failure);
 }
 
 // Extension for converting Failure to Exception
-extension WhenToMeetFailureX on WhenToMeetFailure {
-  WhenToMeetException toException() {
+extension TodoFailureX on TodoFailure {
+  TodoException toException() {
     return when(
-      notFound: (message) => WhenToMeetNotFoundException(message, this),
-      unauthorized: (message) => WhenToMeetUnauthorizedException(message, this),
-      networkError: (message) => WhenToMeetNetworkException(message, this),
-      serverError: (message) => WhenToMeetServerException(message, this),
-      unknown: (message) => WhenToMeetUnknownException(message, this),
+      notFound: (message) => TodoNotFoundException(message, this),
+      unauthorized: (message) => TodoUnauthorizedException(message, this),
+      networkError: (message) => TodoNetworkException(message, this),
+      serverError: (message) => TodoServerException(message, this),
+      unknown: (message) => TodoUnknownException(message, this),
     );
   }
 }
@@ -330,17 +330,17 @@ extension WhenToMeetFailureX on WhenToMeetFailure {
 #### UseCase 구현 패턴
 
 ```dart
-class GetWhenToMeetUsecase {
-  final WhenToMeetRepository repository;
+class GetTodoUseCase {
+  final TodoRepository repository;
 
-  Future<WhenToMeet> call(String whenToMeetId) async {
+  Future<Todo> call(String todoId) async {
     // 1. 입력 검증 (ArgumentError 사용)
-    if (whenToMeetId.trim().isEmpty) {
-      throw ArgumentError('WhenToMeet ID는 필수입니다.');
+    if (todoId.trim().isEmpty) {
+      throw ArgumentError('Todo ID는 필수입니다.');
     }
 
     // 2. Repository 호출 및 Result 처리
-    final result = await repository.read(whenToMeetId.trim());
+    final result = await repository.read(todoId.trim());
 
     // 3. Result를 Entity 또는 Exception으로 변환
     return result.when(
@@ -374,11 +374,11 @@ class GetWhenToMeetUsecase {
 
 ```dart
 @riverpod
-class WhenToMeetNotifier extends _$WhenToMeetNotifier {
+class TodoNotifier extends _$TodoNotifier {
   @override
-  Future<WhenToMeet> build(String whenToMeetId) async {
+  Future<Todo> build(String todoId) async {
     // UseCase 호출만 하면 Riverpod이 자동으로 에러 처리
-    return ref.read(getWhenToMeetUsecaseProvider).call(whenToMeetId);
+    return ref.read(getTodoUseCaseProvider).call(todoId);
   }
 
   Future<void> reload() async {
@@ -386,7 +386,7 @@ class WhenToMeetNotifier extends _$WhenToMeetNotifier {
 
     // AsyncValue.guard로 안전하게 에러 캐치
     state = await AsyncValue.guard(() async {
-      return ref.read(getWhenToMeetUsecaseProvider).call(whenToMeetId);
+      return ref.read(getTodoUseCaseProvider).call(todoId);
     });
   }
 }
@@ -395,13 +395,13 @@ class WhenToMeetNotifier extends _$WhenToMeetNotifier {
 #### UI 에러 처리 패턴
 
 ```dart
-class WhenToMeetPage extends ConsumerWidget {
+class TodoPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final asyncWhenToMeet = ref.watch(whenToMeetNotifierProvider(id));
+    final asyncTodo = ref.watch(todoNotifierProvider(id));
 
-    return asyncWhenToMeet.when(
-      data: (whenToMeet) => _buildContent(whenToMeet),
+    return asyncTodo.when(
+      data: (todo) => _buildContent(todo),
       loading: () => const CircularProgressIndicator(),
       error: (error, stack) => _buildError(error),
     );
@@ -409,15 +409,15 @@ class WhenToMeetPage extends ConsumerWidget {
 
   Widget _buildError(Object error) {
     // Exception 타입별로 다른 UI 표시
-    if (error is WhenToMeetNotFoundException) {
+    if (error is TodoNotFoundException) {
       return ErrorWidget(
-        message: '약속을 찾을 수 없습니다',
+        message: '할 일을 찾을 수 없습니다',
         action: TextButton(
           onPressed: () => Navigator.pop(context),
           child: const Text('뒤로가기'),
         ),
       );
-    } else if (error is WhenToMeetUnauthorizedException) {
+    } else if (error is TodoUnauthorizedException) {
       return ErrorWidget(
         message: '권한이 없습니다',
         action: TextButton(
@@ -425,11 +425,11 @@ class WhenToMeetPage extends ConsumerWidget {
           child: const Text('로그인'),
         ),
       );
-    } else if (error is WhenToMeetNetworkException) {
+    } else if (error is TodoNetworkException) {
       return ErrorWidget(
         message: '네트워크 연결을 확인해주세요',
         action: TextButton(
-          onPressed: () => ref.refresh(whenToMeetNotifierProvider(id)),
+          onPressed: () => ref.refresh(todoNotifierProvider(id)),
           child: const Text('재시도'),
         ),
       );
@@ -437,7 +437,7 @@ class WhenToMeetPage extends ConsumerWidget {
       return ErrorWidget(
         message: '오류가 발생했습니다',
         action: TextButton(
-          onPressed: () => ref.refresh(whenToMeetNotifierProvider(id)),
+          onPressed: () => ref.refresh(todoNotifierProvider(id)),
           child: const Text('재시도'),
         ),
       );
@@ -477,12 +477,12 @@ class WhenToMeetPage extends ConsumerWidget {
 
 ```dart
 @freezed
-sealed class WhenToMeetFailure with _$WhenToMeetFailure {
-  const factory WhenToMeetFailure.notFound({required String message}) = ...;
-  const factory WhenToMeetFailure.unauthorized({required String message}) = ...;
-  const factory WhenToMeetFailure.networkError({required String message}) = ...;
-  const factory WhenToMeetFailure.serverError({required String message}) = ...;
-  const factory WhenToMeetFailure.unknown({required String message}) = ...;
+sealed class TodoFailure with _$TodoFailure {
+  const factory TodoFailure.notFound({required String message}) = ...;
+  const factory TodoFailure.unauthorized({required String message}) = ...;
+  const factory TodoFailure.networkError({required String message}) = ...;
+  const factory TodoFailure.serverError({required String message}) = ...;
+  const factory TodoFailure.unknown({required String message}) = ...;
 }
 ```
 
@@ -493,39 +493,39 @@ sealed class WhenToMeetFailure with _$WhenToMeetFailure {
 **용도**: UseCase에서 Presentation으로 전달하는 타입 안전한 예외
 
 ```dart
-sealed class WhenToMeetException implements Exception {
+sealed class TodoException implements Exception {
   final String message;
-  final WhenToMeetFailure failure;  // 원본 Failure 보존
+  final TodoFailure failure;  // 원본 Failure 보존
 }
 
-final class WhenToMeetNotFoundException extends WhenToMeetException { ... }
-final class WhenToMeetUnauthorizedException extends WhenToMeetException { ... }
+final class TodoNotFoundException extends TodoException { ... }
+final class TodoUnauthorizedException extends TodoException { ... }
 ```
 
 ---
 
 ## 실전 예제
 
-### 시나리오: 약속 조회 실패 (NotFound)
+### 시나리오: 할 일 조회 실패 (NotFound)
 
 ```
 1. Firebase에서 문서 없음
    ↓
 2. DataSource: NotFoundException 던지기
-   throw NotFoundException('WhenToMeet을 찾을 수 없습니다: $id');
+   throw NotFoundException('할 일을 찾을 수 없습니다: $id');
    ↓
 3. Repository: Result.Failure 반환
-   return Failure(WhenToMeetFailure.notFound(message: exception.message));
+   return Failure(TodoFailure.notFound(message: exception.message));
    ↓
-4. UseCase: WhenToMeetNotFoundException 던지기
-   throw error.toException();  // WhenToMeetNotFoundException
+4. UseCase: TodoNotFoundException 던지기
+   throw error.toException();  // TodoNotFoundException
    ↓
 5. Presentation: AsyncValue.error에 자동 저장
    state = AsyncValue.error(exception, stackTrace);
    ↓
 6. UI: 에러 타입별 처리
-   if (error is WhenToMeetNotFoundException) {
-     return ErrorWidget(message: '약속을 찾을 수 없습니다', ...);
+   if (error is TodoNotFoundException) {
+     return ErrorWidget(message: '할 일을 찾을 수 없습니다', ...);
    }
 ```
 
@@ -538,13 +538,13 @@ final class WhenToMeetUnauthorizedException extends WhenToMeetException { ... }
    throw NetworkException('네트워크 연결을 확인해주세요');
    ↓
 3. Repository: Result.Failure 반환
-   return Failure(WhenToMeetFailure.networkError(message: exception.message));
+   return Failure(TodoFailure.networkError(message: exception.message));
    ↓
-4. UseCase: WhenToMeetNetworkException 던지기
+4. UseCase: TodoNetworkException 던지기
    throw error.toException();
    ↓
 5. UI: 재시도 버튼 표시
-   if (error is WhenToMeetNetworkException) {
+   if (error is TodoNetworkException) {
      return ErrorWidget(
        message: '네트워크 연결을 확인해주세요',
        action: TextButton(child: Text('재시도'), ...),
@@ -564,7 +564,7 @@ final class WhenToMeetUnauthorizedException extends WhenToMeetException { ... }
    throw NotFoundException('...');
 
    // Repository: Domain Failure
-   return Failure(WhenToMeetFailure.notFound(message: '...'));
+   return Failure(TodoFailure.notFound(message: '...'));
 
    // UseCase: Domain Exception
    throw error.toException();
@@ -573,11 +573,11 @@ final class WhenToMeetUnauthorizedException extends WhenToMeetException { ... }
 2. **Helper 함수 활용**
    ```dart
    // Repository에서 Exception → Failure 변환
-   WhenToMeetFailure _mapExceptionToFailure(Exception e, String operation) { ... }
+   TodoFailure _mapExceptionToFailure(Exception e, String operation) { ... }
 
    // UseCase에서 Failure → Exception 변환
-   extension WhenToMeetFailureX on WhenToMeetFailure {
-     WhenToMeetException toException() { ... }
+   extension TodoFailureX on TodoFailure {
+     TodoException toException() { ... }
    }
    ```
 
@@ -606,7 +606,7 @@ final class WhenToMeetUnauthorizedException extends WhenToMeetException { ... }
    if (error is NotFoundException) { ... }
 
    // ✅ GOOD: Presentation에서 Domain Exception 처리
-   if (error is WhenToMeetNotFoundException) { ... }
+   if (error is TodoNotFoundException) { ... }
    ```
 
 2. **에러를 State에 저장하지 말기**
@@ -624,7 +624,7 @@ final class WhenToMeetUnauthorizedException extends WhenToMeetException { ... }
 3. **에러를 숨기지 말기**
    ```dart
    // ❌ BAD: catchError로 에러 무시
-   usecase.call().catchError((_) => <WhenToMeet>[]);
+   usecase.call().catchError((_) => <Todo>[]);
 
    // ✅ GOOD: AsyncValue가 에러 처리
    state = await AsyncValue.guard(() => usecase.call());
@@ -662,7 +662,7 @@ state = await AsyncValue.guard(() => usecase.call());
 
 ### 문제 2: 에러 타입 구분이 안됨
 
-**증상**: `error is WhenToMeetNotFoundException` 조건이 false
+**증상**: `error is TodoNotFoundException` 조건이 false
 
 **원인**: Exception이 제대로 변환되지 않음
 
@@ -688,7 +688,7 @@ dart run build_runner build --delete-conflicting-outputs
 throw NotFoundException(e.message);  // Firebase 원본 메시지
 
 // ✅ GOOD
-throw NotFoundException('약속을 찾을 수 없습니다: $id');  // 한국어 메시지
+throw NotFoundException('할 일을 찾을 수 없습니다: $id');  // 한국어 메시지
 ```
 
 ### 문제 4: AsyncValue.loading이 표시되지 않음
@@ -725,9 +725,9 @@ FirebaseException
   ↓ DataSource
 NotFoundException
   ↓ Repository
-WhenToMeetFailure.notFound
+TodoFailure.notFound
   ↓ UseCase
-WhenToMeetNotFoundException
+TodoNotFoundException
   ↓ Presentation
 AsyncValue.error → UI 에러 표시
 ```

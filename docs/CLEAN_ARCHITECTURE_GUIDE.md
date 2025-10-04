@@ -59,21 +59,21 @@ This guide provides best practices for implementing Clean Architecture in Flutte
 
 ```dart
 // ✅ GOOD: Presentation imports Domain
-// presentation/widgets/ranking_list.dart
-import 'package:app/features/rankings/domain/entities/ranking.dart';
+// presentation/widgets/todo_list.dart
+import 'package:app/features/todos/domain/entities/todo.dart';
 
 // ❌ BAD: Presentation imports Data
-// presentation/widgets/ranking_list.dart
-import 'package:app/features/rankings/data/models/ranking_model.dart';
+// presentation/widgets/todo_list.dart
+import 'package:app/features/todos/data/models/todo_model.dart';
 
 // ✅ GOOD: Data imports Domain
-// data/repositories/ranking_repository_impl.dart
-import 'package:app/features/rankings/domain/entities/ranking.dart';
-import 'package:app/features/rankings/domain/repositories/ranking_repository.dart';
+// data/repositories/todo_repository_impl.dart
+import 'package:app/features/todos/domain/entities/todo.dart';
+import 'package:app/features/todos/domain/repositories/todo_repository.dart';
 
 // ❌ BAD: Domain imports Data
-// domain/usecases/get_rankings.dart
-import 'package:app/features/rankings/data/models/ranking_model.dart';
+// domain/usecases/get_todos.dart
+import 'package:app/features/todos/data/models/todo_model.dart';
 ```
 
 ## Layer-Specific Patterns
@@ -85,51 +85,60 @@ import 'package:app/features/rankings/data/models/ranking_model.dart';
 **Key Pattern**: Freezed Model contains Entity + JSON fields + Extension methods
 
 ```dart
-// data/models/ranking_model.dart
+// data/models/todo_model.dart
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '../../domain/entities/ranking.dart';
+import '../../domain/entities/todo.dart';
 
-part 'ranking_model.freezed.dart';
-part 'ranking_model.g.dart';
+part 'todo_model.freezed.dart';
+part 'todo_model.g.dart';
 
 @freezed
-sealed class RankingModel with _$RankingModel {
-  const factory RankingModel({
-    required Ranking entity,  // Contains Domain Entity
+sealed class TodoModel with _$TodoModel {
+  const factory TodoModel({
+    required Todo entity,  // Contains Domain Entity
     // Only add fields here if you need API/DB metadata
     // Examples: etag, version, cachedAt, syncStatus, etc.
-  }) = _RankingModel;
+  }) = _TodoModel;
 
   // Convert JSON to Model (builds Entity inside)
-  factory RankingModel.fromJson(Map<String, dynamic> json) {
-    final entity = Ranking(
+  factory TodoModel.fromJson(Map<String, dynamic> json) {
+    final entity = Todo(
       id: json['id'] as String,
-      startTime: DateTime.parse(json['start_time'] as String),
-      endTime: DateTime.parse(json['end_time'] as String),
-      attendeeCount: json['attendee_count'] as int,
+      title: json['title'] as String,
+      description: json['description'] as String?,
+      isCompleted: json['is_completed'] as bool,
+      dueDate: json['due_date'] != null
+        ? DateTime.parse(json['due_date'] as String)
+        : null,
+      priority: TodoPriority.values.firstWhere(
+        (p) => p.name == json['priority'],
+        orElse: () => TodoPriority.medium,
+      ),
     );
 
-    return RankingModel(entity: entity);
+    return TodoModel(entity: entity);
   }
 
   // Convert Model to JSON (uses Entity data)
   Map<String, dynamic> toJson() => {
     'id': entity.id,
-    'start_time': entity.startTime.toIso8601String(),
-    'end_time': entity.endTime.toIso8601String(),
-    'attendee_count': entity.attendeeCount,
+    'title': entity.title,
+    'description': entity.description,
+    'is_completed': entity.isCompleted,
+    'due_date': entity.dueDate?.toIso8601String(),
+    'priority': entity.priority.name,
   };
 }
 
 // Conversion extensions in the same file
-extension RankingModelX on RankingModel {
+extension TodoModelX on TodoModel {
   // Extract Domain Entity from Model
-  Ranking toEntity() => entity;
+  Todo toEntity() => entity;
 }
 
-extension RankingToModelX on Ranking {
+extension TodoToModelX on Todo {
   // Convert Domain Entity to Model
-  RankingModel toModel() => RankingModel(entity: this);
+  TodoModel toModel() => TodoModel(entity: this);
 }
 ```
 
@@ -173,39 +182,39 @@ sealed class UserModel with _$UserModel {
 **Data Source Example:**
 
 ```dart
-// data/datasources/ranking_remote_datasource.dart
-abstract class RankingRemoteDataSource {
-  Future<List<RankingModel>> getRankings();
-  Future<RankingModel> createRanking(RankingModel model);
+// data/datasources/todo_remote_datasource.dart
+abstract class TodoRemoteDataSource {
+  Future<List<TodoModel>> getTodos();
+  Future<TodoModel> createTodo(TodoModel model);
 }
 
-class RankingRemoteDataSourceImpl implements RankingRemoteDataSource {
+class TodoRemoteDataSourceImpl implements TodoRemoteDataSource {
   final http.Client client;
 
-  RankingRemoteDataSourceImpl({required this.client});
+  TodoRemoteDataSourceImpl({required this.client});
 
   @override
-  Future<List<RankingModel>> getRankings() async {
-    final response = await client.get(Uri.parse('$baseUrl/rankings'));
+  Future<List<TodoModel>> getTodos() async {
+    final response = await client.get(Uri.parse('$baseUrl/todos'));
 
     if (response.statusCode == 200) {
       final List<dynamic> jsonList = json.decode(response.body);
-      return jsonList.map((json) => RankingModel.fromJson(json)).toList();
+      return jsonList.map((json) => TodoModel.fromJson(json)).toList();
     } else {
       throw ServerException();
     }
   }
 
   @override
-  Future<RankingModel> createRanking(RankingModel model) async {
+  Future<TodoModel> createTodo(TodoModel model) async {
     final response = await client.post(
-      Uri.parse('$baseUrl/rankings'),
+      Uri.parse('$baseUrl/todos'),
       body: json.encode(model.toJson()),
       headers: {'Content-Type': 'application/json'},
     );
 
     if (response.statusCode == 201) {
-      return RankingModel.fromJson(json.decode(response.body));
+      return TodoModel.fromJson(json.decode(response.body));
     } else {
       throw ServerException();
     }
@@ -216,33 +225,33 @@ class RankingRemoteDataSourceImpl implements RankingRemoteDataSource {
 **Repository Implementation:**
 
 ```dart
-// data/repositories/ranking_repository_impl.dart
-import '../../domain/entities/ranking.dart';
-import '../../domain/repositories/ranking_repository.dart';
-import '../datasources/ranking_remote_datasource.dart';
-import '../models/ranking_model.dart';
+// data/repositories/todo_repository_impl.dart
+import '../../domain/entities/todo.dart';
+import '../../domain/repositories/todo_repository.dart';
+import '../datasources/todo_remote_datasource.dart';
+import '../models/todo_model.dart';
 
-class RankingRepositoryImpl implements RankingRepository {
-  final RankingRemoteDataSource remoteDataSource;
+class TodoRepositoryImpl implements TodoRepository {
+  final TodoRemoteDataSource remoteDataSource;
 
-  RankingRepositoryImpl({required this.remoteDataSource});
+  TodoRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<List<Ranking>> getRankings() async {
+  Future<List<Todo>> getTodos() async {
     // Get Models from data source
-    final models = await remoteDataSource.getRankings();
+    final models = await remoteDataSource.getTodos();
 
     // Convert Models to Entities using extension
     return models.map((model) => model.toEntity()).toList();
   }
 
   @override
-  Future<Ranking> createRanking(Ranking ranking) async {
+  Future<Todo> createTodo(Todo todo) async {
     // Convert Entity to Model using extension
-    final model = ranking.toModel();
+    final model = todo.toModel();
 
     // Send Model to data source
-    final resultModel = await remoteDataSource.createRanking(model);
+    final resultModel = await remoteDataSource.createTodo(model);
 
     // Convert back to Entity
     return resultModel.toEntity();
@@ -257,79 +266,107 @@ class RankingRepositoryImpl implements RankingRepository {
 **Key Pattern**: Freezed Entity + Extension methods for business logic
 
 ```dart
-// domain/entities/ranking.dart
+// domain/entities/todo.dart
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-part 'ranking.freezed.dart';
-part 'ranking.g.dart';
+part 'todo.freezed.dart';
+part 'todo.g.dart';
+
+enum TodoPriority { low, medium, high }
 
 @freezed
-sealed class Ranking with _$Ranking {
-  const factory Ranking({
+sealed class Todo with _$Todo {
+  const factory Todo({
     required String id,
-    required DateTime startTime,
-    required DateTime endTime,
-    required int attendeeCount,
-  }) = _Ranking;
+    required String title,
+    String? description,
+    required bool isCompleted,
+    DateTime? dueDate,
+    @Default(TodoPriority.medium) TodoPriority priority,
+  }) = _Todo;
 
-  factory Ranking.fromJson(Map<String, dynamic> json) =>
-      _$RankingFromJson(json);
+  factory Todo.fromJson(Map<String, dynamic> json) =>
+      _$TodoFromJson(json);
 }
 
 // Business logic extensions in the same file
-extension RankingX on Ranking {
+extension TodoX on Todo {
   // Business calculations
-  Duration get duration => endTime.difference(startTime);
+  bool get isOverdue {
+    if (dueDate == null || isCompleted) return false;
+    return dueDate!.isBefore(DateTime.now());
+  }
 
-  bool get isHighAttendance => attendeeCount > 5;
+  bool get isPriority => priority == TodoPriority.high;
 
-  bool isOverlapping(Ranking other) {
-    return startTime.isBefore(other.endTime) &&
-           endTime.isAfter(other.startTime);
+  int? get daysUntilDue {
+    if (dueDate == null) return null;
+    return dueDate!.difference(DateTime.now()).inDays;
   }
 
   // Business validations
-  bool get isValidTimeRange => endTime.isAfter(startTime);
+  bool get hasValidDueDate {
+    if (dueDate == null) return true;
+    return dueDate!.isAfter(DateTime.now());
+  }
 
-  double get attendanceRate => attendeeCount / 10.0;
+  bool get isUrgent => isPriority && !isCompleted && (daysUntilDue ?? 0) <= 3;
+
+  // Business operations
+  Todo markAsCompleted() => copyWith(isCompleted: true);
+
+  Todo markAsIncomplete() => copyWith(isCompleted: false);
+
+  Todo updatePriority(TodoPriority newPriority) =>
+      copyWith(priority: newPriority);
 }
 ```
 
 **Repository Interface:**
 
 ```dart
-// domain/repositories/ranking_repository.dart
-import '../entities/ranking.dart';
+// domain/repositories/todo_repository.dart
+import '../entities/todo.dart';
 
-abstract class RankingRepository {
-  Future<List<Ranking>> getRankings();
-  Future<Ranking> getRankingById(String id);
-  Future<Ranking> createRanking(Ranking ranking);
-  Future<void> deleteRanking(String id);
+abstract class TodoRepository {
+  Future<List<Todo>> getTodos();
+  Future<Todo> getTodoById(String id);
+  Future<Todo> createTodo(Todo todo);
+  Future<Todo> updateTodo(Todo todo);
+  Future<void> deleteTodo(String id);
 }
 ```
 
 **Use Case:**
 
 ```dart
-// domain/usecases/get_rankings_usecase.dart
-import '../entities/ranking.dart';
-import '../repositories/ranking_repository.dart';
+// domain/usecases/get_todos_usecase.dart
+import '../entities/todo.dart';
+import '../repositories/todo_repository.dart';
 
-class GetRankingsUseCase {
-  final RankingRepository repository;
+class GetTodosUseCase {
+  final TodoRepository repository;
 
-  GetRankingsUseCase(this.repository);
+  GetTodosUseCase(this.repository);
 
-  Future<List<Ranking>> call({bool onlyHighAttendance = false}) async {
-    final rankings = await repository.getRankings();
+  Future<List<Todo>> call({
+    bool onlyIncomplete = false,
+    bool onlyOverdue = false,
+  }) async {
+    final todos = await repository.getTodos();
 
-    if (onlyHighAttendance) {
-      // Use business logic from extension
-      return rankings.where((r) => r.isHighAttendance).toList();
+    var result = todos;
+
+    if (onlyIncomplete) {
+      result = result.where((t) => !t.isCompleted).toList();
     }
 
-    return rankings;
+    if (onlyOverdue) {
+      // Use business logic from extension
+      result = result.where((t) => t.isOverdue).toList();
+    }
+
+    return result;
   }
 }
 ```
@@ -354,11 +391,11 @@ class GetRankingsUseCase {
 
 ```dart
 // ❌ OLD: ViewModel Pattern (Don't use)
-class RankingViewModel extends ChangeNotifier {
-  List<Ranking> rankings = [];  // Mutable
+class TodoViewModel extends ChangeNotifier {
+  List<Todo> todos = [];  // Mutable
   bool isLoading = false;
 
-  void loadRankings() {
+  void loadTodos() {
     isLoading = true;
     notifyListeners();  // Manual notification
   }
@@ -366,19 +403,19 @@ class RankingViewModel extends ChangeNotifier {
 
 // ✅ NEW: State Pattern (Use this)
 @freezed
-sealed class RankingState with _$RankingState {
-  const factory RankingState({
-    @Default([]) List<Ranking> rankings,  // Immutable
+sealed class TodoState with _$TodoState {
+  const factory TodoState({
+    @Default([]) List<Todo> todos,  // Immutable
     @Default(false) bool isLoading,
-  }) = _RankingState;
+  }) = _TodoState;
 }
 
 @riverpod
-class RankingNotifier extends _$RankingNotifier {
+class TodoNotifier extends _$TodoNotifier {
   @override
-  RankingState build() => const RankingState();
+  TodoState build() => const TodoState();
 
-  Future<void> loadRankings() async {
+  Future<void> loadTodos() async {
     state = state.copyWith(isLoading: true);  // Immutable update
   }
 }
@@ -389,77 +426,102 @@ class RankingNotifier extends _$RankingNotifier {
 **State Class:**
 
 ```dart
-// presentation/states/ranking_state.dart
+// presentation/states/todo_state.dart
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '../../domain/entities/ranking.dart';
+import '../../domain/entities/todo.dart';
 
-part 'ranking_state.freezed.dart';
+part 'todo_state.freezed.dart';
 
 @freezed
-sealed class RankingState with _$RankingState {
-  const factory RankingState({
-    @Default([]) List<Ranking> rankings,
-    @Default(null) String? selectedRankingId,
+sealed class TodoState with _$TodoState {
+  const factory TodoState({
+    @Default([]) List<Todo> todos,
+    @Default(null) String? selectedTodoId,
     @Default(false) bool isLoading,
     @Default(null) String? error,
-  }) = _RankingState;
+  }) = _TodoState;
 }
 
 // UI logic extensions in the same file
-extension RankingStateX on RankingState {
-  List<Ranking> get highAttendanceRankings =>
-      rankings.where((r) => r.isHighAttendance).toList();
+extension TodoStateX on TodoState {
+  List<Todo> get completedTodos =>
+      todos.where((t) => t.isCompleted).toList();
 
-  Ranking? get selectedRanking =>
-      rankings.cast<Ranking?>().firstWhere(
-        (r) => r?.id == selectedRankingId,
+  List<Todo> get incompleteTodos =>
+      todos.where((t) => !t.isCompleted).toList();
+
+  List<Todo> get overdueTodos =>
+      todos.where((t) => t.isOverdue).toList();
+
+  Todo? get selectedTodo =>
+      todos.cast<Todo?>().firstWhere(
+        (t) => t?.id == selectedTodoId,
         orElse: () => null,
       );
 
-  int get totalAttendees =>
-      rankings.fold(0, (sum, r) => sum + r.attendeeCount);
+  int get totalCount => todos.length;
 
-  bool isSelected(String id) => selectedRankingId == id;
+  int get completedCount => completedTodos.length;
+
+  double get completionRate =>
+      totalCount == 0 ? 0.0 : completedCount / totalCount;
+
+  bool isSelected(String id) => selectedTodoId == id;
 }
 ```
 
 **Notifier with riverpod_generator:**
 
 ```dart
-// presentation/providers/ranking_provider.dart
+// presentation/providers/todo_provider.dart
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../domain/usecases/get_rankings_usecase.dart';
-import '../states/ranking_state.dart';
+import '../../domain/usecases/get_todos_usecase.dart';
+import '../states/todo_state.dart';
 
-part 'ranking_provider.g.dart';
+part 'todo_provider.g.dart';
 
 @riverpod
-class RankingNotifier extends _$RankingNotifier {
+class TodoNotifier extends _$TodoNotifier {
   @override
-  RankingState build() {
-    return const RankingState();
+  TodoState build() {
+    return const TodoState();
   }
 
-  Future<void> loadRankings({bool onlyHighAttendance = false}) async {
+  Future<void> loadTodos({
+    bool onlyIncomplete = false,
+    bool onlyOverdue = false,
+  }) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final getRankingsUseCase = ref.read(getRankingsUseCaseProvider);
-      final rankings = await getRankingsUseCase(
-        onlyHighAttendance: onlyHighAttendance,
+      final getTodosUseCase = ref.read(getTodosUseCaseProvider);
+      final todos = await getTodosUseCase(
+        onlyIncomplete: onlyIncomplete,
+        onlyOverdue: onlyOverdue,
       );
-      state = state.copyWith(rankings: rankings, isLoading: false);
+      state = state.copyWith(todos: todos, isLoading: false);
     } catch (e) {
       state = state.copyWith(error: e.toString(), isLoading: false);
     }
   }
 
-  void selectRanking(String rankingId) {
-    state = state.copyWith(selectedRankingId: rankingId);
+  void selectTodo(String todoId) {
+    state = state.copyWith(selectedTodoId: todoId);
   }
 
   void clearSelection() {
-    state = state.copyWith(selectedRankingId: null);
+    state = state.copyWith(selectedTodoId: null);
+  }
+
+  Future<void> toggleTodoComplete(String todoId) async {
+    final todo = state.todos.firstWhere((t) => t.id == todoId);
+    final updated = todo.isCompleted
+        ? todo.markAsIncomplete()
+        : todo.markAsCompleted();
+
+    // Update in repository and refresh
+    await ref.read(updateTodoUseCaseProvider)(updated);
+    await loadTodos();
   }
 }
 ```
@@ -467,18 +529,18 @@ class RankingNotifier extends _$RankingNotifier {
 **Widget:**
 
 ```dart
-// presentation/widgets/ranking_list.dart
+// presentation/widgets/todo_list.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/ranking_provider.dart';
-import '../states/ranking_state.dart';
+import '../providers/todo_provider.dart';
+import '../states/todo_state.dart';
 
-class RankingList extends ConsumerWidget {
-  const RankingList({super.key});
+class TodoList extends ConsumerWidget {
+  const TodoList({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(rankingNotifierProvider);
+    final state = ref.watch(todoNotifierProvider);
 
     if (state.isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -491,20 +553,25 @@ class RankingList extends ConsumerWidget {
     return Column(
       children: [
         // Use computed property from extension
-        Text('Total Attendees: ${state.totalAttendees}'),
+        Text('Completion: ${(state.completionRate * 100).toStringAsFixed(1)}%'),
+        Text('${state.completedCount} / ${state.totalCount} completed'),
         Expanded(
           child: ListView.builder(
-            itemCount: state.rankings.length,
+            itemCount: state.todos.length,
             itemBuilder: (context, index) {
-              final ranking = state.rankings[index];
-              final isSelected = state.isSelected(ranking.id);
+              final todo = state.todos[index];
+              final isSelected = state.isSelected(todo.id);
 
-              return RankingItem(
-                ranking: ranking,
+              return TodoItem(
+                todo: todo,
                 isSelected: isSelected,
                 onTap: () {
-                  ref.read(rankingNotifierProvider.notifier)
-                      .selectRanking(ranking.id);
+                  ref.read(todoNotifierProvider.notifier)
+                      .selectTodo(todo.id);
+                },
+                onToggle: () {
+                  ref.read(todoNotifierProvider.notifier)
+                      .toggleTodoComplete(todo.id);
                 },
               );
             },
@@ -553,37 +620,37 @@ User sees updated UI
 ElevatedButton(
   onPressed: () {
     // 2. Call Notifier method
-    ref.read(rankingNotifierProvider.notifier).loadRankings();
+    ref.read(todoNotifierProvider.notifier).loadTodos();
   },
 )
 
 // 3. Notifier calls UseCase
-Future<void> loadRankings(...) async {
-  final rankings = await getRankingsUseCase();  // Domain Entity
-  state = state.copyWith(rankings: rankings);   // Update Freezed State
+Future<void> loadTodos(...) async {
+  final todos = await getTodosUseCase();  // Domain Entity
+  state = state.copyWith(todos: todos);   // Update Freezed State
 }
 
 // 4. UseCase calls Repository
-Future<List<Ranking>> call() async {
-  return await repository.getRankings();  // Domain Entity
+Future<List<Todo>> call() async {
+  return await repository.getTodos();  // Domain Entity
 }
 
 // 5. Repository calls DataSource
-Future<List<Ranking>> getRankings() async {
-  final models = await remoteDataSource.getRankings();     // Freezed Model
-  return models.map((m) => m.toEntity()).toList();         // Extension conversion
+Future<List<Todo>> getTodos() async {
+  final models = await remoteDataSource.getTodos();     // Freezed Model
+  return models.map((m) => m.toEntity()).toList();      // Extension conversion
 }
 
 // 6. DataSource fetches from API
-Future<List<RankingModel>> getRankings() async {
+Future<List<TodoModel>> getTodos() async {
   final response = await client.get(...);
   final json = jsonDecode(response.body);
-  return json.map((j) => RankingModel.fromJson(j)).toList();  // Freezed fromJson
+  return json.map((j) => TodoModel.fromJson(j)).toList();  // Freezed fromJson
 }
 
 // 7. Widget rebuilds with new state
-final state = ref.watch(rankingNotifierProvider);  // Freezed State
-return Text('Count: ${state.rankings.length}');     // Use Entity
+final state = ref.watch(todoNotifierProvider);  // Freezed State
+return Text('Count: ${state.todos.length}');    // Use Entity
 ```
 
 ## Common Patterns
@@ -594,82 +661,103 @@ When you need UI formatting or calculations, add extensions in the **State file*
 
 **Option A: In State file (recommended for shared UI logic)**
 ```dart
-// presentation/states/ranking_state.dart
+// presentation/states/todo_state.dart
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../domain/entities/ranking.dart';
+import '../../domain/entities/todo.dart';
 
-part 'ranking_state.freezed.dart';
+part 'todo_state.freezed.dart';
 
 @freezed
-sealed class RankingState with _$RankingState {
-  const factory RankingState({
-    @Default([]) List<Ranking> rankings,
+sealed class TodoState with _$TodoState {
+  const factory TodoState({
+    @Default([]) List<Todo> todos,
     @Default(false) bool isLoading,
-  }) = _RankingState;
+  }) = _TodoState;
 }
 
 // State extensions
-extension RankingStateX on RankingState {
-  int get totalAttendees => rankings.fold(0, (sum, r) => sum + r.attendeeCount);
+extension TodoStateX on TodoState {
+  int get totalCount => todos.length;
+  double get completionRate =>
+      totalCount == 0 ? 0.0 : completedTodos.length / totalCount;
 }
 
 // Entity UI extensions in the same file (shared across widgets)
-extension RankingUIX on Ranking {
-  String get formattedTimeRange {
-    final start = DateFormat('HH:mm').format(startTime);
-    final end = DateFormat('HH:mm').format(endTime);
-    return '$start - $end';
+extension TodoUIX on Todo {
+  String get formattedDueDate {
+    if (dueDate == null) return 'No due date';
+    return DateFormat('MMM dd, yyyy').format(dueDate!);
   }
 
-  Color get attendanceColor {
-    if (attendeeCount > 10) return Colors.green;
-    if (attendeeCount > 5) return Colors.orange;
-    return Colors.red;
+  Color get priorityColor {
+    switch (priority) {
+      case TodoPriority.high:
+        return Colors.red;
+      case TodoPriority.medium:
+        return Colors.orange;
+      case TodoPriority.low:
+        return Colors.grey;
+    }
   }
 
-  IconData get attendanceIcon {
-    if (isHighAttendance) return Icons.group;  // Uses domain extension
-    return Icons.person;
+  IconData get statusIcon {
+    if (isCompleted) return Icons.check_circle;
+    if (isOverdue) return Icons.warning;  // Uses domain extension
+    return Icons.circle_outlined;
   }
 
-  String get attendanceLabel {
-    if (attendeeCount == 0) return 'No attendees';
-    if (attendeeCount == 1) return '1 attendee';
-    return '$attendeeCount attendees';
+  String get statusLabel {
+    if (isCompleted) return 'Completed';
+    if (isOverdue) return 'Overdue';
+    if (daysUntilDue != null && daysUntilDue! <= 3) return 'Due soon';
+    return 'Active';
+  }
+
+  Color get statusColor {
+    if (isCompleted) return Colors.green;
+    if (isOverdue) return Colors.red;
+    if (isPriority) return Colors.orange;
+    return Colors.grey;
   }
 }
 ```
 
 **Option B: In Widget file (for widget-specific logic only)**
 ```dart
-// presentation/widgets/ranking_card.dart
+// presentation/widgets/todo_card.dart
 import 'package:flutter/material.dart';
-import '../../domain/entities/ranking.dart';
-import '../states/ranking_state.dart';  // Imports shared UI extensions
+import '../../domain/entities/todo.dart';
+import '../states/todo_state.dart';  // Imports shared UI extensions
 
 // Widget-specific extensions (only used in this widget)
-extension _RankingCardX on Ranking {
+extension _TodoCardX on Todo {
   EdgeInsets get cardPadding {
-    return isHighAttendance
+    return isPriority
       ? EdgeInsets.all(16.0)
       : EdgeInsets.all(8.0);
   }
+
+  double get cardElevation {
+    return isOverdue ? 4.0 : 1.0;
+  }
 }
 
-class RankingCard extends StatelessWidget {
-  final Ranking ranking;
+class TodoCard extends StatelessWidget {
+  final Todo todo;
 
   @override
   Widget build(BuildContext context) {
     return Card(
+      elevation: todo.cardElevation,  // Widget-specific extension
       child: Padding(
-        padding: ranking.cardPadding,  // Widget-specific extension
+        padding: todo.cardPadding,
         child: Column(
           children: [
-            Text(ranking.formattedTimeRange),  // Shared UI extension from state file
-            Icon(ranking.attendanceIcon, color: ranking.attendanceColor),
+            Text(todo.formattedDueDate),  // Shared UI extension from state file
+            Icon(todo.statusIcon, color: todo.statusColor),
+            Text(todo.statusLabel),
           ],
         ),
       ),
@@ -683,63 +771,72 @@ class RankingCard extends StatelessWidget {
 When you need to combine multiple entities or track complex UI state:
 
 ```dart
-// presentation/states/ranking_ui_state.dart
+// presentation/states/todo_ui_state.dart
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '../../domain/entities/ranking.dart';
+import '../../domain/entities/todo.dart';
 
-part 'ranking_ui_state.freezed.dart';
+part 'todo_ui_state.freezed.dart';
 
-enum RankingFilter { all, highAttendance, selected }
-enum RankingSortOrder { byTime, byAttendance }
+enum TodoFilter { all, active, completed, overdue }
+enum TodoSortOrder { byDueDate, byPriority, byTitle }
 
 @freezed
-sealed class RankingUIState with _$RankingUIState {
-  const factory RankingUIState({
-    @Default([]) List<Ranking> rankings,
+sealed class TodoUIState with _$TodoUIState {
+  const factory TodoUIState({
+    @Default([]) List<Todo> todos,
     @Default({}) Set<String> selectedIds,
     @Default({}) Map<String, bool> expandedStates,
-    @Default(RankingFilter.all) RankingFilter filter,
-    @Default(RankingSortOrder.byTime) RankingSortOrder sortOrder,
-  }) = _RankingUIState;
+    @Default(TodoFilter.all) TodoFilter filter,
+    @Default(TodoSortOrder.byDueDate) TodoSortOrder sortOrder,
+  }) = _TodoUIState;
 }
 
 // Computed properties in extension
-extension RankingUIStateX on RankingUIState {
-  List<Ranking> get filteredRankings {
-    var result = rankings;
+extension TodoUIStateX on TodoUIState {
+  List<Todo> get filteredTodos {
+    var result = todos;
 
     switch (filter) {
-      case RankingFilter.highAttendance:
-        result = result.where((r) => r.isHighAttendance).toList();
+      case TodoFilter.active:
+        result = result.where((t) => !t.isCompleted).toList();
         break;
-      case RankingFilter.selected:
-        result = result.where((r) => selectedIds.contains(r.id)).toList();
+      case TodoFilter.completed:
+        result = result.where((t) => t.isCompleted).toList();
+        break;
+      case TodoFilter.overdue:
+        result = result.where((t) => t.isOverdue).toList();
         break;
       default:
         break;
     }
 
-    return _sortRankings(result);
+    return _sortTodos(result);
   }
 
-  List<Ranking> get selectedRankings =>
-      rankings.where((r) => selectedIds.contains(r.id)).toList();
+  List<Todo> get selectedTodos =>
+      todos.where((t) => selectedIds.contains(t.id)).toList();
 
-  int get totalSelectedAttendees =>
-      selectedRankings.fold(0, (sum, r) => sum + r.attendeeCount);
+  int get totalSelectedCount => selectedIds.length;
 
   bool isSelected(String id) => selectedIds.contains(id);
 
   bool isExpanded(String id) => expandedStates[id] ?? false;
 
-  List<Ranking> _sortRankings(List<Ranking> rankings) {
-    final sorted = List<Ranking>.from(rankings);
+  List<Todo> _sortTodos(List<Todo> todos) {
+    final sorted = List<Todo>.from(todos);
     switch (sortOrder) {
-      case RankingSortOrder.byTime:
-        sorted.sort((a, b) => a.startTime.compareTo(b.startTime));
+      case TodoSortOrder.byDueDate:
+        sorted.sort((a, b) {
+          if (a.dueDate == null) return 1;
+          if (b.dueDate == null) return -1;
+          return a.dueDate!.compareTo(b.dueDate!);
+        });
         break;
-      case RankingSortOrder.byAttendance:
-        sorted.sort((a, b) => b.attendeeCount.compareTo(a.attendeeCount));
+      case TodoSortOrder.byPriority:
+        sorted.sort((a, b) => b.priority.index.compareTo(a.priority.index));
+        break;
+      case TodoSortOrder.byTitle:
+        sorted.sort((a, b) => a.title.compareTo(b.title));
         break;
     }
     return sorted;
@@ -752,25 +849,25 @@ extension RankingUIStateX on RankingUIState {
 When you need UI-specific data like selection or validation, use State classes that contain Entities:
 
 ```dart
-// presentation/states/ranking_state.dart
+// presentation/states/todo_state.dart
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '../../domain/entities/ranking.dart';
+import '../../domain/entities/todo.dart';
 
-part 'ranking_state.freezed.dart';
+part 'todo_state.freezed.dart';
 
 @freezed
-sealed class RankingState with _$RankingState {
-  const factory RankingState({
-    @Default([]) List<Ranking> rankings,  // Domain Entities
+sealed class TodoState with _$TodoState {
+  const factory TodoState({
+    @Default([]) List<Todo> todos,  // Domain Entities
     @Default({}) Set<String> selectedIds,  // UI state
     @Default({}) Map<String, String> validationErrors,  // UI validation
-  }) = _RankingState;
+  }) = _TodoState;
 }
 
 // UI logic via extensions
-extension RankingStateX on RankingState {
-  List<Ranking> get selectedRankings =>
-      rankings.where((r) => selectedIds.contains(r.id)).toList();
+extension TodoStateX on TodoState {
+  List<Todo> get selectedTodos =>
+      todos.where((t) => selectedIds.contains(t.id)).toList();
 
   bool isSelected(String id) => selectedIds.contains(id);
 
@@ -779,19 +876,19 @@ extension RankingStateX on RankingState {
   bool canSelect(String id) => validationErrors[id] == null;
 
   // Computed UI properties using Entity extensions
-  Color getStatusColor(Ranking ranking) {
-    if (validationErrors[ranking.id] != null) return Colors.red;
-    if (isSelected(ranking.id)) return Colors.blue;
-    if (ranking.isHighAttendance) return Colors.green;  // From Entity extension
+  Color getStatusColor(Todo todo) {
+    if (validationErrors[todo.id] != null) return Colors.red;
+    if (isSelected(todo.id)) return Colors.blue;
+    if (todo.isPriority) return Colors.orange;  // From Entity extension
     return Colors.grey;
   }
 }
 
 // Usage in Widget
-final state = ref.watch(rankingNotifierProvider);
-final ranking = state.rankings[0];
-final color = state.getStatusColor(ranking);  // Use State extension
-final label = ranking.formattedTimeRange;  // Use Entity extension
+final state = ref.watch(todoNotifierProvider);
+final todo = state.todos[0];
+final color = state.getStatusColor(todo);  // Use State extension
+final label = todo.formattedDueDate;  // Use Entity extension
 ```
 
 **Key Principle**: NO separate Presentation Models. State contains Entities + UI-specific fields.
@@ -801,38 +898,38 @@ final label = ranking.formattedTimeRange;  // Use Entity extension
 ### Complete Feature Structure
 
 ```
-lib/features/rankings/
+lib/features/todos/
 ├── data/
 │   ├── datasources/
-│   │   ├── ranking_local_datasource.dart
-│   │   └── ranking_remote_datasource.dart
+│   │   ├── todo_local_datasource.dart
+│   │   └── todo_remote_datasource.dart
 │   ├── models/
-│   │   └── ranking_model.dart              # Freezed Model + conversion extensions (in same file)
+│   │   └── todo_model.dart              # Freezed Model + conversion extensions (in same file)
 │   └── repositories/
-│       └── ranking_repository_impl.dart
+│       └── todo_repository_impl.dart
 ├── domain/
 │   ├── entities/
-│   │   └── ranking.dart                    # Freezed Entity + business logic extensions (in same file)
+│   │   └── todo.dart                    # Freezed Entity + business logic extensions (in same file)
 │   ├── repositories/
-│   │   └── ranking_repository.dart
+│   │   └── todo_repository.dart
 │   └── usecases/
-│       ├── get_rankings_usecase.dart
-│       ├── create_ranking_usecase.dart
-│       └── delete_ranking_usecase.dart
+│       ├── get_todos_usecase.dart
+│       ├── create_todo_usecase.dart
+│       └── delete_todo_usecase.dart
 └── presentation/
     ├── providers/
-    │   └── ranking_provider.dart           # riverpod_generator (Notifier)
+    │   └── todo_provider.dart           # riverpod_generator (Notifier)
     ├── states/
-    │   └── ranking_state.dart              # Freezed State + UI extensions (State & Entity UI extensions)
+    │   └── todo_state.dart              # Freezed State + UI extensions (State & Entity UI extensions)
     ├── pages/
-    │   └── ranking_page.dart
+    │   └── todo_page.dart
     └── widgets/
-        ├── ranking_list.dart
-        └── ranking_card.dart               # Can include widget-specific extensions in same file
+        ├── todo_list.dart
+        └── todo_card.dart               # Can include widget-specific extensions in same file
     # NOTE: No models/ directory - State uses Domain Entities directly
     # NOTE: No viewmodels/ directory - we use State pattern, not ViewModel pattern
     # NOTE: No ui/ or extensions/ directory - put UI extensions in state file or widget files
-    # NOTE: Entity UI extensions go in ranking_state.dart along with State extensions
+    # NOTE: Entity UI extensions go in todo_state.dart along with State extensions
 ```
 
 ### Decision Tree: Which Pattern to Use?
@@ -869,7 +966,7 @@ Need UI-specific data?
 - **Write Extensions in the same file** - Model extensions in model file, Entity extensions in entity file
 - **Use riverpod_generator** for state management providers
 - **Use Freezed State in Presentation** for UI state management
-- **Models contain Entities** - `RankingModel` has `entity` field
+- **Models contain Entities** - `TodoModel` has `entity` field
 - **Extract Entities from Models** using `model.toEntity()` (returns `model.entity`)
 - **Keep business logic** in Domain entity extensions (in entity file)
 - **Keep shared UI logic** in Presentation State file (Entity UI extensions with State extensions)
@@ -904,9 +1001,9 @@ Need UI-specific data?
 
 | Layer | What to Use | Purpose | Example |
 |-------|-------------|---------|---------|
-| **Data** | Freezed Models (contains Entity) + Extensions | JSON/DB serialization | `RankingModel.fromJson()`, `model.toEntity()` (returns `model.entity`) |
-| **Domain** | Freezed Entities + Extensions | Business logic | `Ranking`, `ranking.isHighAttendance` |
-| **Presentation** | Freezed State + riverpod_generator + Extensions | UI state & interactions | `RankingState`, `RankingNotifier` |
+| **Data** | Freezed Models (contains Entity) + Extensions | JSON/DB serialization | `TodoModel.fromJson()`, `model.toEntity()` (returns `model.entity`) |
+| **Domain** | Freezed Entities + Extensions | Business logic | `Todo`, `todo.isOverdue` |
+| **Presentation** | Freezed State + riverpod_generator + Extensions | UI state & interactions | `TodoState`, `TodoNotifier` |
 
 **Tech Stack:**
 - **State Management**: Riverpod with `riverpod_generator`
@@ -920,15 +1017,16 @@ Need UI-specific data?
 ```dart
 // 1. Data Model (minimal - just Entity)
 @freezed
-sealed class RankingModel with _$RankingModel {
-  const factory RankingModel({
-    required Ranking entity,  // Domain Entity inside
+sealed class TodoModel with _$TodoModel {
+  const factory TodoModel({
+    required Todo entity,  // Domain Entity inside
     // No duplicate fields - use entity data in toJson()
-  }) = _RankingModel;
+  }) = _TodoModel;
 
   Map<String, dynamic> toJson() => {
     'id': entity.id,  // Access entity fields directly
-    'start_time': entity.startTime.toIso8601String(),
+    'title': entity.title,
+    'is_completed': entity.isCompleted,
   };
 }
 
@@ -943,8 +1041,8 @@ sealed class UserModel with _$UserModel {
 }
 
 // 3. Extensions in same file
-extension RankingModelX on RankingModel {
-  Ranking toEntity() => entity;
+extension TodoModelX on TodoModel {
+  Todo toEntity() => entity;
 }
 ```
 

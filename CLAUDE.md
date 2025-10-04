@@ -28,7 +28,7 @@ This linter enforces the following Clean Architecture principles:
 - Extensions in same file as the class
 - NO separate extensions/ directories
 
-For detailed examples and implementation patterns, see [CLEAN_ARCHITECTURE_GUIDE.md](CLEAN_ARCHITECTURE_GUIDE.md).
+For detailed examples and implementation patterns, see [CLEAN_ARCHITECTURE_GUIDE.md](docs/CLEAN_ARCHITECTURE_GUIDE.md).
 
 ## Common Lint Violations & Solutions
 
@@ -36,53 +36,56 @@ For detailed examples and implementation patterns, see [CLEAN_ARCHITECTURE_GUIDE
 
 **Problem**:
 ```dart
-// presentation/widgets/ranking_list.dart
-import 'package:app/features/rankings/data/models/ranking_model.dart';  // ❌ WRONG
+// presentation/widgets/todo_list.dart
+import 'package:app/features/todos/data/models/todo_model.dart';  // ❌ WRONG
 ```
 
 **Solution**:
 ```dart
-// presentation/widgets/ranking_list.dart
-import 'package:app/features/rankings/domain/entities/ranking.dart';  // ✅ CORRECT
+// presentation/widgets/todo_list.dart
+import 'package:app/features/todos/domain/entities/todo.dart';  // ✅ CORRECT
 ```
 
 ### When You Need UI-Specific Data
 
 **Option 1 - Entity UI Extensions in State file** (recommended for shared UI logic):
 ```dart
-// presentation/states/ranking_state.dart
+// presentation/states/todo_state.dart
 @freezed
-class RankingState with _$RankingState {
-  const factory RankingState({
-    @Default([]) List<Ranking> rankings,
+class TodoState with _$TodoState {
+  const factory TodoState({
+    @Default([]) List<Todo> todos,
     @Default(false) bool isLoading,
-  }) = _RankingState;
+  }) = _TodoState;
 }
 
 // State extensions
-extension RankingStateX on RankingState {
-  int get totalAttendees => rankings.fold(0, (sum, r) => sum + r.attendeeCount);
+extension TodoStateX on TodoState {
+  int get completedCount => todos.where((t) => t.isCompleted).length;
+  double get completionRate => todos.isEmpty ? 0.0 : completedCount / todos.length;
 }
 
 // Entity UI extensions in same file (shared across widgets)
-extension RankingUIX on Ranking {
-  String get formattedTime => DateFormat('HH:mm').format(startTime);
-  Color get statusColor => isHighAttendance ? Colors.green : Colors.grey;
-  IconData get icon => isHighAttendance ? Icons.group : Icons.person;
+extension TodoUIX on Todo {
+  String get formattedDueDate => dueDate != null
+    ? DateFormat('MMM dd').format(dueDate!)
+    : 'No due date';
+  Color get statusColor => isCompleted ? Colors.green : (isOverdue ? Colors.red : Colors.grey);
+  IconData get icon => isCompleted ? Icons.check_circle : Icons.circle_outlined;
 }
 ```
 
 **Option 2 - Widget-specific Extensions** (for widget-only logic):
 ```dart
-// presentation/widgets/ranking_card.dart
+// presentation/widgets/todo_card.dart
 // Private extension (only used in this widget)
-extension _RankingCardX on Ranking {
-  EdgeInsets get cardPadding => isHighAttendance
+extension _TodoCardX on Todo {
+  EdgeInsets get cardPadding => isPriority
     ? EdgeInsets.all(16.0)
     : EdgeInsets.all(8.0);
 }
 
-class RankingCard extends StatelessWidget {
+class TodoCard extends StatelessWidget {
   // Uses shared UI extensions from state file + widget-specific extensions
 }
 ```
@@ -92,7 +95,7 @@ class RankingCard extends StatelessWidget {
 - Don't create separate extensions/ or ui/ directories
 - Don't use ViewModels (use Freezed State + Riverpod instead)
 
-See [CLEAN_ARCHITECTURE_GUIDE.md](CLEAN_ARCHITECTURE_GUIDE.md) for complete examples.
+See [CLEAN_ARCHITECTURE_GUIDE.md](docs/CLEAN_ARCHITECTURE_GUIDE.md) for complete examples.
 
 ## Configuration
 
