@@ -1,0 +1,116 @@
+# PRD: Repository Implementation Validation Rule
+
+## 프로젝트 개요
+Clean Architecture Linter에 Repository 구현체의 Clean Architecture 준수 여부를 검증하는 새로운 Lint Rule을 추가한다.
+
+## 배경
+현재 프로젝트에는 13개의 lint rules가 있지만, Repository Implementation에 대한 명시적인 검증 규칙이 없다. Repository는 Data Layer의 핵심 컴포넌트로, 다음 원칙들을 준수해야 한다:
+- Repository 인터페이스는 Domain Layer에 위치
+- Repository 구현체는 Data Layer에 위치
+- DataSource만 의존성으로 가져야 함
+- Model을 Entity로 변환하는 역할
+
+## 목적
+Repository 구현체가 Clean Architecture 원칙을 위반하는 경우를 자동으로 감지하고 개발자에게 피드백을 제공한다.
+
+## 요구사항
+
+### 1. Repository 인터페이스 검증
+- **위치 검증**: `lib/*/domain/repositories/*.dart` 경로에 있어야 함
+- **Naming Convention**: `*Repository` 형식 (예: `UserRepository`, `TodoRepository`)
+- **추상 클래스**: `abstract class` 또는 `abstract interface class`로 선언
+- **반환 타입**: Domain Entity만 반환 (Model 반환 금지)
+
+### 2. Repository 구현체 검증
+- **위치 검증**: `lib/*/data/repositories/*.dart` 경로에 있어야 함
+- **Naming Convention**: `*RepositoryImpl` 형식 (예: `UserRepositoryImpl`)
+- **인터페이스 구현**: Domain Layer의 Repository 인터페이스를 implements
+- **의존성 규칙**:
+  - ✅ DataSource 의존성만 허용
+  - ✅ Domain Entities 사용 가능
+  - ❌ 다른 Repository 직접 의존 금지
+  - ❌ Presentation Layer 의존 금지
+
+### 3. Model ↔ Entity 변환 검증
+- Repository 구현체는 Model을 Entity로 변환해야 함
+- `toEntity()` 또는 유사한 변환 메서드 사용 권장
+- DataSource에서 받은 Model을 그대로 반환하면 안 됨
+
+### 4. 테스트 요구사항
+- **정상 케이스**: 올바른 Repository 구현체는 경고 없음
+- **위반 케이스**:
+  - Domain Layer의 Repository가 구현체인 경우
+  - Data Layer의 Repository가 인터페이스인 경우
+  - Repository 구현체가 다른 Repository를 의존하는 경우
+  - Model을 그대로 반환하는 경우
+- **Error Message**: 명확한 수정 방법 제시
+
+### 5. 예제 코드
+`example/lib/` 디렉토리에 다음 예제 추가:
+- `good_examples/repository_pattern/`: 올바른 구현
+- `bad_examples/repository_violations/`: 잘못된 구현
+
+### 6. 문서화
+- `CLAUDE.md`에 새 규칙 설명 추가
+- `README.md`에 예제 링크 추가
+- Rule description에 자세한 가이드 포함
+
+## 기술 스택
+- Dart `analyzer` package (AST 분석)
+- `custom_lint_builder` framework
+- 기존 `RuleUtils` 활용 (경로 검증, 타입 체크 등)
+
+## 구현 계획
+
+### Phase 1: 기본 검증 로직 (우선순위: HIGH)
+1.1. 파일 경로 검증 로직 구현
+1.2. Naming convention 검증 로직 구현
+1.3. 인터페이스 vs 구현체 구분 로직
+
+### Phase 2: 의존성 검증 (우선순위: HIGH)
+2.1. Repository 구현체의 import 분석
+2.2. DataSource 외 의존성 감지
+2.3. 잘못된 의존성에 대한 Error reporting
+
+### Phase 3: 변환 로직 검증 (우선순위: MEDIUM)
+3.1. Method body 분석 (toEntity 호출 여부)
+3.2. 직접 Model 반환 감지
+3.3. 권장 패턴 제시
+
+### Phase 4: 테스트 및 문서화 (우선순위: HIGH)
+4.1. Unit test 작성 (모든 케이스 커버)
+4.2. Example 코드 작성
+4.3. 문서 업데이트 (CLAUDE.md, README.md)
+
+### Phase 5: CI/CD 통합 (우선순위: MEDIUM)
+5.1. GitHub Actions에서 새 rule 테스트
+5.2. 성능 벤치마크 추가
+5.3. Code coverage 확인
+
+## 성공 기준
+- [ ] Repository 위반 사항을 100% 감지
+- [ ] False positive 0%
+- [ ] 모든 테스트 통과 (기존 테스트 포함)
+- [ ] CI/CD 파이프라인 통과
+- [ ] 예제 코드 및 문서 완료
+- [ ] 기존 13개 rule과 일관된 코드 품질
+
+## 예상 리스크
+- **복잡도**: Method body 분석은 AST traversal이 복잡할 수 있음
+  - 완화: 초기 버전에서는 간단한 패턴 매칭으로 시작
+- **False Positive**: 특수한 케이스에서 오탐 가능
+  - 완화: 충분한 테스트 케이스 확보
+- **성능**: AST 분석이 느려질 수 있음
+  - 완화: 성능 벤치마크 추가, 필요시 최적화
+
+## 타임라인
+- Phase 1-2: 2-3일 (핵심 로직)
+- Phase 3: 1-2일 (선택적 고급 기능)
+- Phase 4: 1일 (테스트 및 문서)
+- Phase 5: 0.5일 (CI/CD)
+- **총 예상 시간**: 4-6일
+
+## 참고 자료
+- 기존 Rule 구현: `lib/src/rules/data_rules/data_imports_domain_rule.dart`
+- RuleUtils: `lib/src/rules/utils/rule_utils.dart`
+- Clean Architecture 가이드: `docs/CLEAN_ARCHITECTURE_GUIDE.md`

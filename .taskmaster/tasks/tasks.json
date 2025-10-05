@@ -1,0 +1,139 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Repository 구현체 검증 규칙 설계 및 코드 구조 분석",
+        "description": "새로운 Repository Implementation Validation Rule의 전반적인 설계를 수립하고 기존 코드베이스의 패턴을 분석하여 일관된 구현 방식을 결정한다.",
+        "details": "RuleUtils.dart의 기존 헬퍼 메서드들을 분석하고, repository_must_return_result_rule.dart 등 기존 Repository 관련 규칙들의 패턴을 파악한다. 새 규칙의 핵심 검증 로직(파일 경로, 네이밍 컨벤션, 인터페이스 구현, 의존성 분석)을 설계하고, LintCode 정의 및 에러 메시지 포맷을 결정한다. lib/src/rules/data_rules/ 디렉토리에 repository_implementation_validation_rule.dart 파일을 생성한다.",
+        "testStrategy": "기존 규칙들의 테스트 패턴을 분석하고, 새 규칙에 대한 테스트 케이스를 설계한다. example/lib/에서 사용할 good/bad 예제들을 계획한다.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Repository 인터페이스 위치 및 네이밍 검증 로직 구현",
+        "description": "Repository 인터페이스가 Domain Layer의 올바른 경로에 위치하고 적절한 네이밍 컨벤션을 따르는지 검증하는 로직을 구현한다.",
+        "details": "RuleUtils에 isRepositoryInterfaceFile() 및 isRepositoryInterface() 메서드를 추가한다. lib/*/domain/repositories/*.dart 경로 검증과 *Repository 네이밍 컨벤션을 확인한다. abstract class 또는 abstract interface class 선언인지 검증하고, Domain Entity만 반환하고 Model 반환을 금지하는 로직을 구현한다. AST의 ClassDeclaration과 MethodDeclaration을 분석하여 반환 타입을 체크한다.",
+        "testStrategy": "올바른 Repository 인터페이스와 잘못된 케이스(잘못된 경로, 네이밍, 구현체 등)에 대한 단위 테스트를 작성한다.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Repository 구현체 위치 및 네이밍 검증 로직 구현",
+        "description": "Repository 구현체가 Data Layer의 올바른 경로에 위치하고 적절한 네이밍 컨벤션을 따르며 올바른 인터페이스를 구현하는지 검증한다.",
+        "details": "lib/*/data/repositories/*.dart 경로 검증과 *RepositoryImpl 네이밍 컨벤션을 확인한다. implements 절을 분석하여 Domain Layer의 Repository 인터페이스를 구현하는지 확인한다. AST의 ImplementsClause를 순회하여 인터페이스 이름에 Repository가 포함되어 있는지 검증한다. 구현체가 추상 클래스가 아닌 concrete class인지 확인한다.",
+        "testStrategy": "올바른 Repository 구현체와 위반 케이스(잘못된 경로, 네이밍, 인터페이스 미구현 등)에 대한 테스트를 작성한다.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Repository 구현체 의존성 검증 로직 구현",
+        "description": "Repository 구현체가 DataSource만 의존하고 다른 Repository나 Presentation Layer를 의존하지 않는지 검증하는 로직을 구현한다.",
+        "details": "ImportDirective AST 노드를 분석하여 Repository 구현체의 import 문들을 검증한다. DataSource 및 Domain Entity import는 허용하고, 다른 Repository 직접 의존과 Presentation Layer 의존을 금지한다. 생성자 매개변수와 필드 선언을 분석하여 의존성 주입 패턴을 확인한다. RuleUtils의 기존 헬퍼 메서드들을 활용하여 파일 경로 기반 의존성 검증을 수행한다.",
+        "testStrategy": "올바른 의존성(DataSource만)과 위반 케이스(다른 Repository 의존, Presentation 의존 등)에 대한 테스트를 작성한다.",
+        "priority": "high",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Model-Entity 변환 로직 검증 구현",
+        "description": "Repository 구현체가 DataSource에서 받은 Model을 Entity로 적절히 변환하는지 검증하는 고급 기능을 구현한다.",
+        "details": "MethodDeclaration의 body를 분석하여 toEntity() 호출 여부를 확인한다. Model을 그대로 반환하는 패턴을 감지하고 권장 변환 패턴을 제시한다. AST의 MethodInvocation과 ReturnStatement를 분석하여 적절한 변환 로직이 있는지 확인한다. 초기 버전에서는 간단한 패턴 매칭으로 시작하고, 향후 더 정교한 분석으로 확장할 수 있도록 설계한다.",
+        "testStrategy": "올바른 Model-Entity 변환과 위반 케이스(직접 Model 반환 등)에 대한 테스트를 작성한다.",
+        "priority": "medium",
+        "dependencies": [
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Repository 검증 규칙을 메인 플러그인에 등록",
+        "description": "새로 구현한 Repository Implementation Validation Rule을 clean_architecture_linter.dart의 메인 플러그인에 등록하여 활성화한다.",
+        "details": "lib/clean_architecture_linter.dart 파일에 새 규칙 import를 추가하고, _CleanArchitectureLinterPlugin의 getLintRules() 메서드에 RepositoryImplementationValidationRule()을 추가한다. 기존 23개 규칙에 이어 24번째 규칙으로 등록하고, 주석으로 규칙 설명을 추가한다. 새 규칙이 Data Layer Rules 섹션에 포함되도록 적절한 위치에 배치한다.",
+        "testStrategy": "플러그인에서 새 규칙이 정상적으로 로드되고 실행되는지 확인하는 통합 테스트를 작성한다.",
+        "priority": "high",
+        "dependencies": [
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Good Examples 예제 코드 작성",
+        "description": "Repository 패턴의 올바른 구현 예제를 example/lib/good_examples/ 디렉토리에 작성한다.",
+        "details": "example/lib/good_examples/repository_pattern/ 디렉토리를 생성하고, 올바른 Repository 인터페이스(domain/repositories/)와 구현체(data/repositories/)를 작성한다. DataSource만 의존하고 Model을 Entity로 변환하는 올바른 패턴을 보여주는 예제를 포함한다. TodoRepository와 TodoRepositoryImpl 예제를 통해 Clean Architecture 원칙을 준수하는 코드를 작성한다.",
+        "testStrategy": "예제 코드에서 새 lint 규칙이 경고를 발생시키지 않는지 확인한다.",
+        "priority": "medium",
+        "dependencies": [
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Bad Examples 예제 코드 작성",
+        "description": "Repository 패턴의 잘못된 구현 예제를 example/lib/bad_examples/ 디렉토리에 작성하여 규칙 위반 사항을 명확히 보여준다.",
+        "details": "example/lib/bad_examples/repository_violations/ 디렉토리를 생성하고, 다양한 위반 케이스를 작성한다: 1) Domain Layer에 구현체가 있는 경우, 2) Data Layer에 인터페이스가 있는 경우, 3) 다른 Repository를 의존하는 경우, 4) Model을 그대로 반환하는 경우, 5) 잘못된 네이밍 컨벤션 등. 각 예제에 명확한 주석으로 무엇이 잘못되었는지 설명을 추가한다.",
+        "testStrategy": "예제 코드에서 새 lint 규칙이 적절한 경고를 발생시키는지 확인한다.",
+        "priority": "medium",
+        "dependencies": [
+          7
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "단위 테스트 및 통합 테스트 작성",
+        "description": "새로운 Repository Implementation Validation Rule에 대한 포괄적인 테스트 슈트를 작성한다.",
+        "details": "test/ 디렉토리에 repository_implementation_validation_rule_test.dart 파일을 생성한다. 모든 검증 로직(인터페이스 위치, 구현체 위치, 네이밍 컨벤션, 의존성, 변환 로직)에 대한 단위 테스트를 작성한다. 정상 케이스와 모든 위반 케이스를 커버하는 테스트를 포함한다. 기존 테스트들의 패턴을 따라 custom_lint_builder의 테스트 프레임워크를 사용한다. False positive가 발생하지 않는지 확인하는 테스트도 포함한다.",
+        "testStrategy": "dart pub test로 모든 테스트가 통과하고, 코드 커버리지가 90% 이상 달성되는지 확인한다.",
+        "priority": "high",
+        "dependencies": [
+          8
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "문서 업데이트 및 CI/CD 통합",
+        "description": "새로운 규칙에 대한 문서를 업데이트하고 CI/CD 파이프라인에서 정상 동작하는지 확인한다.",
+        "details": "CLAUDE.md에 새 Repository Implementation Validation Rule 설명을 추가하고, 위반 사례와 해결 방법을 포함한다. README.md에 새 규칙의 예제 링크를 추가한다. 새 규칙의 LintCode description에 자세한 가이드를 포함하도록 업데이트한다. GitHub Actions에서 새 규칙이 정상 동작하는지 확인하고, 성능 벤치마크를 실행한다. example 프로젝트에서 dart run custom_lint를 실행하여 모든 예제가 예상대로 동작하는지 확인한다.",
+        "testStrategy": "CI/CD 파이프라인 통과, 문서의 정확성 검토, example 프로젝트에서의 실제 동작 확인을 통해 검증한다.",
+        "priority": "high",
+        "dependencies": [
+          9
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-10-05T05:10:01.509Z",
+      "updated": "2025-10-05T05:10:01.509Z",
+      "description": "Tasks for master context"
+    }
+  }
+}
