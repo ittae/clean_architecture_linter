@@ -65,6 +65,22 @@ class RuleUtils {
         normalized.contains('/use_cases/');
   }
 
+  /// Check if file is a Repository interface file (Domain layer)
+  /// Pattern: lib/*/domain/repositories/*.dart
+  static bool isRepositoryInterfaceFile(String filePath) {
+    final normalized = _normalizePath(filePath);
+    return normalized.contains('/domain/repositories/') &&
+        normalized.endsWith('.dart');
+  }
+
+  /// Check if file is a Repository implementation file (Data layer)
+  /// Pattern: lib/*/data/repositories/*_impl.dart
+  static bool isRepositoryImplementationFile(String filePath) {
+    final normalized = _normalizePath(filePath);
+    return normalized.contains('/data/repositories/') &&
+        normalized.endsWith('_impl.dart');
+  }
+
   // ============================================================================
   // Class Name Checkers
   // ============================================================================
@@ -92,6 +108,20 @@ class RuleUtils {
   static bool isRepositoryImplClass(String className) {
     return className.endsWith('RepositoryImpl') ||
         className.endsWith('Impl') && className.contains('Repository');
+  }
+
+  /// Check if class name is a Repository interface (NOT implementation)
+  /// Pattern: *Repository (but NOT *RepositoryImpl)
+  static bool isRepositoryInterfaceClass(String className) {
+    return className.endsWith('Repository') &&
+        !className.endsWith('RepositoryImpl');
+  }
+
+  /// Check if class name is a Repository implementation
+  /// Pattern: *RepositoryImpl
+  static bool isRepositoryImplementationClass(String className) {
+    return className.endsWith('RepositoryImpl') ||
+        (className.endsWith('Impl') && className.contains('Repository'));
   }
 
   // ============================================================================
