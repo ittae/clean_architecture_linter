@@ -3,7 +3,8 @@ import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
-
+import '../../mixins/repository_rule_visitor.dart';
+import '../../mixins/return_type_validation_mixin.dart';
 
 /// Enforces that Repository implementations must return Result type.
 ///
@@ -49,7 +50,8 @@ import '../../clean_architecture_linter_base.dart';
 /// ```
 ///
 /// See ERROR_HANDLING_GUIDE.md for complete error handling patterns.
-class RepositoryMustReturnResultRule extends CleanArchitectureLintRule {
+class RepositoryMustReturnResultRule extends CleanArchitectureLintRule
+    with RepositoryRuleVisitor, ReturnTypeValidationMixin {
   const RepositoryMustReturnResultRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -81,21 +83,15 @@ class RepositoryMustReturnResultRule extends CleanArchitectureLintRule {
     final classNode = method.thisOrAncestorOfType<ClassDeclaration>();
     if (classNode == null) return;
 
-    final className = classNode.name.lexeme;
-    if (!_isRepositoryImplClass(className, classNode)) return;
+    if (!isRepositoryImplementation(classNode)) return;
 
-    // Skip private methods (helpers - can throw, will be caught by public methods)
-    final methodName = method.name.lexeme;
-    if (methodName.startsWith('_')) return;
+    // Skip private methods and void methods
+    if (shouldSkipMethod(method)) return;
 
-    // Check if method returns Result type
     final returnType = method.returnType;
     if (returnType == null) return;
 
-    // Skip void methods (e.g., delete operations)
-    if (CleanArchitectureUtils.isVoidType(returnType)) return;
-
-    if (!CleanArchitectureUtils.isResultType(returnType)) {
+    if (!isResultReturnType(returnType)) {
       final code = LintCode(
         name: 'repository_must_return_result',
         problemMessage:
@@ -109,29 +105,5 @@ class RepositoryMustReturnResultRule extends CleanArchitectureLintRule {
       );
       reporter.atNode(returnType, code);
     }
-  }
-
-  /// Check if class is a Repository implementation
-  bool _isRepositoryImplClass(String className, ClassDeclaration node) {
-    // Check class name pattern
-    final hasRepositoryName = className.contains('Repository') &&
-                              (className.endsWith('Impl') ||
-                               className.endsWith('Implementation'));
-
-    if (!hasRepositoryName) return false;
-
-    // Check if implements a Repository interface
-    final implementsClause = node.implementsClause;
-    if (implementsClause != null) {
-      for (final interface in implementsClause.interfaces) {
-        final interfaceName = interface.name2.lexeme;
-        if (interfaceName.contains('Repository')) {
-          return true;
-        }
-      }
-    }
-
-    // If no implements clause but has Repository in name
-    return hasRepositoryName;
   }
 }

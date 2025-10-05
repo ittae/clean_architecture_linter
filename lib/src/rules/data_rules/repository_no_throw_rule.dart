@@ -3,7 +3,7 @@ import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
-
+import '../../mixins/repository_rule_visitor.dart';
 
 /// Enforces that Repository implementations should NOT throw exceptions directly.
 ///
@@ -49,7 +49,8 @@ import '../../clean_architecture_linter_base.dart';
 /// ```
 ///
 /// See ERROR_HANDLING_GUIDE.md for complete error handling patterns.
-class RepositoryNoThrowRule extends CleanArchitectureLintRule {
+class RepositoryNoThrowRule extends CleanArchitectureLintRule
+    with RepositoryRuleVisitor {
   const RepositoryNoThrowRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -80,19 +81,10 @@ class RepositoryNoThrowRule extends CleanArchitectureLintRule {
     final classNode = node.thisOrAncestorOfType<ClassDeclaration>();
     if (classNode == null) return;
 
-    final className = classNode.name.lexeme;
-    if (!_isRepositoryImplClass(className, classNode)) return;
+    if (!isRepositoryImplementation(classNode)) return;
 
-    // Check if this is a rethrow (allowed in catch blocks)
-    if (CleanArchitectureUtils.isRethrow(node)) return;
-
-    // Check if throw is in a private method (allowed as helper)
-    final method = node.thisOrAncestorOfType<MethodDeclaration>();
-    if (method != null && CleanArchitectureUtils.isPrivateMethod(method)) return;
-
-    // Check if throw is in a constructor (allowed for validation)
-    final constructor = node.thisOrAncestorOfType<ConstructorDeclaration>();
-    if (constructor != null) return;
+    // Check if this is an allowed throw (rethrow, private method, constructor)
+    if (isAllowedRepositoryThrow(node)) return;
 
     // This is a direct throw in a public method - report error
     final code = LintCode(
@@ -107,25 +99,5 @@ class RepositoryNoThrowRule extends CleanArchitectureLintRule {
           'See ERROR_HANDLING_GUIDE.md',
     );
     reporter.atNode(node, code);
-  }
-
-  /// Check if class is a Repository implementation
-  bool _isRepositoryImplClass(String className, ClassDeclaration node) {
-    // Check class name pattern using RuleUtils
-    if (!CleanArchitectureUtils.isRepositoryImplClass(className)) return false;
-
-    // Check if implements a Repository interface
-    final implementsClause = node.implementsClause;
-    if (implementsClause != null) {
-      for (final interface in implementsClause.interfaces) {
-        final interfaceName = interface.name2.lexeme;
-        if (interfaceName.contains('Repository')) {
-          return true;
-        }
-      }
-    }
-
-    // If no implements clause but has Repository in name
-    return true;
   }
 }

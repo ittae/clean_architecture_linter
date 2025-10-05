@@ -3,6 +3,7 @@ import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
+import '../../mixins/return_type_validation_mixin.dart';
 
 
 /// Enforces that DataSource methods should NOT return Result type.
@@ -49,7 +50,8 @@ import '../../clean_architecture_linter_base.dart';
 /// ```
 ///
 /// See ERROR_HANDLING_GUIDE.md for complete error handling patterns.
-class DataSourceNoResultReturnRule extends CleanArchitectureLintRule {
+class DataSourceNoResultReturnRule extends CleanArchitectureLintRule
+    with ReturnTypeValidationMixin {
   const DataSourceNoResultReturnRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -89,7 +91,7 @@ class DataSourceNoResultReturnRule extends CleanArchitectureLintRule {
     final returnType = method.returnType;
     if (returnType == null) return;
 
-    if (CleanArchitectureUtils.isResultType(returnType)) {
+    if (isResultReturnType(returnType)) {
       final code = LintCode(
         name: 'datasource_no_result_return',
         problemMessage:
