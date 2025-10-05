@@ -52,7 +52,7 @@ class DomainPurityRule extends CleanArchitectureLintRule {
     final filePath = resolver.path;
 
     // Only check files in domain layer
-    if (!CleanArchitectureUtils.isDomainLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isDomainFile(filePath)) return;
 
     final importUri = node.uri.stringValue;
     if (importUri == null) return;
@@ -170,7 +170,7 @@ class DomainPurityRule extends CleanArchitectureLintRule {
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
-    if (!CleanArchitectureUtils.isDomainLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isDomainFile(filePath)) return;
 
     // Check for inheritance from external framework classes
     final extendsClause = node.extendsClause;

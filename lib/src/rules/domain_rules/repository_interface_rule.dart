@@ -63,7 +63,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule with RepositoryR
     final filePath = resolver.path;
 
     // Only check files in domain layer
-    if (!CleanArchitectureUtils.isDomainLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isDomainFile(filePath)) return;
 
     final importUri = node.uri.stringValue;
     if (importUri == null) return;
@@ -86,7 +86,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule with RepositoryR
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
-    if (!CleanArchitectureUtils.isDomainLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isDomainFile(filePath)) return;
 
     final className = node.name.lexeme;
     if (!className.contains('Repository')) return;
@@ -144,7 +144,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule with RepositoryR
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
-    if (!CleanArchitectureUtils.isDomainLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isDomainFile(filePath)) return;
 
     final type = node.fields.type;
     if (type is NamedType) {

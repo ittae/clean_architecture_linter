@@ -177,7 +177,7 @@ mixin ExceptionValidationMixin {
   String suggestFeaturePrefix(String className, String filePath) {
     final featureName = CleanArchitectureUtils.extractFeatureName(filePath);
 
-    if (featureName != null) {
+    if (featureName.isNotEmpty) {
       return '$featureName$className';
     }
 
