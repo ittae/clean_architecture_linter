@@ -5,7 +5,6 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 import 'package:path/path.dart' as path;
 
 import '../../clean_architecture_linter_base.dart';
-import '../../utils/rule_utils.dart';
 
 /// Enforces proper DataSource abstraction pattern in data layer.
 ///
@@ -83,10 +82,10 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
-    if (!CleanArchitectureUtils.isDataLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isDataFile(filePath)) return;
 
     final className = node.name.lexeme;
-    if (!RuleUtils.isDataSourceClass(className)) return;
+    if (!CleanArchitectureUtils.isDataSourceClass(className)) return;
 
     // Check if concrete DataSource without abstract interface
     if (node.abstractKeyword == null && _isConcreteDataSource(className)) {
@@ -123,10 +122,10 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
     final filePath = resolver.path;
     final className = node.name.lexeme;
 
-    if (!RuleUtils.isDataSourceClass(className)) return;
+    if (!CleanArchitectureUtils.isDataSourceClass(className)) return;
 
     // Check if DataSource is in Domain Layer (wrong!)
-    if (CleanArchitectureUtils.isDomainLayerFile(filePath)) {
+    if (CleanArchitectureUtils.isDomainFile(filePath)) {
       final code = LintCode(
         name: 'datasource_abstraction',
         problemMessage:
@@ -144,14 +143,14 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
-    if (!CleanArchitectureUtils.isDataLayerFile(filePath)) return;
+    if (!CleanArchitectureUtils.isDataFile(filePath)) return;
 
     // Check if this method is in a DataSource class
     final classNode = method.thisOrAncestorOfType<ClassDeclaration>();
     if (classNode == null) return;
 
     final className = classNode.name.lexeme;
-    if (!RuleUtils.isDataSourceClass(className)) return;
+    if (!CleanArchitectureUtils.isDataSourceClass(className)) return;
 
     final returnType = method.returnType;
     if (returnType == null) return;

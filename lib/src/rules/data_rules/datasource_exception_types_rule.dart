@@ -3,7 +3,6 @@ import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
-import '../../utils/rule_utils.dart';
 
 /// Enforces that DataSource should only use defined Data layer exceptions.
 ///
@@ -109,7 +108,7 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule {
     final filePath = resolver.path;
 
     // Only check DataSource files or classes
-    if (!RuleUtils.isDataSourceFile(filePath) && !_isDataSourceClass(node)) return;
+    if (!CleanArchitectureUtils.isDataSourceFile(filePath) && !_isDataSourceClass(node)) return;
 
     final expression = node.expression;
 
@@ -152,11 +151,11 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule {
 
   /// Check if throw is inside a DataSource class
   bool _isDataSourceClass(ThrowExpression node) {
-    final classNode = RuleUtils.findParentClass(node);
+    final classNode = CleanArchitectureUtils.findParentClass(node);
     if (classNode == null) return false;
 
     final className = classNode.name.lexeme;
-    return RuleUtils.isDataSourceClass(className);
+    return CleanArchitectureUtils.isDataSourceClass(className);
   }
 
   /// Check if exception is allowed in DataSource

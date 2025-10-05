@@ -3,7 +3,7 @@ import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
-import '../../utils/rule_utils.dart';
+
 
 /// Enforces Domain Exception naming convention with feature prefix.
 ///
@@ -110,10 +110,10 @@ class ExceptionNamingConventionRule extends CleanArchitectureLintRule {
     final filePath = resolver.path;
 
     // Only check Domain layer files
-    if (!RuleUtils.isDomainFile(filePath)) return;
+    if (!CleanArchitectureUtils.isDomainFile(filePath)) return;
 
     // Check if class implements Exception
-    if (!RuleUtils.implementsException(node)) return;
+    if (!CleanArchitectureUtils.implementsException(node)) return;
 
     final className = node.name.lexeme;
 
@@ -171,7 +171,7 @@ class ExceptionNamingConventionRule extends CleanArchitectureLintRule {
   /// Suggest feature name based on file path
   String _suggestFeatureName(String className, String filePath) {
     // Extract feature name using RuleUtils
-    final featureName = RuleUtils.extractFeatureName(filePath);
+    final featureName = CleanArchitectureUtils.extractFeatureName(filePath);
 
     if (featureName != null) {
       return '$featureName$className';

@@ -3,7 +3,7 @@ import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
-import '../../utils/rule_utils.dart';
+
 
 /// Enforces that Repository implementations must return Result type.
 ///
@@ -93,9 +93,9 @@ class RepositoryMustReturnResultRule extends CleanArchitectureLintRule {
     if (returnType == null) return;
 
     // Skip void methods (e.g., delete operations)
-    if (RuleUtils.isVoidType(returnType)) return;
+    if (CleanArchitectureUtils.isVoidType(returnType)) return;
 
-    if (!RuleUtils.isResultType(returnType)) {
+    if (!CleanArchitectureUtils.isResultType(returnType)) {
       final code = LintCode(
         name: 'repository_must_return_result',
         problemMessage:

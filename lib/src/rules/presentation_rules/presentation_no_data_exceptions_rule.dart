@@ -3,7 +3,7 @@ import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
-import '../../utils/rule_utils.dart';
+
 
 /// Enforces that Presentation layer should NOT handle Data layer exceptions.
 ///
@@ -104,7 +104,7 @@ class PresentationNoDataExceptionsRule extends CleanArchitectureLintRule {
     final filePath = resolver.path;
 
     // Only check files in presentation layer
-    if (!RuleUtils.isPresentationFile(filePath)) return;
+    if (!CleanArchitectureUtils.isPresentationFile(filePath)) return;
 
     // Get the type being checked
     final type = node.type;
@@ -113,7 +113,7 @@ class PresentationNoDataExceptionsRule extends CleanArchitectureLintRule {
     final typeName = type.name2.lexeme;
 
     // Check if it's a Data layer exception
-    if (RuleUtils.isDataException(typeName)) {
+    if (CleanArchitectureUtils.isDataException(typeName)) {
       final domainException = _suggestDomainException(typeName, filePath);
 
       final code = LintCode(
@@ -136,7 +136,7 @@ class PresentationNoDataExceptionsRule extends CleanArchitectureLintRule {
   /// Suggest appropriate Domain exception based on context
   String _suggestDomainException(String dataException, String filePath) {
     // Extract feature name using RuleUtils
-    final featureName = RuleUtils.extractFeatureName(filePath);
+    final featureName = CleanArchitectureUtils.extractFeatureName(filePath);
 
     if (featureName != null) {
       return '$featureName$dataException'; // e.g., TodoNotFoundException

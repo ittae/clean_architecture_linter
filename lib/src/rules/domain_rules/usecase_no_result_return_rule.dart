@@ -3,7 +3,7 @@ import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
-import '../../utils/rule_utils.dart';
+
 
 /// Enforces that UseCase should NOT return Result type.
 ///
@@ -84,7 +84,7 @@ class UseCaseNoResultReturnRule extends CleanArchitectureLintRule {
     if (classNode == null) return;
 
     final className = classNode.name.lexeme;
-    if (!RuleUtils.isUseCaseClass(className)) return;
+    if (!CleanArchitectureUtils.isUseCaseClass(className)) return;
 
     // Skip private methods (helpers)
     final methodName = method.name.lexeme;
@@ -95,9 +95,9 @@ class UseCaseNoResultReturnRule extends CleanArchitectureLintRule {
     if (returnType == null) return;
 
     // Skip void methods
-    if (RuleUtils.isVoidType(returnType)) return;
+    if (CleanArchitectureUtils.isVoidType(returnType)) return;
 
-    if (RuleUtils.isResultType(returnType)) {
+    if (CleanArchitectureUtils.isResultType(returnType)) {
       final code = LintCode(
         name: 'usecase_no_result_return',
         problemMessage:

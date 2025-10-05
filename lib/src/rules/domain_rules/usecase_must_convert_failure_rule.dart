@@ -3,7 +3,7 @@ import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
-import '../../utils/rule_utils.dart';
+
 
 /// Enforces that UseCase should convert Failure to Domain Exception.
 ///
@@ -82,7 +82,7 @@ class UseCaseMustConvertFailureRule extends CleanArchitectureLintRule {
     final filePath = resolver.path;
 
     // Only check UseCase files
-    if (!RuleUtils.isUseCaseFile(filePath) && !_isUseCaseClass(node)) return;
+    if (!CleanArchitectureUtils.isUseCaseFile(filePath) && !_isUseCaseClass(node)) return;
 
     // Check if this is a .when() method call
     if (node.methodName.name != 'when') return;
@@ -177,10 +177,10 @@ class UseCaseMustConvertFailureRule extends CleanArchitectureLintRule {
 
   /// Check if method is inside a UseCase class
   bool _isUseCaseClass(MethodInvocation node) {
-    final classNode = RuleUtils.findParentClass(node);
+    final classNode = CleanArchitectureUtils.findParentClass(node);
     if (classNode == null) return false;
 
     final className = classNode.name.lexeme;
-    return RuleUtils.isUseCaseClass(className);
+    return CleanArchitectureUtils.isUseCaseClass(className);
   }
 }

@@ -3,7 +3,7 @@ import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
-import '../../utils/rule_utils.dart';
+
 
 /// Enforces that Presentation State should use AsyncValue for error handling.
 ///
@@ -98,7 +98,7 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
     final filePath = resolver.path;
 
     // Only check Presentation State files
-    if (!RuleUtils.isPresentationFile(filePath)) return;
+    if (!CleanArchitectureUtils.isPresentationFile(filePath)) return;
 
     // Check if class is a Freezed State (has @freezed annotation)
     if (!_isFreezedState(node)) return;

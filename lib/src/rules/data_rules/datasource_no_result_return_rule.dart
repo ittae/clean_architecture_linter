@@ -3,7 +3,7 @@ import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
-import '../../utils/rule_utils.dart';
+
 
 /// Enforces that DataSource methods should NOT return Result type.
 ///
@@ -83,13 +83,13 @@ class DataSourceNoResultReturnRule extends CleanArchitectureLintRule {
 
     final className = classNode.name.lexeme;
     // Only check classes with DataSource in the name
-    if (!RuleUtils.isDataSourceClass(className)) return;
+    if (!CleanArchitectureUtils.isDataSourceClass(className)) return;
 
     // Check if method returns Result type
     final returnType = method.returnType;
     if (returnType == null) return;
 
-    if (RuleUtils.isResultType(returnType)) {
+    if (CleanArchitectureUtils.isResultType(returnType)) {
       final code = LintCode(
         name: 'datasource_no_result_return',
         problemMessage:

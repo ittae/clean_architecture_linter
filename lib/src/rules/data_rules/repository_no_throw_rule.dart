@@ -3,7 +3,7 @@ import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
-import '../../utils/rule_utils.dart';
+
 
 /// Enforces that Repository implementations should NOT throw exceptions directly.
 ///
@@ -84,11 +84,11 @@ class RepositoryNoThrowRule extends CleanArchitectureLintRule {
     if (!_isRepositoryImplClass(className, classNode)) return;
 
     // Check if this is a rethrow (allowed in catch blocks)
-    if (RuleUtils.isRethrow(node)) return;
+    if (CleanArchitectureUtils.isRethrow(node)) return;
 
     // Check if throw is in a private method (allowed as helper)
     final method = node.thisOrAncestorOfType<MethodDeclaration>();
-    if (method != null && RuleUtils.isPrivateMethod(method)) return;
+    if (method != null && CleanArchitectureUtils.isPrivateMethod(method)) return;
 
     // Check if throw is in a constructor (allowed for validation)
     final constructor = node.thisOrAncestorOfType<ConstructorDeclaration>();
@@ -112,7 +112,7 @@ class RepositoryNoThrowRule extends CleanArchitectureLintRule {
   /// Check if class is a Repository implementation
   bool _isRepositoryImplClass(String className, ClassDeclaration node) {
     // Check class name pattern using RuleUtils
-    if (!RuleUtils.isRepositoryImplClass(className)) return false;
+    if (!CleanArchitectureUtils.isRepositoryImplClass(className)) return false;
 
     // Check if implements a Repository interface
     final implementsClause = node.implementsClause;
