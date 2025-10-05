@@ -4,7 +4,7 @@ import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 import 'package:path/path.dart' as path;
 
-import '../clean_architecture_linter_base.dart';
+import '../../clean_architecture_linter_base.dart';
 
 /// Enforces test coverage for critical Clean Architecture components.
 ///

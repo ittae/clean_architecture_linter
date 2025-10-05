@@ -10,8 +10,13 @@ library;
 
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
-// Core Clean Architecture Rules
-import 'src/rules/layer_dependency_rule.dart';
+// Cross-Layer Rules (rules that validate across multiple architectural layers)
+import 'src/rules/cross_layer/layer_dependency_rule.dart';
+import 'src/rules/cross_layer/circular_dependency_rule.dart';
+import 'src/rules/cross_layer/boundary_crossing_rule.dart';
+import 'src/rules/cross_layer/test_coverage_rule.dart';
+
+// Domain Layer Rules
 import 'src/rules/domain_rules/domain_purity_rule.dart';
 import 'src/rules/domain_rules/dependency_inversion_rule.dart';
 import 'src/rules/domain_rules/repository_interface_rule.dart';
@@ -19,9 +24,6 @@ import 'src/rules/domain_rules/usecase_no_result_return_rule.dart';
 import 'src/rules/domain_rules/usecase_must_convert_failure_rule.dart';
 import 'src/rules/domain_rules/exception_naming_convention_rule.dart';
 import 'src/rules/domain_rules/exception_message_localization_rule.dart';
-import 'src/rules/circular_dependency_rule.dart';
-import 'src/rules/boundary_crossing_rule.dart';
-import 'src/rules/test_coverage_rule.dart';
 
 // Data Layer Rules
 import 'src/rules/data_rules/model_structure_rule.dart';

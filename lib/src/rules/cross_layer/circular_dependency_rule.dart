@@ -2,7 +2,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
-import '../clean_architecture_linter_base.dart';
+import '../../clean_architecture_linter_base.dart';
 
 /// Detects circular dependencies between files and architectural layers.
 ///
