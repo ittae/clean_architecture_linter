@@ -3,6 +3,7 @@ import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
+import '../../utils/rule_utils.dart';
 
 /// Enforces that Repository implementations should NOT throw exceptions directly.
 ///
@@ -83,11 +84,11 @@ class RepositoryNoThrowRule extends CleanArchitectureLintRule {
     if (!_isRepositoryImplClass(className, classNode)) return;
 
     // Check if this is a rethrow (allowed in catch blocks)
-    if (_isRethrow(node)) return;
+    if (RuleUtils.isRethrow(node)) return;
 
     // Check if throw is in a private method (allowed as helper)
     final method = node.thisOrAncestorOfType<MethodDeclaration>();
-    if (method != null && _isPrivateMethod(method)) return;
+    if (method != null && RuleUtils.isPrivateMethod(method)) return;
 
     // Check if throw is in a constructor (allowed for validation)
     final constructor = node.thisOrAncestorOfType<ConstructorDeclaration>();
@@ -110,12 +111,8 @@ class RepositoryNoThrowRule extends CleanArchitectureLintRule {
 
   /// Check if class is a Repository implementation
   bool _isRepositoryImplClass(String className, ClassDeclaration node) {
-    // Check class name pattern
-    final hasRepositoryName = className.contains('Repository') &&
-                              (className.endsWith('Impl') ||
-                               className.endsWith('Implementation'));
-
-    if (!hasRepositoryName) return false;
+    // Check class name pattern using RuleUtils
+    if (!RuleUtils.isRepositoryImplClass(className)) return false;
 
     // Check if implements a Repository interface
     final implementsClause = node.implementsClause;
@@ -129,33 +126,6 @@ class RepositoryNoThrowRule extends CleanArchitectureLintRule {
     }
 
     // If no implements clause but has Repository in name
-    return hasRepositoryName;
-  }
-
-  /// Check if this is a rethrow statement (allowed)
-  bool _isRethrow(ThrowExpression node) {
-    // rethrow has no expression (node.expression will be null for 'rethrow')
-    // Actually in AST, rethrow is represented differently
-    // Check if we're in a catch clause
-    final catchClause = node.thisOrAncestorOfType<CatchClause>();
-    if (catchClause == null) return false;
-
-    // Check if throw expression is the caught exception
-    final expression = node.expression;
-    if (expression is SimpleIdentifier) {
-      // Check if it matches the caught exception variable
-      final catchParam = catchClause.exceptionParameter;
-      if (catchParam != null && expression.name == catchParam.name.lexeme) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  /// Check if method is private (helper method - allowed to throw)
-  bool _isPrivateMethod(MethodDeclaration method) {
-    final methodName = method.name.lexeme;
-    return methodName.startsWith('_');
+    return true;
   }
 }

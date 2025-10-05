@@ -3,6 +3,7 @@ import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
+import '../../utils/rule_utils.dart';
 
 /// Enforces that UseCase should convert Failure to Domain Exception.
 ///
@@ -81,7 +82,7 @@ class UseCaseMustConvertFailureRule extends CleanArchitectureLintRule {
     final filePath = resolver.path;
 
     // Only check UseCase files
-    if (!_isUseCaseFile(filePath) && !_isUseCaseClass(node)) return;
+    if (!RuleUtils.isUseCaseFile(filePath) && !_isUseCaseClass(node)) return;
 
     // Check if this is a .when() method call
     if (node.methodName.name != 'when') return;
@@ -174,27 +175,12 @@ class UseCaseMustConvertFailureRule extends CleanArchitectureLintRule {
     return false;
   }
 
-  /// Check if file is a UseCase file
-  bool _isUseCaseFile(String filePath) {
-    final normalized = filePath.replaceAll('\\', '/');
-    return normalized.contains('/usecases/') ||
-        normalized.contains('/use_cases/');
-  }
-
   /// Check if method is inside a UseCase class
   bool _isUseCaseClass(MethodInvocation node) {
-    var parent = node.parent;
+    final classNode = RuleUtils.findParentClass(node);
+    if (classNode == null) return false;
 
-    while (parent != null) {
-      if (parent is ClassDeclaration) {
-        final className = parent.name.lexeme;
-        return className.endsWith('UseCase') ||
-            className.endsWith('Usecase') ||
-            className.contains('UseCase');
-      }
-      parent = parent.parent;
-    }
-
-    return false;
+    final className = classNode.name.lexeme;
+    return RuleUtils.isUseCaseClass(className);
   }
 }

@@ -3,6 +3,7 @@ import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
+import '../../utils/rule_utils.dart';
 
 /// Enforces that DataSource methods should NOT return Result type.
 ///
@@ -82,13 +83,13 @@ class DataSourceNoResultReturnRule extends CleanArchitectureLintRule {
 
     final className = classNode.name.lexeme;
     // Only check classes with DataSource in the name
-    if (!_isDataSourceClass(className)) return;
+    if (!RuleUtils.isDataSourceClass(className)) return;
 
     // Check if method returns Result type
     final returnType = method.returnType;
     if (returnType == null) return;
 
-    if (_isResultType(returnType)) {
+    if (RuleUtils.isResultType(returnType)) {
       final code = LintCode(
         name: 'datasource_no_result_return',
         problemMessage:
@@ -102,49 +103,5 @@ class DataSourceNoResultReturnRule extends CleanArchitectureLintRule {
       );
       reporter.atNode(returnType, code);
     }
-  }
-
-  /// Check if class name indicates it's a DataSource
-  bool _isDataSourceClass(String className) {
-    return className.contains('DataSource') ||
-           className.contains('Datasource') ||
-           className.endsWith('DS');
-  }
-
-  /// Check if return type is Result or Either
-  bool _isResultType(TypeAnnotation returnType) {
-    final typeStr = returnType.toString();
-
-    // Check for common Result/Either patterns
-    // - Result<T, E>
-    // - Either<L, R>
-    // - Future<Result<T, E>>
-    // - Future<Either<L, R>>
-    if (typeStr.contains('Result<') ||
-        typeStr.contains('Either<') ||
-        typeStr.contains('Result ') ||
-        typeStr.contains('Either ')) {
-      return true;
-    }
-
-    // Check with NamedType for more precise detection
-    if (returnType is NamedType) {
-      final name = returnType.name2.lexeme;
-      if (name == 'Result' || name == 'Either') {
-        return true;
-      }
-
-      // Check type arguments (e.g., Future<Result<T, E>>)
-      final typeArgs = returnType.typeArguments?.arguments;
-      if (typeArgs != null) {
-        for (final arg in typeArgs) {
-          if (_isResultType(arg)) {
-            return true;
-          }
-        }
-      }
-    }
-
-    return false;
   }
 }

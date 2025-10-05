@@ -3,6 +3,7 @@ import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
+import '../../utils/rule_utils.dart';
 
 /// Enforces that Presentation layer should NOT handle Data layer exceptions.
 ///
@@ -103,7 +104,7 @@ class PresentationNoDataExceptionsRule extends CleanArchitectureLintRule {
     final filePath = resolver.path;
 
     // Only check files in presentation layer
-    if (!_isPresentationFile(filePath)) return;
+    if (!RuleUtils.isPresentationFile(filePath)) return;
 
     // Get the type being checked
     final type = node.type;
@@ -112,7 +113,7 @@ class PresentationNoDataExceptionsRule extends CleanArchitectureLintRule {
     final typeName = type.name2.lexeme;
 
     // Check if it's a Data layer exception
-    if (_isDataException(typeName)) {
+    if (RuleUtils.isDataException(typeName)) {
       final domainException = _suggestDomainException(typeName, filePath);
 
       final code = LintCode(
@@ -132,40 +133,13 @@ class PresentationNoDataExceptionsRule extends CleanArchitectureLintRule {
     }
   }
 
-  /// Check if file is in presentation layer
-  bool _isPresentationFile(String filePath) {
-    final normalized = filePath.replaceAll('\\', '/');
-    return normalized.contains('/presentation/') ||
-           normalized.contains('/ui/') ||
-           normalized.contains('/views/') ||
-           normalized.contains('/widgets/') ||
-           normalized.contains('/pages/') ||
-           normalized.contains('/screens/');
-  }
-
-  /// Check if exception is a Data layer exception
-  bool _isDataException(String typeName) {
-    return dataExceptions.contains(typeName);
-  }
-
   /// Suggest appropriate Domain exception based on context
   String _suggestDomainException(String dataException, String filePath) {
-    // Try to extract feature name from file path
-    // e.g., /features/todos/presentation/ -> Todo
-    final featureMatch = RegExp(r'/features/(\w+)/').firstMatch(filePath);
-    final featureName = featureMatch?.group(1);
+    // Extract feature name using RuleUtils
+    final featureName = RuleUtils.extractFeatureName(filePath);
 
     if (featureName != null) {
-      // Capitalize first letter
-      final capitalizedFeature =
-          featureName[0].toUpperCase() + featureName.substring(1);
-
-      // Remove 's' if plural (todos -> Todo)
-      final singularFeature = capitalizedFeature.endsWith('s')
-          ? capitalizedFeature.substring(0, capitalizedFeature.length - 1)
-          : capitalizedFeature;
-
-      return '$singularFeature$dataException'; // e.g., TodoNotFoundException
+      return '$featureName$dataException'; // e.g., TodoNotFoundException
     }
 
     // Fallback: generic Domain exception

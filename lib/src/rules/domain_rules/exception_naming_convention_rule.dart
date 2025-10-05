@@ -3,6 +3,7 @@ import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
+import '../../utils/rule_utils.dart';
 
 /// Enforces Domain Exception naming convention with feature prefix.
 ///
@@ -109,10 +110,10 @@ class ExceptionNamingConventionRule extends CleanArchitectureLintRule {
     final filePath = resolver.path;
 
     // Only check Domain layer files
-    if (!_isDomainFile(filePath)) return;
+    if (!RuleUtils.isDomainFile(filePath)) return;
 
     // Check if class implements Exception
-    if (!_implementsException(node)) return;
+    if (!RuleUtils.implementsException(node)) return;
 
     final className = node.name.lexeme;
 
@@ -137,28 +138,6 @@ class ExceptionNamingConventionRule extends CleanArchitectureLintRule {
       );
       reporter.atNode(node, code);
     }
-  }
-
-  /// Check if file is in Domain layer
-  bool _isDomainFile(String filePath) {
-    final normalized = filePath.replaceAll('\\', '/');
-    return normalized.contains('/domain/') ||
-        normalized.contains('/exceptions/');
-  }
-
-  /// Check if class implements Exception
-  bool _implementsException(ClassDeclaration node) {
-    final implementsClause = node.implementsClause;
-    if (implementsClause == null) return false;
-
-    for (final type in implementsClause.interfaces) {
-      final typeName = type.name2.lexeme;
-      if (typeName == 'Exception') {
-        return true;
-      }
-    }
-
-    return false;
   }
 
   /// Check if exception is allowed without prefix
@@ -191,30 +170,11 @@ class ExceptionNamingConventionRule extends CleanArchitectureLintRule {
 
   /// Suggest feature name based on file path
   String _suggestFeatureName(String className, String filePath) {
-    // Try to extract feature from path
-    // e.g., /features/todos/domain/ -> Todo
-    final featureMatch = RegExp(r'/features/(\w+)/').firstMatch(filePath);
-    if (featureMatch != null) {
-      var featureName = featureMatch.group(1)!;
-      // Capitalize and singularize
-      featureName = featureName[0].toUpperCase() + featureName.substring(1);
-      if (featureName.endsWith('s')) {
-        featureName = featureName.substring(0, featureName.length - 1);
-      }
-      return '$featureName$className';
-    }
+    // Extract feature name using RuleUtils
+    final featureName = RuleUtils.extractFeatureName(filePath);
 
-    // Try to extract from directory name
-    final pathParts = filePath.split('/');
-    for (var i = pathParts.length - 1; i >= 0; i--) {
-      final part = pathParts[i];
-      if (part != 'domain' &&
-          part != 'exceptions' &&
-          part != 'lib' &&
-          !part.contains('.')) {
-        final featureName = part[0].toUpperCase() + part.substring(1);
-        return '$featureName$className';
-      }
+    if (featureName != null) {
+      return '$featureName$className';
     }
 
     // Fallback: use generic "Feature" prefix

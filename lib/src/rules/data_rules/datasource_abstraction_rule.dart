@@ -5,6 +5,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 import 'package:path/path.dart' as path;
 
 import '../../clean_architecture_linter_base.dart';
+import '../../utils/rule_utils.dart';
 
 /// Enforces proper DataSource abstraction pattern in data layer.
 ///
@@ -85,7 +86,7 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
     if (!CleanArchitectureUtils.isDataLayerFile(filePath)) return;
 
     final className = node.name.lexeme;
-    if (!_isDataSourceClass(className)) return;
+    if (!RuleUtils.isDataSourceClass(className)) return;
 
     // Check if concrete DataSource without abstract interface
     if (node.abstractKeyword == null && _isConcreteDataSource(className)) {
@@ -122,7 +123,7 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
     final filePath = resolver.path;
     final className = node.name.lexeme;
 
-    if (!_isDataSourceClass(className)) return;
+    if (!RuleUtils.isDataSourceClass(className)) return;
 
     // Check if DataSource is in Domain Layer (wrong!)
     if (CleanArchitectureUtils.isDomainLayerFile(filePath)) {
@@ -150,7 +151,7 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
     if (classNode == null) return;
 
     final className = classNode.name.lexeme;
-    if (!_isDataSourceClass(className)) return;
+    if (!RuleUtils.isDataSourceClass(className)) return;
 
     final returnType = method.returnType;
     if (returnType == null) return;
@@ -166,10 +167,6 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
       );
       reporter.atNode(returnType, code);
     }
-  }
-
-  bool _isDataSourceClass(String className) {
-    return className.contains('DataSource') || className.contains('Datasource');
   }
 
   bool _isConcreteDataSource(String className) {

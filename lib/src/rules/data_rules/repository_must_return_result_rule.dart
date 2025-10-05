@@ -3,6 +3,7 @@ import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
+import '../../utils/rule_utils.dart';
 
 /// Enforces that Repository implementations must return Result type.
 ///
@@ -92,9 +93,9 @@ class RepositoryMustReturnResultRule extends CleanArchitectureLintRule {
     if (returnType == null) return;
 
     // Skip void methods (e.g., delete operations)
-    if (_isVoidReturn(returnType)) return;
+    if (RuleUtils.isVoidType(returnType)) return;
 
-    if (!_isResultType(returnType)) {
+    if (!RuleUtils.isResultType(returnType)) {
       final code = LintCode(
         name: 'repository_must_return_result',
         problemMessage:
@@ -132,46 +133,5 @@ class RepositoryMustReturnResultRule extends CleanArchitectureLintRule {
 
     // If no implements clause but has Repository in name
     return hasRepositoryName;
-  }
-
-  /// Check if return type is void or Future<void>
-  bool _isVoidReturn(TypeAnnotation returnType) {
-    final typeStr = returnType.toString();
-    return typeStr == 'void' ||
-           typeStr == 'Future<void>' ||
-           typeStr.startsWith('Future<void>');
-  }
-
-  /// Check if return type is Result or Either
-  bool _isResultType(TypeAnnotation returnType) {
-    final typeStr = returnType.toString();
-
-    // Check for common Result/Either patterns
-    if (typeStr.contains('Result<') ||
-        typeStr.contains('Either<') ||
-        typeStr.contains('Result ') ||
-        typeStr.contains('Either ')) {
-      return true;
-    }
-
-    // Check with NamedType for more precise detection
-    if (returnType is NamedType) {
-      final name = returnType.name2.lexeme;
-      if (name == 'Result' || name == 'Either') {
-        return true;
-      }
-
-      // Check type arguments (e.g., Future<Result<T, E>>)
-      final typeArgs = returnType.typeArguments?.arguments;
-      if (typeArgs != null) {
-        for (final arg in typeArgs) {
-          if (_isResultType(arg)) {
-            return true;
-          }
-        }
-      }
-    }
-
-    return false;
   }
 }

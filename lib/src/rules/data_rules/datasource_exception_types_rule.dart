@@ -3,6 +3,7 @@ import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
+import '../../utils/rule_utils.dart';
 
 /// Enforces that DataSource should only use defined Data layer exceptions.
 ///
@@ -108,7 +109,7 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule {
     final filePath = resolver.path;
 
     // Only check DataSource files or classes
-    if (!_isDataSourceFile(filePath) && !_isDataSourceClass(node)) return;
+    if (!RuleUtils.isDataSourceFile(filePath) && !_isDataSourceClass(node)) return;
 
     final expression = node.expression;
 
@@ -149,27 +150,13 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule {
     }
   }
 
-  /// Check if file is a DataSource file
-  bool _isDataSourceFile(String filePath) {
-    final normalized = filePath.replaceAll('\\', '/');
-    return normalized.contains('/datasources/') ||
-        normalized.contains('/data_sources/');
-  }
-
   /// Check if throw is inside a DataSource class
   bool _isDataSourceClass(ThrowExpression node) {
-    var parent = node.parent;
+    final classNode = RuleUtils.findParentClass(node);
+    if (classNode == null) return false;
 
-    while (parent != null) {
-      if (parent is ClassDeclaration) {
-        final className = parent.name.lexeme;
-        return className.endsWith('DataSource') ||
-            className.contains('DataSource');
-      }
-      parent = parent.parent;
-    }
-
-    return false;
+    final className = classNode.name.lexeme;
+    return RuleUtils.isDataSourceClass(className);
   }
 
   /// Check if exception is allowed in DataSource

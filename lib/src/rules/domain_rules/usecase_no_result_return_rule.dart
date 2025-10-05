@@ -3,6 +3,7 @@ import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
+import '../../utils/rule_utils.dart';
 
 /// Enforces that UseCase should NOT return Result type.
 ///
@@ -83,7 +84,7 @@ class UseCaseNoResultReturnRule extends CleanArchitectureLintRule {
     if (classNode == null) return;
 
     final className = classNode.name.lexeme;
-    if (!_isUseCaseClass(className)) return;
+    if (!RuleUtils.isUseCaseClass(className)) return;
 
     // Skip private methods (helpers)
     final methodName = method.name.lexeme;
@@ -94,9 +95,9 @@ class UseCaseNoResultReturnRule extends CleanArchitectureLintRule {
     if (returnType == null) return;
 
     // Skip void methods
-    if (_isVoidReturn(returnType)) return;
+    if (RuleUtils.isVoidType(returnType)) return;
 
-    if (_isResultType(returnType)) {
+    if (RuleUtils.isResultType(returnType)) {
       final code = LintCode(
         name: 'usecase_no_result_return',
         problemMessage:
@@ -116,53 +117,5 @@ class UseCaseNoResultReturnRule extends CleanArchitectureLintRule {
       );
       reporter.atNode(returnType, code);
     }
-  }
-
-  /// Check if class name indicates it's a UseCase
-  bool _isUseCaseClass(String className) {
-    return className.endsWith('UseCase') ||
-           className.endsWith('Usecase') ||
-           className.contains('UseCase');
-  }
-
-  /// Check if return type is void or Future<void>
-  bool _isVoidReturn(TypeAnnotation returnType) {
-    final typeStr = returnType.toString();
-    return typeStr == 'void' ||
-           typeStr == 'Future<void>' ||
-           typeStr.startsWith('Future<void>');
-  }
-
-  /// Check if return type is Result or Either
-  bool _isResultType(TypeAnnotation returnType) {
-    final typeStr = returnType.toString();
-
-    // Check for common Result/Either patterns
-    if (typeStr.contains('Result<') ||
-        typeStr.contains('Either<') ||
-        typeStr.contains('Result ') ||
-        typeStr.contains('Either ')) {
-      return true;
-    }
-
-    // Check with NamedType for more precise detection
-    if (returnType is NamedType) {
-      final name = returnType.name2.lexeme;
-      if (name == 'Result' || name == 'Either') {
-        return true;
-      }
-
-      // Check type arguments (e.g., Future<Result<T, E>>)
-      final typeArgs = returnType.typeArguments?.arguments;
-      if (typeArgs != null) {
-        for (final arg in typeArgs) {
-          if (_isResultType(arg)) {
-            return true;
-          }
-        }
-      }
-    }
-
-    return false;
   }
 }
