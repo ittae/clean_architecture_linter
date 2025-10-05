@@ -15,6 +15,10 @@ import 'src/rules/layer_dependency_rule.dart';
 import 'src/rules/domain_rules/domain_purity_rule.dart';
 import 'src/rules/domain_rules/dependency_inversion_rule.dart';
 import 'src/rules/domain_rules/repository_interface_rule.dart';
+import 'src/rules/domain_rules/usecase_no_result_return_rule.dart';
+import 'src/rules/domain_rules/usecase_must_convert_failure_rule.dart';
+import 'src/rules/domain_rules/exception_naming_convention_rule.dart';
+import 'src/rules/domain_rules/exception_message_localization_rule.dart';
 import 'src/rules/circular_dependency_rule.dart';
 import 'src/rules/boundary_crossing_rule.dart';
 import 'src/rules/test_coverage_rule.dart';
@@ -22,12 +26,19 @@ import 'src/rules/test_coverage_rule.dart';
 // Data Layer Rules
 import 'src/rules/data_rules/model_structure_rule.dart';
 import 'src/rules/data_rules/datasource_abstraction_rule.dart';
+import 'src/rules/data_rules/datasource_no_result_return_rule.dart';
+import 'src/rules/data_rules/repository_must_return_result_rule.dart';
+import 'src/rules/data_rules/repository_no_throw_rule.dart';
+import 'src/rules/data_rules/datasource_exception_types_rule.dart';
+import 'src/rules/data_rules/failure_naming_convention_rule.dart';
 
 // Presentation Layer Rules
 import 'src/rules/presentation_rules/no_presentation_models_rule.dart';
 import 'src/rules/presentation_rules/extension_location_rule.dart';
 import 'src/rules/presentation_rules/freezed_usage_rule.dart';
 import 'src/rules/presentation_rules/riverpod_generator_rule.dart';
+import 'src/rules/presentation_rules/presentation_no_data_exceptions_rule.dart';
+import 'src/rules/presentation_rules/presentation_use_async_value_rule.dart';
 
 /// Plugin entry point for Clean Architecture Linter.
 PluginBase createPlugin() => _CleanArchitectureLinterPlugin();
@@ -74,27 +85,62 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
       // 6. Boundary Crossing Validation - 레이어 경계 검증
       BoundaryCrossingRule(),
 
-      // Data Layer Rules (2 rules)
+      // Domain Layer Rules (4 rules)
 
-      // 8. Model Structure - Freezed Model with Entity
+      // 7. UseCase No Result Return - UseCase should unwrap Result
+      UseCaseNoResultReturnRule(),
+
+      // 8. UseCase Must Convert Failure - UseCase should use .toException()
+      UseCaseMustConvertFailureRule(),
+
+      // 9. Exception Naming Convention - Feature prefix for Domain exceptions
+      ExceptionNamingConventionRule(),
+
+      // 10. Exception Message Localization - Use Korean messages
+      ExceptionMessageLocalizationRule(),
+
+      // Data Layer Rules (7 rules)
+
+      // 11. Model Structure - Freezed Model with Entity
       ModelStructureRule(),
 
-      // 9. DataSource Abstraction - Abstract DataSource with Implementation
+      // 12. DataSource Abstraction - Abstract DataSource with Implementation
       DataSourceAbstractionRule(),
 
-      // Presentation Layer Rules (4 rules)
+      // 13. DataSource No Result Return - DataSource should throw exceptions
+      DataSourceNoResultReturnRule(),
 
-      // 10. No Presentation Models - Use Freezed State instead
+      // 14. Repository Must Return Result - Repository must wrap in Result type
+      RepositoryMustReturnResultRule(),
+
+      // 15. Repository No Throw - Repository should not throw exceptions directly
+      RepositoryNoThrowRule(),
+
+      // 16. DataSource Exception Types - Use defined Data exceptions only
+      DataSourceExceptionTypesRule(),
+
+      // 17. Failure Naming Convention - Feature prefix for Failure classes
+      FailureNamingConventionRule(),
+
+      // Presentation Layer Rules (6 rules)
+
+      // 18. No Presentation Models - Use Freezed State instead
       NoPresentationModelsRule(),
 
-      // 11. Extension Location - Extensions in same file
+      // 19. Extension Location - Extensions in same file
       ExtensionLocationRule(),
 
-      // 12. Freezed Usage - Use Freezed instead of Equatable
+      // 20. Freezed Usage - Use Freezed instead of Equatable
       FreezedUsageRule(),
 
-      // 13. Riverpod Generator - Use @riverpod annotation
+      // 21. Riverpod Generator - Use @riverpod annotation
       RiverpodGeneratorRule(),
+
+      // 22. Presentation No Data Exceptions - Use Domain exceptions only
+      PresentationNoDataExceptionsRule(),
+
+      // 23. Presentation Use AsyncValue - Use AsyncValue for error handling
+      PresentationUseAsyncValueRule(),
     ];
 
     // Conditionally add test coverage rule if enabled
