@@ -208,36 +208,135 @@ dart pub publish
 
 ## Architecture
 
-The package is structured around the `custom_lint_builder` framework:
+The package is structured around the `custom_lint_builder` framework with a mixin-based architecture for code reuse:
 
 ### Core Architecture
 - **Entry Point**: `lib/clean_architecture_linter.dart` - Defines the plugin and registers all lint rules
-- **Base Configuration**: `lib/src/clean_architecture_linter_base.dart` - Shared utilities and configuration options
+- **Base Configuration**: `lib/src/clean_architecture_linter_base.dart` - Shared utilities and configuration options (1,014 lines)
+- **Mixins**: `lib/src/mixins/` - Reusable validation logic (592 total lines)
+  - `exception_validation_mixin.dart` (225 lines) - Exception naming and feature prefix validation
+  - `repository_rule_visitor.dart` (238 lines) - Repository interface and implementation detection
+  - `return_type_validation_mixin.dart` (129 lines) - Result type and return type validation
 - **Rule Categories**: Rules are organized by Clean Architecture layers:
   - `lib/src/rules/domain_rules/` - 7 rules for domain layer validation
-  - `lib/src/rules/data_rules/` - 3 rules for data layer validation
+  - `lib/src/rules/data_rules/` - 8 rules for data layer validation
   - `lib/src/rules/presentation_rules/` - 3 rules for presentation layer validation
+  - `lib/src/rules/cross_layer/` - 2 rules for cross-layer boundary enforcement
+
+### Mixin-Based Architecture (v2.0)
+The package uses mixins to eliminate code duplication across lint rules:
+
+**Exception Validation Mixin** - Applied to exception-related rules:
+- `isExceptionClass()` - Checks if class implements Exception
+- `isAllowedWithoutPrefix()` - Validates allowed exception names
+- `isGenericExceptionName()` - Detects generic exception names needing feature prefix
+- `isDataLayerException()` - Identifies data layer exceptions
+- `suggestFeaturePrefix()` - Generates feature-specific exception names
+- `extractFeatureName()` - Extracts feature name from file path
+
+**Repository Rule Visitor** - Applied to repository-related rules:
+- `isRepositoryImplementation()` - Detects repository implementation classes
+- `isRepositoryInterface()` - Validates abstract repository interfaces
+- `shouldSkipMethod()` - Identifies methods to skip (private, test-only)
+- `isAllowedRepositoryThrow()` - Checks if throw is allowed in repository
+
+**Return Type Validation Mixin** - Applied to return type rules:
+- `isResultReturnType()` - Detects Result/Either/Task return types
+- `shouldSkipMethod()` - Common method skipping logic
 
 ### Rule Implementation Pattern
-Each lint rule extends `DartLintRule` and follows this pattern:
+Each lint rule extends `CleanArchitectureLintRule` and can use mixins:
 1. Define a `LintCode` with name, problem message, and correction message
-2. Implement the `run()` method to analyze AST nodes
-3. Use visitors to traverse and validate specific code patterns
-4. Report violations using the `ErrorReporter`
+2. Apply relevant mixins using `with` keyword
+3. Implement `runRule()` method to analyze AST nodes
+4. Use mixin methods instead of duplicating validation logic
+5. Report violations using the `ErrorReporter`
+
+**Example with Mixins**:
+```dart
+class ExceptionNamingConventionRule extends CleanArchitectureLintRule
+    with ExceptionValidationMixin {
+
+  @override
+  void runRule(...) {
+    if (!isExceptionClass(node)) return;  // From mixin
+    if (isGenericExceptionName(className)) {  // From mixin
+      final suggestedName = suggestFeaturePrefix(className, filePath);  // From mixin
+      // Report violation
+    }
+  }
+}
+```
+
+### Code Reduction Achievements (Task 17)
+- **Before Refactoring**: 1,384 lines across 10 rules
+- **After Refactoring**: 1,077 lines (170 lines eliminated, 13.6% reduction)
+- **Mixin Implementation**: 592 lines of reusable validation logic
+- **Net Benefit**: Eliminated duplication, improved maintainability, easier to add new rules
 
 ### Key Components
-- **Plugin Registration**: `_CleanArchitectureLinterPlugin` class registers all 13 lint rules
+- **Plugin Registration**: `_CleanArchitectureLinterPlugin` class registers all lint rules
 - **AST Analysis**: Rules analyze Dart Abstract Syntax Trees to detect architectural violations
+- **Mixin Composition**: Shared validation logic composed via Dart mixins
+- **Utility Class**: `CleanArchitectureUtils` provides layer detection, type checking, and path utilities
 - **Error Reporting**: Standardized error messages guide developers toward Clean Architecture compliance
 
 ## Development Guidelines
 
 ### Adding New Rules
-1. Create rule file in appropriate category directory (`domain_rules/`, `data_rules/`, `presentation_rules/`)
-2. Extend `DartLintRule` and implement required methods
-3. Register the rule in `lib/clean_architecture_linter.dart`
-4. Add examples to `example/lib/` directories
-5. Write tests in `test/` directory
+1. **Identify rule category** - Determine if it's domain, data, presentation, or cross-layer
+2. **Check for reusable logic** - Review existing mixins in `lib/src/mixins/`:
+   - Exception validation? Use `ExceptionValidationMixin`
+   - Repository validation? Use `RepositoryRuleVisitor`
+   - Return type checking? Use `ReturnTypeValidationMixin`
+3. **Create rule file** in appropriate directory (`domain_rules/`, `data_rules/`, `presentation_rules/`, `cross_layer/`)
+4. **Extend base class** with mixins:
+   ```dart
+   class MyNewRule extends CleanArchitectureLintRule
+       with ExceptionValidationMixin, ReturnTypeValidationMixin {
+     // Use mixin methods instead of duplicating logic
+   }
+   ```
+5. **Register the rule** in `lib/clean_architecture_linter.dart`
+6. **Add examples** to `example/lib/` directories (good and bad examples)
+7. **Write tests** in `test/` directory
+
+### Using Mixins for Code Reuse
+**Before** (duplicated validation logic):
+```dart
+class MyRule extends CleanArchitectureLintRule {
+  bool _isExceptionClass(ClassDeclaration node) {
+    // 15 lines of duplicated logic
+  }
+
+  bool _isDataException(String typeName) {
+    // 10 lines of duplicated logic
+  }
+}
+```
+
+**After** (mixin-based, no duplication):
+```dart
+class MyRule extends CleanArchitectureLintRule
+    with ExceptionValidationMixin {
+
+  @override
+  void runRule(...) {
+    if (!isExceptionClass(node)) return;  // From mixin
+    if (isDataLayerException(typeName)) { // From mixin
+      // Custom rule logic
+    }
+  }
+}
+```
+
+### Creating New Mixins
+If you find validation logic duplicated across 3+ rules:
+1. Create new mixin in `lib/src/mixins/`
+2. Extract common validation methods
+3. Add comprehensive dartdoc comments
+4. Write unit tests for the mixin
+5. Update this documentation
 
 ### Testing Strategy
 - Test files go in `test/` directory
@@ -256,16 +355,27 @@ Each lint rule extends `DartLintRule` and follows this pattern:
 lib/
 ├── clean_architecture_linter.dart          # Main plugin entry point
 ├── src/
-│   ├── clean_architecture_linter_base.dart # Shared configuration
-│   └── rules/
-│       ├── domain_rules/                   # Domain layer rules (7 rules)
-│       ├── data_rules/                     # Data layer rules (3 rules)
-│       └── presentation_rules/             # Presentation layer rules (3 rules)
+│   ├── clean_architecture_linter_base.dart # Shared configuration & utilities (1,014 lines)
+│   ├── mixins/                             # Reusable validation mixins (592 lines total)
+│   │   ├── exception_validation_mixin.dart # Exception validation (225 lines)
+│   │   ├── repository_rule_visitor.dart    # Repository validation (238 lines)
+│   │   ├── return_type_validation_mixin.dart # Return type validation (129 lines)
+│   │   └── README.md                       # Mixin documentation
+│   ├── rules/
+│   │   ├── domain_rules/                   # Domain layer rules (7 rules)
+│   │   ├── data_rules/                     # Data layer rules (8 rules)
+│   │   ├── presentation_rules/             # Presentation layer rules (3 rules)
+│   │   └── cross_layer/                    # Cross-layer rules (2 rules)
+│   ├── utils/                              # Additional utilities
+│   └── validators/                         # Custom validators
 example/
 ├── lib/
 │   ├── good_examples/                      # Valid Clean Architecture examples
 │   └── bad_examples/                       # Invalid examples that trigger rules
-test/                                       # Test files
+test/
+├── mixins/                                 # Mixin unit tests
+├── utils/                                  # Utility tests
+└── rules/                                  # Rule integration tests
 ```
 
 ## Dependencies
