@@ -3,7 +3,7 @@ import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
-
+import '../../mixins/exception_validation_mixin.dart';
 
 /// Enforces Domain Exception naming convention with feature prefix.
 ///
@@ -46,7 +46,8 @@ import '../../clean_architecture_linter_base.dart';
 /// ```
 ///
 /// See ERROR_HANDLING_GUIDE.md for complete naming conventions.
-class ExceptionNamingConventionRule extends CleanArchitectureLintRule {
+class ExceptionNamingConventionRule extends CleanArchitectureLintRule
+    with ExceptionValidationMixin {
   const ExceptionNamingConventionRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -61,35 +62,6 @@ class ExceptionNamingConventionRule extends CleanArchitectureLintRule {
         'Examples: TodoNotFoundException, UserValidationException\\n'
         'See ERROR_HANDLING_GUIDE.md',
   );
-
-  /// Generic exception suffixes that should have feature prefix
-  static const exceptionSuffixes = {
-    'NotFoundException',
-    'ValidationException',
-    'UnauthorizedException',
-    'NetworkException',
-    'ServerException',
-    'TimeoutException',
-    'CancelledException',
-    'InvalidException',
-    'DuplicateException',
-  };
-
-  /// Allowed exceptions without feature prefix (Data layer, Dart built-in)
-  static const allowedWithoutPrefix = {
-    'Exception',
-    'Error',
-    'StateError',
-    'ArgumentError',
-    'FormatException',
-    'RangeError',
-    'UnimplementedError',
-    'UnsupportedError',
-    // Data layer exceptions (allowed)
-    'DataSourceException',
-    'CacheException',
-    'DatabaseException',
-  };
 
   @override
   void runRule(
@@ -113,16 +85,16 @@ class ExceptionNamingConventionRule extends CleanArchitectureLintRule {
     if (!CleanArchitectureUtils.isDomainFile(filePath)) return;
 
     // Check if class implements Exception
-    if (!CleanArchitectureUtils.implementsException(node)) return;
+    if (!isExceptionClass(node)) return;
 
     final className = node.name.lexeme;
 
     // Skip allowed exceptions
-    if (_isAllowedWithoutPrefix(className)) return;
+    if (isAllowedWithoutPrefix(className)) return;
 
     // Check if class needs feature prefix
-    if (_needsFeaturePrefix(className)) {
-      final suggestedName = _suggestFeatureName(className, filePath);
+    if (isGenericExceptionName(className)) {
+      final suggestedName = suggestFeaturePrefix(className, filePath);
 
       final code = LintCode(
         name: 'exception_naming_convention',
@@ -138,46 +110,5 @@ class ExceptionNamingConventionRule extends CleanArchitectureLintRule {
       );
       reporter.atNode(node, code);
     }
-  }
-
-  /// Check if exception is allowed without prefix
-  bool _isAllowedWithoutPrefix(String className) {
-    return allowedWithoutPrefix.contains(className);
-  }
-
-  /// Check if exception needs feature prefix
-  bool _needsFeaturePrefix(String className) {
-    // Check if it ends with common exception suffixes
-    for (final suffix in exceptionSuffixes) {
-      if (className == suffix) {
-        // Exact match without prefix (e.g., "NotFoundException")
-        return true;
-      }
-    }
-
-    // Check if it's a generic exception name without feature context
-    if (className.endsWith('Exception') && className.length < 20) {
-      // Short exception names without clear feature context
-      final withoutSuffix = className.replaceAll('Exception', '');
-      if (withoutSuffix.length < 5) {
-        // Very short prefix suggests it might be generic
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  /// Suggest feature name based on file path
-  String _suggestFeatureName(String className, String filePath) {
-    // Extract feature name using RuleUtils
-    final featureName = CleanArchitectureUtils.extractFeatureName(filePath);
-
-    if (featureName != null) {
-      return '$featureName$className';
-    }
-
-    // Fallback: use generic "Feature" prefix
-    return 'Feature$className';
   }
 }

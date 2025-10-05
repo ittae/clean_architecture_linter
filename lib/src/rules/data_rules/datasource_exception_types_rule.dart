@@ -3,6 +3,7 @@ import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
+import '../../mixins/exception_validation_mixin.dart';
 
 /// Enforces that DataSource should only use defined Data layer exceptions.
 ///
@@ -59,7 +60,8 @@ import '../../clean_architecture_linter_base.dart';
 /// ```
 ///
 /// See ERROR_HANDLING_GUIDE.md for complete error handling patterns.
-class DataSourceExceptionTypesRule extends CleanArchitectureLintRule {
+class DataSourceExceptionTypesRule extends CleanArchitectureLintRule
+    with ExceptionValidationMixin {
   const DataSourceExceptionTypesRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -77,17 +79,6 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule {
         '  - DatabaseException (for database errors)\n\n'
         'See ERROR_HANDLING_GUIDE.md',
   );
-
-  /// Allowed Data layer exceptions
-  static const allowedExceptions = {
-    'NotFoundException',
-    'UnauthorizedException',
-    'NetworkException',
-    'DataSourceException',
-    'ServerException',
-    'CacheException',
-    'DatabaseException',
-  };
 
   @override
   void runRule(
@@ -127,8 +118,8 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule {
 
     if (exceptionType == null) return;
 
-    // Check if it's an allowed exception
-    if (!_isAllowedException(exceptionType)) {
+    // Check if it's an allowed Data layer exception
+    if (!isDataLayerException(exceptionType)) {
       final code = LintCode(
         name: 'datasource_exception_types',
         problemMessage:
@@ -156,10 +147,5 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule {
 
     final className = classNode.name.lexeme;
     return CleanArchitectureUtils.isDataSourceClass(className);
-  }
-
-  /// Check if exception is allowed in DataSource
-  bool _isAllowedException(String exceptionType) {
-    return allowedExceptions.contains(exceptionType);
   }
 }

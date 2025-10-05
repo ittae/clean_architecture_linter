@@ -3,7 +3,7 @@ import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
-
+import '../../mixins/exception_validation_mixin.dart';
 
 /// Enforces that Presentation layer should NOT handle Data layer exceptions.
 ///
@@ -59,7 +59,8 @@ import '../../clean_architecture_linter_base.dart';
 /// ```
 ///
 /// See ERROR_HANDLING_GUIDE.md for complete error handling patterns.
-class PresentationNoDataExceptionsRule extends CleanArchitectureLintRule {
+class PresentationNoDataExceptionsRule extends CleanArchitectureLintRule
+    with ExceptionValidationMixin {
   const PresentationNoDataExceptionsRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -73,17 +74,6 @@ class PresentationNoDataExceptionsRule extends CleanArchitectureLintRule {
         'UseCase should convert Data exceptions to Domain exceptions. '
         'See ERROR_HANDLING_GUIDE.md',
   );
-
-  /// Data layer exceptions that should NOT be used in Presentation
-  static const dataExceptions = {
-    'NotFoundException',
-    'UnauthorizedException',
-    'NetworkException',
-    'DataSourceException',
-    'ServerException',
-    'CacheException',
-    'DatabaseException',
-  };
 
   @override
   void runRule(
@@ -113,8 +103,8 @@ class PresentationNoDataExceptionsRule extends CleanArchitectureLintRule {
     final typeName = type.name2.lexeme;
 
     // Check if it's a Data layer exception
-    if (CleanArchitectureUtils.isDataException(typeName)) {
-      final domainException = _suggestDomainException(typeName, filePath);
+    if (isDataLayerException(typeName)) {
+      final domainException = suggestFeaturePrefix(typeName, filePath);
 
       final code = LintCode(
         name: 'presentation_no_data_exceptions',
@@ -131,18 +121,5 @@ class PresentationNoDataExceptionsRule extends CleanArchitectureLintRule {
       );
       reporter.atNode(type, code);
     }
-  }
-
-  /// Suggest appropriate Domain exception based on context
-  String _suggestDomainException(String dataException, String filePath) {
-    // Extract feature name using RuleUtils
-    final featureName = CleanArchitectureUtils.extractFeatureName(filePath);
-
-    if (featureName != null) {
-      return '$featureName$dataException'; // e.g., TodoNotFoundException
-    }
-
-    // Fallback: generic Domain exception
-    return 'Domain$dataException';
   }
 }
