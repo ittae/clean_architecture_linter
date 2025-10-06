@@ -88,7 +88,7 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
     if (!CleanArchitectureUtils.isDataSourceClass(className)) return;
 
     // Check if concrete DataSource without abstract interface
-    if (node.abstractKeyword == null && _isConcreteDataSource(className)) {
+    if (node.abstractKeyword == null && _isConcreteDataSource(node, className)) {
       // This is a concrete DataSource implementation
       // Check if there's a corresponding abstract interface or test file
 
@@ -168,10 +168,27 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
     }
   }
 
-  bool _isConcreteDataSource(String className) {
-    // Implementation classes typically end with Impl
-    return !className.endsWith('Impl') &&
-           !className.endsWith('Implementation');
+  bool _isConcreteDataSource(ClassDeclaration node, String className) {
+    // 1. Check if implements clause exists and implements a DataSource interface
+    if (node.implementsClause != null) {
+      final interfaces = node.implementsClause!.interfaces;
+      for (final interface in interfaces) {
+        final interfaceName = interface.name2.toString();
+        if (CleanArchitectureUtils.isDataSourceClass(interfaceName)) {
+          // Implements a DataSource interface - this is correct pattern
+          return false;
+        }
+      }
+    }
+
+    // 2. Check if abstract - abstract classes are interfaces
+    if (node.abstractKeyword != null) {
+      return false;
+    }
+
+    // 3. If neither implements a DataSource interface nor is abstract,
+    //    this is a problematic concrete DataSource
+    return true;
   }
 
   String _getAbstractName(String concreteName) {
