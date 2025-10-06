@@ -20,6 +20,7 @@ import 'src/rules/cross_layer/test_coverage_rule.dart';
 import 'src/rules/domain_rules/domain_purity_rule.dart';
 import 'src/rules/domain_rules/dependency_inversion_rule.dart';
 import 'src/rules/domain_rules/repository_interface_rule.dart';
+import 'src/rules/domain_rules/entity_business_logic_rule.dart';
 import 'src/rules/domain_rules/usecase_no_result_return_rule.dart';
 import 'src/rules/domain_rules/usecase_must_convert_failure_rule.dart';
 import 'src/rules/domain_rules/exception_naming_convention_rule.dart';
@@ -87,61 +88,64 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
       // 6. Boundary Crossing Validation - 레이어 경계 검증
       BoundaryCrossingRule(),
 
-      // Domain Layer Rules (4 rules)
+      // Domain Layer Rules (5 rules)
 
-      // 7. UseCase No Result Return - UseCase should unwrap Result
+      // 7. Entity Business Logic - Entities should not be anemic
+      EntityBusinessLogicRule(),
+
+      // 8. UseCase No Result Return - UseCase should unwrap Result
       UseCaseNoResultReturnRule(),
 
-      // 8. UseCase Must Convert Failure - UseCase should use .toException()
+      // 9. UseCase Must Convert Failure - UseCase should use .toException()
       UseCaseMustConvertFailureRule(),
 
-      // 9. Exception Naming Convention - Feature prefix for Domain exceptions
+      // 10. Exception Naming Convention - Feature prefix for Domain exceptions
       ExceptionNamingConventionRule(),
 
-      // 10. Exception Message Localization - Use Korean messages
+      // 11. Exception Message Localization - Use Korean messages
       ExceptionMessageLocalizationRule(),
 
       // Data Layer Rules (7 rules)
 
-      // 11. Model Structure - Freezed Model with Entity
+      // 12. Model Structure - Freezed Model with Entity
       ModelStructureRule(),
 
-      // 12. DataSource Abstraction - Abstract DataSource with Implementation
+      // 13. DataSource Abstraction - Abstract DataSource with Implementation
       DataSourceAbstractionRule(),
 
-      // 13. DataSource No Result Return - DataSource should throw exceptions
+      // 14. DataSource No Result Return - DataSource should throw exceptions
       DataSourceNoResultReturnRule(),
 
-      // 14. Repository Must Return Result - Repository must wrap in Result type
+      // 15. Repository Must Return Result - Repository must wrap in Result type
       RepositoryMustReturnResultRule(),
 
-      // 15. Repository No Throw - Repository should not throw exceptions directly
+      // 16. Repository No Throw - Repository should not throw exceptions directly
       RepositoryNoThrowRule(),
 
-      // 16. DataSource Exception Types - Use defined Data exceptions only
+      // 17. DataSource Exception Types - Use defined Data exceptions only
       DataSourceExceptionTypesRule(),
 
-      // 17. Failure Naming Convention - Feature prefix for Failure classes
+      // 18. Failure Naming Convention - Feature prefix for Failure classes
       FailureNamingConventionRule(),
 
       // Presentation Layer Rules (6 rules)
 
-      // 18. No Presentation Models - Use Freezed State instead
+      // 19. No Presentation Models - Use Freezed State instead
       NoPresentationModelsRule(),
 
-      // 19. Extension Location - Extensions in same file
+      // 20. Extension Location - Extensions in same file
       ExtensionLocationRule(),
 
-      // 20. Freezed Usage - Use Freezed instead of Equatable
+      // 21. Freezed Usage - Use Freezed instead of Equatable
       FreezedUsageRule(),
 
-      // 21. Riverpod Generator - Use @riverpod annotation
+      // 22. Riverpod Generator - Use @riverpod annotation
       RiverpodGeneratorRule(),
 
-      // 22. Presentation No Data Exceptions - Use Domain exceptions only
+      // 23. Presentation No Data Exceptions - Use Domain exceptions only
       PresentationNoDataExceptionsRule(),
 
-      // 23. Presentation Use AsyncValue - Use AsyncValue for error handling
+      // 24. Presentation Use AsyncValue - Use AsyncValue for error handling
       PresentationUseAsyncValueRule(),
     ];
 

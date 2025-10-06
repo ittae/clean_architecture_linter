@@ -1,10 +1,27 @@
 // Bad examples that will be flagged by Clean Architecture Linter
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'domain_bad_examples.freezed.dart';
 
 // ❌ Domain Purity Violation - importing external frameworks
 // import 'package:http/http.dart' as http; // This will be flagged
 // import 'package:flutter/material.dart'; // This will be flagged
 
 // These imports are commented out for example purposes, but would be flagged:
+
+// ❌ Anemic Entity (no business logic methods)
+class AnemicProduct {
+  final String id;
+  final String name;
+  final double price;
+
+  const AnemicProduct({
+    required this.id,
+    required this.name,
+    required this.price,
+  });
+  // ❌ No business logic methods - just data fields
+}
 
 // ❌ Entity Immutability Violation
 class BadUserEntity {
@@ -70,4 +87,55 @@ class BadUserBusinessLogic {
 
 abstract class UserRepository {
   Future<BadUserEntity?> getUserById(String id);
+}
+
+// ❌ Freezed Entity without Extension (no business logic)
+@freezed
+class FreezedTodo with _$FreezedTodo {
+  const factory FreezedTodo({
+    required String id,
+    required String title,
+    required bool isCompleted,
+  }) = _FreezedTodo;
+  // ❌ Missing extension with business logic
+}
+
+// ❌ Anemic Entity with only getters
+class CustomerEntity {
+  final String id;
+  final String name;
+  final String email;
+
+  const CustomerEntity({
+    required this.id,
+    required this.name,
+    required this.email,
+  });
+
+  // ❌ Only simple getters, no business logic
+  String get displayName => name;
+  String get contactEmail => email;
+}
+
+// ❌ Entity with mutable fields and setters
+class MutableOrder {
+  String status; // ❌ Non-final field
+  final String id;
+  final List<String> items;
+
+  MutableOrder({
+    required this.status,
+    required this.id,
+    required this.items,
+  });
+
+  // ❌ Setter method violates immutability
+  void updateStatus(String newStatus) {
+    status = newStatus;
+  }
+
+  // ❌ Mutating method
+  void addItem(String item) {
+    items.add(item);
+  }
 }
