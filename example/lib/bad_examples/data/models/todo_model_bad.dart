@@ -59,7 +59,7 @@ class TodoModelInheritance extends Todo {
 
 /// ❌ Violation 6: Missing conversion methods
 @freezed
-sealed class TodoModelNoConversion {
+sealed class TodoModelNoConversion with _$TodoModelNoConversion {
   const factory TodoModelNoConversion({
     required Todo entity,
     String? etag,
