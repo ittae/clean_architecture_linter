@@ -28,7 +28,7 @@ jobs:
       run: dart --version
 
     - name: Install dependencies
-      run: dart pub get
+      run: dart pub get --no-recursive
 
     - name: Verify dependencies
       run: dart pub deps
@@ -58,7 +58,7 @@ jobs:
         sdk: 'stable'
 
     - name: Install dependencies
-      run: dart pub get
+      run: dart pub get --no-recursive
 
     - name: Install coverage tools
       run: dart pub global activate coverage
