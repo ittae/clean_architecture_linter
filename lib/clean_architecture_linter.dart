@@ -30,6 +30,7 @@ import 'src/rules/domain_rules/exception_message_localization_rule.dart';
 import 'src/rules/data_rules/model_structure_rule.dart';
 import 'src/rules/data_rules/datasource_abstraction_rule.dart';
 import 'src/rules/data_rules/datasource_no_result_return_rule.dart';
+import 'src/rules/data_rules/repository_implementation_rule.dart';
 import 'src/rules/data_rules/repository_must_return_result_rule.dart';
 import 'src/rules/data_rules/repository_no_throw_rule.dart';
 import 'src/rules/data_rules/datasource_exception_types_rule.dart';
@@ -105,7 +106,7 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
       // 11. Exception Message Localization - Use Korean messages
       ExceptionMessageLocalizationRule(),
 
-      // Data Layer Rules (7 rules)
+      // Data Layer Rules (8 rules)
 
       // 12. Model Structure - Freezed Model with Entity
       ModelStructureRule(),
@@ -116,36 +117,39 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
       // 14. DataSource No Result Return - DataSource should throw exceptions
       DataSourceNoResultReturnRule(),
 
-      // 15. Repository Must Return Result - Repository must wrap in Result type
+      // 15. Repository Implementation - RepositoryImpl must implement domain interface
+      RepositoryImplementationRule(),
+
+      // 16. Repository Must Return Result - Repository must wrap in Result type
       RepositoryMustReturnResultRule(),
 
-      // 16. Repository No Throw - Repository should not throw exceptions directly
+      // 17. Repository No Throw - Repository should not throw exceptions directly
       RepositoryNoThrowRule(),
 
-      // 17. DataSource Exception Types - Use defined Data exceptions only
+      // 18. DataSource Exception Types - Use defined Data exceptions only
       DataSourceExceptionTypesRule(),
 
-      // 18. Failure Naming Convention - Feature prefix for Failure classes
+      // 19. Failure Naming Convention - Feature prefix for Failure classes
       FailureNamingConventionRule(),
 
       // Presentation Layer Rules (6 rules)
 
-      // 19. No Presentation Models - Use Freezed State instead
+      // 20. No Presentation Models - Use Freezed State instead
       NoPresentationModelsRule(),
 
-      // 20. Extension Location - Extensions in same file
+      // 21. Extension Location - Extensions in same file
       ExtensionLocationRule(),
 
-      // 21. Freezed Usage - Use Freezed instead of Equatable
+      // 22. Freezed Usage - Use Freezed instead of Equatable
       FreezedUsageRule(),
 
-      // 22. Riverpod Generator - Use @riverpod annotation
+      // 23. Riverpod Generator - Use @riverpod annotation
       RiverpodGeneratorRule(),
 
-      // 23. Presentation No Data Exceptions - Use Domain exceptions only
+      // 24. Presentation No Data Exceptions - Use Domain exceptions only
       PresentationNoDataExceptionsRule(),
 
-      // 24. Presentation Use AsyncValue - Use AsyncValue for error handling
+      // 25. Presentation Use AsyncValue - Use AsyncValue for error handling
       PresentationUseAsyncValueRule(),
     ];
 

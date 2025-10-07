@@ -168,8 +168,23 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule with RepositoryR
     final returnType = method.returnType;
 
     // Check if repository method returns domain entities (not data models)
+    _checkReturnTypeForModels(returnType, reporter);
+
+    // Check method parameters for data layer models
+    _checkMethodParametersForModels(method, reporter);
+  }
+
+  /// Checks if return type contains data layer models (including nested generics)
+  void _checkReturnTypeForModels(
+    TypeAnnotation? returnType,
+    ErrorReporter reporter,
+  ) {
+    if (returnType == null) return;
+
     if (returnType is NamedType) {
       final returnTypeName = returnType.name2.lexeme;
+
+      // Check the main type
       if (_isDataLayerModel(returnTypeName)) {
         final code = LintCode(
           name: 'repository_interface',
@@ -177,10 +192,79 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule with RepositoryR
           correctionMessage: 'Repository methods should return domain entities, not data models.',
         );
         reporter.atNode(returnType, code);
+        return; // Don't check further if main type is already a model
+      }
+
+      // Check generic type arguments (e.g., Result<UserModel, Failure>)
+      final typeArguments = returnType.typeArguments?.arguments;
+      if (typeArguments != null) {
+        for (final typeArg in typeArguments) {
+          if (typeArg is NamedType) {
+            final typeArgName = typeArg.name2.lexeme;
+            if (_isDataLayerModel(typeArgName)) {
+              final code = LintCode(
+                name: 'repository_interface',
+                problemMessage: 'Repository method uses data layer model in generic type: $typeArgName',
+                correctionMessage: 'Use domain entities in generic types. Example: Result<User, Failure> instead of Result<UserModel, Failure>',
+              );
+              reporter.atNode(typeArg, code);
+            }
+          }
+        }
       }
     }
+  }
 
-    // Method names are domain-specific and should not be enforced by linter
+  /// Checks if method parameters contain data layer models
+  void _checkMethodParametersForModels(
+    MethodDeclaration method,
+    ErrorReporter reporter,
+  ) {
+    final parameters = method.parameters;
+    if (parameters == null) return;
+
+    for (final param in parameters.parameters) {
+      TypeAnnotation? paramType;
+
+      if (param is SimpleFormalParameter) {
+        paramType = param.type;
+      } else if (param is DefaultFormalParameter) {
+        final innerParam = param.parameter;
+        if (innerParam is SimpleFormalParameter) {
+          paramType = innerParam.type;
+        }
+      }
+
+      if (paramType is NamedType) {
+        final paramTypeName = paramType.name2.lexeme;
+        if (_isDataLayerModel(paramTypeName)) {
+          final code = LintCode(
+            name: 'repository_interface',
+            problemMessage: 'Repository method parameter uses data layer model: $paramTypeName',
+            correctionMessage: 'Repository method parameters should use domain entities, not data models.',
+          );
+          reporter.atNode(paramType, code);
+        }
+
+        // Check generic type arguments in parameters (e.g., List<UserModel>)
+        final typeArguments = paramType.typeArguments?.arguments;
+        if (typeArguments != null) {
+          for (final typeArg in typeArguments) {
+            if (typeArg is NamedType) {
+              final typeArgName = typeArg.name2.lexeme;
+              if (_isDataLayerModel(typeArgName)) {
+                final code = LintCode(
+                  name: 'repository_interface',
+                  problemMessage: 'Repository parameter uses data layer model in generic type: $typeArgName',
+                  correctionMessage: 'Use domain entities in generic types. Example: List<User> instead of List<UserModel>',
+                );
+                reporter.atNode(typeArg, code);
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   RepositoryViolation? _analyzeRepositoryImport(String importUri) {

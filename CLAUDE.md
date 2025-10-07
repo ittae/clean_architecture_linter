@@ -97,6 +97,168 @@ class TodoCard extends StatelessWidget {
 
 See [CLEAN_ARCHITECTURE_GUIDE.md](docs/CLEAN_ARCHITECTURE_GUIDE.md) for complete examples.
 
+### ❌ Violation: Domain Repository is Concrete (Not Abstract)
+
+**Problem**:
+```dart
+// domain/repositories/user_repository.dart
+class UserRepository {  // ❌ WRONG - Concrete class in domain
+  Future<User?> getUser(String id) {
+    // Implementation in domain layer
+  }
+}
+```
+
+**Solution**:
+```dart
+// domain/repositories/user_repository.dart
+abstract interface class UserRepository {  // ✅ CORRECT - Abstract interface
+  Future<Result<User, Failure>> getUser(String id);
+}
+
+// data/repositories/user_repository_impl.dart
+class UserRepositoryImpl implements UserRepository {  // ✅ Implementation in data layer
+  @override
+  Future<Result<User, Failure>> getUser(String id) async {
+    try {
+      final model = await dataSource.getUser(id);
+      return Success(model.toEntity());
+    } on DataException catch (e) {
+      return Failure(UserFailure.notFound(message: e.message));
+    }
+  }
+}
+```
+
+### ❌ Violation: RepositoryImpl Missing Interface Implementation
+
+**Problem**:
+```dart
+// data/repositories/user_repository_impl.dart
+class UserRepositoryImpl {  // ❌ WRONG - No implements clause
+  Future<Result<User, Failure>> getUser(String id) async { }
+}
+```
+
+**Solution**:
+```dart
+// data/repositories/user_repository_impl.dart
+class UserRepositoryImpl implements UserRepository {  // ✅ CORRECT
+  final UserDataSource dataSource;
+
+  UserRepositoryImpl({required this.dataSource});
+
+  @override
+  Future<Result<User, Failure>> getUser(String id) async {
+    try {
+      final model = await dataSource.getUser(id);
+      return Success(model.toEntity());
+    } on DataException catch (e) {
+      return Failure(UserFailure.fromDataException(e));
+    }
+  }
+}
+```
+
+### ❌ Violation: Repository Method Returns Model Instead of Entity
+
+**Problem**:
+```dart
+// domain/repositories/user_repository.dart
+abstract interface class UserRepository {
+  Future<Result<UserModel, Failure>> getUser(String id);  // ❌ WRONG - Returns Model
+  Future<List<UserModel>> getUsers();  // ❌ WRONG - Returns Model
+}
+```
+
+**Solution**:
+```dart
+// domain/repositories/user_repository.dart
+abstract interface class UserRepository {
+  Future<Result<User, Failure>> getUser(String id);  // ✅ CORRECT - Returns Entity
+  Future<Result<List<User>, Failure>> getUsers();  // ✅ CORRECT - Returns Entity
+}
+```
+
+### ❌ Violation: Repository Method Doesn't Return Result Type
+
+**Problem**:
+```dart
+// data/repositories/user_repository_impl.dart
+class UserRepositoryImpl implements UserRepository {
+  Future<User?> getUser(String id) async {  // ❌ WRONG - No Result wrapper
+    final model = await dataSource.getUser(id);
+    return model.toEntity();
+  }
+}
+```
+
+**Solution**:
+```dart
+// data/repositories/user_repository_impl.dart
+class UserRepositoryImpl implements UserRepository {
+  Future<Result<User, Failure>> getUser(String id) async {  // ✅ CORRECT
+    try {
+      final model = await dataSource.getUser(id);
+      return Success(model.toEntity());
+    } on DataException catch (e) {
+      return Failure(UserFailure.fromDataException(e));
+    }
+  }
+}
+```
+
+### ❌ Violation: Repository Throws Exceptions
+
+**Problem**:
+```dart
+// data/repositories/user_repository_impl.dart
+class UserRepositoryImpl implements UserRepository {
+  Future<Result<User, Failure>> getUser(String id) async {
+    if (id.isEmpty) {
+      throw ArgumentError('ID required');  // ❌ WRONG - Repository throwing
+    }
+    // ...
+  }
+}
+```
+
+**Solution**:
+```dart
+// data/repositories/user_repository_impl.dart
+class UserRepositoryImpl implements UserRepository {
+  Future<Result<User, Failure>> getUser(String id) async {
+    if (id.isEmpty) {
+      return Failure(UserFailure.invalidInput(message: 'ID required'));  // ✅ CORRECT
+    }
+
+    try {
+      final model = await dataSource.getUser(id);  // DataSource throws
+      return Success(model.toEntity());
+    } on DataException catch (e) {
+      return Failure(UserFailure.fromDataException(e));  // ✅ Convert to Failure
+    }
+  }
+}
+```
+
+### Repository Pattern Summary
+
+**Domain Layer (Interfaces)**:
+- ✅ Abstract classes or abstract interface classes
+- ✅ Return `Result<Entity, Failure>` types
+- ✅ Named `*Repository` (e.g., `UserRepository`, `TodoRepository`)
+- ❌ No implementations or method bodies
+- ❌ No Model types in signatures
+
+**Data Layer (Implementations)**:
+- ✅ Concrete classes implementing domain interfaces
+- ✅ Named `*RepositoryImpl` (e.g., `UserRepositoryImpl`)
+- ✅ Must use `implements` keyword
+- ✅ Catch DataSource exceptions and convert to `Result`
+- ❌ Never throw exceptions directly
+- ❌ No Model types in return signatures (convert to Entity)
+
 ## Configuration
 
 All Clean Architecture rules are **enabled by default**. No configuration needed in `analysis_options.yaml`.
