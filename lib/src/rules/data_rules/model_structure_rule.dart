@@ -85,6 +85,18 @@ class ModelStructureRule extends CleanArchitectureLintRule {
       return;
     }
 
+    // Check for sealed class modifier
+    if (!_isSealedClass(node)) {
+      final code = LintCode(
+        name: 'model_structure',
+        problemMessage:
+            'Data model "$className" should be a sealed class',
+        correctionMessage:
+            'Add "sealed" modifier before "class" keyword (e.g., "sealed class $className").',
+      );
+      reporter.atNode(node, code);
+    }
+
     // Check for Entity field in constructor
     final hasEntityField = _hasEntityField(node);
     if (!hasEntityField) {
@@ -109,6 +121,10 @@ class ModelStructureRule extends CleanArchitectureLintRule {
       final name = annotation.name.toString();
       return name == 'freezed' || name == 'Freezed';
     });
+  }
+
+  bool _isSealedClass(ClassDeclaration node) {
+    return node.sealedKeyword != null;
   }
 
   bool _hasEntityField(ClassDeclaration node) {

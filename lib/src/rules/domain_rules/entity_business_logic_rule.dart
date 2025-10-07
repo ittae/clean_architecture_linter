@@ -205,6 +205,20 @@ class EntityBusinessLogicRule extends CleanArchitectureLintRule {
     final isFreezed = _hasFreezedAnnotation(classNode);
 
     if (isFreezed) {
+      // Check for sealed class modifier
+      if (!_isSealedClass(classNode)) {
+        reporter.atNode(
+          classNode,
+          LintCode(
+            name: 'entity_business_logic',
+            problemMessage:
+                'Freezed Entity "$className" should be a sealed class',
+            correctionMessage:
+                'Add "sealed" modifier before "class" keyword (e.g., "sealed class $className").',
+          ),
+        );
+      }
+
       // For Freezed entities, check for extension in same file
       if (!_hasExtensionInFile(className, classNode)) {
         reporter.atNode(
@@ -310,6 +324,11 @@ class EntityBusinessLogicRule extends CleanArchitectureLintRule {
       if (name == 'freezed' || name == 'Freezed') return true;
     }
     return false;
+  }
+
+  /// Checks if class is sealed
+  bool _isSealedClass(ClassDeclaration classNode) {
+    return classNode.sealedKeyword != null;
   }
 
   /// Checks if there's an extension for this class in the same file
