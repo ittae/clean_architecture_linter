@@ -11,7 +11,7 @@ import '../../clean_architecture_linter_base.dart';
 /// - NO separate extensions/ directories
 /// - Domain: Business logic extensions in entity file
 /// - Data: Conversion extensions in model file
-/// - Presentation: UI extensions in state file or widget file
+/// - Presentation: Entity UI extensions ONLY in state files (NOT in widget files)
 ///
 /// ✅ Correct Pattern:
 /// ```dart
@@ -22,6 +22,18 @@ import '../../clean_architecture_linter_base.dart';
 /// extension RankingX on Ranking {  // Same file
 ///   bool get isHighAttendance => attendeeCount > 5;
 /// }
+///
+/// // presentation/states/ranking_state.dart
+/// @freezed
+/// class RankingState {
+///   const factory RankingState({
+///     @Default([]) List<Ranking> rankings,
+///   }) = _RankingState;
+/// }
+///
+/// extension RankingUIX on Ranking {  // ✅ OK: State file only
+///   Color get statusColor => Colors.green;
+/// }
 /// ```
 ///
 /// ❌ Wrong Pattern:
@@ -29,6 +41,8 @@ import '../../clean_architecture_linter_base.dart';
 /// // domain/extensions/ranking_extensions.dart  ❌
 /// // presentation/extensions/  ❌
 /// // presentation/ui/  ❌
+/// // presentation/widgets/ranking_card.dart
+/// extension RankingUIX on Ranking { }  // ❌ NO: Widget file
 /// ```
 class ExtensionLocationRule extends CleanArchitectureLintRule {
   const ExtensionLocationRule() : super(code: _code);
@@ -48,6 +62,10 @@ class ExtensionLocationRule extends CleanArchitectureLintRule {
   ) {
     context.registry.addCompilationUnit((node) {
       _checkExtensionDirectory(node, reporter, resolver);
+    });
+
+    context.registry.addExtensionDeclaration((node) {
+      _checkPresentationExtensionLocation(node, reporter, resolver);
     });
   }
 
@@ -95,5 +113,46 @@ class ExtensionLocationRule extends CleanArchitectureLintRule {
       return 'state file or widget file (e.g., ranking_state.dart with UI extensions)';
     }
     return 'appropriate file';
+  }
+
+  void _checkPresentationExtensionLocation(
+    ExtensionDeclaration node,
+    ErrorReporter reporter,
+    CustomLintResolver resolver,
+  ) {
+    final filePath = resolver.path;
+    final normalized = filePath.replaceAll('\\', '/').toLowerCase();
+
+    // Only check presentation layer
+    if (!normalized.contains('/presentation/')) return;
+
+    // Skip if in states/ directory (allowed)
+    if (normalized.contains('/states/') || normalized.endsWith('_state.dart')) {
+      return;
+    }
+
+    // Check if extension is on a Domain Entity
+    final extendedType = node.onClause?.extendedType;
+    if (extendedType == null) return;
+
+    // Check if this looks like a Domain Entity extension
+    // (Entity extensions in presentation should ONLY be in state files)
+    if (normalized.contains('/widgets/') ||
+        normalized.contains('/pages/') ||
+        normalized.contains('/screens/') ||
+        normalized.endsWith('_widget.dart') ||
+        normalized.endsWith('_page.dart') ||
+        normalized.endsWith('_screen.dart')) {
+      final code = LintCode(
+        name: 'extension_location',
+        problemMessage:
+            'Entity UI extensions are not allowed in widget/page/screen files',
+        correctionMessage:
+            'Move entity UI extensions to the State file (e.g., todo_state.dart). '
+            'Only State files should contain entity UI extensions. '
+            'Widget files should use the State and its extensions, not define their own.',
+      );
+      reporter.atNode(node, code);
+    }
   }
 }
