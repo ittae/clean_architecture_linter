@@ -21,7 +21,6 @@ include: package:lints/recommended.yaml
 
 analyzer:
   exclude:
-    - example/**
     - test/**
     - "**/*.test.dart"
     - "**/*.freezed.dart"

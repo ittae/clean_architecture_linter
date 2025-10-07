@@ -1,1 +1,13 @@
-example/
+# Development and documentation files
+.dart_tool/
+.vscode/
+.idea/
+*.iml
+.DS_Store
+
+# Keep package lightweight - exclude non-essential docs
+CONTRIBUTING.md
+TASKMASTER_빠른시작.md
+VALIDATION_REPORT.md
+CLAUDE.md
+ARCHITECTURE.md
