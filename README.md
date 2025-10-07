@@ -277,7 +277,90 @@ class UserEntity {
 class UserWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // Business logic in UI layer
+    // Business logic in UI layer - WRONG!
+    final isValid = email.contains('@') && email.length > 5;
+    return Text(isValid ? 'Valid' : 'Invalid');
+  }
+}
+```
+
+**Repository Throwing Exceptions**
+```dart
+// ❌ This will be flagged by avoid_exception_throwing_in_repository
+class UserRepositoryImpl implements UserRepository {
+  @override
+  Future<UserEntity> getUser(String id) async {
+    if (id.isEmpty) {
+      throw ArgumentError('ID cannot be empty'); // Should return Result instead
+    }
+    // ...
+  }
+}
+```
+
+**Layer Dependency Violation**
+```dart
+// ❌ This will be flagged by avoid_layer_dependency_violation
+// In domain layer file:
+import 'package:myapp/data/models/user_model.dart'; // Domain importing Data!
+
+class UserEntity extends UserModel { // Wrong dependency direction
+  // ...
+}
+```
+
+**Missing Exception Prefix**
+```dart
+// ❌ This will be flagged by ensure_exception_prefix
+class NetworkException extends Exception { // Should be UserNetworkException
+  // ...
+}
+```
+
+### 🔄 Common Patterns
+
+**Proper Error Handling with Result Type**
+```dart
+// ✅ Good: Using Result pattern
+sealed class Result<T, E> {}
+class Success<T, E> extends Result<T, E> {
+  final T value;
+  Success(this.value);
+}
+class Failure<T, E> extends Result<T, E> {
+  final E error;
+  Failure(this.error);
+}
+
+// Repository implementation
+class UserRepositoryImpl implements UserRepository {
+  @override
+  Future<Result<UserEntity, UserException>> getUser(String id) async {
+    try {
+      final userData = await dataSource.getUser(id);
+      return Success(userData.toEntity());
+    } catch (e) {
+      return Failure(UserDataException(e.toString()));
+    }
+  }
+}
+```
+
+**Proper Exception Naming**
+```dart
+// ✅ Good: Proper exception prefixes
+class UserNetworkException extends Exception {
+  final String message;
+  UserNetworkException(this.message);
+}
+
+class UserValidationException extends Exception {
+  final String field;
+  UserValidationException(this.field);
+}
+```
+
+For more detailed examples and explanations, see our comprehensive [Examples Guide](docs/EXAMPLES.md).
     final user = UserRepository().getUser('123');
     return Text(user.name);
   }

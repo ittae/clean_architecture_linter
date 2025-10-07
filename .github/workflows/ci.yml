@@ -28,7 +28,7 @@ jobs:
       run: dart --version
 
     - name: Install dependencies
-      run: dart pub get --no-recursive
+      run: dart pub get
 
     - name: Verify dependencies
       run: dart pub deps
@@ -58,7 +58,7 @@ jobs:
         sdk: 'stable'
 
     - name: Install dependencies
-      run: dart pub get --no-recursive
+      run: dart pub get
 
     - name: Install coverage tools
       run: dart pub global activate coverage
@@ -88,12 +88,15 @@ jobs:
       with:
         sdk: 'stable'
 
-    - name: Install main package dependencies
+    - name: Install main package dependencies only
       run: dart pub get
 
-    - name: Verify example structure
+    - name: Verify example structure exists
       run: |
-        echo "Checking example files..."
-        ls -la example/lib/good_examples/ || echo "Good examples directory"
-        ls -la example/lib/bad_examples/ || echo "Bad examples directory"
-        echo "✅ Example structure verified"
+        if [ -d "example" ]; then
+          echo "✅ Example directory exists"
+          ls -la example/lib/good_examples/ || echo "Good examples directory"
+          ls -la example/lib/bad_examples/ || echo "Bad examples directory"
+        else
+          echo "ℹ️ No example directory found"
+        fi
