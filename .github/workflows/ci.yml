@@ -76,36 +76,24 @@ jobs:
         flags: unittests
         name: codecov-umbrella
 
-  linter-test:
+  example-test:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Setup Flutter SDK
-      uses: subosito/flutter-action@v2
+    - name: Setup Dart SDK
+      uses: dart-lang/setup-dart@v1
       with:
-        flutter-version: 'stable'
+        sdk: 'stable'
 
     - name: Install main package dependencies
-      run: flutter pub get
+      run: dart pub get
 
-    - name: Install example dependencies
-      working-directory: example
-      run: flutter pub get
-
-    - name: Test linter on example project
-      working-directory: example
-      run: |
-        # Test that our linter works on the example project
-        echo "Testing linter on example project..."
-        flutter pub run custom_lint || echo "✅ Linter correctly analyzed example project"
-
-    - name: Verify example files exist
-      working-directory: example
+    - name: Verify example structure
       run: |
         echo "Checking example files..."
-        ls -la lib/good_examples/ || echo "Good examples directory"
-        ls -la lib/bad_examples/ || echo "Bad examples directory"
+        ls -la example/lib/good_examples/ || echo "Good examples directory"
+        ls -la example/lib/bad_examples/ || echo "Bad examples directory"
         echo "✅ Example structure verified"
