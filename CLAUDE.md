@@ -259,6 +259,167 @@ class UserRepositoryImpl implements UserRepository {
 - ❌ Never throw exceptions directly
 - ❌ No Model types in return signatures (convert to Entity)
 
+## Exception Naming & Layer Patterns
+
+### ❌ Violation: Domain Exception Missing Feature Prefix
+
+**Problem**:
+```dart
+// domain/exceptions/todo_exceptions.dart
+class NotFoundException implements Exception {  // ❌ WRONG - Too generic
+  final String message;
+  NotFoundException(this.message);
+}
+
+class ValidationException implements Exception {  // ❌ WRONG - Missing feature prefix
+  final String message;
+  ValidationException(this.message);
+}
+```
+
+**Solution**:
+```dart
+// domain/exceptions/todo_exceptions.dart
+class TodoNotFoundException implements Exception {  // ✅ CORRECT - Feature prefix
+  final String message;
+  TodoNotFoundException(this.message);
+}
+
+class TodoValidationException implements Exception {  // ✅ CORRECT - Feature prefix
+  final String message;
+  TodoValidationException(this.message);
+}
+```
+
+**Why**: Feature prefixes prevent naming conflicts and clearly indicate which feature the exception belongs to.
+
+### ❌ Violation: DataSource Using Generic Exceptions
+
+**Problem**:
+```dart
+// data/datasources/todo_remote_datasource.dart
+class TodoRemoteDataSource {
+  Future<Todo> getTodo(String id) async {
+    throw Exception('Custom error');  // ❌ WRONG - Generic Exception
+  }
+
+  Future<List<Todo>> getTodos() async {
+    throw StateError('Invalid state');  // ❌ WRONG - Dart built-in
+  }
+
+  Future<void> deleteTodo(String id) async {
+    throw CustomApiException('API error');  // ❌ WRONG - Custom exception
+  }
+}
+```
+
+**Solution**:
+```dart
+// data/datasources/todo_remote_datasource.dart
+class TodoRemoteDataSource {
+  Future<Todo> getTodo(String id) async {
+    final response = await client.get('/todos/$id');
+
+    if (response.statusCode == 404) {
+      throw NotFoundException('Todo not found: $id');  // ✅ CORRECT
+    }
+
+    if (response.statusCode == 401) {
+      throw UnauthorizedException('Auth required');  // ✅ CORRECT
+    }
+
+    if (response.statusCode >= 500) {
+      throw ServerException('Server error');  // ✅ CORRECT
+    }
+
+    return Todo.fromJson(response.data);
+  }
+
+  Future<List<Todo>> getTodos() async {
+    try {
+      return await client.get('/todos');
+    } catch (e) {
+      throw NetworkException('Connection failed: $e');  // ✅ CORRECT
+    }
+  }
+
+  Future<void> deleteTodo(String id) async {
+    throw DataSourceException('Delete operation failed');  // ✅ CORRECT
+  }
+}
+```
+
+**Allowed Data Layer Exceptions**:
+- ✅ `NotFoundException` - For 404 errors
+- ✅ `UnauthorizedException` - For 401/403 errors
+- ✅ `NetworkException` - For connection errors
+- ✅ `ServerException` - For 5xx server errors
+- ✅ `CacheException` - For cache errors
+- ✅ `DatabaseException` - For database errors
+- ✅ `DataSourceException` - For generic data source errors
+
+### ❌ Violation: Presentation Layer Using Data Exceptions
+
+**Problem**:
+```dart
+// presentation/widgets/todo_list.dart
+class TodoList extends StatelessWidget {
+  void _loadTodos() {
+    try {
+      // ...
+    } on NetworkException catch (e) {  // ❌ WRONG - Data exception in Presentation
+      showError(e.message);
+    } on CacheException catch (e) {  // ❌ WRONG - Data exception in Presentation
+      showError(e.message);
+    }
+  }
+}
+```
+
+**Solution**:
+```dart
+// presentation/widgets/todo_list.dart
+class TodoList extends StatelessWidget {
+  void _loadTodos() {
+    try {
+      // UseCase returns Result, unwrap it
+      final result = await getTodosUseCase();
+
+      result.when(
+        success: (todos) => _showTodos(todos),
+        failure: (failure) => _handleFailure(failure),  // ✅ Handle domain Failure
+      );
+    } on TodoNotFoundException catch (e) {  // ✅ CORRECT - Domain exception
+      showError('Todos not found');
+    } on TodoNetworkFailure catch (e) {  // ✅ CORRECT - Domain Failure type
+      showError('Network error');
+    }
+  }
+}
+```
+
+**Why**: Presentation layer should only handle domain-level exceptions/failures. Data layer exceptions (NetworkException, CacheException) should be caught by Repository and converted to domain Failures.
+
+### Exception Handling Layer Pattern Summary
+
+**Domain Layer**:
+- ✅ Feature-prefixed exceptions (e.g., `TodoNotFoundException`, `UserValidationException`)
+- ✅ Domain-specific Failure types
+- ❌ No generic exception names without prefix
+- ❌ No data layer exceptions
+
+**Data Layer**:
+- ✅ DataSource throws defined Data exceptions (NetworkException, CacheException, etc.)
+- ✅ Repository catches Data exceptions and converts to `Result<T, Failure>`
+- ❌ No generic `Exception`, `StateError`, or custom exception types in DataSource
+- ❌ Repository never throws exceptions (returns Result instead)
+
+**Presentation Layer**:
+- ✅ Handle domain exceptions and Failure types only
+- ✅ Unwrap Result from UseCases
+- ❌ Never catch or handle Data layer exceptions (NetworkException, CacheException, etc.)
+- ❌ No direct DataSource or Repository usage
+
 ## Configuration
 
 All Clean Architecture rules are **enabled by default**. No configuration needed in `analysis_options.yaml`.

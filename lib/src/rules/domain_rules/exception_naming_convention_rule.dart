@@ -89,8 +89,8 @@ class ExceptionNamingConventionRule extends CleanArchitectureLintRule
 
     final className = node.name.lexeme;
 
-    // Skip allowed exceptions
-    if (isAllowedWithoutPrefix(className)) return;
+    // Skip Dart built-in exceptions (Exception, Error, StateError, etc.)
+    if (ExceptionValidationMixin.dartBuiltInExceptions.contains(className)) return;
 
     // Check if class needs feature prefix
     if (isGenericExceptionName(className)) {
