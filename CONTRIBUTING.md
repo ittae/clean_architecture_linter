@@ -507,7 +507,7 @@ dart pub test --watch
 1. **Run Quality Checks**:
    ```bash
    dart analyze
-   dart format .
+   dart format --line-length=120 .
    dart pub test
    cd example && dart run custom_lint
    ```

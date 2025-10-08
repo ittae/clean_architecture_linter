@@ -508,16 +508,7 @@ dart run custom_lint
 dart analyze
 
 # Format code
-dart format .
-```
-
-### Testing with External Project
-```bash
-# Test the package with the ittae project
-cd /Users/ittae/development/ittae && dart run custom_lint
-
-# Install the package locally in ittae project
-cd /Users/ittae/development/ittae && dart pub add dev:clean_architecture_linter --path=/Users/ittae/development/clean_architecture_linter
+dart format --line-length=120 . lin
 ```
 
 ### Publishing
