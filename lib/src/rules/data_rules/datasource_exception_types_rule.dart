@@ -60,14 +60,12 @@ import '../../mixins/exception_validation_mixin.dart';
 /// ```
 ///
 /// See ERROR_HANDLING_GUIDE.md for complete error handling patterns.
-class DataSourceExceptionTypesRule extends CleanArchitectureLintRule
-    with ExceptionValidationMixin {
+class DataSourceExceptionTypesRule extends CleanArchitectureLintRule with ExceptionValidationMixin {
   const DataSourceExceptionTypesRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'datasource_exception_types',
-    problemMessage:
-        'DataSource should only use defined Data layer exceptions. Found: {0}',
+    problemMessage: 'DataSource should only use defined Data layer exceptions. Found: {0}',
     correctionMessage: 'Use one of the defined Data exceptions:\n'
         '  - NotFoundException (for 404 errors)\n'
         '  - UnauthorizedException (for 401/403 errors)\n'
@@ -98,8 +96,9 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule
     final filePath = resolver.path;
 
     // Only check DataSource files or classes
-    if (!CleanArchitectureUtils.isDataSourceFile(filePath) &&
-        !_isDataSourceClass(node)) return;
+    if (!CleanArchitectureUtils.isDataSourceFile(filePath) && !_isDataSourceClass(node)) {
+      return;
+    }
 
     final expression = node.expression;
 
@@ -122,8 +121,7 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule
     if (!isDataLayerException(exceptionType)) {
       final code = LintCode(
         name: 'datasource_exception_types',
-        problemMessage:
-            'DataSource should NOT use "$exceptionType". Use defined Data layer exceptions instead.',
+        problemMessage: 'DataSource should NOT use "$exceptionType". Use defined Data layer exceptions instead.',
         correctionMessage: 'Replace with appropriate Data exception:\n'
             '  - NotFoundException (for 404 errors)\n'
             '  - UnauthorizedException (for 401/403 errors)\n'

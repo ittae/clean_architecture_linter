@@ -52,8 +52,7 @@ class UseCaseMustConvertFailureRule extends CleanArchitectureLintRule {
 
   static const _code = LintCode(
     name: 'usecase_must_convert_failure',
-    problemMessage:
-        'UseCase should convert Failure to Domain Exception using .toException()',
+    problemMessage: 'UseCase should convert Failure to Domain Exception using .toException()',
     correctionMessage: 'In Result.when() failure case, call .toException():\\n'
         '  Before: failure: (error) => throw error\\n'
         '  After:  failure: (error) => throw error.toException()\\n\\n'
@@ -80,8 +79,9 @@ class UseCaseMustConvertFailureRule extends CleanArchitectureLintRule {
     final filePath = resolver.path;
 
     // Only check UseCase files
-    if (!CleanArchitectureUtils.isUseCaseFile(filePath) &&
-        !_isUseCaseClass(node)) return;
+    if (!CleanArchitectureUtils.isUseCaseFile(filePath) && !_isUseCaseClass(node)) {
+      return;
+    }
 
     // Check if this is a .when() method call
     if (node.methodName.name != 'when') return;

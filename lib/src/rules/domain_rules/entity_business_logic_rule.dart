@@ -159,8 +159,7 @@ class EntityBusinessLogicRule extends CleanArchitectureLintRule {
 
   static const _code = LintCode(
     name: 'entity_business_logic',
-    problemMessage:
-        'Domain Entity appears to be anemic (only data fields without business logic). '
+    problemMessage: 'Domain Entity appears to be anemic (only data fields without business logic). '
         'Entities should contain business logic methods.',
     correctionMessage: 'Add business logic methods to Entity:\n'
         '  - Calculations: get isOverdue, get totalAmount\n'
@@ -189,7 +188,7 @@ class EntityBusinessLogicRule extends CleanArchitectureLintRule {
     CustomLintResolver resolver,
   ) {
     final className = classNode.name.lexeme;
-    final filePath = classNode.declaredElement?.source.fullName ?? '';
+    final filePath = resolver.source.fullName;
 
     // Only check domain layer entities
     if (!CleanArchitectureUtils.isDomainFile(filePath)) return;
@@ -210,10 +209,8 @@ class EntityBusinessLogicRule extends CleanArchitectureLintRule {
           classNode,
           LintCode(
             name: 'entity_business_logic',
-            problemMessage:
-                'Freezed Entity "$className" should be a sealed class',
-            correctionMessage:
-                'Add "sealed" modifier before "class" keyword (e.g., "sealed class $className").',
+            problemMessage: 'Freezed Entity "$className" should be a sealed class',
+            correctionMessage: 'Add "sealed" modifier before "class" keyword (e.g., "sealed class $className").',
           ),
         );
       }
@@ -224,8 +221,7 @@ class EntityBusinessLogicRule extends CleanArchitectureLintRule {
           classNode,
           LintCode(
             name: 'entity_business_logic',
-            problemMessage:
-                'Freezed Entity "$className" lacks business logic extension. '
+            problemMessage: 'Freezed Entity "$className" lacks business logic extension. '
                 'Add extension with business logic methods in same file.',
             correctionMessage: 'Add extension to Freezed entity:\n'
                 '  extension ${className}X on $className {\n'
@@ -275,11 +271,6 @@ class EntityBusinessLogicRule extends CleanArchitectureLintRule {
     if (className.endsWith('Exception')) return false;
     if (className.endsWith('Failure')) return false;
 
-    // If in domain/entities/ directory, it's an entity
-    final filePath = classNode.declaredElement?.source.fullName ?? '';
-    if (filePath.contains('/domain/entities/')) return true;
-
-    // Default: assume it's an entity if in domain layer and not a special class
     return true;
   }
 
@@ -339,10 +330,7 @@ class EntityBusinessLogicRule extends CleanArchitectureLintRule {
           final typeName = extendedType.name2.lexeme;
           if (typeName == className) {
             // Check if extension has methods
-            final methods = declaration.members
-                .whereType<MethodDeclaration>()
-                .where((m) => !m.isStatic)
-                .toList();
+            final methods = declaration.members.whereType<MethodDeclaration>().where((m) => !m.isStatic).toList();
             if (methods.isNotEmpty) return true;
           }
         }
