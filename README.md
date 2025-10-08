@@ -104,13 +104,18 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 
 ## 🚀 Quick Start
 
+### 📋 Requirements
+
+- **Dart SDK**: 3.6.0+
+- **Flutter**: 3.0+ (optional, for Flutter projects)
+
 ### 1. Add to your project
 
 ```yaml
 # pubspec.yaml
 dev_dependencies:
   clean_architecture_linter: ^1.0.0
-  custom_lint: ^0.6.7
+  custom_lint: ^0.7.6
 ```
 
 ### 2. Enable custom lint
