@@ -49,14 +49,12 @@ import '../../mixins/repository_rule_visitor.dart';
 /// ```
 ///
 /// See ERROR_HANDLING_GUIDE.md for complete error handling patterns.
-class RepositoryNoThrowRule extends CleanArchitectureLintRule
-    with RepositoryRuleVisitor {
+class RepositoryNoThrowRule extends CleanArchitectureLintRule with RepositoryRuleVisitor {
   const RepositoryNoThrowRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'repository_no_throw',
-    problemMessage:
-        'Repository should NOT throw exceptions directly. Convert exceptions to Result instead.',
+    problemMessage: 'Repository should NOT throw exceptions directly. Convert exceptions to Result instead.',
     correctionMessage:
         'Remove throw statement and return Failure. Repository should catch exceptions and wrap in Result.',
   );
@@ -89,8 +87,7 @@ class RepositoryNoThrowRule extends CleanArchitectureLintRule
     // This is a direct throw in a public method - report error
     final code = LintCode(
       name: 'repository_no_throw',
-      problemMessage:
-          'Repository should NOT throw exceptions. Convert to Result instead.',
+      problemMessage: 'Repository should NOT throw exceptions. Convert to Result instead.',
       correctionMessage: 'Replace throw with Result.Failure:\n'
           '  Before: throw NotFoundException("Not found")\n'
           '  After:  return Failure(TodoFailure.notFound("Not found"))\n\n'

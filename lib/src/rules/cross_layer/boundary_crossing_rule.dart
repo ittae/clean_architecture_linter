@@ -18,8 +18,7 @@ class BoundaryCrossingRule extends CleanArchitectureLintRule {
   static const _code = LintCode(
     name: 'boundary_crossing',
     problemMessage: 'Boundary crossing violation: {0}',
-    correctionMessage:
-        'Use Dependency Inversion Principle to cross architectural boundaries properly.',
+    correctionMessage: 'Use Dependency Inversion Principle to cross architectural boundaries properly.',
   );
 
   @override
@@ -57,8 +56,7 @@ class BoundaryCrossingRule extends CleanArchitectureLintRule {
     if (_isConcreteDependency(importUri, sourceLayer, targetLayer)) {
       final code = LintCode(
         name: 'boundary_crossing',
-        problemMessage:
-            '${sourceLayer.name} layer depends on concrete ${targetLayer.name} implementation: $importUri',
+        problemMessage: '${sourceLayer.name} layer depends on concrete ${targetLayer.name} implementation: $importUri',
         correctionMessage:
             'Use interfaces/abstractions instead of concrete implementations for cross-layer dependencies.',
       );
@@ -66,18 +64,14 @@ class BoundaryCrossingRule extends CleanArchitectureLintRule {
     }
   }
 
-  bool _isConcreteDependency(
-      String importUri, ArchitecturalLayer source, ArchitecturalLayer target) {
+  bool _isConcreteDependency(String importUri, ArchitecturalLayer source, ArchitecturalLayer target) {
     // Check for obvious concrete implementation patterns
-    if (importUri.contains('_impl.dart') ||
-        importUri.contains('_implementation.dart') ||
-        importUri.endsWith('Impl')) {
+    if (importUri.contains('_impl.dart') || importUri.contains('_implementation.dart') || importUri.endsWith('Impl')) {
       return true;
     }
 
     // Domain should not import from Data or Presentation (except for DI files)
-    if (source.name == 'domain' &&
-        (target.name == 'data' || target.name == 'presentation')) {
+    if (source.name == 'domain' && (target.name == 'data' || target.name == 'presentation')) {
       return true;
     }
 
@@ -131,8 +125,7 @@ class BoundaryCrossingRule extends CleanArchitectureLintRule {
       'main.dart', // main.dart often contains DI setup
     ];
 
-    return diPatterns.any((pattern) =>
-        normalizedPath.endsWith(pattern) || normalizedPath.contains(pattern));
+    return diPatterns.any((pattern) => normalizedPath.endsWith(pattern) || normalizedPath.contains(pattern));
   }
 }
 

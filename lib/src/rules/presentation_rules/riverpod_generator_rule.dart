@@ -64,8 +64,7 @@ class RiverpodGeneratorRule extends CleanArchitectureLintRule {
 
     // Only check in presentation/providers directory
     if (!normalized.contains('/presentation/')) return;
-    if (!normalized.contains('/providers/') &&
-        !normalized.endsWith('_provider.dart')) {
+    if (!normalized.contains('/providers/') && !normalized.endsWith('_provider.dart')) {
       return;
     }
 
@@ -89,8 +88,7 @@ class RiverpodGeneratorRule extends CleanArchitectureLintRule {
     if (manualProviders.contains(methodName)) {
       final code = LintCode(
         name: 'riverpod_generator',
-        problemMessage:
-            'Manual provider "$methodName" detected. Use @riverpod annotation instead.',
+        problemMessage: 'Manual provider "$methodName" detected. Use @riverpod annotation instead.',
         correctionMessage:
             'Use riverpod_generator: Create a class with @riverpod annotation instead of manual provider declaration.',
       );

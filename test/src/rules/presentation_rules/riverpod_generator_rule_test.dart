@@ -155,8 +155,7 @@ void main() {
     group('Edge Cases', () {
       test('handles provider with complex generics', () {
         expect(
-          _isManualProvider(
-              'StateNotifierProvider<RankingNotifier, AsyncValue<RankingState>>'),
+          _isManualProvider('StateNotifierProvider<RankingNotifier, AsyncValue<RankingState>>'),
           isTrue,
           reason: 'Should detect manual providers with complex generics',
         );
@@ -250,8 +249,7 @@ bool _isProviderFile(String filePath) {
 
   if (!normalized.contains('/presentation/')) return false;
 
-  return normalized.contains('/providers/') ||
-      normalized.endsWith('_provider.dart');
+  return normalized.contains('/providers/') || normalized.endsWith('_provider.dart');
 }
 
 String _getErrorMessage(ProviderType providerType) {

@@ -393,8 +393,7 @@ void main() {
 
     group('Error Messages', () {
       test('anemic entity error message is clear', () {
-        const errorMessage =
-            'Domain Entity appears to be anemic (only data fields without business logic). '
+        const errorMessage = 'Domain Entity appears to be anemic (only data fields without business logic). '
             'Entities should contain business logic methods.';
 
         expect(
@@ -410,8 +409,7 @@ void main() {
       });
 
       test('freezed without extension error is specific', () {
-        const errorMessage =
-            'Freezed Entity "Todo" lacks business logic extension. '
+        const errorMessage = 'Freezed Entity "Todo" lacks business logic extension. '
             'Add extension with business logic methods in same file.';
 
         expect(
@@ -644,9 +642,7 @@ bool _isMutableField(String field) {
 
 /// Detects setter methods
 bool _isSetterMethod(String methodName) {
-  return methodName.startsWith('set') ||
-      methodName.startsWith('update') ||
-      methodName.startsWith('modify');
+  return methodName.startsWith('set') || methodName.startsWith('update') || methodName.startsWith('modify');
 }
 
 /// Checks entity immutability

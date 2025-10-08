@@ -21,8 +21,7 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
 
   static const _code = LintCode(
     name: 'layer_dependency',
-    problemMessage:
-        'Improper dependency between architectural layers detected.',
+    problemMessage: 'Improper dependency between architectural layers detected.',
     correctionMessage:
         'Ensure dependencies flow inward: Presentation → Domain ← Data. Never skip layers or create circular dependencies.',
   );
@@ -87,26 +86,22 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
       case ArchitectureLayer.domain:
         if (target == ArchitectureLayer.data) {
           return LayerViolation(
-            message:
-                'Domain layer cannot depend on Data layer. Found import: $importPath',
+            message: 'Domain layer cannot depend on Data layer. Found import: $importPath',
             suggestion:
                 'Domain layer must remain pure. Use dependency inversion - create abstractions in Domain that Data layer implements.',
           );
         }
         if (target == ArchitectureLayer.presentation) {
           return LayerViolation(
-            message:
-                'Domain layer cannot depend on Presentation layer. Found import: $importPath',
+            message: 'Domain layer cannot depend on Presentation layer. Found import: $importPath',
             suggestion:
                 'Domain layer must remain independent of UI concerns. Move UI-specific logic to Presentation layer.',
           );
         }
         if (target == ArchitectureLayer.infrastructure) {
           return LayerViolation(
-            message:
-                'Domain layer cannot depend on Infrastructure. Found import: $importPath',
-            suggestion:
-                'Create domain abstractions (interfaces) and implement them in Infrastructure/Data layer.',
+            message: 'Domain layer cannot depend on Infrastructure. Found import: $importPath',
+            suggestion: 'Create domain abstractions (interfaces) and implement them in Infrastructure/Data layer.',
           );
         }
         break;
@@ -114,19 +109,14 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
       case ArchitectureLayer.data:
         if (target == ArchitectureLayer.presentation) {
           return LayerViolation(
-            message:
-                'Data layer cannot depend on Presentation layer. Found import: $importPath',
-            suggestion:
-                'Data layer should only depend on Domain layer. Remove presentation dependencies.',
+            message: 'Data layer cannot depend on Presentation layer. Found import: $importPath',
+            suggestion: 'Data layer should only depend on Domain layer. Remove presentation dependencies.',
           );
         }
-        if (target == ArchitectureLayer.infrastructure &&
-            !_isAllowedInfrastructureImport(importPath)) {
+        if (target == ArchitectureLayer.infrastructure && !_isAllowedInfrastructureImport(importPath)) {
           return LayerViolation(
-            message:
-                'Data layer has suspicious Infrastructure dependency: $importPath',
-            suggestion:
-                'Ensure this infrastructure dependency is appropriate for data layer responsibilities.',
+            message: 'Data layer has suspicious Infrastructure dependency: $importPath',
+            suggestion: 'Ensure this infrastructure dependency is appropriate for data layer responsibilities.',
           );
         }
         break;
@@ -134,19 +124,15 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
       case ArchitectureLayer.presentation:
         if (target == ArchitectureLayer.data) {
           return LayerViolation(
-            message:
-                'Presentation layer should not directly depend on Data layer. Found import: $importPath',
+            message: 'Presentation layer should not directly depend on Data layer. Found import: $importPath',
             suggestion:
                 'Presentation should interact with Domain layer (Use Cases) instead of Data layer directly. Apply Dependency Rule.',
           );
         }
-        if (target == ArchitectureLayer.infrastructure &&
-            !_isAllowedPresentationInfrastructure(importPath)) {
+        if (target == ArchitectureLayer.infrastructure && !_isAllowedPresentationInfrastructure(importPath)) {
           return LayerViolation(
-            message:
-                'Presentation layer has improper Infrastructure dependency: $importPath',
-            suggestion:
-                'Use Domain abstractions instead of direct infrastructure dependencies in Presentation.',
+            message: 'Presentation layer has improper Infrastructure dependency: $importPath',
+            suggestion: 'Use Domain abstractions instead of direct infrastructure dependencies in Presentation.',
           );
         }
         break;
@@ -154,10 +140,8 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
       case ArchitectureLayer.infrastructure:
         if (target == ArchitectureLayer.presentation) {
           return LayerViolation(
-            message:
-                'Infrastructure cannot depend on Presentation layer. Found import: $importPath',
-            suggestion:
-                'Infrastructure should only provide services, not depend on UI.',
+            message: 'Infrastructure cannot depend on Presentation layer. Found import: $importPath',
+            suggestion: 'Infrastructure should only provide services, not depend on UI.',
           );
         }
         break;
@@ -168,10 +152,8 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
             target == ArchitectureLayer.presentation ||
             target == ArchitectureLayer.infrastructure) {
           return LayerViolation(
-            message:
-                'Application layer cannot depend on outer layers. Found import: $importPath',
-            suggestion:
-                'Application layer should only depend on Domain entities and abstractions.',
+            message: 'Application layer cannot depend on outer layers. Found import: $importPath',
+            suggestion: 'Application layer should only depend on Domain entities and abstractions.',
           );
         }
         break;
@@ -186,8 +168,7 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
 
     // Check for domain layer and its sub-layers
     if (normalizedPath.contains('/domain/')) {
-      if (normalizedPath.contains('/domain/usecases/') ||
-          normalizedPath.contains('/domain/use_cases/')) {
+      if (normalizedPath.contains('/domain/usecases/') || normalizedPath.contains('/domain/use_cases/')) {
         return ArchitectureLayer.application;
       }
       return ArchitectureLayer.domain;
@@ -296,8 +277,7 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
       'main.dart', // main.dart often contains DI setup
     ];
 
-    return diPatterns.any((pattern) =>
-        normalizedPath.endsWith(pattern) || normalizedPath.contains(pattern));
+    return diPatterns.any((pattern) => normalizedPath.endsWith(pattern) || normalizedPath.contains(pattern));
   }
 
   bool _isCrossCuttingConcern(String importUri) {

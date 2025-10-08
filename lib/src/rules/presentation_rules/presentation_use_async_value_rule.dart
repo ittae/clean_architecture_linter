@@ -59,10 +59,8 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
 
   static const _code = LintCode(
     name: 'presentation_use_async_value',
-    problemMessage:
-        'Presentation State should NOT store error fields. Use AsyncValue for error handling.',
-    correctionMessage:
-        'Remove error fields from State and use AsyncValue pattern:\\n'
+    problemMessage: 'Presentation State should NOT store error fields. Use AsyncValue for error handling.',
+    correctionMessage: 'Remove error fields from State and use AsyncValue pattern:\\n'
         '  ❌ Bad:  @freezed class State { String? errorMessage; }\\n'
         '  ✅ Good: @riverpod Future<T> build() => repository.getData()\\n\\n'
         'AsyncValue automatically handles loading, error, and data states.\\n'
@@ -128,10 +126,8 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
           if (_isErrorField(fieldName)) {
             final code = LintCode(
               name: 'presentation_use_async_value',
-              problemMessage:
-                  'State should NOT have error field "${variable.name.lexeme}". Use AsyncValue instead.',
-              correctionMessage:
-                  'Remove error field and use AsyncValue pattern:\\n\\n'
+              problemMessage: 'State should NOT have error field "${variable.name.lexeme}". Use AsyncValue instead.',
+              correctionMessage: 'Remove error field and use AsyncValue pattern:\\n\\n'
                   'Instead of storing errors in State:\\n'
                   '  ❌ @freezed class TodoState { String? ${variable.name.lexeme}; }\\n\\n'
                   'Use Riverpod AsyncValue:\\n'
@@ -157,8 +153,7 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
   }
 
   /// Check factory constructor parameters for error fields
-  void _checkConstructorParameters(
-      ConstructorDeclaration constructor, ErrorReporter reporter) {
+  void _checkConstructorParameters(ConstructorDeclaration constructor, ErrorReporter reporter) {
     for (final param in constructor.parameters.parameters) {
       String? paramName;
       AstNode? nameNode;
@@ -174,15 +169,11 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
         nameNode = param;
       }
 
-      if (paramName != null &&
-          nameNode != null &&
-          _isErrorField(paramName.toLowerCase())) {
+      if (paramName != null && nameNode != null && _isErrorField(paramName.toLowerCase())) {
         final code = LintCode(
           name: 'presentation_use_async_value',
-          problemMessage:
-              'State should NOT have error parameter "$paramName". Use AsyncValue instead.',
-          correctionMessage:
-              'Remove error parameter and use AsyncValue pattern:\\n'
+          problemMessage: 'State should NOT have error parameter "$paramName". Use AsyncValue instead.',
+          correctionMessage: 'Remove error parameter and use AsyncValue pattern:\\n'
               '  ❌ factory State({ String? $paramName })\\n'
               '  ✅ Use @riverpod Future<T> build() pattern\\n\\n'
               'See ERROR_HANDLING_GUIDE.md',

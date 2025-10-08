@@ -165,8 +165,7 @@ void main() {
           expect(
             _isDataLayerException(exception),
             isFalse,
-            reason:
-                '$exception is a custom domain exception, not allowed in DataSource',
+            reason: '$exception is a custom domain exception, not allowed in DataSource',
           );
         }
       });
@@ -183,8 +182,7 @@ void main() {
           expect(
             _isDataLayerException(exception),
             isFalse,
-            reason:
-                '$exception is a custom exception, not allowed in DataSource',
+            reason: '$exception is a custom exception, not allowed in DataSource',
           );
         }
       });

@@ -18,16 +18,13 @@ import '../../mixins/repository_rule_visitor.dart';
 /// - Testability through interface-based mocking
 /// - Dependency Inversion Principle compliance
 /// - Supports multiple data source strategies
-class RepositoryImplementationRule extends CleanArchitectureLintRule
-    with RepositoryRuleVisitor {
+class RepositoryImplementationRule extends CleanArchitectureLintRule with RepositoryRuleVisitor {
   const RepositoryImplementationRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'repository_implementation',
-    problemMessage:
-        'Data layer repository implementation must properly implement domain repository interface.',
-    correctionMessage:
-        'Ensure RepositoryImpl classes use implements keyword with domain repository interface.',
+    problemMessage: 'Data layer repository implementation must properly implement domain repository interface.',
+    correctionMessage: 'Ensure RepositoryImpl classes use implements keyword with domain repository interface.',
   );
 
   @override
@@ -62,8 +59,7 @@ class RepositoryImplementationRule extends CleanArchitectureLintRule
     }
 
     // Check for RepositoryImpl misplaced in domain layer
-    if (CleanArchitectureUtils.isDomainFile(filePath) &&
-        className.endsWith('RepositoryImpl')) {
+    if (CleanArchitectureUtils.isDomainFile(filePath) && className.endsWith('RepositoryImpl')) {
       _checkMisplacedImplementation(node, reporter, className);
     }
   }
@@ -81,8 +77,7 @@ class RepositoryImplementationRule extends CleanArchitectureLintRule
     if (implementsClause == null || implementsClause.interfaces.isEmpty) {
       final code = LintCode(
         name: 'repository_implementation',
-        problemMessage:
-            'Repository implementation must implement a domain repository interface: $className',
+        problemMessage: 'Repository implementation must implement a domain repository interface: $className',
         correctionMessage:
             'Add implements clause with domain repository interface. Example: class UserRepositoryImpl implements UserRepository',
       );
@@ -93,13 +88,11 @@ class RepositoryImplementationRule extends CleanArchitectureLintRule
     // Verify that at least one interface is a repository interface
     final hasRepositoryInterface = implementsClause.interfaces.any((interface) {
       final interfaceName = interface.name2.lexeme;
-      return interfaceName.endsWith('Repository') &&
-          !interfaceName.endsWith('RepositoryImpl');
+      return interfaceName.endsWith('Repository') && !interfaceName.endsWith('RepositoryImpl');
     });
 
     if (!hasRepositoryInterface) {
-      final implementedInterfaces =
-          implementsClause.interfaces.map((i) => i.name2.lexeme).join(', ');
+      final implementedInterfaces = implementsClause.interfaces.map((i) => i.name2.lexeme).join(', ');
       final code = LintCode(
         name: 'repository_implementation',
         problemMessage:
@@ -120,8 +113,7 @@ class RepositoryImplementationRule extends CleanArchitectureLintRule
     if (node.abstractKeyword != null) {
       final code = LintCode(
         name: 'repository_implementation',
-        problemMessage:
-            'Repository interface should be in domain layer, not data layer: $className',
+        problemMessage: 'Repository interface should be in domain layer, not data layer: $className',
         correctionMessage:
             'Move abstract repository interface to domain layer. Data layer should only contain RepositoryImpl classes.',
       );
@@ -136,8 +128,7 @@ class RepositoryImplementationRule extends CleanArchitectureLintRule
   ) {
     final code = LintCode(
       name: 'repository_implementation',
-      problemMessage:
-          'Repository implementation should be in data layer, not domain layer: $className',
+      problemMessage: 'Repository implementation should be in data layer, not domain layer: $className',
       correctionMessage:
           'Move $className to data layer. Domain layer should only contain abstract repository interfaces.',
     );

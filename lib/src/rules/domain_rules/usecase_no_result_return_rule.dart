@@ -47,8 +47,7 @@ import '../../mixins/return_type_validation_mixin.dart';
 /// ```
 ///
 /// See ERROR_HANDLING_GUIDE.md for complete error handling patterns.
-class UseCaseNoResultReturnRule extends CleanArchitectureLintRule
-    with ReturnTypeValidationMixin {
+class UseCaseNoResultReturnRule extends CleanArchitectureLintRule with ReturnTypeValidationMixin {
   const UseCaseNoResultReturnRule() : super(code: _code);
 
   static const _code = LintCode(
@@ -96,8 +95,7 @@ class UseCaseNoResultReturnRule extends CleanArchitectureLintRule
     if (isResultReturnType(returnType)) {
       final code = LintCode(
         name: 'usecase_no_result_return',
-        problemMessage:
-            'UseCase method "${method.name.lexeme}" should NOT return Result. '
+        problemMessage: 'UseCase method "${method.name.lexeme}" should NOT return Result. '
             'UseCase should unwrap Result and return Entity or throw domain exception.',
         correctionMessage: 'Unwrap Result from Repository:\n'
             '  Before: Future<Result<Todo, TodoFailure>> call()\n'

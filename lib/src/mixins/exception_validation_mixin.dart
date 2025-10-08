@@ -143,8 +143,7 @@ mixin ExceptionValidationMixin {
   /// isAllowedWithoutPrefix('NotFoundException') // false (needs feature prefix)
   /// ```
   bool isAllowedWithoutPrefix(String className) {
-    return dartBuiltInExceptions.contains(className) ||
-        dataLayerExceptions.contains(className);
+    return dartBuiltInExceptions.contains(className) || dataLayerExceptions.contains(className);
   }
 
   /// Checks if the [className] is a Data layer exception.

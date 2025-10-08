@@ -21,8 +21,7 @@ class DomainPurityRule extends CleanArchitectureLintRule {
 
   static const _code = LintCode(
     name: 'domain_purity',
-    problemMessage:
-        'Domain layer must remain pure and not depend on external frameworks or infrastructure concerns.',
+    problemMessage: 'Domain layer must remain pure and not depend on external frameworks or infrastructure concerns.',
     correctionMessage:
         'Remove dependencies on UI frameworks, HTTP clients, databases, or platform-specific APIs. Use abstractions instead.',
   );
@@ -99,8 +98,7 @@ class DomainPurityRule extends CleanArchitectureLintRule {
       if (importUri.startsWith(lib)) {
         return DomainViolation(
           category: 'Networking dependency detected',
-          suggestion:
-              'Use repository abstractions instead of direct HTTP clients in domain layer.',
+          suggestion: 'Use repository abstractions instead of direct HTTP clients in domain layer.',
         );
       }
     }
@@ -118,8 +116,7 @@ class DomainPurityRule extends CleanArchitectureLintRule {
       if (importUri.startsWith(lib)) {
         return DomainViolation(
           category: 'Storage dependency detected',
-          suggestion:
-              'Use repository abstractions instead of direct storage dependencies in domain layer.',
+          suggestion: 'Use repository abstractions instead of direct storage dependencies in domain layer.',
         );
       }
     }
@@ -136,8 +133,7 @@ class DomainPurityRule extends CleanArchitectureLintRule {
       if (importUri.startsWith(lib)) {
         return DomainViolation(
           category: 'Platform-specific dependency detected',
-          suggestion:
-              'Use service abstractions instead of direct platform dependencies in domain layer.',
+          suggestion: 'Use service abstractions instead of direct platform dependencies in domain layer.',
         );
       }
     }
@@ -154,8 +150,7 @@ class DomainPurityRule extends CleanArchitectureLintRule {
       if (importUri.startsWith(lib)) {
         return DomainViolation(
           category: 'State management dependency detected',
-          suggestion:
-              'State management should be handled in presentation layer, not domain layer.',
+          suggestion: 'State management should be handled in presentation layer, not domain layer.',
         );
       }
     }
@@ -179,10 +174,8 @@ class DomainPurityRule extends CleanArchitectureLintRule {
       if (_isExternalFrameworkClass(superTypeName)) {
         final code = LintCode(
           name: 'domain_purity',
-          problemMessage:
-              'Domain entities should not extend external framework classes ($superTypeName)',
-          correctionMessage:
-              'Use composition instead of inheritance from external frameworks.',
+          problemMessage: 'Domain entities should not extend external framework classes ($superTypeName)',
+          correctionMessage: 'Use composition instead of inheritance from external frameworks.',
         );
         reporter.atNode(extendsClause, code);
       }
@@ -196,10 +189,8 @@ class DomainPurityRule extends CleanArchitectureLintRule {
         if (_isExternalFrameworkClass(interfaceName)) {
           final code = LintCode(
             name: 'domain_purity',
-            problemMessage:
-                'Domain classes should not implement external framework interfaces ($interfaceName)',
-            correctionMessage:
-                'Create domain-specific abstractions instead of implementing external interfaces.',
+            problemMessage: 'Domain classes should not implement external framework interfaces ($interfaceName)',
+            correctionMessage: 'Create domain-specific abstractions instead of implementing external interfaces.',
           );
           reporter.atNode(interface, code);
         }

@@ -395,8 +395,11 @@ clean_architecture_linter/
 1. Fork the repository
 2. Create a feature branch
 3. Add tests for new rules
-4. Ensure all tests pass
-5. Submit a pull request
+4. Format your code: `dart format --line-length=120 .`
+5. Ensure all tests pass
+6. Submit a pull request
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## 📄 License
 
@@ -419,4 +422,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Made with ❤️ for the Flutter Clean Architecture community**
+**Made with ❤️ for the Flutter community**

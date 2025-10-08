@@ -64,10 +64,8 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
     final testConfig = configs.rules['clean_architecture_linter_require_test'];
     final testEnabled = testConfig?.enabled ?? false;
     final checkUsecases = testConfig?.json['check_usecases'] as bool? ?? true;
-    final checkRepositories =
-        testConfig?.json['check_repositories'] as bool? ?? true;
-    final checkDatasources =
-        testConfig?.json['check_datasources'] as bool? ?? true;
+    final checkRepositories = testConfig?.json['check_repositories'] as bool? ?? true;
+    final checkDatasources = testConfig?.json['check_datasources'] as bool? ?? true;
     final checkNotifiers = testConfig?.json['check_notifiers'] as bool? ?? true;
 
     final rules = <LintRule>[

@@ -56,10 +56,8 @@ class RepositoryMustReturnResultRule extends CleanArchitectureLintRule
 
   static const _code = LintCode(
     name: 'repository_must_return_result',
-    problemMessage:
-        'Repository implementation must return Result type to handle errors properly.',
-    correctionMessage:
-        'Wrap return type in Result (e.g., Future<Result<Todo, TodoFailure>>). '
+    problemMessage: 'Repository implementation must return Result type to handle errors properly.',
+    correctionMessage: 'Wrap return type in Result (e.g., Future<Result<Todo, TodoFailure>>). '
         'Catch DataSource exceptions and convert to Result.',
   );
 
@@ -94,8 +92,7 @@ class RepositoryMustReturnResultRule extends CleanArchitectureLintRule
     if (!isResultReturnType(returnType)) {
       final code = LintCode(
         name: 'repository_must_return_result',
-        problemMessage:
-            'Repository method "${method.name.lexeme}" must return Result type. '
+        problemMessage: 'Repository method "${method.name.lexeme}" must return Result type. '
             'Repository should catch exceptions and convert to Result.',
         correctionMessage: 'Wrap return type in Result:\n'
             '  Before: Future<${returnType.toString()}>\n'

@@ -50,8 +50,7 @@ class TestCoverageRule extends CleanArchitectureLintRule {
   static const _code = LintCode(
     name: 'clean_architecture_linter_require_test',
     problemMessage: 'Critical components should have corresponding test files',
-    correctionMessage:
-        'Create a test file for this component or disable this rule in analysis_options.yaml',
+    correctionMessage: 'Create a test file for this component or disable this rule in analysis_options.yaml',
   );
 
   @override
@@ -132,8 +131,7 @@ class TestCoverageRule extends CleanArchitectureLintRule {
     if (className.endsWith('UseCase')) {
       return ComponentType.useCase;
     }
-    if (filePath.endsWith('_usecase.dart') &&
-        normalized.contains('/usecases/')) {
+    if (filePath.endsWith('_usecase.dart') && normalized.contains('/usecases/')) {
       // File is in usecases directory and ends with _usecase.dart
       // But we still require class name to end with UseCase
       // So this won't catch non-UseCase classes in the file
@@ -141,8 +139,7 @@ class TestCoverageRule extends CleanArchitectureLintRule {
     }
 
     // Check for Repository Implementation
-    if (className.endsWith('RepositoryImpl') ||
-        className.endsWith('RepositoryImplementation')) {
+    if (className.endsWith('RepositoryImpl') || className.endsWith('RepositoryImplementation')) {
       return ComponentType.repositoryImpl;
     }
 
@@ -161,8 +158,7 @@ class TestCoverageRule extends CleanArchitectureLintRule {
 
   bool _isDataSourceImplementation(String className, ClassDeclaration node) {
     // Check if it's a DataSource class
-    if (!className.contains('DataSource') &&
-        !className.contains('Datasource')) {
+    if (!className.contains('DataSource') && !className.contains('Datasource')) {
       return false;
     }
 
@@ -252,8 +248,7 @@ class TestCoverageRule extends CleanArchitectureLintRule {
     final code = LintCode(
       name: 'clean_architecture_linter_require_test',
       problemMessage: '$componentName "$className" is missing a test file',
-      correctionMessage:
-          'Create test file at: ${path.relative(expectedTestPath)}',
+      correctionMessage: 'Create test file at: ${path.relative(expectedTestPath)}',
     );
 
     reporter.atNode(node, code);

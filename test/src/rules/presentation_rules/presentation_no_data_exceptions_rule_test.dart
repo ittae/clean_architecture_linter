@@ -130,8 +130,7 @@ void main() {
           expect(
             _isDataLayerException(exception),
             isFalse,
-            reason:
-                '$exception is a custom Domain exception, should be allowed',
+            reason: '$exception is a custom Domain exception, should be allowed',
           );
         }
       });
@@ -200,8 +199,7 @@ void main() {
           expect(
             suggestion,
             testCase.expectedSuggestion,
-            reason:
-                'Should suggest ${testCase.expectedSuggestion} for ${testCase.filePath}',
+            reason: 'Should suggest ${testCase.expectedSuggestion} for ${testCase.filePath}',
           );
         }
       });
@@ -214,8 +212,7 @@ void main() {
             expectedSuggestion: 'AuthUnauthorizedException',
           ),
           TestExceptionSuggestion(
-            filePath:
-                'lib/core/features/todos/presentation/widgets/todo_card.dart',
+            filePath: 'lib/core/features/todos/presentation/widgets/todo_card.dart',
             dataException: 'CacheException',
             expectedSuggestion: 'TodoCacheException',
           ),
@@ -242,8 +239,7 @@ void main() {
         ];
 
         for (final filePath in testCases) {
-          final suggestion =
-              _suggestDomainException('NotFoundException', filePath);
+          final suggestion = _suggestDomainException('NotFoundException', filePath);
 
           expect(
             suggestion,
@@ -487,8 +483,7 @@ void main() {
 
       test('uses suggestFeaturePrefix from mixin', () {
         final filePath = 'lib/features/todos/presentation/pages/todo_page.dart';
-        final suggestion =
-            _suggestDomainException('NotFoundException', filePath);
+        final suggestion = _suggestDomainException('NotFoundException', filePath);
 
         expect(
           suggestion,
@@ -532,8 +527,7 @@ bool _isDataLayerException(String exceptionType) {
 }
 
 bool _isPresentationFile(String filePath) {
-  return filePath.contains('/presentation/') ||
-      filePath.contains('\\presentation\\');
+  return filePath.contains('/presentation/') || filePath.contains('\\presentation\\');
 }
 
 String _suggestDomainException(String dataException, String filePath) {

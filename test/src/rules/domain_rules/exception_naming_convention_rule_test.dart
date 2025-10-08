@@ -127,8 +127,7 @@ void main() {
         }
       });
 
-      test('rejects domain exceptions needing prefix (not in allowed lists)',
-          () {
+      test('rejects domain exceptions needing prefix (not in allowed lists)', () {
         final testCases = [
           'ValidationException',
           'TimeoutException',
@@ -149,20 +148,17 @@ void main() {
       test('suggests feature prefix from file path', () {
         final testCases = [
           TestFeatureSuggestion(
-            filePath:
-                'lib/features/todos/domain/exceptions/todo_exceptions.dart',
+            filePath: 'lib/features/todos/domain/exceptions/todo_exceptions.dart',
             exceptionName: 'NotFoundException',
             expectedSuggestion: 'TodoNotFoundException',
           ),
           TestFeatureSuggestion(
-            filePath:
-                'lib/features/users/domain/exceptions/user_exceptions.dart',
+            filePath: 'lib/features/users/domain/exceptions/user_exceptions.dart',
             exceptionName: 'ValidationException',
             expectedSuggestion: 'UserValidationException',
           ),
           TestFeatureSuggestion(
-            filePath:
-                'lib/features/orders/domain/exceptions/order_exceptions.dart',
+            filePath: 'lib/features/orders/domain/exceptions/order_exceptions.dart',
             exceptionName: 'NetworkException',
             expectedSuggestion: 'OrderNetworkException',
           ),
@@ -177,8 +173,7 @@ void main() {
           expect(
             suggestion,
             testCase.expectedSuggestion,
-            reason:
-                'Should suggest ${testCase.expectedSuggestion} for ${testCase.filePath}',
+            reason: 'Should suggest ${testCase.expectedSuggestion} for ${testCase.filePath}',
           );
         }
       });
@@ -186,15 +181,12 @@ void main() {
       test('handles nested feature paths', () {
         final testCases = [
           TestFeatureSuggestion(
-            filePath:
-                'lib/features/auth/domain/exceptions/auth_exceptions.dart',
+            filePath: 'lib/features/auth/domain/exceptions/auth_exceptions.dart',
             exceptionName: 'NotFoundException',
-            expectedSuggestion:
-                'AuthNotFoundException', // Uses feature name after features/
+            expectedSuggestion: 'AuthNotFoundException', // Uses feature name after features/
           ),
           TestFeatureSuggestion(
-            filePath:
-                'lib/core/features/todos/domain/exceptions/todo_exceptions.dart',
+            filePath: 'lib/core/features/todos/domain/exceptions/todo_exceptions.dart',
             exceptionName: 'ValidationException',
             expectedSuggestion: 'TodoValidationException',
           ),
@@ -221,8 +213,7 @@ void main() {
         ];
 
         for (final filePath in testCases) {
-          final suggestion =
-              _suggestFeaturePrefix('NotFoundException', filePath);
+          final suggestion = _suggestFeaturePrefix('NotFoundException', filePath);
 
           expect(
             suggestion,
@@ -494,8 +485,7 @@ bool _isGenericExceptionName(String className) {
 }
 
 bool _isAllowedWithoutPrefix(String className) {
-  return _dartBuiltInExceptions.contains(className) ||
-      _dataLayerExceptions.contains(className);
+  return _dartBuiltInExceptions.contains(className) || _dataLayerExceptions.contains(className);
 }
 
 String _suggestFeaturePrefix(String className, String filePath) {

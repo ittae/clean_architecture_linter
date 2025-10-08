@@ -56,8 +56,7 @@ void main() {
           TestRepository(
             isAbstract: false,
             hasImplementation: true,
-            layerPath:
-                'lib/features/todos/domain/repositories/todo_repository.dart',
+            layerPath: 'lib/features/todos/domain/repositories/todo_repository.dart',
           ),
           TestRepository(
             isAbstract: false,
@@ -80,8 +79,7 @@ void main() {
           TestRepository(
             isAbstract: true,
             hasImplementation: false,
-            layerPath:
-                'lib/features/todos/domain/repositories/todo_repository.dart',
+            layerPath: 'lib/features/todos/domain/repositories/todo_repository.dart',
           ),
         ];
 
@@ -103,8 +101,7 @@ void main() {
         expect(
           _isEffectivelyAbstract(repo),
           isTrue,
-          reason:
-              'Repository with all abstract methods is effectively abstract',
+          reason: 'Repository with all abstract methods is effectively abstract',
         );
       });
     });
@@ -173,8 +170,7 @@ void main() {
           expect(
             _isDataRepositoryImplImport(importUri),
             isTrue,
-            reason:
-                '$importUri should be detected as data repository impl import',
+            reason: '$importUri should be detected as data repository impl import',
           );
         }
       });
@@ -207,8 +203,7 @@ void main() {
           expect(
             _isInfrastructureDependency(importUri),
             isTrue,
-            reason:
-                '$importUri should be detected as infrastructure dependency',
+            reason: '$importUri should be detected as infrastructure dependency',
           );
         }
       });
@@ -256,8 +251,7 @@ void main() {
           expect(
             _isConcreteRepositoryDependency(paramDeclaration),
             isTrue,
-            reason:
-                '$paramDeclaration should be detected as concrete dependency',
+            reason: '$paramDeclaration should be detected as concrete dependency',
           );
         }
       });
@@ -307,8 +301,7 @@ void main() {
           expect(
             _isConcreteRepositoryField(fieldDeclaration),
             isTrue,
-            reason:
-                '$fieldDeclaration should be detected as concrete dependency',
+            reason: '$fieldDeclaration should be detected as concrete dependency',
           );
         }
       });
@@ -421,10 +414,7 @@ void main() {
         final testCases = [
           ('lib/features/todos/domain/repositories/todo_repository.dart', true),
           ('lib/domain/repositories/user_repository.dart', true),
-          (
-            'lib/features/todos/data/repositories/todo_repository_impl.dart',
-            false
-          ),
+          ('lib/features/todos/data/repositories/todo_repository_impl.dart', false),
           ('lib/presentation/pages/home_page.dart', false),
         ];
 
@@ -456,8 +446,7 @@ void main() {
 
     group('Error Messages', () {
       test('concrete repository error message is clear', () {
-        const errorMessage =
-            'Repository in domain layer should be abstract: UserRepository';
+        const errorMessage = 'Repository in domain layer should be abstract: UserRepository';
 
         expect(
           errorMessage.contains('abstract'),
@@ -472,8 +461,7 @@ void main() {
       });
 
       test('import violation error provides guidance', () {
-        const errorMessage =
-            'Importing concrete repository implementation from data layer';
+        const errorMessage = 'Importing concrete repository implementation from data layer';
 
         expect(
           errorMessage.contains('concrete repository'),
@@ -488,8 +476,7 @@ void main() {
       });
 
       test('infrastructure dependency error is specific', () {
-        const errorMessage =
-            'Direct infrastructure dependency detected in domain repository';
+        const errorMessage = 'Direct infrastructure dependency detected in domain repository';
 
         expect(
           errorMessage.contains('infrastructure'),
@@ -504,10 +491,8 @@ void main() {
       });
 
       test('model return type error provides solution', () {
-        const errorMessage =
-            'Repository method returns data layer model: UserModel';
-        const correctionMessage =
-            'Repository methods should return domain entities, not data models.';
+        const errorMessage = 'Repository method returns data layer model: UserModel';
+        const correctionMessage = 'Repository methods should return domain entities, not data models.';
 
         expect(
           errorMessage.contains('data layer model'),
@@ -651,9 +636,7 @@ void main() {
 
 /// Detects abstract class repositories
 bool _isAbstractRepository(String declaration) {
-  return declaration.contains('abstract') &&
-      declaration.contains('class') &&
-      declaration.contains('Repository');
+  return declaration.contains('abstract') && declaration.contains('class') && declaration.contains('Repository');
 }
 
 /// Detects abstract interface class repositories (Dart 3)
@@ -666,9 +649,7 @@ bool _isAbstractInterfaceRepository(String declaration) {
 
 /// Detects concrete repository in domain layer
 bool _isConcreteRepositoryInDomain(TestRepository repo) {
-  return !repo.isAbstract &&
-      repo.hasImplementation &&
-      _isDomainLayerFile(repo.layerPath);
+  return !repo.isAbstract && repo.hasImplementation && _isDomainLayerFile(repo.layerPath);
 }
 
 /// Checks if repository is effectively abstract (all methods abstract)
@@ -683,16 +664,13 @@ bool _containsRepository(String className) {
 
 /// Detects repository implementation class names
 bool _isRepositoryImplClass(String className) {
-  return (className.endsWith('Impl') || className.endsWith('Implementation')) &&
-      className.contains('Repo');
+  return (className.endsWith('Impl') || className.endsWith('Implementation')) && className.contains('Repo');
 }
 
 /// Detects data layer repository implementation imports
 bool _isDataRepositoryImplImport(String importUri) {
-  final hasDataPath =
-      importUri.contains('/data/') || importUri.contains(r'\data\');
-  final hasRepository =
-      importUri.contains('repository') || importUri.contains('Repository');
+  final hasDataPath = importUri.contains('/data/') || importUri.contains(r'\data\');
+  final hasRepository = importUri.contains('repository') || importUri.contains('Repository');
   final hasImpl = importUri.contains('impl') || importUri.contains('Impl');
 
   return hasDataPath && hasRepository && hasImpl;
@@ -721,31 +699,23 @@ bool _violatesImportRules(TestImportContext context) {
 /// Detects concrete repository dependency in constructor parameter
 bool _isConcreteRepositoryDependency(String paramDeclaration) {
   return paramDeclaration.contains('Impl') &&
-      (paramDeclaration.contains('Repository') ||
-          paramDeclaration.contains('Repo'));
+      (paramDeclaration.contains('Repository') || paramDeclaration.contains('Repo'));
 }
 
 /// Gets constructor violations
 List<String> _getConstructorViolations(TestConstructor constructor) {
-  return constructor.parameters
-      .where((p) => _isRepositoryImplClass(p.typeName))
-      .map((p) => p.typeName)
-      .toList();
+  return constructor.parameters.where((p) => _isRepositoryImplClass(p.typeName)).map((p) => p.typeName).toList();
 }
 
 /// Detects concrete repository field
 bool _isConcreteRepositoryField(String fieldDeclaration) {
   return fieldDeclaration.contains('Impl') &&
-      (fieldDeclaration.contains('Repository') ||
-          fieldDeclaration.contains('Repo'));
+      (fieldDeclaration.contains('Repository') || fieldDeclaration.contains('Repo'));
 }
 
 /// Gets field violations
 List<String> _getFieldViolations(List<TestField> fields) {
-  return fields
-      .where((f) => _isRepositoryImplClass(f.typeName))
-      .map((f) => f.typeName)
-      .toList();
+  return fields.where((f) => _isRepositoryImplClass(f.typeName)).map((f) => f.typeName).toList();
 }
 
 /// Detects data layer model types
@@ -758,10 +728,7 @@ bool _isDataLayerModel(String typeName) {
 
 /// Gets method return type violations
 List<String> _getMethodReturnTypeViolations(List<TestMethod> methods) {
-  return methods
-      .where((m) => _isDataLayerModel(m.returnType))
-      .map((m) => m.name)
-      .toList();
+  return methods.where((m) => _isDataLayerModel(m.returnType)).map((m) => m.name).toList();
 }
 
 /// Detects domain layer files
@@ -776,15 +743,12 @@ bool _isValidAbstractRepository(TestRepository repo) {
 
 /// Checks if implements Repository interface
 bool _implementsRepositoryInterface(TestRepository repo) {
-  return repo.implementedInterfaces
-      .any((interface) => interface.contains('Repository'));
+  return repo.implementedInterfaces.any((interface) => interface.contains('Repository'));
 }
 
 /// Detects generic repository types
 bool _isGenericRepository(String typeName) {
-  return typeName.contains('Repository') &&
-      typeName.contains('<') &&
-      typeName.contains('>');
+  return typeName.contains('Repository') && typeName.contains('<') && typeName.contains('>');
 }
 
 /// Detects private class names
@@ -794,8 +758,7 @@ bool _isPrivateClass(String className) {
 
 /// Checks repository in inheritance chain
 bool _hasRepositoryInHierarchy(TestRepository repo) {
-  return (repo.extendsClass?.contains('Repository') ?? false) ||
-      _implementsRepositoryInterface(repo);
+  return (repo.extendsClass?.contains('Repository') ?? false) || _implementsRepositoryInterface(repo);
 }
 
 // ============================================================================

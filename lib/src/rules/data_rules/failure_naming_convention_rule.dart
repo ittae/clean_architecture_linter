@@ -31,8 +31,7 @@ class FailureNamingConventionRule extends CleanArchitectureLintRule {
       final className = node.name.lexeme;
 
       // Check if it's a Failure class
-      if (className == 'Failure' ||
-          (className.endsWith('Failure') && className.length < 12)) {
+      if (className == 'Failure' || (className.endsWith('Failure') && className.length < 12)) {
         final filePath = resolver.path;
         if (filePath.contains('/data/') || filePath.contains('/domain/')) {
           reporter.atNode(node, _code);

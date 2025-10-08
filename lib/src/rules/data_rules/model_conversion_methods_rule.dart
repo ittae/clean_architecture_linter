@@ -48,8 +48,7 @@ class ModelConversionMethodsRule extends CleanArchitectureLintRule {
 
   static const _code = LintCode(
     name: 'model_conversion_methods',
-    problemMessage:
-        'Data model should have conversion methods in extension (toEntity, fromEntity)',
+    problemMessage: 'Data model should have conversion methods in extension (toEntity, fromEntity)',
     correctionMessage: 'Add extension with conversion methods in same file:\n'
         '  extension ModelNameX on ModelName {\n'
         '    Entity toEntity() => entity;\n'
@@ -124,8 +123,7 @@ class ModelConversionMethodsRule extends CleanArchitectureLintRule {
         for (final param in params) {
           final fieldInfo = _extractFieldInfo(param);
           if (fieldInfo != null) {
-            if (fieldInfo.name == 'entity' ||
-                fieldInfo.name.endsWith('Entity')) {
+            if (fieldInfo.name == 'entity' || fieldInfo.name.endsWith('Entity')) {
               return true;
             }
           }
@@ -166,10 +164,8 @@ class ModelConversionMethodsRule extends CleanArchitectureLintRule {
           final typeName = extendedType.name2.lexeme;
           if (typeName == className) {
             // Check for required conversion methods
-            final hasToEntity =
-                _hasMethod(declaration, 'toEntity', isStatic: false);
-            final hasFromEntity =
-                _hasMethod(declaration, 'fromEntity', isStatic: true);
+            final hasToEntity = _hasMethod(declaration, 'toEntity', isStatic: false);
+            final hasFromEntity = _hasMethod(declaration, 'fromEntity', isStatic: true);
 
             return hasToEntity && hasFromEntity;
           }

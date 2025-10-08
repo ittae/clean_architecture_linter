@@ -97,21 +97,14 @@ class CleanArchitectureUtils {
 
   /// Checks if a file is documentation without code.
   static bool _isDocumentationFile(String filePath) {
-    if (filePath.endsWith('.md') ||
-        filePath.endsWith('.txt') ||
-        filePath.endsWith('.rst')) {
+    if (filePath.endsWith('.md') || filePath.endsWith('.txt') || filePath.endsWith('.rst')) {
       return true;
     }
 
     // Keep important YAML files but exclude others
     if (filePath.endsWith('.yaml') || filePath.endsWith('.yml')) {
       final fileName = filePath.split('/').last.split('\\').last;
-      final importantYamlFiles = [
-        'pubspec.yaml',
-        'analysis_options.yaml',
-        'build.yaml',
-        'dependency_validator.yaml'
-      ];
+      final importantYamlFiles = ['pubspec.yaml', 'analysis_options.yaml', 'build.yaml', 'dependency_validator.yaml'];
       return !importantYamlFiles.contains(fileName);
     }
 
@@ -263,8 +256,7 @@ class CleanArchitectureUtils {
     if (excludeFiles && shouldExcludeFile(filePath)) return false;
 
     final normalized = _normalizePath(filePath);
-    return normalized.contains('/usecases/') ||
-        normalized.contains('/use_cases/');
+    return normalized.contains('/usecases/') || normalized.contains('/use_cases/');
   }
 
   /// Checks if a file is a data source implementation.
@@ -289,8 +281,7 @@ class CleanArchitectureUtils {
     if (excludeFiles && shouldExcludeFile(filePath)) return false;
 
     final normalized = _normalizePath(filePath);
-    return normalized.contains('/datasources/') ||
-        normalized.contains('/data_sources/');
+    return normalized.contains('/datasources/') || normalized.contains('/data_sources/');
   }
 
   /// Checks if a file is a repository (interface or implementation).
@@ -337,14 +328,12 @@ class CleanArchitectureUtils {
   /// - [excludeFiles]: Whether to exclude test/generated files (default: true)
   ///
   /// Returns `true` if the file is a repository implementation.
-  static bool isRepositoryImplFile(String filePath,
-      {bool excludeFiles = true}) {
+  static bool isRepositoryImplFile(String filePath, {bool excludeFiles = true}) {
     if (excludeFiles && shouldExcludeFile(filePath)) return false;
 
     final normalized = _normalizePath(filePath);
     return normalized.contains('/repositories/') &&
-        (normalized.endsWith('_impl.dart') ||
-            normalized.contains('_repository_impl.dart'));
+        (normalized.endsWith('_impl.dart') || normalized.contains('_repository_impl.dart'));
   }
 
   // ============================================================================
@@ -371,9 +360,7 @@ class CleanArchitectureUtils {
   ///
   /// Returns `true` if the class name follows use case conventions.
   static bool isUseCaseClass(String className) {
-    return className.endsWith('UseCase') ||
-        className.endsWith('Usecase') ||
-        className.contains('UseCase');
+    return className.endsWith('UseCase') || className.endsWith('Usecase') || className.contains('UseCase');
   }
 
   /// Checks if a class name matches data source naming conventions.
@@ -396,9 +383,7 @@ class CleanArchitectureUtils {
   ///
   /// Returns `true` if the class name follows data source conventions.
   static bool isDataSourceClass(String className) {
-    return className.endsWith('DataSource') ||
-        className.endsWith('Datasource') ||
-        className.contains('DataSource');
+    return className.endsWith('DataSource') || className.endsWith('Datasource') || className.contains('DataSource');
   }
 
   /// Checks if a class name matches repository naming conventions.
@@ -451,8 +436,7 @@ class CleanArchitectureUtils {
   /// - [isRepositoryInterface] for AST-based precise validation
   /// - [isRepositoryImplClass] for implementation class check
   static bool isRepositoryInterfaceClass(String className) {
-    return className.endsWith('Repository') &&
-        !className.endsWith('RepositoryImpl');
+    return className.endsWith('Repository') && !className.endsWith('RepositoryImpl');
   }
 
   /// Checks if a class name suggests a repository implementation.
@@ -534,8 +518,7 @@ class CleanArchitectureUtils {
 
     // Step 1: Check naming patterns
     final repositoryPatterns = ['Repository', 'DataSource', 'Gateway', 'Port'];
-    final isRepositoryClass =
-        repositoryPatterns.any((pattern) => className.contains(pattern));
+    final isRepositoryClass = repositoryPatterns.any((pattern) => className.contains(pattern));
 
     if (!isRepositoryClass) return false;
 
@@ -545,8 +528,7 @@ class CleanArchitectureUtils {
     // Step 3: Check if all methods are abstract
     final hasOnlyAbstractMethods = classDeclaration.members
         .whereType<MethodDeclaration>()
-        .every((method) =>
-            method.isAbstract || method.isGetter || method.isSetter);
+        .every((method) => method.isAbstract || method.isGetter || method.isSetter);
 
     return isRepositoryClass && (isAbstractClass || hasOnlyAbstractMethods);
   }
@@ -624,10 +606,7 @@ class CleanArchitectureUtils {
     // Check with NamedType for more precise detection
     if (returnType is NamedType) {
       final name = returnType.name2.lexeme;
-      if (name == 'Result' ||
-          name == 'Either' ||
-          name == 'Task' ||
-          name == 'TaskEither') {
+      if (name == 'Result' || name == 'Either' || name == 'Task' || name == 'TaskEither') {
         return true;
       }
 
@@ -738,9 +717,7 @@ class CleanArchitectureUtils {
   /// See also:
   /// - [isDataException] for data layer exceptions
   static bool isDomainException(String typeName) {
-    return typeName.endsWith('DomainException') ||
-        typeName.endsWith('DomainError') ||
-        typeName.endsWith('Failure');
+    return typeName.endsWith('DomainException') || typeName.endsWith('DomainError') || typeName.endsWith('Failure');
   }
 
   /// Checks if a class implements or extends the Exception interface.
@@ -771,14 +748,9 @@ class CleanArchitectureUtils {
     final implementsClause = node.implementsClause;
     final withClause = node.withClause;
 
-    return (extendsClause?.superclass.toString().contains('Exception') ??
-            false) ||
-        (implementsClause?.interfaces
-                .any((i) => i.toString().contains('Exception')) ??
-            false) ||
-        (withClause?.mixinTypes
-                .any((m) => m.toString().contains('Exception')) ??
-            false);
+    return (extendsClause?.superclass.toString().contains('Exception') ?? false) ||
+        (implementsClause?.interfaces.any((i) => i.toString().contains('Exception')) ?? false) ||
+        (withClause?.mixinTypes.any((m) => m.toString().contains('Exception')) ?? false);
   }
 
   // ============================================================================
@@ -860,8 +832,7 @@ class CleanArchitectureUtils {
   ///
   /// Returns `true` if the expression is a rethrow.
   static bool isRethrow(ThrowExpression node) {
-    return node.expression.toString() == 'rethrow' ||
-        node.expression is RethrowExpression;
+    return node.expression.toString() == 'rethrow' || node.expression is RethrowExpression;
   }
 
   // ============================================================================
