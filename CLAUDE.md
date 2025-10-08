@@ -28,7 +28,7 @@ This linter enforces the following Clean Architecture principles:
 - Extensions in same file as the class
 - NO separate extensions/ directories
 
-For detailed examples and implementation patterns, see [CLEAN_ARCHITECTURE_GUIDE.md](docs/CLEAN_ARCHITECTURE_GUIDE.md).
+For detailed examples and implementation patterns, see [CLEAN_ARCHITECTURE_GUIDE.md](doc/CLEAN_ARCHITECTURE_GUIDE.md).
 
 ## Common Lint Violations & Solutions
 
@@ -95,7 +95,7 @@ class TodoCard extends StatelessWidget {
 - Don't create separate extensions/ or ui/ directories
 - Don't use ViewModels (use Freezed State + Riverpod instead)
 
-See [CLEAN_ARCHITECTURE_GUIDE.md](docs/CLEAN_ARCHITECTURE_GUIDE.md) for complete examples.
+See [CLEAN_ARCHITECTURE_GUIDE.md](doc/CLEAN_ARCHITECTURE_GUIDE.md) for complete examples.
 
 ### ❌ Violation: Domain Repository is Concrete (Not Abstract)
 

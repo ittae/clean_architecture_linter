@@ -304,8 +304,8 @@ cd example && dart run custom_lint
 
 ## Related Documentation
 
-- [Clean Architecture Guide](../../../../docs/CLEAN_ARCHITECTURE_GUIDE.md)
-- [Error Handling Guide](../../../../docs/ERROR_HANDLING_GUIDE.md)
+- [Clean Architecture Guide](../../../../doc/CLEAN_ARCHITECTURE_GUIDE.md)
+- [Error Handling Guide](../../../../doc/ERROR_HANDLING_GUIDE.md)
 - [Cross-Layer Rules](../cross_layer/README.md)
 - [Domain Layer Rules](../domain_rules/README.md)
 - [Presentation Layer Rules](../presentation_rules/README.md)

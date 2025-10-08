@@ -228,7 +228,7 @@ Potential mixins to add:
 
 ## Related Documentation
 
-- [Clean Architecture Guide](../../../docs/CLEAN_ARCHITECTURE_GUIDE.md)
-- [Error Handling Guide](../../../docs/ERROR_HANDLING_GUIDE.md)
+- [Clean Architecture Guide](../../../doc/CLEAN_ARCHITECTURE_GUIDE.md)
+- [Error Handling Guide](../../../doc/ERROR_HANDLING_GUIDE.md)
 - [CleanArchitectureUtils](../utils/clean_architecture_utils.dart)
 - [Rule Categories](../rules/README.md)

@@ -5,6 +5,10 @@
 *.iml
 .DS_Store
 
+# Exclude coverage files to keep package lightweight
+coverage/
+.taskmaster/
+
 # Keep package lightweight - exclude non-essential docs
 CONTRIBUTING.md
 TASKMASTER_빠른시작.md

@@ -450,4 +450,4 @@ task-master fix-dependencies
 
 - TaskMaster 공식 문서: `.taskmaster/CLAUDE.md`
 - 프로젝트 가이드: `CLAUDE.md`
-- Clean Architecture 가이드: `docs/CLEAN_ARCHITECTURE_GUIDE.md`
+- Clean Architecture 가이드: `doc/CLEAN_ARCHITECTURE_GUIDE.md`

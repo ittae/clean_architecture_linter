@@ -365,7 +365,7 @@ class UserValidationException extends Exception {
 }
 ```
 
-For more detailed examples and explanations, see our comprehensive [Examples Guide](docs/EXAMPLES.md).
+For more detailed examples and explanations, see our comprehensive [Examples Guide](doc/EXAMPLES.md).
     final user = UserRepository().getUser('123');
     return Text(user.name);
   }
