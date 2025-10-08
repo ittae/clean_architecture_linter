@@ -89,8 +89,7 @@ class ModelStructureRule extends CleanArchitectureLintRule {
     if (!_isSealedClass(node)) {
       final code = LintCode(
         name: 'model_structure',
-        problemMessage:
-            'Data model "$className" should be a sealed class',
+        problemMessage: 'Data model "$className" should be a sealed class',
         correctionMessage:
             'Add "sealed" modifier before "class" keyword (e.g., "sealed class $className").',
       );
@@ -182,7 +181,16 @@ class ModelStructureRule extends CleanArchitectureLintRule {
 
     // 2. Domain entities are typically simple nouns (User, Product, Order, TimeSlot, etc.)
     // If it's a custom type (not a primitive), it's likely an entity
-    final primitiveTypes = ['String', 'int', 'double', 'bool', 'DateTime', 'List', 'Map', 'Set'];
+    final primitiveTypes = [
+      'String',
+      'int',
+      'double',
+      'bool',
+      'DateTime',
+      'List',
+      'Map',
+      'Set'
+    ];
     if (primitiveTypes.any((type) => typeName.startsWith(type))) {
       return false;
     }

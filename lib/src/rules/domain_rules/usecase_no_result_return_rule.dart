@@ -5,7 +5,6 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 import '../../clean_architecture_linter_base.dart';
 import '../../mixins/return_type_validation_mixin.dart';
 
-
 /// Enforces that UseCase should NOT return Result type.
 ///
 /// In Clean Architecture, UseCase is responsible for unwrapping Result from
@@ -56,8 +55,7 @@ class UseCaseNoResultReturnRule extends CleanArchitectureLintRule
     name: 'usecase_no_result_return',
     problemMessage:
         'UseCase should NOT return Result type. UseCase should unwrap Result and return Entity or throw domain exception.',
-    correctionMessage:
-        'Unwrap Result and return Entity:\n'
+    correctionMessage: 'Unwrap Result and return Entity:\n'
         '  return result.when(\n'
         '    success: (data) => data,\n'
         '    failure: (error) => throw error.toException(),\n'
@@ -101,8 +99,7 @@ class UseCaseNoResultReturnRule extends CleanArchitectureLintRule
         problemMessage:
             'UseCase method "${method.name.lexeme}" should NOT return Result. '
             'UseCase should unwrap Result and return Entity or throw domain exception.',
-        correctionMessage:
-            'Unwrap Result from Repository:\n'
+        correctionMessage: 'Unwrap Result from Repository:\n'
             '  Before: Future<Result<Todo, TodoFailure>> call()\n'
             '  After:  Future<Todo> call() // unwrap and throw on failure\n\n'
             'Pattern:\n'

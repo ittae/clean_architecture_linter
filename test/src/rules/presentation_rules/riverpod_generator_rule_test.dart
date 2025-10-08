@@ -155,7 +155,8 @@ void main() {
     group('Edge Cases', () {
       test('handles provider with complex generics', () {
         expect(
-          _isManualProvider('StateNotifierProvider<RankingNotifier, AsyncValue<RankingState>>'),
+          _isManualProvider(
+              'StateNotifierProvider<RankingNotifier, AsyncValue<RankingState>>'),
           isTrue,
           reason: 'Should detect manual providers with complex generics',
         );

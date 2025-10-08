@@ -23,7 +23,8 @@ void main() {
 
       test('returns true for valid implementation names', () {
         expect(testRule.isValidRepositoryName('TodoRepositoryImpl'), isTrue);
-        expect(testRule.isValidRepositoryName('UserRepositoryImplementation'), isTrue);
+        expect(testRule.isValidRepositoryName('UserRepositoryImplementation'),
+            isTrue);
       });
 
       test('returns false for invalid repository names', () {

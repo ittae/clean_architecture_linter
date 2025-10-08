@@ -144,7 +144,7 @@ mixin ExceptionValidationMixin {
   /// ```
   bool isAllowedWithoutPrefix(String className) {
     return dartBuiltInExceptions.contains(className) ||
-           dataLayerExceptions.contains(className);
+        dataLayerExceptions.contains(className);
   }
 
   /// Checks if the [className] is a Data layer exception.

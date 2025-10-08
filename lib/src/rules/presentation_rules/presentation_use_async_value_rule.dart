@@ -4,7 +4,6 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
 
-
 /// Enforces that Presentation State should use AsyncValue for error handling.
 ///
 /// In Clean Architecture with Riverpod, error states should be managed through

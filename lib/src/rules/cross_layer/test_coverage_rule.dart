@@ -251,8 +251,7 @@ class TestCoverageRule extends CleanArchitectureLintRule {
 
     final code = LintCode(
       name: 'clean_architecture_linter_require_test',
-      problemMessage:
-          '$componentName "$className" is missing a test file',
+      problemMessage: '$componentName "$className" is missing a test file',
       correctionMessage:
           'Create test file at: ${path.relative(expectedTestPath)}',
     );

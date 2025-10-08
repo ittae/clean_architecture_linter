@@ -54,8 +54,7 @@ class ExceptionNamingConventionRule extends CleanArchitectureLintRule
     name: 'exception_naming_convention',
     problemMessage:
         'Domain Exception should have feature prefix: {Feature}{ExceptionType}',
-    correctionMessage:
-        'Add feature prefix to exception name:\\n'
+    correctionMessage: 'Add feature prefix to exception name:\\n'
         '  ❌ Bad:  class NotFoundException implements Exception\\n'
         '  ✅ Good: class TodoNotFoundException implements Exception\\n\\n'
         'Pattern: {Feature}{ExceptionType}\\n'
@@ -90,7 +89,8 @@ class ExceptionNamingConventionRule extends CleanArchitectureLintRule
     final className = node.name.lexeme;
 
     // Skip Dart built-in exceptions (Exception, Error, StateError, etc.)
-    if (ExceptionValidationMixin.dartBuiltInExceptions.contains(className)) return;
+    if (ExceptionValidationMixin.dartBuiltInExceptions.contains(className))
+      return;
 
     // Check if class needs feature prefix
     if (isGenericExceptionName(className)) {
@@ -100,8 +100,7 @@ class ExceptionNamingConventionRule extends CleanArchitectureLintRule
         name: 'exception_naming_convention',
         problemMessage:
             'Domain Exception "$className" should have feature prefix',
-        correctionMessage:
-            'Add feature prefix to exception name:\\n'
+        correctionMessage: 'Add feature prefix to exception name:\\n'
             '  Current:  class $className implements Exception\\n'
             '  Suggested: class $suggestedName implements Exception\\n\\n'
             'Pattern: {Feature}{ExceptionType}\\n'

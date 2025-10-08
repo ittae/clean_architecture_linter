@@ -97,8 +97,7 @@ class RepositoryMustReturnResultRule extends CleanArchitectureLintRule
         problemMessage:
             'Repository method "${method.name.lexeme}" must return Result type. '
             'Repository should catch exceptions and convert to Result.',
-        correctionMessage:
-            'Wrap return type in Result:\n'
+        correctionMessage: 'Wrap return type in Result:\n'
             '  Before: Future<${returnType.toString()}>\n'
             '  After:  Future<Result<${returnType.toString()}, TodoFailure>>\n\n'
             'Catch DataSource exceptions and convert to Failure. See ERROR_HANDLING_GUIDE.md',

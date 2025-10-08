@@ -162,8 +162,7 @@ class EntityBusinessLogicRule extends CleanArchitectureLintRule {
     problemMessage:
         'Domain Entity appears to be anemic (only data fields without business logic). '
         'Entities should contain business logic methods.',
-    correctionMessage:
-        'Add business logic methods to Entity:\n'
+    correctionMessage: 'Add business logic methods to Entity:\n'
         '  - Calculations: get isOverdue, get totalAmount\n'
         '  - Validations: bool isValid(), bool canPerform()\n'
         '  - Transformations: Entity markAsCompleted()\n\n'
@@ -228,8 +227,7 @@ class EntityBusinessLogicRule extends CleanArchitectureLintRule {
             problemMessage:
                 'Freezed Entity "$className" lacks business logic extension. '
                 'Add extension with business logic methods in same file.',
-            correctionMessage:
-                'Add extension to Freezed entity:\n'
+            correctionMessage: 'Add extension to Freezed entity:\n'
                 '  extension ${className}X on $className {\n'
                 '    bool get isValid => /* validation logic */;\n'
                 '    $className performAction() => /* business logic */;\n'
@@ -247,11 +245,9 @@ class EntityBusinessLogicRule extends CleanArchitectureLintRule {
           classNode,
           LintCode(
             name: 'entity_immutability',
-            problemMessage:
-                'Entity "$className" has non-final fields. '
+            problemMessage: 'Entity "$className" has non-final fields. '
                 'Domain entities must be immutable.',
-            correctionMessage:
-                'Make all fields final:\n'
+            correctionMessage: 'Make all fields final:\n'
                 '  final String name; // Not: String name;\n\n'
                 'Use copyWith pattern for updates:\n'
                 '  Entity copyWith({String? name}) => Entity(name: name ?? this.name);',

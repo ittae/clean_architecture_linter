@@ -56,7 +56,8 @@ void main() {
           TestRepository(
             isAbstract: false,
             hasImplementation: true,
-            layerPath: 'lib/features/todos/domain/repositories/todo_repository.dart',
+            layerPath:
+                'lib/features/todos/domain/repositories/todo_repository.dart',
           ),
           TestRepository(
             isAbstract: false,
@@ -79,7 +80,8 @@ void main() {
           TestRepository(
             isAbstract: true,
             hasImplementation: false,
-            layerPath: 'lib/features/todos/domain/repositories/todo_repository.dart',
+            layerPath:
+                'lib/features/todos/domain/repositories/todo_repository.dart',
           ),
         ];
 
@@ -101,7 +103,8 @@ void main() {
         expect(
           _isEffectivelyAbstract(repo),
           isTrue,
-          reason: 'Repository with all abstract methods is effectively abstract',
+          reason:
+              'Repository with all abstract methods is effectively abstract',
         );
       });
     });
@@ -170,7 +173,8 @@ void main() {
           expect(
             _isDataRepositoryImplImport(importUri),
             isTrue,
-            reason: '$importUri should be detected as data repository impl import',
+            reason:
+                '$importUri should be detected as data repository impl import',
           );
         }
       });
@@ -203,7 +207,8 @@ void main() {
           expect(
             _isInfrastructureDependency(importUri),
             isTrue,
-            reason: '$importUri should be detected as infrastructure dependency',
+            reason:
+                '$importUri should be detected as infrastructure dependency',
           );
         }
       });
@@ -251,7 +256,8 @@ void main() {
           expect(
             _isConcreteRepositoryDependency(paramDeclaration),
             isTrue,
-            reason: '$paramDeclaration should be detected as concrete dependency',
+            reason:
+                '$paramDeclaration should be detected as concrete dependency',
           );
         }
       });
@@ -301,7 +307,8 @@ void main() {
           expect(
             _isConcreteRepositoryField(fieldDeclaration),
             isTrue,
-            reason: '$fieldDeclaration should be detected as concrete dependency',
+            reason:
+                '$fieldDeclaration should be detected as concrete dependency',
           );
         }
       });
@@ -414,7 +421,10 @@ void main() {
         final testCases = [
           ('lib/features/todos/domain/repositories/todo_repository.dart', true),
           ('lib/domain/repositories/user_repository.dart', true),
-          ('lib/features/todos/data/repositories/todo_repository_impl.dart', false),
+          (
+            'lib/features/todos/data/repositories/todo_repository_impl.dart',
+            false
+          ),
           ('lib/presentation/pages/home_page.dart', false),
         ];
 
@@ -673,8 +683,7 @@ bool _containsRepository(String className) {
 
 /// Detects repository implementation class names
 bool _isRepositoryImplClass(String className) {
-  return (className.endsWith('Impl') ||
-          className.endsWith('Implementation')) &&
+  return (className.endsWith('Impl') || className.endsWith('Implementation')) &&
       className.contains('Repo');
 }
 

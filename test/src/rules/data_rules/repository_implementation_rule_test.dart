@@ -60,7 +60,8 @@ void main() {
           expect(
             _hasRepositoryInterface(impl),
             isTrue,
-            reason: '${impl.className} properly implements repository interface',
+            reason:
+                '${impl.className} properly implements repository interface',
           );
         }
       });
@@ -89,7 +90,8 @@ void main() {
         }
       });
 
-      test('accepts RepositoryImpl with multiple interfaces including repository',
+      test(
+          'accepts RepositoryImpl with multiple interfaces including repository',
           () {
         final impl = TestRepositoryImpl(
           className: 'UserRepositoryImpl',

@@ -18,12 +18,14 @@ import '../../mixins/repository_rule_visitor.dart';
 /// - Independence from data layer changes
 /// - Clear contract definition
 /// - Supports multiple data source strategies
-class RepositoryInterfaceRule extends CleanArchitectureLintRule with RepositoryRuleVisitor {
+class RepositoryInterfaceRule extends CleanArchitectureLintRule
+    with RepositoryRuleVisitor {
   const RepositoryInterfaceRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'repository_interface',
-    problemMessage: 'Domain layer must depend only on repository abstractions, not concrete implementations.',
+    problemMessage:
+        'Domain layer must depend only on repository abstractions, not concrete implementations.',
     correctionMessage:
         'Use abstract repository interfaces and ensure proper separation between domain and data layers.',
   );
@@ -96,8 +98,10 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule with RepositoryR
       // This is a concrete repository in domain layer - should be abstract
       final code = LintCode(
         name: 'repository_interface',
-        problemMessage: 'Repository in domain layer should be abstract: $className',
-        correctionMessage: 'Make repository abstract or move implementation to data layer.',
+        problemMessage:
+            'Repository in domain layer should be abstract: $className',
+        correctionMessage:
+            'Make repository abstract or move implementation to data layer.',
       );
       reporter.atNode(node, code);
     }
@@ -128,8 +132,10 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule with RepositoryR
           if (CleanArchitectureUtils.isRepositoryImplClass(typeName)) {
             final code = LintCode(
               name: 'repository_interface',
-              problemMessage: 'Constructor depends on concrete repository implementation: $typeName',
-              correctionMessage: 'Use abstract repository interface instead of concrete implementation.',
+              problemMessage:
+                  'Constructor depends on concrete repository implementation: $typeName',
+              correctionMessage:
+                  'Use abstract repository interface instead of concrete implementation.',
             );
             reporter.atNode(type, code);
           }
@@ -152,8 +158,10 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule with RepositoryR
       if (CleanArchitectureUtils.isRepositoryImplClass(typeName)) {
         final code = LintCode(
           name: 'repository_interface',
-          problemMessage: 'Field depends on concrete repository implementation: $typeName',
-          correctionMessage: 'Use abstract repository interface instead of concrete implementation.',
+          problemMessage:
+              'Field depends on concrete repository implementation: $typeName',
+          correctionMessage:
+              'Use abstract repository interface instead of concrete implementation.',
         );
         reporter.atNode(type, code);
       }
@@ -188,8 +196,10 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule with RepositoryR
       if (_isDataLayerModel(returnTypeName)) {
         final code = LintCode(
           name: 'repository_interface',
-          problemMessage: 'Repository method returns data layer model: $returnTypeName',
-          correctionMessage: 'Repository methods should return domain entities, not data models.',
+          problemMessage:
+              'Repository method returns data layer model: $returnTypeName',
+          correctionMessage:
+              'Repository methods should return domain entities, not data models.',
         );
         reporter.atNode(returnType, code);
         return; // Don't check further if main type is already a model
@@ -204,8 +214,10 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule with RepositoryR
             if (_isDataLayerModel(typeArgName)) {
               final code = LintCode(
                 name: 'repository_interface',
-                problemMessage: 'Repository method uses data layer model in generic type: $typeArgName',
-                correctionMessage: 'Use domain entities in generic types. Example: Result<User, Failure> instead of Result<UserModel, Failure>',
+                problemMessage:
+                    'Repository method uses data layer model in generic type: $typeArgName',
+                correctionMessage:
+                    'Use domain entities in generic types. Example: Result<User, Failure> instead of Result<UserModel, Failure>',
               );
               reporter.atNode(typeArg, code);
             }
@@ -240,8 +252,10 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule with RepositoryR
         if (_isDataLayerModel(paramTypeName)) {
           final code = LintCode(
             name: 'repository_interface',
-            problemMessage: 'Repository method parameter uses data layer model: $paramTypeName',
-            correctionMessage: 'Repository method parameters should use domain entities, not data models.',
+            problemMessage:
+                'Repository method parameter uses data layer model: $paramTypeName',
+            correctionMessage:
+                'Repository method parameters should use domain entities, not data models.',
           );
           reporter.atNode(paramType, code);
         }
@@ -255,8 +269,10 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule with RepositoryR
               if (_isDataLayerModel(typeArgName)) {
                 final code = LintCode(
                   name: 'repository_interface',
-                  problemMessage: 'Repository parameter uses data layer model in generic type: $typeArgName',
-                  correctionMessage: 'Use domain entities in generic types. Example: List<User> instead of List<UserModel>',
+                  problemMessage:
+                      'Repository parameter uses data layer model in generic type: $typeArgName',
+                  correctionMessage:
+                      'Use domain entities in generic types. Example: List<User> instead of List<UserModel>',
                 );
                 reporter.atNode(typeArg, code);
               }
@@ -270,11 +286,14 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule with RepositoryR
   RepositoryViolation? _analyzeRepositoryImport(String importUri) {
     // Check for data layer repository implementations
     if ((importUri.contains('/data/') || importUri.contains('\\data\\')) &&
-        (importUri.contains('repository') || importUri.contains('Repository'))) {
+        (importUri.contains('repository') ||
+            importUri.contains('Repository'))) {
       if (importUri.contains('impl') || importUri.contains('Impl')) {
         return RepositoryViolation(
-          message: 'Importing concrete repository implementation from data layer',
-          suggestion: 'Import only abstract repository interfaces. Move concrete implementations to data layer.',
+          message:
+              'Importing concrete repository implementation from data layer',
+          suggestion:
+              'Import only abstract repository interfaces. Move concrete implementations to data layer.',
         );
       }
     }
@@ -290,8 +309,10 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule with RepositoryR
     for (final pattern in infraPatterns) {
       if (importUri.startsWith(pattern)) {
         return RepositoryViolation(
-          message: 'Direct infrastructure dependency detected in domain repository',
-          suggestion: 'Use repository abstractions instead of direct infrastructure dependencies.',
+          message:
+              'Direct infrastructure dependency detected in domain repository',
+          suggestion:
+              'Use repository abstractions instead of direct infrastructure dependencies.',
         );
       }
     }

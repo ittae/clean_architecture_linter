@@ -16,8 +16,7 @@ class ExceptionMessageLocalizationRule extends CleanArchitectureLintRule {
   static const _code = LintCode(
     name: 'exception_message_localization',
     problemMessage: 'Consider using Korean message for user-facing exceptions',
-    correctionMessage:
-        'Use Korean for better UX:\\n'
+    correctionMessage: 'Use Korean for better UX:\\n'
         '  ⚠️ English: TodoNotFoundException("Not found")\\n'
         '  ✅ Korean:  TodoNotFoundException("할 일을 찾을 수 없습니다")',
   );

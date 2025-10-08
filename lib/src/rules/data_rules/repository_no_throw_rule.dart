@@ -91,8 +91,7 @@ class RepositoryNoThrowRule extends CleanArchitectureLintRule
       name: 'repository_no_throw',
       problemMessage:
           'Repository should NOT throw exceptions. Convert to Result instead.',
-      correctionMessage:
-          'Replace throw with Result.Failure:\n'
+      correctionMessage: 'Replace throw with Result.Failure:\n'
           '  Before: throw NotFoundException("Not found")\n'
           '  After:  return Failure(TodoFailure.notFound("Not found"))\n\n'
           'Repository must catch DataSource exceptions and convert to Result. '

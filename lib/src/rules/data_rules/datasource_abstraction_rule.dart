@@ -88,7 +88,8 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
     if (!CleanArchitectureUtils.isDataSourceClass(className)) return;
 
     // Check if concrete DataSource without abstract interface
-    if (node.abstractKeyword == null && _isConcreteDataSource(node, className)) {
+    if (node.abstractKeyword == null &&
+        _isConcreteDataSource(node, className)) {
       // This is a concrete DataSource implementation
       // Check if there's a corresponding abstract interface or test file
 

@@ -5,7 +5,6 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 import '../../clean_architecture_linter_base.dart';
 import '../../mixins/return_type_validation_mixin.dart';
 
-
 /// Enforces that DataSource methods should NOT return Result type.
 ///
 /// In Clean Architecture, DataSource should throw exceptions instead of

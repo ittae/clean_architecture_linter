@@ -427,8 +427,7 @@ void main() {
       });
 
       test('immutability error provides guidance', () {
-        const errorMessage =
-            'Entity "Order" has non-final fields. '
+        const errorMessage = 'Entity "Order" has non-final fields. '
             'Domain entities must be immutable.';
 
         expect(

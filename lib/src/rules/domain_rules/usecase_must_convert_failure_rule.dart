@@ -4,7 +4,6 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
 
-
 /// Enforces that UseCase should convert Failure to Domain Exception.
 ///
 /// In Clean Architecture, UseCase receives Result<T, Failure> from Repository
@@ -55,8 +54,7 @@ class UseCaseMustConvertFailureRule extends CleanArchitectureLintRule {
     name: 'usecase_must_convert_failure',
     problemMessage:
         'UseCase should convert Failure to Domain Exception using .toException()',
-    correctionMessage:
-        'In Result.when() failure case, call .toException():\\n'
+    correctionMessage: 'In Result.when() failure case, call .toException():\\n'
         '  Before: failure: (error) => throw error\\n'
         '  After:  failure: (error) => throw error.toException()\\n\\n'
         'This converts Failure to Domain Exception for Presentation layer.\\n'
@@ -82,7 +80,8 @@ class UseCaseMustConvertFailureRule extends CleanArchitectureLintRule {
     final filePath = resolver.path;
 
     // Only check UseCase files
-    if (!CleanArchitectureUtils.isUseCaseFile(filePath) && !_isUseCaseClass(node)) return;
+    if (!CleanArchitectureUtils.isUseCaseFile(filePath) &&
+        !_isUseCaseClass(node)) return;
 
     // Check if this is a .when() method call
     if (node.methodName.name != 'when') return;

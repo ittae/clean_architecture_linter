@@ -50,8 +50,7 @@ class ModelConversionMethodsRule extends CleanArchitectureLintRule {
     name: 'model_conversion_methods',
     problemMessage:
         'Data model should have conversion methods in extension (toEntity, fromEntity)',
-    correctionMessage:
-        'Add extension with conversion methods in same file:\n'
+    correctionMessage: 'Add extension with conversion methods in same file:\n'
         '  extension ModelNameX on ModelName {\n'
         '    Entity toEntity() => entity;\n'
         '    static ModelName fromEntity(Entity entity) => ModelName(entity: entity);\n'
@@ -167,8 +166,10 @@ class ModelConversionMethodsRule extends CleanArchitectureLintRule {
           final typeName = extendedType.name2.lexeme;
           if (typeName == className) {
             // Check for required conversion methods
-            final hasToEntity = _hasMethod(declaration, 'toEntity', isStatic: false);
-            final hasFromEntity = _hasMethod(declaration, 'fromEntity', isStatic: true);
+            final hasToEntity =
+                _hasMethod(declaration, 'toEntity', isStatic: false);
+            final hasFromEntity =
+                _hasMethod(declaration, 'fromEntity', isStatic: true);
 
             return hasToEntity && hasFromEntity;
           }

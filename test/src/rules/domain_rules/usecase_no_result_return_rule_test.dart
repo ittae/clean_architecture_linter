@@ -301,8 +301,7 @@ void main() {
           'throw domain exception',
         ];
 
-        const errorMessage =
-            'UseCase method "call" should NOT return Result. '
+        const errorMessage = 'UseCase method "call" should NOT return Result. '
             'UseCase should unwrap Result and return Entity or throw domain exception.';
 
         for (final phrase in expectedPhrases) {
