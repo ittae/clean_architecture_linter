@@ -3,10 +3,11 @@ name: Publish to pub.dev
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
 
 jobs:
-  publish:
+  # Run all quality checks before publishing
+  test:
     runs-on: ubuntu-latest
 
     steps:
@@ -36,39 +37,9 @@ jobs:
     - name: Check pub publishing (dry run)
       run: dart pub publish --dry-run
 
-    - name: Setup pub credentials
-      run: |
-        mkdir -p ~/.config/dart
-        echo '${{ secrets.PUB_DEV_PUBLISH_ACCESS_TOKEN }}' > ~/.config/dart/pub-credentials.json
-
-    - name: Publish to pub.dev
-      run: dart pub publish --force
-
-    - name: Create GitHub Release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        body: |
-          ## Changes in this Release
-
-          Please see [CHANGELOG.md](CHANGELOG.md) for detailed changes.
-
-          ## Installation
-
-          Add this to your package's `pubspec.yaml` file:
-
-          ```yaml
-          dev_dependencies:
-            clean_architecture_linter: ^${{ github.ref_name }}
-            custom_lint: ^0.7.6
-          ```
-
-          Then run:
-          ```bash
-          dart pub get
-          ```
-        draft: false
-        prerelease: false
+  # Publish only if tests pass
+  publish:
+    needs: test
+    permissions:
+      id-token: write # Required for authentication using OIDC
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
