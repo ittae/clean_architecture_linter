@@ -7,98 +7,55 @@ Flutter 프로젝트에서 클린 아키텍처 원칙을 강제하는 포괄적�
 
 ## 🚀 주요 기능
 
-- **39개의 포괄적인 린트 규칙**으로 클린 아키텍처의 모든 측면을 커버
-- **도메인 계층 규칙** (11개): 비즈니스 로직 순수성과 적절한 추상화 보장
-- **데이터 계층 규칙** (7개): 리포지토리 구현과 데이터 모델 검증
-- **프레젠테이션 계층 규칙** (3개): UI/비즈니스 로직 분리 강제
-- **인터페이스 어댑터 규칙** (3개): 적절한 데이터 변환 패턴 검증
-- **프레임워크 규칙** (4개): 프레임워크 세부사항을 외부 계층에 유지
-- **경계 규칙** (11개): 적절한 경계 교차 패턴 강제
-- **실시간 피드백**: IDE에서 즉시 확인 (VS Code, IntelliJ IDEA, Android Studio)
-- **설정 가능한 규칙**: 필요에 따라 특정 규칙 활성화/비활성화
-- **제로 디펜던시**: 앱에 의존성 없이 개발 의존성으로만 작동
+- 🛡️ **자동 클린 아키텍처 보호** - 자유롭게 코드 작성, 린터가 위반사항 감지
+- 🎯 **27개의 전문화된 규칙** - 모든 클린 아키텍처 계층 포괄
+- 🚀 **Flutter 최적화** - Flutter 개발 패턴에 특화
+- 📚 **교육적** - 수정 가이드를 통해 클린 아키텍처 학습
+- ⚡ **실시간 피드백** - 즉각적인 경고와 실행 가능한 해결책
+- 🔧 **제로 설정** - 기본값으로 즉시 작동
+- 🧪 **테스트 인식** - 테스트 파일과 개발 컨텍스트에 대한 스마트 예외처리
 
-## 📋 클린 아키텍처 계층별 규칙
+## 📋 규칙 개요 (27개 규칙)
 
-### 🎯 도메인 계층 (핵심 비즈니스 규칙)
-*비즈니스 로직과 규칙을 포함하는 가장 안쪽 계층*
+### 🌐 핵심 클린 아키텍처 원칙 (6개 규칙)
+1. **Layer Dependency** - 의존성 방향 강제 (안쪽으로만)
+2. **Domain Purity** - 도메인 계층의 외부 프레임워크 의존성 방지
+3. **Dependency Inversion** - 추상화 기반 의존성 검증
+4. **Repository Interface** - 적절한 리포지토리 추상화 보장
+5. **Circular Dependency** - 계층 간 순환 의존성 방지
+6. **Boundary Crossing** - 적절한 계층 경계 교차 검증
 
-**엔티티 & 비즈니스 규칙 (4개):**
-- `entity_business_rules` - 엔티티가 기업 비즈니스 규칙만 포함하도록 보장
-- `entity_stability` - 엔티티 안정성과 불변성 검증
-- `entity_immutability` - 불변 도메인 엔티티 강제
-- `business_logic_isolation` - 외부 계층으로의 비즈니스 로직 누출 방지
+### 🎯 도메인 계층 규칙 (5개 규칙)
+7. **Entity Business Logic** - 엔티티가 비즈니스 규칙 포함 (빈약한 도메인 모델 방지)
+8. **UseCase No Result Return** - UseCase는 Result 타입 언래핑
+9. **UseCase Must Convert Failure** - UseCase는 Failure를 Exception으로 변환
+10. **Exception Naming Convention** - 도메인 예외에 기능 접두사
+11. **Exception Message Localization** - 일관된 예외 메시지
 
-**유스케이스 & 애플리케이션 규칙 (4개):**
-- `usecase_orchestration` - 유스케이스 오케스트레이션 패턴 검증
-- `usecase_application_rules` - 유스케이스가 애플리케이션 특화 규칙을 포함하도록 보장
-- `usecase_independence` - 유스케이스 독립성 강제
-- `usecase_single_responsibility` - 단일 책임 원칙 검증
+### 💾 데이터 계층 규칙 (10개 규칙)
+12. **Model Structure** - Entity 구성을 포함하는 Freezed 모델
+13. **Model Field Duplication** - 모델에 중복 엔티티 필드 없음
+14. **Model Conversion Methods** - 필수 `toEntity()` 및 `fromEntity()`
+15. **DataSource Abstraction** - 데이터 소스용 추상 인터페이스
+16. **DataSource No Result Return** - DataSource는 예외 발생
+17. **Repository Implementation** - RepositoryImpl은 도메인 인터페이스 구현 필수
+18. **Repository Must Return Result** - Repository는 Result 타입으로 래핑
+19. **Repository No Throw** - Repository는 예외를 Result로 변환
+20. **DataSource Exception Types** - 정의된 데이터 계층 예외만 사용
+21. **Failure Naming Convention** - Failure 클래스에 기능 접두사
 
-**도메인 인터페이스 & 검증 (3개):**
-- `repository_interface` - 적절한 리포지토리 추상화 검증
-- `domain_model_validation` - 적절한 도메인 검증 보장
-- `domain_purity` - 외부 프레임워크 의존성 방지
-- `dependency_inversion` - 의존성 방향 검증
+### 🎨 프레젠테이션 계층 규칙 (6개 규칙)
+22. **No Presentation Models** - ViewModel 대신 Freezed State 사용
+23. **Extension Location** - 클래스와 동일 파일에 확장 정의
+24. **Freezed Usage** - Equatable 대신 Freezed 사용
+25. **Riverpod Generator** - `@riverpod` 어노테이션 사용
+26. **Presentation No Data Exceptions** - 도메인 예외만 사용
+27. **Presentation Use AsyncValue** - 에러 처리에 AsyncValue 사용
 
-### 💾 데이터 계층 (데이터 접근 & 외부 인터페이스)
-*리포지토리 구현과 데이터 소스 관리*
+### 🧪 선택사항: 테스트 커버리지 규칙
+**Test Coverage** - UseCase, Repository, DataSource, Notifier에 대한 테스트 파일 강제 (기본값: 비활성화)
 
-**리포지토리 & 데이터 소스 규칙 (3개):**
-- `repository_implementation` - 리포지토리 구현 패턴 검증
-- `datasource_naming` - 적절한 명명 규칙 강제
-- `model_structure` - 데이터 모델의 적절한 구조 보장
-
-**경계 데이터 규칙 (4개):**
-- `data_boundary_crossing` - 적절한 경계 데이터 전달 검증
-- `database_row_boundary` - 데이터베이스 행 구조의 내부 전달 방지
-- `dto_boundary_pattern` - 경계 교차를 위한 DTO 패턴 강제
-- `entity_boundary_isolation` - 외부 계층으로부터 엔티티 격리
-
-### 🎨 프레젠테이션 계층 (UI & 전달 메커니즘)
-*사용자 인터페이스와 전달 메커니즘*
-
-**UI & 상태 관리 (3개):**
-- `ui_dependency_injection` - 비즈니스 로직 직접 인스턴스화 방지
-- `state_management` - 적절한 상태 관리 패턴 검증
-- `presentation_logic_separation` - UI/비즈니스 로직 분리 강제
-
-### 🔗 인터페이스 어댑터 (데이터 형식 변환)
-*컨트롤러, 프레젠터, 게이트웨이*
-
-**데이터 변환 & MVC (3개):**
-- `data_conversion_adapter` - 데이터 형식 변환 검증
-- `mvc_architecture` - 어댑터에서 MVC 패턴 강제
-- `external_service_adapter` - 외부 서비스 어댑터 패턴 검증
-
-### ⚙️ 프레임워크 & 드라이버 (외부 세부사항)
-*웹 프레임워크, 데이터베이스, 외부 에이전시*
-
-**프레임워크 격리 (4개):**
-- `framework_isolation` - 가장 바깥 계층에서 프레임워크 세부사항 격리
-- `database_detail` - 프레임워크 계층에서 데이터베이스 세부사항 유지
-- `web_framework_detail` - 웹 프레임워크 특화 사항 격리
-- `glue_code` - 글루 코드 패턴 검증
-
-### 🌐 아키텍처 경계 (횡단 관심사)
-*여러 계층에 걸쳐 Uncle Bob의 원칙을 강제하는 규칙*
-
-**의존성 & 계층 규칙 (5개):**
-- `layer_dependency` - 의존성 규칙 강제 (안쪽으로만)
-- `circular_dependency` - 순환 의존성 방지
-- `core_dependency` - 핵심 의존성 패턴 검증
-- `abstraction_level` - 적절한 추상화 수준 보장
-- `flexible_layer_detection` - 유연한 계층 아키텍처 지원
-
-**경계 교차 패턴 (6개):**
-- `boundary_crossing` - 적절한 경계 교차 검증
-- `dependency_inversion_boundary` - 경계에서 의존성 역전 강제
-- `interface_boundary` - 인터페이스 경계 패턴 검증
-- `polymorphic_flow_control` - 다형적 흐름 제어 역전 보장
-- `abstraction_progression` - 계층 간 추상화 진행 검증
-- `clean_architecture_benefits` - 아키텍처가 기대 효과를 제공하도록 보장
-
-> 📖 **상세 규칙 가이드**: [RULES_KO.md](RULES_KO.md)에서 39개 규칙에 대한 포괄적인 문서, Uncle Bob 인용구, 구현 가이드를 확인하세요.
+> 📖 **구현 가이드**: 자세한 패턴과 예제는 [CLEAN_ARCHITECTURE_GUIDE.md](doc/CLEAN_ARCHITECTURE_GUIDE.md)를 참조하세요.
 
 ## 📦 설치
 
