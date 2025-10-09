@@ -10,14 +10,14 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 ## ✨ Key Features
 
 - 🛡️ **Automatic Clean Architecture Protection** - Write code freely, linter catches violations
-- 🎯 **27 Specialized Rules** - Comprehensive coverage of all Clean Architecture layers
+- 🎯 **26 Specialized Rules** - Comprehensive coverage of all Clean Architecture layers
 - 🚀 **Flutter-Optimized** - Built specifically for Flutter development patterns
 - 📚 **Educational** - Learn Clean Architecture through guided corrections
 - ⚡ **Real-time Feedback** - Immediate warnings with actionable solutions
 - 🔧 **Zero Configuration** - Works out of the box with sensible defaults
 - 🧪 **Test-Aware** - Smart exceptions for test files and development contexts
 
-## 📋 Rules Overview (27 Rules)
+## 📋 Rules Overview (26 Rules)
 
 ### 🌐 Core Clean Architecture Principles (6 rules)
 1. **Layer Dependency** - Enforces dependency direction (inward only)
@@ -27,32 +27,31 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 5. **Circular Dependency** - Prevents circular dependencies between layers
 6. **Boundary Crossing** - Validates proper layer boundary crossing
 
-### 🎯 Domain Layer Rules (5 rules)
-7. **Entity Business Logic** - Ensures entities contain business rules (not anemic)
-8. **UseCase No Result Return** - UseCases should unwrap Result types
-9. **UseCase Must Convert Failure** - UseCases convert Failures to Exceptions
-10. **Exception Naming Convention** - Feature prefix for domain exceptions
-11. **Exception Message Localization** - Consistent exception messages
+### 🎯 Domain Layer Rules (4 rules)
+7. **UseCase No Result Return** - UseCases should unwrap Result types
+8. **UseCase Must Convert Failure** - UseCases convert Failures to Exceptions
+9. **Exception Naming Convention** - Feature prefix for domain exceptions
+10. **Exception Message Localization** - Consistent exception messages
 
 ### 💾 Data Layer Rules (10 rules)
-12. **Model Structure** - Freezed models with entity composition
-13. **Model Field Duplication** - No duplicate entity fields in models
-14. **Model Conversion Methods** - Required `toEntity()` and `fromEntity()`
-15. **DataSource Abstraction** - Abstract interfaces for data sources
-16. **DataSource No Result Return** - DataSources throw exceptions
-17. **Repository Implementation** - RepositoryImpl must implement domain interface
-18. **Repository Must Return Result** - Repositories wrap results in Result type
-19. **Repository No Throw** - Repositories convert exceptions to Result
-20. **DataSource Exception Types** - Use defined data layer exceptions only
-21. **Failure Naming Convention** - Feature prefix for Failure classes
+11. **Model Structure** - Freezed models with entity composition
+12. **Model Field Duplication** - No duplicate entity fields in models
+13. **Model Conversion Methods** - Required `toEntity()` and `fromEntity()`
+14. **DataSource Abstraction** - Abstract interfaces for data sources
+15. **DataSource No Result Return** - DataSources throw exceptions
+16. **Repository Implementation** - RepositoryImpl must implement domain interface
+17. **Repository Must Return Result** - Repositories wrap results in Result type
+18. **Repository No Throw** - Repositories convert exceptions to Result
+19. **DataSource Exception Types** - Use defined data layer exceptions only
+20. **Failure Naming Convention** - Feature prefix for Failure classes
 
 ### 🎨 Presentation Layer Rules (6 rules)
-22. **No Presentation Models** - Use Freezed State instead of ViewModels
-23. **Extension Location** - Extensions in same file as the class
-24. **Freezed Usage** - Use Freezed instead of Equatable
-25. **Riverpod Generator** - Use `@riverpod` annotation
-26. **Presentation No Data Exceptions** - Use domain exceptions only
-27. **Presentation Use AsyncValue** - Use AsyncValue for error handling
+21. **No Presentation Models** - Use Freezed State instead of ViewModels
+22. **Extension Location** - Extensions in same file as the class
+23. **Freezed Usage** - Use Freezed instead of Equatable
+24. **Riverpod Generator** - Use `@riverpod` annotation
+25. **Presentation No Data Exceptions** - Use domain exceptions only
+26. **Presentation Use AsyncValue** - Use AsyncValue for error handling
 
 ### 🧪 Optional: Test Coverage Rule
 **Test Coverage** - Enforces test files for UseCases, Repositories, DataSources, and Notifiers (disabled by default)
@@ -315,11 +314,6 @@ class UserValidationException extends Exception {
 ```
 
 For more detailed examples and explanations, see our comprehensive [Examples Guide](doc/EXAMPLES.md).
-    final user = UserRepository().getUser('123');
-    return Text(user.name);
-  }
-}
-```
 
 ## 🛠️ Development
 

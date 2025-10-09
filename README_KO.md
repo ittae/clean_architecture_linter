@@ -3,19 +3,21 @@
 [![pub package](https://img.shields.io/pub/v/clean_architecture_linter.svg)](https://pub.dev/packages/clean_architecture_linter)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Flutter 프로젝트에서 클린 아키텍처 원칙을 강제하는 포괄적인 커스텀 린트 패키지입니다. Uncle Bob의 클린 아키텍처를 따르는 Flutter 애플리케이션에서 적절한 아키텍처 경계와 패턴을 유지하도록 특별히 설계된 **최초이자 유일한** 린트 도구입니다.
+> 🇰🇷 한국어 README | 🇺🇸 [English README](README.md)
 
-## 🚀 주요 기능
+Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강제**하는 포괄적인 커스텀 린트 패키지입니다. 자유롭게 코드를 작성하면 린터가 실시간 피드백과 실행 가능한 수정 방법으로 완벽한 클린 아키텍처 준수를 안내합니다.
+
+## ✨ 주요 기능
 
 - 🛡️ **자동 클린 아키텍처 보호** - 자유롭게 코드 작성, 린터가 위반사항 감지
-- 🎯 **27개의 전문화된 규칙** - 모든 클린 아키텍처 계층 포괄
+- 🎯 **26개의 전문화된 규칙** - 모든 클린 아키텍처 계층 포괄
 - 🚀 **Flutter 최적화** - Flutter 개발 패턴에 특화
 - 📚 **교육적** - 수정 가이드를 통해 클린 아키텍처 학습
 - ⚡ **실시간 피드백** - 즉각적인 경고와 실행 가능한 해결책
 - 🔧 **제로 설정** - 기본값으로 즉시 작동
 - 🧪 **테스트 인식** - 테스트 파일과 개발 컨텍스트에 대한 스마트 예외처리
 
-## 📋 규칙 개요 (27개 규칙)
+## 📋 규칙 개요 (26개 규칙)
 
 ### 🌐 핵심 클린 아키텍처 원칙 (6개 규칙)
 1. **Layer Dependency** - 의존성 방향 강제 (안쪽으로만)
@@ -25,116 +27,92 @@ Flutter 프로젝트에서 클린 아키텍처 원칙을 강제하는 포괄적�
 5. **Circular Dependency** - 계층 간 순환 의존성 방지
 6. **Boundary Crossing** - 적절한 계층 경계 교차 검증
 
-### 🎯 도메인 계층 규칙 (5개 규칙)
-7. **Entity Business Logic** - 엔티티가 비즈니스 규칙 포함 (빈약한 도메인 모델 방지)
-8. **UseCase No Result Return** - UseCase는 Result 타입 언래핑
-9. **UseCase Must Convert Failure** - UseCase는 Failure를 Exception으로 변환
-10. **Exception Naming Convention** - 도메인 예외에 기능 접두사
-11. **Exception Message Localization** - 일관된 예외 메시지
+### 🎯 도메인 계층 규칙 (4개 규칙)
+7. **UseCase No Result Return** - UseCase는 Result 타입 언래핑
+8. **UseCase Must Convert Failure** - UseCase는 Failure를 Exception으로 변환
+9. **Exception Naming Convention** - 도메인 예외에 기능 접두사
+10. **Exception Message Localization** - 일관된 예외 메시지
 
 ### 💾 데이터 계층 규칙 (10개 규칙)
-12. **Model Structure** - Entity 구성을 포함하는 Freezed 모델
-13. **Model Field Duplication** - 모델에 중복 엔티티 필드 없음
-14. **Model Conversion Methods** - 필수 `toEntity()` 및 `fromEntity()`
-15. **DataSource Abstraction** - 데이터 소스용 추상 인터페이스
-16. **DataSource No Result Return** - DataSource는 예외 발생
-17. **Repository Implementation** - RepositoryImpl은 도메인 인터페이스 구현 필수
-18. **Repository Must Return Result** - Repository는 Result 타입으로 래핑
-19. **Repository No Throw** - Repository는 예외를 Result로 변환
-20. **DataSource Exception Types** - 정의된 데이터 계층 예외만 사용
-21. **Failure Naming Convention** - Failure 클래스에 기능 접두사
+11. **Model Structure** - Entity 구성을 포함하는 Freezed 모델
+12. **Model Field Duplication** - 모델에 중복 엔티티 필드 없음
+13. **Model Conversion Methods** - 필수 `toEntity()` 및 `fromEntity()`
+14. **DataSource Abstraction** - 데이터 소스용 추상 인터페이스
+15. **DataSource No Result Return** - DataSource는 예외 발생
+16. **Repository Implementation** - RepositoryImpl은 도메인 인터페이스 구현 필수
+17. **Repository Must Return Result** - Repository는 Result 타입으로 래핑
+18. **Repository No Throw** - Repository는 예외를 Result로 변환
+19. **DataSource Exception Types** - 정의된 데이터 계층 예외만 사용
+20. **Failure Naming Convention** - Failure 클래스에 기능 접두사
 
 ### 🎨 프레젠테이션 계층 규칙 (6개 규칙)
-22. **No Presentation Models** - ViewModel 대신 Freezed State 사용
-23. **Extension Location** - 클래스와 동일 파일에 확장 정의
-24. **Freezed Usage** - Equatable 대신 Freezed 사용
-25. **Riverpod Generator** - `@riverpod` 어노테이션 사용
-26. **Presentation No Data Exceptions** - 도메인 예외만 사용
-27. **Presentation Use AsyncValue** - 에러 처리에 AsyncValue 사용
+21. **No Presentation Models** - ViewModel 대신 Freezed State 사용
+22. **Extension Location** - 클래스와 동일 파일에 확장 정의
+23. **Freezed Usage** - Equatable 대신 Freezed 사용
+24. **Riverpod Generator** - `@riverpod` 어노테이션 사용
+25. **Presentation No Data Exceptions** - 도메인 예외만 사용
+26. **Presentation Use AsyncValue** - 에러 처리에 AsyncValue 사용
 
 ### 🧪 선택사항: 테스트 커버리지 규칙
 **Test Coverage** - UseCase, Repository, DataSource, Notifier에 대한 테스트 파일 강제 (기본값: 비활성화)
 
 > 📖 **구현 가이드**: 자세한 패턴과 예제는 [CLEAN_ARCHITECTURE_GUIDE.md](doc/CLEAN_ARCHITECTURE_GUIDE.md)를 참조하세요.
 
-## 📦 설치
+## 🚀 빠른 시작
 
-`pubspec.yaml`에 `clean_architecture_linter`를 개발 의존성으로 추가하세요:
+### 📋 요구사항
+
+- **Dart SDK**: 3.6.0+
+- **Flutter**: 3.0+ (Flutter 프로젝트의 경우 선택사항)
+
+### 1. 프로젝트에 추가
 
 ```yaml
+# pubspec.yaml
 dev_dependencies:
-  clean_architecture_linter: ^0.1.0
-  custom_lint: ^0.6.7
+  clean_architecture_linter: ^1.0.0
+  custom_lint: ^0.7.6
 ```
 
-## ⚙️ 설정
-
-`analysis_options.yaml`을 생성하거나 업데이트하세요:
+### 2. custom lint 활성화
 
 ```yaml
+# analysis_options.yaml
 analyzer:
   plugins:
     - custom_lint
   exclude:
-    - test/**  
+    - test/**
     - "**/*.test.dart"    # 테스트 파일 제외
     - "**/*.g.dart"       # 생성된 파일 제외
     - "**/*.freezed.dart" # Freezed 파일 제외
     - "**/*.mocks.dart"   # Mock 파일 제외
+```
 
+### 3. 린터 실행
+
+```bash
+dart pub get
+dart pub custom_lint
+```
+
+완료되었습니다! 이제 린터가 자동으로 코드베이스에 클린 아키텍처 원칙을 강제합니다.
+
+## 🎛️ 설정
+
+### 선택사항: 테스트 커버리지
+
+`clean_architecture_linter_require_test` 규칙은 **기본적으로 비활성화**되어 있습니다. 중요한 컴포넌트에 대한 테스트 파일을 강제하려면 활성화하세요:
+
+```yaml
+# analysis_options.yaml
 custom_lint:
   rules:
-    # 도메인 계층 규칙 (11개)
-    - entity_business_rules
-    - entity_stability
-    - entity_immutability
-    - business_logic_isolation
-    - usecase_orchestration
-    - usecase_application_rules
-    - usecase_independence
-    - usecase_single_responsibility
-    - repository_interface
-    - domain_model_validation
-    - domain_purity
-    - dependency_inversion
-
-    # 데이터 계층 규칙 (7개)
-    - repository_implementation
-    - datasource_naming
-    - model_structure
-    - data_boundary_crossing
-    - database_row_boundary
-    - dto_boundary_pattern
-    - entity_boundary_isolation
-
-    # 프레젠테이션 계층 규칙 (3개)
-    - ui_dependency_injection
-    - state_management
-    - presentation_logic_separation
-
-    # 인터페이스 어댑터 규칙 (3개)
-    - data_conversion_adapter
-    - mvc_architecture
-    - external_service_adapter
-
-    # 프레임워크 규칙 (4개)
-    - framework_isolation
-    - database_detail
-    - web_framework_detail
-    - glue_code
-
-    # 경계 규칙 (11개)
-    - layer_dependency
-    - circular_dependency
-    - core_dependency
-    - abstraction_level
-    - flexible_layer_detection
-    - boundary_crossing
-    - dependency_inversion_boundary
-    - interface_boundary
-    - polymorphic_flow_control
-    - abstraction_progression
-    - clean_architecture_benefits
+    - clean_architecture_linter_require_test: true
+      check_usecases: true       # UseCase 테스트 필수
+      check_repositories: true   # Repository 테스트 필수
+      check_datasources: true    # DataSource 테스트 필수
+      check_notifiers: true      # Notifier 테스트 필수
 ```
 
 ## 🚦 사용법
@@ -162,7 +140,7 @@ lib/
 ### 린터 실행
 
 ```bash
-# custom_lint가 설치되지 않았다면 먼저 활성화
+# custom_lint가 아직 활성화되지 않은 경우
 dart pub global activate custom_lint
 
 # 린터 실행
@@ -171,9 +149,9 @@ dart pub custom_lint
 
 ### IDE 통합
 
-다음 IDE에서 자동으로 작동합니다:
-- **VS Code**: Dart/Flutter 확장과 함께
-- **IntelliJ IDEA** / **Android Studio**: Flutter 플러그인과 함께
+린터는 다음 환경에서 자동으로 작동합니다:
+- Dart/Flutter 확장이 설치된 **VS Code**
+- Flutter 플러그인이 설치된 **IntelliJ IDEA** / **Android Studio**
 
 ## 📚 예제
 
@@ -208,7 +186,7 @@ abstract class UserRepository {
 }
 ```
 
-**단일 책임을 가진 유스케이스**
+**단일 책임을 가진 UseCase**
 ```dart
 // lib/domain/usecases/get_user_usecase.dart
 class GetUserUseCase {
@@ -252,12 +230,90 @@ class UserEntity {
 class UserWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // UI 계층의 비즈니스 로직
-    final user = UserRepository().getUser('123');
-    return Text(user.name);
+    // UI 계층의 비즈니스 로직 - 잘못됨!
+    final isValid = email.contains('@') && email.length > 5;
+    return Text(isValid ? 'Valid' : 'Invalid');
   }
 }
 ```
+
+**예외를 던지는 Repository**
+```dart
+// ❌ avoid_exception_throwing_in_repository에 걸림
+class UserRepositoryImpl implements UserRepository {
+  @override
+  Future<UserEntity> getUser(String id) async {
+    if (id.isEmpty) {
+      throw ArgumentError('ID cannot be empty'); // Result를 반환해야 함
+    }
+    // ...
+  }
+}
+```
+
+**계층 의존성 위반**
+```dart
+// ❌ avoid_layer_dependency_violation에 걸림
+// 도메인 계층 파일에서:
+import 'package:myapp/data/models/user_model.dart'; // Domain이 Data를 임포트!
+
+class UserEntity extends UserModel { // 잘못된 의존성 방향
+  // ...
+}
+```
+
+**예외 접두사 누락**
+```dart
+// ❌ ensure_exception_prefix에 걸림
+class NetworkException extends Exception { // UserNetworkException이어야 함
+  // ...
+}
+```
+
+### 🔄 일반적인 패턴
+
+**Result 타입을 사용한 올바른 에러 처리**
+```dart
+// ✅ 좋음: Result 패턴 사용
+sealed class Result<T, E> {}
+class Success<T, E> extends Result<T, E> {
+  final T value;
+  Success(this.value);
+}
+class Failure<T, E> extends Result<T, E> {
+  final E error;
+  Failure(this.error);
+}
+
+// Repository 구현
+class UserRepositoryImpl implements UserRepository {
+  @override
+  Future<Result<UserEntity, UserException>> getUser(String id) async {
+    try {
+      final userData = await dataSource.getUser(id);
+      return Success(userData.toEntity());
+    } catch (e) {
+      return Failure(UserDataException(e.toString()));
+    }
+  }
+}
+```
+
+**올바른 예외 네이밍**
+```dart
+// ✅ 좋음: 적절한 예외 접두사
+class UserNetworkException extends Exception {
+  final String message;
+  UserNetworkException(this.message);
+}
+
+class UserValidationException extends Exception {
+  final String field;
+  UserValidationException(this.field);
+}
+```
+
+더 자세한 예제와 설명은 포괄적인 [예제 가이드](doc/EXAMPLES.md)를 참조하세요.
 
 ## 🛠️ 개발
 
@@ -270,9 +326,7 @@ clean_architecture_linter/
 │   │   └── rules/
 │   │       ├── domain_rules/
 │   │       ├── data_rules/
-│   │       ├── presentation_rules/
-│   │       ├── adapter_rules/
-│   │       └── framework_rules/
+│   │       └── presentation_rules/
 │   └── clean_architecture_linter.dart
 ├── example/
 ├── test/
@@ -282,46 +336,13 @@ clean_architecture_linter/
 ### 기여하기
 
 1. 저장소를 포크하세요
-2. 기능 브랜치를 만드세요
+2. 기능 브랜치를 생성하세요
 3. 새 규칙에 대한 테스트를 추가하세요
-4. 모든 테스트가 통과하는지 확인하세요
-5. Pull Request를 제출하세요
+4. 코드를 포맷하세요: `dart format --line-length=120 .`
+5. 모든 테스트가 통과하는지 확인하세요
+6. Pull Request를 제출하세요
 
-## 💡 단계별 도입 가이드
-
-### 신규 프로젝트
-```yaml
-custom_lint:
-  rules:
-    # 핵심 규칙부터 시작
-    - entity_immutability
-    - domain_purity
-    - layer_dependency
-    - business_logic_isolation
-```
-
-### 기존 프로젝트 리팩토링
-```yaml
-custom_lint:
-  rules:
-    # 구조적 문제부터 해결
-    - circular_dependency
-    - layer_dependency
-    # 점진적으로 패턴 개선
-    - repository_interface
-    - data_boundary_crossing
-```
-
-### 팀 교육용
-```yaml
-custom_lint:
-  rules:
-    # Uncle Bob의 핵심 원칙들
-    - entity_business_rules
-    - usecase_orchestration
-    - dependency_inversion_boundary
-    - clean_architecture_benefits
-```
+자세한 가이드라인은 [CONTRIBUTING.md](CONTRIBUTING.md)를 참조하세요.
 
 ## 📄 라이센스
 
@@ -344,4 +365,4 @@ custom_lint:
 
 ---
 
-**Flutter 클린 아키텍처 커뮤니티를 위해 ❤️로 만들어졌습니다**
+**Flutter 커뮤니티를 위해 ❤️로 만들어졌습니다**

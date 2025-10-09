@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2025-10-09
+
+### 🗑️ Removed
+
+- **entity_business_logic rule** - Removed overly strict rule requiring all entities to have business logic methods
+  - Not all entities need business logic (e.g., events, DTOs, value objects)
+  - Users reported this as too restrictive for practical use cases
+  - Total rules: 27 → 26
+
+### 📝 Documentation
+
+- Fixed incomplete code snippet in README.md examples section
+- Synchronized README_KO.md structure with README.md (removed inconsistent sections)
+- Updated rule count from 27 to 26 in both English and Korean READMEs
+
 ## [1.0.1] - 2025-10-09
 
 ### 📝 Documentation
