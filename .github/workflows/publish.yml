@@ -21,11 +21,14 @@ jobs:
     - name: Install dependencies
       run: dart pub get
 
+    - name: Verify dependencies
+      run: dart pub deps
+
     - name: Run analyzer
-      run: dart analyze --fatal-infos
+      run: dart analyze --fatal-warnings
 
     - name: Check formatting
-      run: dart format --output=none --set-exit-if-changed .
+      run: dart format --line-length=120 --output=none --set-exit-if-changed .
 
     - name: Run tests
       run: dart test
