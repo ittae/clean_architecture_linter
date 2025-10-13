@@ -220,6 +220,12 @@ void main() {
           ),
           isTrue,
         );
+        expect(
+          CleanArchitectureUtils.isDataFile(
+            'lib/features/auth/data/repositories/auth_repository_impl.dart',
+          ),
+          isTrue,
+        );
       });
 
       test('should exclude test files by default', () {
@@ -251,6 +257,22 @@ void main() {
         expect(
           CleanArchitectureUtils.isDataFile(
             'lib/features/auth/presentation/pages/login_page.dart',
+          ),
+          isFalse,
+        );
+      });
+
+      test('should not identify domain/repositories as data layer', () {
+        // Regression test for bug: domain/repositories should not be detected as data layer
+        expect(
+          CleanArchitectureUtils.isDataFile(
+            'lib/features/auth/domain/repositories/auth_repository.dart',
+          ),
+          isFalse,
+        );
+        expect(
+          CleanArchitectureUtils.isDataFile(
+            'lib/core/analytics/domain/repositories/analytics_repository.dart',
           ),
           isFalse,
         );

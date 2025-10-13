@@ -160,17 +160,21 @@ class CleanArchitectureUtils {
   /// Recognizes files in these directories:
   /// - `/data/` - Standard data layer directory
   /// - `/datasources/`, `/data_sources/` - Data source implementations
-  /// - `/repositories/` - Repository implementations
+  /// - `/repositories/` - Repository implementations (excludes `/domain/repositories/`)
   /// - `/models/` - Data models
   ///
   /// By default, automatically excludes test files, generated files, and build
   /// artifacts. Set [excludeFiles] to `false` to include all files regardless.
+  ///
+  /// Note: `/repositories/` in domain layer (e.g., `/domain/repositories/`) are
+  /// correctly identified as domain files, not data files.
   ///
   /// Examples:
   /// ```dart
   /// isDataFile('lib/features/todos/data/models/todo_model.dart');           // true
   /// isDataFile('lib/features/todos/data/datasources/todo_remote_ds.dart');  // true
   /// isDataFile('lib/features/todos/data/repositories/todo_repo_impl.dart'); // true
+  /// isDataFile('lib/features/todos/domain/repositories/todo_repository.dart'); // false (domain layer)
   /// isDataFile('lib/features/todos/data/models/todo_model.freezed.dart');   // false (excluded)
   /// isDataFile('lib/features/todos/domain/entities/todo.dart');             // false
   /// ```
@@ -184,6 +188,13 @@ class CleanArchitectureUtils {
     if (excludeFiles && shouldExcludeFile(filePath)) return false;
 
     final normalized = _normalizePath(filePath);
+
+    // /domain/repositories/ should be recognized as domain, not data
+    // Check this before other patterns to avoid false positives
+    if (normalized.contains('/domain/')) {
+      return false;
+    }
+
     return normalized.contains('/data/') ||
         normalized.contains('/datasources/') ||
         normalized.contains('/data_sources/') ||
