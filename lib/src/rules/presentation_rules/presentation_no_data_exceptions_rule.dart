@@ -1,6 +1,7 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:analyzer/error/error.dart' show ErrorSeverity;
 
 import '../../clean_architecture_linter_base.dart';
 import '../../mixins/exception_validation_mixin.dart';
@@ -70,6 +71,7 @@ class PresentationNoDataExceptionsRule extends CleanArchitectureLintRule with Ex
         '  After:  if (error is TodoNotFoundException)\n\n'
         'UseCase should convert Data exceptions to Domain exceptions. '
         'See ERROR_HANDLING_GUIDE.md',
+    errorSeverity: ErrorSeverity.WARNING,
   );
 
   @override
@@ -113,6 +115,7 @@ class PresentationNoDataExceptionsRule extends CleanArchitectureLintRule with Ex
             'UseCase layer should convert Data exceptions to Domain exceptions. '
             'Data exceptions should never reach Presentation layer.\n\n'
             'See ERROR_HANDLING_GUIDE.md for complete patterns.',
+        errorSeverity: ErrorSeverity.WARNING,
       );
       reporter.atNode(type, code);
     }

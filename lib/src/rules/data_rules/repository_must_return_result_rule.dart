@@ -1,6 +1,7 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:analyzer/error/error.dart' show ErrorSeverity;
 
 import '../../clean_architecture_linter_base.dart';
 import '../../mixins/repository_rule_visitor.dart';
@@ -59,6 +60,7 @@ class RepositoryMustReturnResultRule extends CleanArchitectureLintRule
     problemMessage: 'Repository implementation must return Result type to handle errors properly.',
     correctionMessage: 'Wrap return type in Result (e.g., Future<Result<Todo, TodoFailure>>). '
         'Catch DataSource exceptions and convert to Result.',
+    errorSeverity: ErrorSeverity.WARNING,
   );
 
   @override
@@ -98,6 +100,7 @@ class RepositoryMustReturnResultRule extends CleanArchitectureLintRule
             '  Before: Future<${returnType.toString()}>\n'
             '  After:  Future<Result<${returnType.toString()}, TodoFailure>>\n\n'
             'Catch DataSource exceptions and convert to Failure. See ERROR_HANDLING_GUIDE.md',
+        errorSeverity: ErrorSeverity.WARNING,
       );
       reporter.atNode(returnType, code);
     }

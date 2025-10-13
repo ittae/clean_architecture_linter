@@ -1,4 +1,5 @@
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/error/error.dart' show ErrorSeverity;
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
@@ -25,6 +26,7 @@ class RepositoryImplementationRule extends CleanArchitectureLintRule with Reposi
     name: 'repository_implementation',
     problemMessage: 'Data layer repository implementation must properly implement domain repository interface.',
     correctionMessage: 'Ensure RepositoryImpl classes use implements keyword with domain repository interface.',
+    errorSeverity: ErrorSeverity.WARNING,
   );
 
   @override
@@ -80,6 +82,7 @@ class RepositoryImplementationRule extends CleanArchitectureLintRule with Reposi
         problemMessage: 'Repository implementation must implement a domain repository interface: $className',
         correctionMessage:
             'Add implements clause with domain repository interface. Example: class UserRepositoryImpl implements UserRepository',
+        errorSeverity: ErrorSeverity.WARNING,
       );
       reporter.atNode(node, code);
       return;
@@ -99,6 +102,7 @@ class RepositoryImplementationRule extends CleanArchitectureLintRule with Reposi
             'Repository implementation should implement a domain repository interface: $className implements $implementedInterfaces',
         correctionMessage:
             'Implement the corresponding domain repository interface. Example: class UserRepositoryImpl implements UserRepository',
+        errorSeverity: ErrorSeverity.WARNING,
       );
       reporter.atNode(node, code);
     }
@@ -116,6 +120,7 @@ class RepositoryImplementationRule extends CleanArchitectureLintRule with Reposi
         problemMessage: 'Repository interface should be in domain layer, not data layer: $className',
         correctionMessage:
             'Move abstract repository interface to domain layer. Data layer should only contain RepositoryImpl classes.',
+        errorSeverity: ErrorSeverity.WARNING,
       );
       reporter.atNode(node, code);
     }
@@ -131,6 +136,7 @@ class RepositoryImplementationRule extends CleanArchitectureLintRule with Reposi
       problemMessage: 'Repository implementation should be in data layer, not domain layer: $className',
       correctionMessage:
           'Move $className to data layer. Domain layer should only contain abstract repository interfaces.',
+      errorSeverity: ErrorSeverity.WARNING,
     );
     reporter.atNode(node, code);
   }

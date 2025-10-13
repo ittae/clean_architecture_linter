@@ -1,4 +1,5 @@
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/error/error.dart' show ErrorSeverity;
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
@@ -24,6 +25,7 @@ class CircularDependencyRule extends CleanArchitectureLintRule {
     problemMessage: 'Circular dependency detected between files or layers.',
     correctionMessage:
         'Refactor to remove circular dependency. Consider using dependency injection, interfaces, or reorganizing code structure.',
+    errorSeverity: ErrorSeverity.ERROR,
   );
 
   // Static cache to store dependency graph across file analysis
@@ -110,6 +112,7 @@ class CircularDependencyRule extends CleanArchitectureLintRule {
               name: 'circular_dependency',
               problemMessage: 'Circular dependency detected: $cycleDescription',
               correctionMessage: _getSuggestion(cycle),
+              errorSeverity: ErrorSeverity.ERROR,
             );
             reporter.atNode(directive, enhancedCode);
           }
@@ -195,6 +198,7 @@ class CircularDependencyRule extends CleanArchitectureLintRule {
                 problemMessage: 'Layer-level circular dependency: ${layerCycle.join(' → ')}',
                 correctionMessage:
                     'Architectural layers should have acyclic dependencies. Consider using dependency inversion.',
+                errorSeverity: ErrorSeverity.ERROR,
               );
               reporter.atNode(directive, enhancedCode);
               break; // Report once per file

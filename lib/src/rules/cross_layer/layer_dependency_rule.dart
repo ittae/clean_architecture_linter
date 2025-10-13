@@ -1,4 +1,5 @@
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/error/error.dart' show ErrorSeverity;
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
@@ -24,6 +25,7 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
     problemMessage: 'Improper dependency between architectural layers detected.',
     correctionMessage:
         'Ensure dependencies flow inward: Presentation → Domain ← Data. Never skip layers or create circular dependencies.',
+    errorSeverity: ErrorSeverity.ERROR,
   );
 
   @override
@@ -67,6 +69,7 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
         name: 'layer_dependency',
         problemMessage: violation.message,
         correctionMessage: violation.suggestion,
+        errorSeverity: ErrorSeverity.ERROR,
       );
       reporter.atNode(node, enhancedCode);
     }

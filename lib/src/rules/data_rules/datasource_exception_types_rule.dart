@@ -1,6 +1,7 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:analyzer/error/error.dart' show ErrorSeverity;
 
 import '../../clean_architecture_linter_base.dart';
 import '../../mixins/exception_validation_mixin.dart';
@@ -75,6 +76,7 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule with Except
         '  - CacheException (for cache errors)\n'
         '  - DatabaseException (for database errors)\n\n'
         'See ERROR_HANDLING_GUIDE.md',
+    errorSeverity: ErrorSeverity.WARNING,
   );
 
   @override
@@ -132,6 +134,7 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule with Except
             '  - DatabaseException (for database errors)\n\n'
             'Current: throw $exceptionType(...)\n'
             'Example: throw NotFoundException(\'Resource not found\')',
+        errorSeverity: ErrorSeverity.WARNING,
       );
       reporter.atNode(expression, code);
     }

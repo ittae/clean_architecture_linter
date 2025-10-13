@@ -1,4 +1,5 @@
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/error/error.dart' show ErrorSeverity;
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
@@ -93,6 +94,7 @@ class RepositoryNoThrowRule extends CleanArchitectureLintRule with RepositoryRul
           '  After:  return Failure(TodoFailure.notFound("Not found"))\n\n'
           'Repository must catch DataSource exceptions and convert to Result. '
           'See ERROR_HANDLING_GUIDE.md',
+        errorSeverity: ErrorSeverity.WARNING,
     );
     reporter.atNode(node, code);
   }
