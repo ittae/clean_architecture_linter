@@ -33,6 +33,12 @@ class FailureNamingConventionRule extends CleanArchitectureLintRule {
       // Check if it's a Failure class
       if (className == 'Failure' || (className.endsWith('Failure') && className.length < 12)) {
         final filePath = resolver.path;
+
+        // Skip /core/ directory - core failures don't need feature prefix
+        if (filePath.contains('/core/')) {
+          return;
+        }
+
         if (filePath.contains('/data/') || filePath.contains('/domain/')) {
           reporter.atNode(node, _code);
         }

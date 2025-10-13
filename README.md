@@ -70,7 +70,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 ```yaml
 # pubspec.yaml
 dev_dependencies:
-  clean_architecture_linter: ^1.0.0
+  clean_architecture_linter: ^1.0.2
   custom_lint: ^0.7.6
 ```
 
@@ -93,7 +93,7 @@ analyzer:
 
 ```bash
 dart pub get
-dart pub custom_lint
+dart run custom_lint
 ```
 
 That's it! The linter will now automatically enforce Clean Architecture principles in your codebase.
@@ -102,17 +102,14 @@ That's it! The linter will now automatically enforce Clean Architecture principl
 
 ### Optional: Test Coverage
 
-The `clean_architecture_linter_require_test` rule is **disabled by default**. Enable it to enforce test files for critical components:
+The `clean_architecture_linter_require_test` rule is **disabled by default**.  
+Enable it to enforce test files for critical components:
 
 ```yaml
 # analysis_options.yaml
 custom_lint:
   rules:
     - clean_architecture_linter_require_test: true
-      check_usecases: true       # Require tests for UseCases
-      check_repositories: true   # Require tests for Repositories
-      check_datasources: true    # Require tests for DataSources
-      check_notifiers: true      # Require tests for Notifiers
 ```
 
 ## 🚦 Usage
