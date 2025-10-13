@@ -44,6 +44,7 @@ import 'src/rules/presentation_rules/freezed_usage_rule.dart';
 import 'src/rules/presentation_rules/riverpod_generator_rule.dart';
 import 'src/rules/presentation_rules/presentation_no_data_exceptions_rule.dart';
 import 'src/rules/presentation_rules/presentation_use_async_value_rule.dart';
+import 'src/rules/presentation_rules/presentation_no_throw_rule.dart';
 
 /// Plugin entry point for Clean Architecture Linter.
 PluginBase createPlugin() => _CleanArchitectureLinterPlugin();
@@ -134,7 +135,7 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
       // 20. Failure Naming Convention - Feature prefix for Failure classes
       FailureNamingConventionRule(),
 
-      // Presentation Layer Rules (6 rules)
+      // Presentation Layer Rules (7 rules)
 
       // 21. No Presentation Models - Use Freezed State instead
       NoPresentationModelsRule(),
@@ -153,6 +154,9 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
 
       // 26. Presentation Use AsyncValue - Use AsyncValue for error handling
       PresentationUseAsyncValueRule(),
+
+      // 27. Presentation No Throw - States should not throw exceptions
+      PresentationNoThrowRule(),
     ];
 
     // Conditionally add test coverage rule if enabled
