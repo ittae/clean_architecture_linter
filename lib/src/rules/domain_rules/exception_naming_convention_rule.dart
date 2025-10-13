@@ -81,6 +81,11 @@ class ExceptionNamingConventionRule extends CleanArchitectureLintRule with Excep
     // Only check Domain layer files
     if (!CleanArchitectureUtils.isDomainFile(filePath)) return;
 
+    // Skip /core/ directory - core exceptions don't need feature prefix
+    if (filePath.contains('/core/')) {
+      return;
+    }
+
     // Check if class implements Exception
     if (!isExceptionClass(node)) return;
 
