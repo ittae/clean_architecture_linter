@@ -6,16 +6,15 @@ import 'package:test/test.dart';
 /// enforces Clean Architecture Model conversion pattern.
 ///
 /// Test Coverage:
-/// 1. Conversion method detection (toEntity, fromEntity)
-/// 2. Extension in same file requirement
-/// 3. Static vs instance method validation
+/// 1. toEntity() method detection (required)
+/// 2. fromEntity() method detection (optional - can be factory or extension)
+/// 3. Extension in same file requirement
 /// 4. Error messages
 /// 5. Edge cases
 ///
 /// Conversion Pattern:
-/// - toEntity(): Instance method to convert Model → Entity
-/// - fromEntity(): Static method to create Model from Entity
-/// - Both methods must be in extension in same file
+/// - toEntity(): Instance method in extension (REQUIRED)
+/// - fromEntity(): Use factory constructor in class (OPTIONAL, not checked by this rule)
 ///
 /// Note: These are unit tests for the rule logic. Integration tests are
 /// provided via the example/ directory's good_examples/ and bad_examples/.
@@ -54,14 +53,13 @@ void main() {
         );
       });
 
-      test('requires both conversion methods', () {
+      test('requires toEntity method (fromEntity is optional)', () {
         final hasToEntity = _hasMethod('toEntity', isStatic: false);
-        final hasFromEntity = _hasMethod('fromEntity', isStatic: true);
 
         expect(
-          hasToEntity && hasFromEntity,
+          hasToEntity,
           isTrue,
-          reason: 'Both conversion methods should be present',
+          reason: 'toEntity() method is required',
         );
       });
     });
@@ -111,14 +109,9 @@ void main() {
     });
 
     group('Error Messages', () {
-      test('provides clear message for missing conversion methods', () {
+      test('provides clear message for missing toEntity method', () {
         final message = _getErrorMessage(ErrorType.missingConversion);
 
-        expect(
-          message,
-          contains('conversion methods'),
-          reason: 'Error message should mention conversion methods',
-        );
         expect(
           message,
           contains('toEntity'),
@@ -126,12 +119,12 @@ void main() {
         );
         expect(
           message,
-          contains('fromEntity'),
-          reason: 'Error message should mention fromEntity',
+          contains('extension'),
+          reason: 'Error message should mention extension',
         );
       });
 
-      test('provides correction example', () {
+      test('provides correction example with factory suggestion', () {
         final message = _getErrorMessage(ErrorType.missingConversion);
 
         expect(
@@ -141,18 +134,18 @@ void main() {
         );
         expect(
           message,
-          contains('static'),
-          reason: 'Error message should show static method example',
+          contains('factory'),
+          reason: 'Error message should suggest factory constructor for fromEntity',
         );
       });
 
-      test('explains same file requirement', () {
+      test('explains toEntity requirement clearly', () {
         final message = _getErrorMessage(ErrorType.missingConversion);
 
         expect(
           message,
-          contains('same file'),
-          reason: 'Error message should explain same file requirement',
+          contains('toEntity'),
+          reason: 'Error message should clearly state toEntity is required',
         );
       });
     });
@@ -182,11 +175,11 @@ void main() {
         );
       });
 
-      test('handles extension with only one method', () {
+      test('handles extension with only toEntity method', () {
         expect(
           _hasExtensionWithMethods(hasToEntity: true, hasFromEntity: false),
-          isFalse,
-          reason: 'Extension needs both conversion methods',
+          isTrue,
+          reason: 'toEntity() is sufficient, fromEntity is optional',
         );
       });
 
@@ -203,14 +196,14 @@ void main() {
       test('should detect violations in bad examples', () {
         final expectedViolations = {
           'todo_model_bad.dart': [
-            'TodoModelNoConversion: Missing conversion methods',
+            'TodoModelNoConversion: Missing toEntity() method',
           ],
         };
 
         expect(
           expectedViolations['todo_model_bad.dart']!.length,
           greaterThan(0),
-          reason: 'Should detect missing conversion methods',
+          reason: 'Should detect missing toEntity() method',
         );
       });
 
@@ -218,14 +211,13 @@ void main() {
         final expectedPassing = {
           'todo_model_good.dart': [
             'TodoModel: Has toEntity() instance method',
-            'TodoModel: Has fromEntity() static method',
             'TodoModel: Extension in same file',
           ],
         };
 
         expect(
           expectedPassing['todo_model_good.dart']!.length,
-          equals(3),
+          greaterThan(0),
           reason: 'Should accept good example patterns',
         );
       });
@@ -304,8 +296,10 @@ bool _hasExtensionWithMethods({
   bool hasToEntity = false,
   bool hasFromEntity = false,
 }) {
-  if (methodCount == 0) return false;
-  return hasToEntity && hasFromEntity;
+  // fromEntity is optional, only toEntity is required
+  // methodCount == 0 means empty extension
+  if (methodCount == 0 && !hasToEntity) return false;
+  return hasToEntity;
 }
 
 bool _hasMultipleExtensions(String className, {required int count}) {
@@ -316,11 +310,12 @@ bool _hasMultipleExtensions(String className, {required int count}) {
 String _getErrorMessage(ErrorType errorType) {
   switch (errorType) {
     case ErrorType.missingConversion:
-      return 'Data model should have conversion methods in extension (toEntity, fromEntity). '
-          'Add extension with conversion methods in same file:\n'
+      return 'Data model should have toEntity() method in extension. '
+          'Add extension with toEntity() method in the same file:\n'
           '  extension ModelNameX on ModelName {\n'
           '    Entity toEntity() => entity;\n'
-          '    static ModelName fromEntity(Entity entity) => ModelName(entity: entity);\n'
-          '  }';
+          '  }\n\n'
+          'For creating Models from Entities, use factory constructors:\n'
+          '  factory ModelName.fromEntity(Entity entity) => ModelName(entity: entity);';
   }
 }

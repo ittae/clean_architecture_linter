@@ -280,6 +280,14 @@ class UserRepositoryImpl implements UserRepository {
 - Makes architectural boundaries clear in code
 - Exception: Direct `.entity` access is allowed inside extension methods where conversion is implemented
 
+**Note on fromEntity()**: While `toEntity()` is required in extensions, `fromEntity()` should be implemented as a factory constructor in the Model class:
+```dart
+factory TodoModel.fromEntity(Todo entity, {String? etag}) {
+  return TodoModel(entity: entity, etag: etag);
+}
+```
+This is the Dart/Freezed way and allows calling `TodoModel.fromEntity(entity)` naturally.
+
 ### Repository Pattern Summary
 
 **Domain Layer (Interfaces)**:

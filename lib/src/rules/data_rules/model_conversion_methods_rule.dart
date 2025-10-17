@@ -4,12 +4,12 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
 
-/// Enforces presence of conversion methods in Model extensions
+/// Enforces presence of toEntity() conversion method in Model extensions
 ///
-/// This rule ensures that data models have proper conversion methods:
-/// - toEntity(): Convert Model to Entity (instance method)
-/// - fromEntity(): Create Model from Entity (static method)
-/// - Extensions must be in the same file as the Model
+/// This rule ensures that data models have the toEntity() method to convert Model → Entity.
+/// The toEntity() method must be in an extension in the same file.
+///
+/// For creating Models from Entities (fromEntity), use factory constructors directly in the class.
 ///
 /// ✅ Correct Pattern:
 /// ```dart
@@ -19,16 +19,15 @@ import '../../clean_architecture_linter_base.dart';
 ///     required Todo entity,
 ///     String? etag,
 ///   }) = _TodoModel;
+///
+///   // Optional: Named factory for creating from Entity
+///   factory TodoModel.fromEntity(Todo entity, {String? etag}) {
+///     return TodoModel(entity: entity, etag: etag);
+///   }
 /// }
 ///
 /// extension TodoModelX on TodoModel {
-///   /// Convert Model to Entity
-///   Todo toEntity() => entity;
-///
-///   /// Create Model from Entity
-///   static TodoModel fromEntity(Todo entity, {String? etag}) {
-///     return TodoModel(entity: entity, etag: etag);
-///   }
+///   Todo toEntity() => entity;  // Required
 /// }
 /// ```
 ///
@@ -41,19 +40,20 @@ import '../../clean_architecture_linter_base.dart';
 ///     String? etag,
 ///   }) = _TodoModel;
 /// }
-/// // ❌ Missing extension with conversion methods
+/// // ❌ Missing toEntity() extension method
 /// ```
 class ModelConversionMethodsRule extends CleanArchitectureLintRule {
   const ModelConversionMethodsRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'model_conversion_methods',
-    problemMessage: 'Data model should have conversion methods in extension (toEntity, fromEntity)',
-    correctionMessage: 'Add extension with conversion methods in same file:\n'
+    problemMessage: 'Data model should have toEntity() method in extension',
+    correctionMessage: 'Add extension with toEntity() method in the same file:\n'
         '  extension ModelNameX on ModelName {\n'
         '    Entity toEntity() => entity;\n'
-        '    static ModelName fromEntity(Entity entity) => ModelName(entity: entity);\n'
-        '  }',
+        '  }\n\n'
+        'For creating Models from Entities, use factory constructors:\n'
+        '  factory ModelName.fromEntity(Entity entity) => ModelName(entity: entity);',
   );
 
   @override
@@ -88,16 +88,13 @@ class ModelConversionMethodsRule extends CleanArchitectureLintRule {
     // Check for Entity field
     if (!_hasEntityField(node)) return;
 
-    // Check for conversion extension in same file
+    // Check for toEntity() method in extension
     final compilationUnit = node.thisOrAncestorOfType<CompilationUnit>();
     if (compilationUnit == null) return;
 
-    final hasExtension = _hasConversionExtension(
-      compilationUnit,
-      className,
-    );
+    final hasToEntity = _hasToEntityMethod(compilationUnit, className);
 
-    if (!hasExtension) {
+    if (!hasToEntity) {
       reporter.atNode(node, _code);
     }
   }
@@ -152,7 +149,8 @@ class ModelConversionMethodsRule extends CleanArchitectureLintRule {
     return _FieldInfo(name: name, type: type);
   }
 
-  bool _hasConversionExtension(
+  /// Checks if toEntity() method exists in any extension on this Model
+  bool _hasToEntityMethod(
     CompilationUnit compilationUnit,
     String className,
   ) {
@@ -163,11 +161,10 @@ class ModelConversionMethodsRule extends CleanArchitectureLintRule {
         if (extendedType != null && extendedType is NamedType) {
           final typeName = extendedType.name2.lexeme;
           if (typeName == className) {
-            // Check for required conversion methods
-            final hasToEntity = _hasMethod(declaration, 'toEntity', isStatic: false);
-            final hasFromEntity = _hasMethod(declaration, 'fromEntity', isStatic: true);
-
-            return hasToEntity && hasFromEntity;
+            // Check for toEntity() instance method
+            if (_hasMethod(declaration, 'toEntity', isStatic: false)) {
+              return true;
+            }
           }
         }
       }
