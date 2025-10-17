@@ -145,8 +145,10 @@ class ExtensionLocationRule extends CleanArchitectureLintRule {
         normalized.endsWith('_screen.dart')) {
       final code = LintCode(
         name: 'extension_location',
-        problemMessage: 'Entity UI extensions are not allowed in widget/page/screen files',
-        correctionMessage: 'Move entity UI extensions to the State file (e.g., todo_state.dart). '
+        problemMessage:
+            'Entity UI extensions are not allowed in widget/page/screen files',
+        correctionMessage:
+            'Move entity UI extensions to the State file (e.g., todo_state.dart). '
             'Only State files should contain entity UI extensions. '
             'Widget files should use the State and its extensions, not define their own.',
       );

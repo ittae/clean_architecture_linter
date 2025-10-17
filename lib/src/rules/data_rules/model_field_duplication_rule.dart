@@ -39,7 +39,8 @@ class ModelFieldDuplicationRule extends CleanArchitectureLintRule {
 
   static const _code = LintCode(
     name: 'model_field_duplication',
-    problemMessage: 'Data model should NOT duplicate Entity fields. Use composition pattern.',
+    problemMessage:
+        'Data model should NOT duplicate Entity fields. Use composition pattern.',
     correctionMessage:
         'Remove duplicate fields. Model should only contain Entity field + metadata (etag, version, cachedAt).',
   );
@@ -101,7 +102,8 @@ class ModelFieldDuplicationRule extends CleanArchitectureLintRule {
         name: 'model_field_duplication',
         problemMessage:
             'Field "${duplicate.name}" duplicates Entity field. Model should only contain Entity + metadata.',
-        correctionMessage: 'Remove "${duplicate.name}" field. Access it via entity.${duplicate.name} instead.',
+        correctionMessage:
+            'Remove "${duplicate.name}" field. Access it via entity.${duplicate.name} instead.',
       );
 
       // Report at the field location
@@ -205,7 +207,16 @@ class ModelFieldDuplicationRule extends CleanArchitectureLintRule {
     }
 
     // Exclude primitive types
-    final primitiveTypes = ['String', 'int', 'double', 'bool', 'DateTime', 'List', 'Map', 'Set'];
+    final primitiveTypes = [
+      'String',
+      'int',
+      'double',
+      'bool',
+      'DateTime',
+      'List',
+      'Map',
+      'Set'
+    ];
     if (primitiveTypes.any((type) => cleanTypeName.startsWith(type))) {
       return false;
     }

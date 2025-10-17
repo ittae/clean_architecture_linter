@@ -23,7 +23,8 @@ import 'package:test/test.dart';
 void main() {
   group('RepositoryNoThrowRule', () {
     group('Repository Implementation Detection', () {
-      test('detects Repository implementation by class name with Impl suffix', () {
+      test('detects Repository implementation by class name with Impl suffix',
+          () {
         expect(
           _isRepositoryImplementation('TodoRepositoryImpl'),
           isTrue,
@@ -31,7 +32,9 @@ void main() {
         );
       });
 
-      test('detects Repository implementation by class name with Implementation suffix', () {
+      test(
+          'detects Repository implementation by class name with Implementation suffix',
+          () {
         expect(
           _isRepositoryImplementation('UserRepositoryImplementation'),
           isTrue,
@@ -44,7 +47,8 @@ void main() {
         expect(
           _isRepositoryImplementation('TodoRepositoryImpl'),
           isTrue,
-          reason: 'Classes implementing Repository interfaces should be detected',
+          reason:
+              'Classes implementing Repository interfaces should be detected',
         );
       });
 
@@ -120,7 +124,8 @@ void main() {
         expect(
           _isAllowedThrow(ThrowContext.privateMethod),
           isTrue,
-          reason: 'Private methods can throw (will be caught by public methods)',
+          reason:
+              'Private methods can throw (will be caught by public methods)',
         );
       });
 
@@ -525,7 +530,9 @@ bool _isRepositoryImplementation(String className) {
 
 bool _isRepositoryInterface(String className) {
   // Simulate RepositoryRuleVisitor.isRepositoryInterface
-  if (className.contains('Repository') && !className.endsWith('Impl') && !className.endsWith('Implementation')) {
+  if (className.contains('Repository') &&
+      !className.endsWith('Impl') &&
+      !className.endsWith('Implementation')) {
     return true;
   }
   return false;

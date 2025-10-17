@@ -65,7 +65,8 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
 
   static const _code = LintCode(
     name: 'presentation_no_throw',
-    problemMessage: 'Presentation States/Notifiers should NOT throw exceptions. Use state management instead.',
+    problemMessage:
+        'Presentation States/Notifiers should NOT throw exceptions. Use state management instead.',
     correctionMessage: 'Replace throw with state update:\n'
         '  Before: throw TodoException("Error")\n'
         '  After:  state = AsyncValue.error(TodoFailure.error(), stack)\n\n'
@@ -125,7 +126,8 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
 
     final code = LintCode(
       name: 'presentation_no_throw',
-      problemMessage: 'Presentation State "$className.${methodNode.name.lexeme}" should NOT throw $exceptionType. '
+      problemMessage:
+          'Presentation State "$className.${methodNode.name.lexeme}" should NOT throw $exceptionType. '
           'Use state management instead.',
       correctionMessage: 'Replace throw with state update:\n'
           '  ❌ Current: throw $exceptionType\n'

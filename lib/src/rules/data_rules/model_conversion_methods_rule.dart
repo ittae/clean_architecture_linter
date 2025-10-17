@@ -48,7 +48,8 @@ class ModelConversionMethodsRule extends CleanArchitectureLintRule {
   static const _code = LintCode(
     name: 'model_conversion_methods',
     problemMessage: 'Data model should have toEntity() method in extension',
-    correctionMessage: 'Add extension with toEntity() method in the same file:\n'
+    correctionMessage:
+        'Add extension with toEntity() method in the same file:\n'
         '  extension ModelNameX on ModelName {\n'
         '    Entity toEntity() => entity;\n'
         '  }\n\n'
@@ -120,7 +121,8 @@ class ModelConversionMethodsRule extends CleanArchitectureLintRule {
         for (final param in params) {
           final fieldInfo = _extractFieldInfo(param);
           if (fieldInfo != null) {
-            if (fieldInfo.name == 'entity' || fieldInfo.name.endsWith('Entity')) {
+            if (fieldInfo.name == 'entity' ||
+                fieldInfo.name.endsWith('Entity')) {
               return true;
             }
           }

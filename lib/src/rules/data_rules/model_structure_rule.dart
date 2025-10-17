@@ -40,7 +40,8 @@ class ModelStructureRule extends CleanArchitectureLintRule {
 
   static const _code = LintCode(
     name: 'model_structure',
-    problemMessage: 'Data model should use Freezed and contain Entity without duplicate fields',
+    problemMessage:
+        'Data model should use Freezed and contain Entity without duplicate fields',
     correctionMessage:
         'Use @freezed with required Entity field. Only add metadata fields if needed (etag, version, cachedAt).',
   );
@@ -75,8 +76,10 @@ class ModelStructureRule extends CleanArchitectureLintRule {
     if (!_hasFreezedAnnotation(node)) {
       final code = LintCode(
         name: 'model_structure',
-        problemMessage: 'Data model "$className" should use @freezed annotation',
-        correctionMessage: 'Add @freezed annotation above the class declaration.',
+        problemMessage:
+            'Data model "$className" should use @freezed annotation',
+        correctionMessage:
+            'Add @freezed annotation above the class declaration.',
       );
       reporter.atNode(node, code);
       return;
@@ -87,7 +90,8 @@ class ModelStructureRule extends CleanArchitectureLintRule {
       final code = LintCode(
         name: 'model_structure',
         problemMessage: 'Data model "$className" should be a sealed class',
-        correctionMessage: 'Add "sealed" modifier before "class" keyword (e.g., "sealed class $className").',
+        correctionMessage:
+            'Add "sealed" modifier before "class" keyword (e.g., "sealed class $className").',
       );
       reporter.atNode(node, code);
     }
@@ -98,7 +102,8 @@ class ModelStructureRule extends CleanArchitectureLintRule {
       final code = LintCode(
         name: 'model_structure',
         problemMessage: 'Data model "$className" should contain Entity field',
-        correctionMessage: 'Add "required EntityName entity" field to contain the Domain Entity.',
+        correctionMessage:
+            'Add "required EntityName entity" field to contain the Domain Entity.',
       );
       reporter.atNode(node, code);
     }
@@ -133,7 +138,9 @@ class ModelStructureRule extends CleanArchitectureLintRule {
 
             // Check if parameter name is 'entity' or ends with 'Entity'
             // OR if parameter type ends with 'Entity' (e.g., TimeSlot for TimeSlot entity)
-            if (paramName == 'entity' || paramName.endsWith('Entity') || _isEntityType(typeName)) {
+            if (paramName == 'entity' ||
+                paramName.endsWith('Entity') ||
+                _isEntityType(typeName)) {
               return true;
             }
           } else if (param is DefaultFormalParameter) {
@@ -142,7 +149,9 @@ class ModelStructureRule extends CleanArchitectureLintRule {
               final paramName = normalParam.name?.toString() ?? '';
               final typeName = normalParam.type?.toString() ?? '';
 
-              if (paramName == 'entity' || paramName.endsWith('Entity') || _isEntityType(typeName)) {
+              if (paramName == 'entity' ||
+                  paramName.endsWith('Entity') ||
+                  _isEntityType(typeName)) {
                 return true;
               }
             }
@@ -172,7 +181,16 @@ class ModelStructureRule extends CleanArchitectureLintRule {
 
     // 2. Domain entities are typically simple nouns (User, Product, Order, TimeSlot, etc.)
     // If it's a custom type (not a primitive), it's likely an entity
-    final primitiveTypes = ['String', 'int', 'double', 'bool', 'DateTime', 'List', 'Map', 'Set'];
+    final primitiveTypes = [
+      'String',
+      'int',
+      'double',
+      'bool',
+      'DateTime',
+      'List',
+      'Map',
+      'Set'
+    ];
     if (primitiveTypes.any((type) => typeName.startsWith(type))) {
       return false;
     }

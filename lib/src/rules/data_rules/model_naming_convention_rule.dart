@@ -76,7 +76,8 @@ class ModelNamingConventionRule extends CleanArchitectureLintRule {
 
   static const _code = LintCode(
     name: 'model_naming_convention',
-    problemMessage: 'Model name should not include DataSource implementation details. '
+    problemMessage:
+        'Model name should not include DataSource implementation details. '
         'Use entity-based naming instead.',
     correctionMessage: 'Remove DataSource implementation from Model name:\n'
         '  ❌ Bad:  class TodoFirestoreModel\n'
@@ -181,9 +182,11 @@ class ModelNamingConventionRule extends CleanArchitectureLintRule {
 
         final code = LintCode(
           name: 'model_naming_convention',
-          problemMessage: 'Model name "$className" should not include DataSource implementation "$keyword". '
+          problemMessage:
+              'Model name "$className" should not include DataSource implementation "$keyword". '
               'This violates implementation independence.',
-          correctionMessage: 'Remove DataSource implementation from Model name:\n'
+          correctionMessage:
+              'Remove DataSource implementation from Model name:\n'
               '  ❌ Current:  class $className\n'
               '  ✅ Suggested: class $suggestedName\n\n'
               'Models should be independent of DataSource implementation.\n'

@@ -37,7 +37,8 @@ class NoPresentationModelsRule extends CleanArchitectureLintRule {
   static const _code = LintCode(
     name: 'no_presentation_models',
     problemMessage: 'Presentation Models and ViewModels are not allowed',
-    correctionMessage: 'Use Freezed State with Riverpod instead. State should contain Domain Entities directly.',
+    correctionMessage:
+        'Use Freezed State with Riverpod instead. State should contain Domain Entities directly.',
   );
 
   @override
@@ -83,7 +84,8 @@ class NoPresentationModelsRule extends CleanArchitectureLintRule {
       final code = LintCode(
         name: 'no_presentation_models',
         problemMessage: 'ViewModels directory is not allowed',
-        correctionMessage: 'Remove presentation/viewmodels/ directory. Use Freezed State with Riverpod instead.',
+        correctionMessage:
+            'Remove presentation/viewmodels/ directory. Use Freezed State with Riverpod instead.',
       );
       reporter.atOffset(
         offset: 0,
@@ -104,7 +106,8 @@ class NoPresentationModelsRule extends CleanArchitectureLintRule {
       final code = LintCode(
         name: 'no_presentation_models',
         problemMessage: 'ViewModel pattern is not allowed: $className',
-        correctionMessage: 'Use Freezed State with riverpod_generator (@riverpod annotation) instead.',
+        correctionMessage:
+            'Use Freezed State with riverpod_generator (@riverpod annotation) instead.',
       );
       reporter.atNode(node, code);
     }

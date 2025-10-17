@@ -422,7 +422,16 @@ bool _isEntityType(String typeName) {
   }
 
   // Exclude primitive types
-  final primitiveTypes = ['String', 'int', 'double', 'bool', 'DateTime', 'List', 'Map', 'Set'];
+  final primitiveTypes = [
+    'String',
+    'int',
+    'double',
+    'bool',
+    'DateTime',
+    'List',
+    'Map',
+    'Set'
+  ];
   if (primitiveTypes.any((type) => cleanTypeName.startsWith(type))) {
     return false;
   }

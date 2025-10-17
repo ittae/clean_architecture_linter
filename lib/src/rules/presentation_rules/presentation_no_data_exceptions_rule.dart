@@ -60,12 +60,14 @@ import '../../mixins/exception_validation_mixin.dart';
 /// ```
 ///
 /// See ERROR_HANDLING_GUIDE.md for complete error handling patterns.
-class PresentationNoDataExceptionsRule extends CleanArchitectureLintRule with ExceptionValidationMixin {
+class PresentationNoDataExceptionsRule extends CleanArchitectureLintRule
+    with ExceptionValidationMixin {
   const PresentationNoDataExceptionsRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'presentation_no_data_exceptions',
-    problemMessage: 'Presentation layer should NOT handle Data layer exceptions. Use Domain exceptions instead.',
+    problemMessage:
+        'Presentation layer should NOT handle Data layer exceptions. Use Domain exceptions instead.',
     correctionMessage: 'Replace Data exception with Domain exception:\n'
         '  Before: if (error is NotFoundException)\n'
         '  After:  if (error is TodoNotFoundException)\n\n'
@@ -107,7 +109,8 @@ class PresentationNoDataExceptionsRule extends CleanArchitectureLintRule with Ex
 
       final code = LintCode(
         name: 'presentation_no_data_exceptions',
-        problemMessage: 'Presentation should NOT handle Data exception "$typeName". '
+        problemMessage:
+            'Presentation should NOT handle Data exception "$typeName". '
             'Use Domain exception instead.',
         correctionMessage: 'Replace with Domain exception:\n'
             '  Before: if (error is $typeName)\n'

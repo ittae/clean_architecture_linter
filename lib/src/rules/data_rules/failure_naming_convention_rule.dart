@@ -31,7 +31,8 @@ class FailureNamingConventionRule extends CleanArchitectureLintRule {
       final className = node.name.lexeme;
 
       // Check if it's a Failure class
-      if (className == 'Failure' || (className.endsWith('Failure') && className.length < 12)) {
+      if (className == 'Failure' ||
+          (className.endsWith('Failure') && className.length < 12)) {
         final filePath = resolver.path;
 
         // Skip /core/ directory - core failures don't need feature prefix

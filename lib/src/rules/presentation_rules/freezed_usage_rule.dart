@@ -75,7 +75,8 @@ class FreezedUsageRule extends CleanArchitectureLintRule {
       if (superclass.contains('Equatable')) {
         final code = LintCode(
           name: 'freezed_usage',
-          problemMessage: 'Class "${node.name.lexeme}" uses Equatable. Use @freezed instead.',
+          problemMessage:
+              'Class "${node.name.lexeme}" uses Equatable. Use @freezed instead.',
           correctionMessage:
               'Replace "extends Equatable" with @freezed annotation. Remove props getter and use Freezed factory constructor.',
         );
@@ -90,8 +91,10 @@ class FreezedUsageRule extends CleanArchitectureLintRule {
         if (interface.toString().contains('Equatable')) {
           final code = LintCode(
             name: 'freezed_usage',
-            problemMessage: 'Class "${node.name.lexeme}" implements Equatable. Use @freezed instead.',
-            correctionMessage: 'Use @freezed annotation for immutable data classes.',
+            problemMessage:
+                'Class "${node.name.lexeme}" implements Equatable. Use @freezed instead.',
+            correctionMessage:
+                'Use @freezed annotation for immutable data classes.',
           );
           reporter.atNode(implementsClause, code);
         }
@@ -115,13 +118,16 @@ class FreezedUsageRule extends CleanArchitectureLintRule {
       final code = LintCode(
         name: 'freezed_usage',
         problemMessage: 'Equatable import detected. Use Freezed instead.',
-        correctionMessage: 'Remove equatable import and add freezed_annotation. Use @freezed for data classes.',
+        correctionMessage:
+            'Remove equatable import and add freezed_annotation. Use @freezed for data classes.',
       );
       reporter.atNode(node, code);
     }
   }
 
   bool _isArchitectureLayer(String filePath) {
-    return filePath.contains('/domain/') || filePath.contains('/data/') || filePath.contains('/presentation/');
+    return filePath.contains('/domain/') ||
+        filePath.contains('/data/') ||
+        filePath.contains('/presentation/');
   }
 }

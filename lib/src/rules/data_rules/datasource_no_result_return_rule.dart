@@ -49,13 +49,16 @@ import '../../mixins/return_type_validation_mixin.dart';
 /// ```
 ///
 /// See ERROR_HANDLING_GUIDE.md for complete error handling patterns.
-class DataSourceNoResultReturnRule extends CleanArchitectureLintRule with ReturnTypeValidationMixin {
+class DataSourceNoResultReturnRule extends CleanArchitectureLintRule
+    with ReturnTypeValidationMixin {
   const DataSourceNoResultReturnRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'datasource_no_result_return',
-    problemMessage: 'DataSource should NOT return Result type. DataSource should throw exceptions.',
-    correctionMessage: 'Change return type to the data type (e.g., TodoModel) and throw exceptions for errors. '
+    problemMessage:
+        'DataSource should NOT return Result type. DataSource should throw exceptions.',
+    correctionMessage:
+        'Change return type to the data type (e.g., TodoModel) and throw exceptions for errors. '
         'Repository will catch exceptions and convert to Result.',
   );
 
@@ -90,9 +93,11 @@ class DataSourceNoResultReturnRule extends CleanArchitectureLintRule with Return
     if (isResultReturnType(returnType)) {
       final code = LintCode(
         name: 'datasource_no_result_return',
-        problemMessage: 'DataSource method "${method.name.lexeme}" should NOT return Result. '
+        problemMessage:
+            'DataSource method "${method.name.lexeme}" should NOT return Result. '
             'DataSource should throw exceptions instead.',
-        correctionMessage: 'Remove Result wrapper and throw exceptions for errors:\n'
+        correctionMessage:
+            'Remove Result wrapper and throw exceptions for errors:\n'
             '  Before: Future<Result<TodoModel, Failure>> getTodo()\n'
             '  After:  Future<TodoModel> getTodo() // throws NotFoundException\n\n'
             'Repository will catch and convert to Result. See ERROR_HANDLING_GUIDE.md',

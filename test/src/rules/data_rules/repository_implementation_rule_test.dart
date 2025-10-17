@@ -36,7 +36,8 @@ void main() {
           expect(
             _hasRepositoryInterface(impl),
             isFalse,
-            reason: '${impl.className} should require repository interface implementation',
+            reason:
+                '${impl.className} should require repository interface implementation',
           );
         }
       });
@@ -59,7 +60,8 @@ void main() {
           expect(
             _hasRepositoryInterface(impl),
             isTrue,
-            reason: '${impl.className} properly implements repository interface',
+            reason:
+                '${impl.className} properly implements repository interface',
           );
         }
       });
@@ -82,12 +84,15 @@ void main() {
           expect(
             _hasRepositoryInterface(impl),
             isFalse,
-            reason: '${impl.className} should implement proper repository interface',
+            reason:
+                '${impl.className} should implement proper repository interface',
           );
         }
       });
 
-      test('accepts RepositoryImpl with multiple interfaces including repository', () {
+      test(
+          'accepts RepositoryImpl with multiple interfaces including repository',
+          () {
         final impl = TestRepositoryImpl(
           className: 'UserRepositoryImpl',
           implementsInterfaces: ['UserRepository', 'Disposable', 'Cacheable'],
@@ -160,7 +165,9 @@ void main() {
         }
       });
 
-      test('detects repository implementations in wrong location (domain layer)', () {
+      test(
+          'detects repository implementations in wrong location (domain layer)',
+          () {
         final testCases = [
           TestRepositoryImpl(
             className: 'UserRepositoryImpl',
@@ -351,7 +358,11 @@ void main() {
       test('handles repositories with multiple parent interfaces', () {
         final impl = TestRepositoryImpl(
           className: 'UserRepositoryImpl',
-          implementsInterfaces: ['UserRepository', 'CacheableRepository', 'RefreshableRepository'],
+          implementsInterfaces: [
+            'UserRepository',
+            'CacheableRepository',
+            'RefreshableRepository'
+          ],
           inDataLayer: true,
         );
 
@@ -413,11 +424,13 @@ bool _isRepositoryImpl(String className) {
 }
 
 bool _isRepositoryInterface(String interfaceName) {
-  return interfaceName.endsWith('Repository') && !interfaceName.endsWith('RepositoryImpl');
+  return interfaceName.endsWith('Repository') &&
+      !interfaceName.endsWith('RepositoryImpl');
 }
 
 bool _hasRepositoryInterface(TestRepositoryImpl impl) {
-  return impl.implementsInterfaces.any((interface) => _isRepositoryInterface(interface));
+  return impl.implementsInterfaces
+      .any((interface) => _isRepositoryInterface(interface));
 }
 
 bool _isRepositoryInWrongLayer(TestRepositoryInterface interface) {

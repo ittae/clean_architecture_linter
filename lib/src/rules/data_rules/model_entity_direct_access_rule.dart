@@ -41,9 +41,11 @@ class ModelEntityDirectAccessRule extends CleanArchitectureLintRule {
 
   static const _code = LintCode(
     name: 'model_entity_direct_access',
-    problemMessage: 'Direct access to model.entity is not allowed in Data layer. '
+    problemMessage:
+        'Direct access to model.entity is not allowed in Data layer. '
         'Use the toEntity() extension method instead.',
-    correctionMessage: 'Replace ".entity" with ".toEntity()" to maintain clear conversion boundaries. '
+    correctionMessage:
+        'Replace ".entity" with ".toEntity()" to maintain clear conversion boundaries. '
         'Example: model.toEntity() instead of model.entity',
   );
 
@@ -109,6 +111,8 @@ class ModelEntityDirectAccessRule extends CleanArchitectureLintRule {
   /// This is a redundant check since CleanArchitectureLintRule already
   /// excludes test files, but kept for explicit clarity.
   bool _isTestFile(String filePath) {
-    return filePath.contains('/test/') || filePath.contains('\\test\\') || filePath.endsWith('_test.dart');
+    return filePath.contains('/test/') ||
+        filePath.contains('\\test\\') ||
+        filePath.endsWith('_test.dart');
   }
 }

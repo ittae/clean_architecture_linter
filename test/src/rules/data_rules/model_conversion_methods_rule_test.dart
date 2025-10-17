@@ -135,7 +135,8 @@ void main() {
         expect(
           message,
           contains('factory'),
-          reason: 'Error message should suggest factory constructor for fromEntity',
+          reason:
+              'Error message should suggest factory constructor for fromEntity',
         );
       });
 
@@ -187,7 +188,8 @@ void main() {
         expect(
           _hasMultipleExtensions('TodoModel', count: 2),
           isTrue,
-          reason: 'Should handle multiple extensions and find conversion methods',
+          reason:
+              'Should handle multiple extensions and find conversion methods',
         );
       });
     });
@@ -262,7 +264,8 @@ bool _isExtensionInSameFile(String className) {
   return _hasExtensionOn(className);
 }
 
-bool _hasCorrectReturnType(String methodName, {required String expectedReturn}) {
+bool _hasCorrectReturnType(String methodName,
+    {required String expectedReturn}) {
   final extension = _mockExtensions['TodoModel'];
   if (extension == null) return false;
 
@@ -273,7 +276,8 @@ bool _hasCorrectReturnType(String methodName, {required String expectedReturn}) 
   return method['returnType'] != null;
 }
 
-bool _hasCorrectParameters(String methodName, {required List<String> expectedParams}) {
+bool _hasCorrectParameters(String methodName,
+    {required List<String> expectedParams}) {
   final extension = _mockExtensions['TodoModel'];
   if (extension == null) return false;
 

@@ -51,7 +51,8 @@ void main() {
           dataSourceException: 'NotFoundException',
           repositoryConvertsTo: 'Result<Todo, TodoFailure>',
           useCaseThrows: 'TodoNotFoundException',
-          presentationCatches: 'NotFoundException', // ❌ Data exception in Presentation
+          presentationCatches:
+              'NotFoundException', // ❌ Data exception in Presentation
         );
 
         final violations = _detectViolations(flow);
@@ -63,7 +64,8 @@ void main() {
         );
       });
 
-      test('detects violation: Repository throws instead of returning Result', () {
+      test('detects violation: Repository throws instead of returning Result',
+          () {
         // Violation Flow:
         // Repository throws ArgumentError (should return Failure)
 
@@ -125,7 +127,9 @@ void main() {
     });
 
     group('Inter-Rule Consistency', () {
-      test('exception_naming_convention and presentation_no_data_exceptions agree', () {
+      test(
+          'exception_naming_convention and presentation_no_data_exceptions agree',
+          () {
         // Both rules should recognize the difference between:
         // - Data exceptions: NotFoundException (no prefix)
         // - Domain exceptions: TodoNotFoundException (with prefix)
@@ -182,16 +186,27 @@ void main() {
 
       test('all rules recognize layer boundaries correctly', () {
         // Domain layer
-        expect(_isDomainLayer('lib/domain/exceptions/todo_exceptions.dart'), isTrue);
-        expect(_isDomainLayer('lib/features/todos/domain/usecases/get_todo.dart'), isTrue);
+        expect(_isDomainLayer('lib/domain/exceptions/todo_exceptions.dart'),
+            isTrue);
+        expect(
+            _isDomainLayer('lib/features/todos/domain/usecases/get_todo.dart'),
+            isTrue);
 
         // Data layer
-        expect(_isDataLayer('lib/data/datasources/todo_remote_datasource.dart'), isTrue);
-        expect(_isDataLayer('lib/features/todos/data/repositories/todo_repository_impl.dart'), isTrue);
+        expect(_isDataLayer('lib/data/datasources/todo_remote_datasource.dart'),
+            isTrue);
+        expect(
+            _isDataLayer(
+                'lib/features/todos/data/repositories/todo_repository_impl.dart'),
+            isTrue);
 
         // Presentation layer
-        expect(_isPresentationLayer('lib/presentation/pages/todo_page.dart'), isTrue);
-        expect(_isPresentationLayer('lib/features/todos/presentation/widgets/todo_list.dart'), isTrue);
+        expect(_isPresentationLayer('lib/presentation/pages/todo_page.dart'),
+            isTrue);
+        expect(
+            _isPresentationLayer(
+                'lib/features/todos/presentation/widgets/todo_list.dart'),
+            isTrue);
       });
     });
 
@@ -248,7 +263,8 @@ void main() {
         expect(
           _needsFeaturePrefix('ValidationException'),
           isTrue,
-          reason: 'ValidationException needs feature prefix (TodoValidationException)',
+          reason:
+              'ValidationException needs feature prefix (TodoValidationException)',
         );
       });
 
@@ -389,7 +405,8 @@ void main() {
           expect(
             actualCount,
             equals(example.value),
-            reason: '${example.key} should have ${example.value} violations, found $actualCount',
+            reason:
+                '${example.key} should have ${example.value} violations, found $actualCount',
           );
         }
       });
@@ -407,13 +424,16 @@ void main() {
         expect(
           _getTotalViolationCount(),
           equals(expectedTotalViolations),
-          reason: 'Example project should have exactly $expectedTotalViolations violations',
+          reason:
+              'Example project should have exactly $expectedTotalViolations violations',
         );
       });
     });
 
     group('Rule Interaction Matrix', () {
-      test('exception_naming_convention does not conflict with datasource_exception_types', () {
+      test(
+          'exception_naming_convention does not conflict with datasource_exception_types',
+          () {
         // Data layer can use NotFoundException (no feature prefix)
         // Domain layer needs TodoNotFoundException (with feature prefix)
 
@@ -427,7 +447,9 @@ void main() {
         );
       });
 
-      test('datasource_exception_types does not conflict with repository_no_throw', () {
+      test(
+          'datasource_exception_types does not conflict with repository_no_throw',
+          () {
         // DataSource can throw NotFoundException
         // Repository must catch and convert to Result
 
@@ -445,7 +467,9 @@ void main() {
         );
       });
 
-      test('repository_no_throw does not conflict with presentation_no_data_exceptions', () {
+      test(
+          'repository_no_throw does not conflict with presentation_no_data_exceptions',
+          () {
         // Repository converts to Result (no throw)
         // Presentation catches domain exceptions (not data exceptions)
 
@@ -537,7 +561,8 @@ List<RuleViolation> _detectViolations(ExceptionFlow flow) {
   }
 
   // Check domain exception missing feature prefix
-  if (_needsFeaturePrefix(flow.useCaseThrows) && !_isDartBuiltIn(flow.useCaseThrows)) {
+  if (_needsFeaturePrefix(flow.useCaseThrows) &&
+      !_isDartBuiltIn(flow.useCaseThrows)) {
     violations.add(RuleViolation.missingFeaturePrefix);
   }
 
@@ -630,7 +655,8 @@ bool _isDataLayer(String filePath) {
 }
 
 bool _isPresentationLayer(String filePath) {
-  return filePath.contains('/presentation/') || filePath.contains('\\presentation\\');
+  return filePath.contains('/presentation/') ||
+      filePath.contains('\\presentation\\');
 }
 
 Layer _resolveExceptionLayer(String exceptionName, String filePath) {

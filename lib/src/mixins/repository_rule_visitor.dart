@@ -181,7 +181,8 @@ mixin RepositoryRuleVisitor {
     }
 
     // Allow throws in constructors (validation)
-    final constructor = throwNode.thisOrAncestorOfType<ConstructorDeclaration>();
+    final constructor =
+        throwNode.thisOrAncestorOfType<ConstructorDeclaration>();
     if (constructor != null) return true;
 
     return false;

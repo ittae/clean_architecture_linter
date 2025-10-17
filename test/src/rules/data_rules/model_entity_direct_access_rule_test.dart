@@ -76,7 +76,8 @@ void main() {
             filePath: 'lib/presentation/pages/todo_page.dart',
           ),
           isFalse,
-          reason: 'Presentation should not import Model at all (handled by other rules)',
+          reason:
+              'Presentation should not import Model at all (handled by other rules)',
         );
       });
 
@@ -87,7 +88,8 @@ void main() {
             filePath: 'lib/domain/usecases/get_todos.dart',
           ),
           isFalse,
-          reason: 'Domain should not import Model at all (handled by other rules)',
+          reason:
+              'Domain should not import Model at all (handled by other rules)',
         );
       });
 
@@ -273,7 +275,8 @@ void main() {
             isModelType: false,
           ),
           isTrue,
-          reason: 'Rule checks property name, not type (type checking is expensive)',
+          reason:
+              'Rule checks property name, not type (type checking is expensive)',
         );
       });
 

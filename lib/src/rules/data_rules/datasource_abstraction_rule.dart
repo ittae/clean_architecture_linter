@@ -48,8 +48,10 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
 
   static const _code = LintCode(
     name: 'datasource_abstraction',
-    problemMessage: 'DataSource should follow proper abstraction pattern in Data Layer',
-    correctionMessage: 'Create abstract DataSource interface in Data Layer with corresponding implementation.',
+    problemMessage:
+        'DataSource should follow proper abstraction pattern in Data Layer',
+    correctionMessage:
+        'Create abstract DataSource interface in Data Layer with corresponding implementation.',
   );
 
   @override
@@ -86,7 +88,8 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
     if (!CleanArchitectureUtils.isDataSourceClass(className)) return;
 
     // Check if concrete DataSource without abstract interface
-    if (node.abstractKeyword == null && _isConcreteDataSource(node, className)) {
+    if (node.abstractKeyword == null &&
+        _isConcreteDataSource(node, className)) {
       // This is a concrete DataSource implementation
       // Check if there's a corresponding abstract interface or test file
 
@@ -97,8 +100,10 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
 
       final code = LintCode(
         name: 'datasource_abstraction',
-        problemMessage: 'Concrete DataSource "$className" should implement an abstract interface for testability',
-        correctionMessage: 'Create abstract DataSource interface: ${_getAbstractName(className)} or add test file',
+        problemMessage:
+            'Concrete DataSource "$className" should implement an abstract interface for testability',
+        correctionMessage:
+            'Create abstract DataSource interface: ${_getAbstractName(className)} or add test file',
       );
       reporter.atNode(node, code);
     }
@@ -124,7 +129,8 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
     if (CleanArchitectureUtils.isDomainFile(filePath)) {
       final code = LintCode(
         name: 'datasource_abstraction',
-        problemMessage: 'DataSource "$className" should be in Data Layer, not Domain Layer',
+        problemMessage:
+            'DataSource "$className" should be in Data Layer, not Domain Layer',
         correctionMessage:
             'Move DataSource to data/datasources/. Domain should only depend on Repository abstractions.',
       );
@@ -154,7 +160,8 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
     if (_returnsEntity(returnType)) {
       final code = LintCode(
         name: 'datasource_abstraction',
-        problemMessage: 'DataSource method "${method.name.lexeme}" returns Entity. DataSource should return Model.',
+        problemMessage:
+            'DataSource method "${method.name.lexeme}" returns Entity. DataSource should return Model.',
         correctionMessage:
             'Change return type to Model. DataSource works with Models, Repository converts to Entities.',
       );
@@ -220,7 +227,9 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
     final libIndex = normalized.indexOf('/lib/');
     if (libIndex == -1) {
       // Fallback: just replace lib with test
-      final testPath = normalized.replaceFirst('/lib/', '/test/').replaceFirst('.dart', '_test.dart');
+      final testPath = normalized
+          .replaceFirst('/lib/', '/test/')
+          .replaceFirst('.dart', '_test.dart');
       return File(testPath).existsSync();
     }
 

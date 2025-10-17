@@ -59,7 +59,8 @@ void main() {
 
       test('rejects non-equatable imports', () {
         expect(
-          _hasEquatableImport('package:freezed_annotation/freezed_annotation.dart'),
+          _hasEquatableImport(
+              'package:freezed_annotation/freezed_annotation.dart'),
           isFalse,
           reason: 'Should not detect non-equatable imports',
         );
@@ -85,7 +86,8 @@ void main() {
 
       test('checks presentation layer files', () {
         expect(
-          _isArchitectureLayer('/project/lib/presentation/states/user_state.dart'),
+          _isArchitectureLayer(
+              '/project/lib/presentation/states/user_state.dart'),
           isTrue,
           reason: 'Should check presentation layer',
         );
@@ -231,7 +233,9 @@ bool _hasEquatableImport(String importUri) {
 
 bool _isArchitectureLayer(String filePath) {
   final normalized = filePath.replaceAll('\\', '/').toLowerCase();
-  return normalized.contains('/domain/') || normalized.contains('/data/') || normalized.contains('/presentation/');
+  return normalized.contains('/domain/') ||
+      normalized.contains('/data/') ||
+      normalized.contains('/presentation/');
 }
 
 bool _hasMultipleInterfaces(List<String> interfaces) {

@@ -95,7 +95,8 @@ void main() {
 
       test('detects presentation/viewmodels directory', () {
         expect(
-          _hasForbiddenDirectory('/lib/presentation/viewmodels/user_viewmodel.dart'),
+          _hasForbiddenDirectory(
+              '/lib/presentation/viewmodels/user_viewmodel.dart'),
           isTrue,
           reason: 'Should detect presentation/viewmodels/ directory',
         );
@@ -214,7 +215,8 @@ void main() {
 
       test('handles Windows path separators', () {
         expect(
-          _hasForbiddenDirectory('C:\\project\\lib\\presentation\\models\\user.dart'),
+          _hasForbiddenDirectory(
+              'C:\\project\\lib\\presentation\\models\\user.dart'),
           isTrue,
           reason: 'Should handle Windows paths',
         );
@@ -222,7 +224,8 @@ void main() {
 
       test('handles nested directory structures', () {
         expect(
-          _hasForbiddenDirectory('/lib/features/user/presentation/models/user_ui.dart'),
+          _hasForbiddenDirectory(
+              '/lib/features/user/presentation/models/user_ui.dart'),
           isTrue,
           reason: 'Should detect forbidden directories in nested structures',
         );
@@ -290,7 +293,8 @@ bool _extendsChangeNotifier(String extendsClause) {
 bool _hasForbiddenDirectory(String filePath) {
   final normalized = filePath.replaceAll('\\', '/').toLowerCase();
 
-  return normalized.contains('/presentation/models/') || normalized.contains('/presentation/viewmodels/');
+  return normalized.contains('/presentation/models/') ||
+      normalized.contains('/presentation/viewmodels/');
 }
 
 String _getErrorMessage(ViolationType violationType) {

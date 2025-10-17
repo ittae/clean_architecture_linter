@@ -556,7 +556,7 @@ dart run custom_lint
 dart analyze
 
 # Format code
-dart format --line-length=120 . lin
+dart format .
 ```
 
 ### Publishing
