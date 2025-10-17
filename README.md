@@ -10,14 +10,14 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 ## ✨ Key Features
 
 - 🛡️ **Automatic Clean Architecture Protection** - Write code freely, linter catches violations
-- 🎯 **26 Specialized Rules** - Comprehensive coverage of all Clean Architecture layers
+- 🎯 **29 Specialized Rules** - Comprehensive coverage of all Clean Architecture layers
 - 🚀 **Flutter-Optimized** - Built specifically for Flutter development patterns
 - 📚 **Educational** - Learn Clean Architecture through guided corrections
 - ⚡ **Real-time Feedback** - Immediate warnings with actionable solutions
 - 🔧 **Zero Configuration** - Works out of the box with sensible defaults
 - 🧪 **Test-Aware** - Smart exceptions for test files and development contexts
 
-## 📋 Rules Overview (26 Rules)
+## 📋 Rules Overview (29 Rules)
 
 ### 🌐 Core Clean Architecture Principles (6 rules)
 1. **Layer Dependency** - Enforces dependency direction (inward only)
@@ -33,25 +33,28 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 9. **Exception Naming Convention** - Feature prefix for domain exceptions
 10. **Exception Message Localization** - Consistent exception messages
 
-### 💾 Data Layer Rules (10 rules)
+### 💾 Data Layer Rules (13 rules)
 11. **Model Structure** - Freezed models with entity composition
 12. **Model Field Duplication** - No duplicate entity fields in models
-13. **Model Conversion Methods** - Required `toEntity()` and `fromEntity()`
-14. **DataSource Abstraction** - Abstract interfaces for data sources
-15. **DataSource No Result Return** - DataSources throw exceptions
-16. **Repository Implementation** - RepositoryImpl must implement domain interface
-17. **Repository Must Return Result** - Repositories wrap results in Result type
-18. **Repository No Throw** - Repositories convert exceptions to Result
-19. **DataSource Exception Types** - Use defined data layer exceptions only
-20. **Failure Naming Convention** - Feature prefix for Failure classes
+13. **Model Conversion Methods** - Required `toEntity()` method in extensions
+14. **Model Entity Direct Access** - Use `.toEntity()` instead of direct `.entity` access
+15. **Model Naming Convention** - Models must end with `Model` suffix
+16. **DataSource Abstraction** - Abstract interfaces for data sources
+17. **DataSource No Result Return** - DataSources throw exceptions
+18. **Repository Implementation** - RepositoryImpl must implement domain interface
+19. **Repository Must Return Result** - Repositories wrap results in Result type
+20. **Repository No Throw** - Repositories convert exceptions to Result
+21. **DataSource Exception Types** - Use defined data layer exceptions only
+22. **Failure Naming Convention** - Feature prefix for Failure classes
 
-### 🎨 Presentation Layer Rules (6 rules)
-21. **No Presentation Models** - Use Freezed State instead of ViewModels
-22. **Extension Location** - Extensions in same file as the class
-23. **Freezed Usage** - Use Freezed instead of Equatable
-24. **Riverpod Generator** - Use `@riverpod` annotation
-25. **Presentation No Data Exceptions** - Use domain exceptions only
-26. **Presentation Use AsyncValue** - Use AsyncValue for error handling
+### 🎨 Presentation Layer Rules (7 rules)
+23. **No Presentation Models** - Use Freezed State instead of ViewModels
+24. **Extension Location** - Extensions in same file as the class
+25. **Freezed Usage** - Use Freezed instead of Equatable
+26. **Riverpod Generator** - Use `@riverpod` annotation
+27. **Presentation No Data Exceptions** - Use domain exceptions only
+28. **Presentation Use AsyncValue** - Use AsyncValue for error handling
+29. **Presentation No Throw** - No exception throwing in Presentation layer
 
 ### 🧪 Optional: Test Coverage Rule
 **Test Coverage** - Enforces test files for UseCases, Repositories, DataSources, and Notifiers (disabled by default)
@@ -70,7 +73,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 ```yaml
 # pubspec.yaml
 dev_dependencies:
-  clean_architecture_linter: ^1.0.2
+  clean_architecture_linter: ^1.0.3
   custom_lint: ^0.7.6
 ```
 
@@ -335,7 +338,7 @@ clean_architecture_linter/
 1. Fork the repository
 2. Create a feature branch
 3. Add tests for new rules
-4. Format your code: `dart format --line-length=120 .`
+4. Format your code: `dart format .`
 5. Ensure all tests pass
 6. Submit a pull request
 

@@ -10,14 +10,14 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 ## ✨ 주요 기능
 
 - 🛡️ **자동 클린 아키텍처 보호** - 자유롭게 코드 작성, 린터가 위반사항 감지
-- 🎯 **26개의 전문화된 규칙** - 모든 클린 아키텍처 계층 포괄
+- 🎯 **29개의 전문화된 규칙** - 모든 클린 아키텍처 계층 포괄
 - 🚀 **Flutter 최적화** - Flutter 개발 패턴에 특화
 - 📚 **교육적** - 수정 가이드를 통해 클린 아키텍처 학습
 - ⚡ **실시간 피드백** - 즉각적인 경고와 실행 가능한 해결책
 - 🔧 **제로 설정** - 기본값으로 즉시 작동
 - 🧪 **테스트 인식** - 테스트 파일과 개발 컨텍스트에 대한 스마트 예외처리
 
-## 📋 규칙 개요 (26개 규칙)
+## 📋 규칙 개요 (29개 규칙)
 
 ### 🌐 핵심 클린 아키텍처 원칙 (6개 규칙)
 1. **Layer Dependency** - 의존성 방향 강제 (안쪽으로만)
@@ -33,25 +33,28 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 9. **Exception Naming Convention** - 도메인 예외에 기능 접두사
 10. **Exception Message Localization** - 일관된 예외 메시지
 
-### 💾 데이터 계층 규칙 (10개 규칙)
+### 💾 데이터 계층 규칙 (13개 규칙)
 11. **Model Structure** - Entity 구성을 포함하는 Freezed 모델
 12. **Model Field Duplication** - 모델에 중복 엔티티 필드 없음
-13. **Model Conversion Methods** - 필수 `toEntity()` 및 `fromEntity()`
-14. **DataSource Abstraction** - 데이터 소스용 추상 인터페이스
-15. **DataSource No Result Return** - DataSource는 예외 발생
-16. **Repository Implementation** - RepositoryImpl은 도메인 인터페이스 구현 필수
-17. **Repository Must Return Result** - Repository는 Result 타입으로 래핑
-18. **Repository No Throw** - Repository는 예외를 Result로 변환
-19. **DataSource Exception Types** - 정의된 데이터 계층 예외만 사용
-20. **Failure Naming Convention** - Failure 클래스에 기능 접두사
+13. **Model Conversion Methods** - 확장에 필수 `toEntity()` 메서드
+14. **Model Entity Direct Access** - 직접 `.entity` 접근 대신 `.toEntity()` 사용
+15. **Model Naming Convention** - 모델은 `Model` 접미사로 끝나야 함
+16. **DataSource Abstraction** - 데이터 소스용 추상 인터페이스
+17. **DataSource No Result Return** - DataSource는 예외 발생
+18. **Repository Implementation** - RepositoryImpl은 도메인 인터페이스 구현 필수
+19. **Repository Must Return Result** - Repository는 Result 타입으로 래핑
+20. **Repository No Throw** - Repository는 예외를 Result로 변환
+21. **DataSource Exception Types** - 정의된 데이터 계층 예외만 사용
+22. **Failure Naming Convention** - Failure 클래스에 기능 접두사
 
-### 🎨 프레젠테이션 계층 규칙 (6개 규칙)
-21. **No Presentation Models** - ViewModel 대신 Freezed State 사용
-22. **Extension Location** - 클래스와 동일 파일에 확장 정의
-23. **Freezed Usage** - Equatable 대신 Freezed 사용
-24. **Riverpod Generator** - `@riverpod` 어노테이션 사용
-25. **Presentation No Data Exceptions** - 도메인 예외만 사용
-26. **Presentation Use AsyncValue** - 에러 처리에 AsyncValue 사용
+### 🎨 프레젠테이션 계층 규칙 (7개 규칙)
+23. **No Presentation Models** - ViewModel 대신 Freezed State 사용
+24. **Extension Location** - 클래스와 동일 파일에 확장 정의
+25. **Freezed Usage** - Equatable 대신 Freezed 사용
+26. **Riverpod Generator** - `@riverpod` 어노테이션 사용
+27. **Presentation No Data Exceptions** - 도메인 예외만 사용
+28. **Presentation Use AsyncValue** - 에러 처리에 AsyncValue 사용
+29. **Presentation No Throw** - 프레젠테이션 계층에서 예외 throw 금지
 
 ### 🧪 선택사항: 테스트 커버리지 규칙
 **Test Coverage** - UseCase, Repository, DataSource, Notifier에 대한 테스트 파일 강제 (기본값: 비활성화)
@@ -70,7 +73,7 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 ```yaml
 # pubspec.yaml
 dev_dependencies:
-  clean_architecture_linter: ^1.0.0
+  clean_architecture_linter: ^1.0.3
   custom_lint: ^0.7.6
 ```
 
@@ -338,7 +341,7 @@ clean_architecture_linter/
 1. 저장소를 포크하세요
 2. 기능 브랜치를 생성하세요
 3. 새 규칙에 대한 테스트를 추가하세요
-4. 코드를 포맷하세요: `dart format --line-length=120 .`
+4. 코드를 포맷하세요: `dart format .`
 5. 모든 테스트가 통과하는지 확인하세요
 6. Pull Request를 제출하세요
 
