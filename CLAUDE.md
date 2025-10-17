@@ -242,6 +242,44 @@ class UserRepositoryImpl implements UserRepository {
 }
 ```
 
+### ❌ Violation: Direct .entity Property Access in Data Layer
+
+**Problem**:
+```dart
+// data/repositories/user_repository_impl.dart
+class UserRepositoryImpl implements UserRepository {
+  Future<Result<List<User>, Failure>> getUsers() async {
+    try {
+      final models = await dataSource.getUsers();
+      return Success(models.map((m) => m.entity).toList());  // ❌ WRONG - Direct access
+    } on DataException catch (e) {
+      return Failure(UserFailure.fromDataException(e));
+    }
+  }
+}
+```
+
+**Solution**:
+```dart
+// data/repositories/user_repository_impl.dart
+class UserRepositoryImpl implements UserRepository {
+  Future<Result<List<User>, Failure>> getUsers() async {
+    try {
+      final models = await dataSource.getUsers();
+      return Success(models.map((m) => m.toEntity()).toList());  // ✅ CORRECT - Use method
+    } on DataException catch (e) {
+      return Failure(UserFailure.fromDataException(e));
+    }
+  }
+}
+```
+
+**Why**: Using `.toEntity()` method instead of direct `.entity` access:
+- Provides explicit conversion boundary between Model and Entity
+- Allows future conversion logic changes in one place
+- Makes architectural boundaries clear in code
+- Exception: Direct `.entity` access is allowed inside extension methods where conversion is implemented
+
 ### Repository Pattern Summary
 
 **Domain Layer (Interfaces)**:
@@ -256,8 +294,10 @@ class UserRepositoryImpl implements UserRepository {
 - ✅ Named `*RepositoryImpl` (e.g., `UserRepositoryImpl`)
 - ✅ Must use `implements` keyword
 - ✅ Catch DataSource exceptions and convert to `Result`
+- ✅ Use `.toEntity()` method instead of direct `.entity` access
 - ❌ Never throw exceptions directly
 - ❌ No Model types in return signatures (convert to Entity)
+- ❌ Never access `.entity` property directly (use `.toEntity()` method)
 
 ## Exception Naming & Layer Patterns
 

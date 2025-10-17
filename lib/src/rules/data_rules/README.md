@@ -19,7 +19,7 @@ The Data layer must:
 
 ---
 
-## Rules in this Category
+## Rules in this Category (12 rules)
 
 ### 1. Model Structure Rule (`model_structure_rule.dart`)
 **Purpose**: Enforces proper Freezed Model structure with Entity composition.
@@ -256,6 +256,59 @@ class UserFailure with _$UserFailure {
 @freezed
 class Failure with _$Failure {
   const factory Failure.notFound(String message) = NotFoundFailure;
+}
+```
+
+---
+
+### 8. Model Entity Direct Access Rule (`model_entity_direct_access_rule.dart`)
+**Purpose**: Enforces using `.toEntity()` method instead of direct `.entity` property access in Data layer.
+
+**What it checks**:
+- ❌ No direct `.entity` property access in Data layer (outside extensions)
+- ✅ Use `.toEntity()` method for Model → Entity conversion
+- ✅ Exception: Direct `.entity` access allowed inside extension methods
+
+**Why this matters**:
+- Provides explicit conversion boundary between Model and Entity
+- Allows future conversion logic changes in one place
+- Makes architectural boundaries clear in code
+
+**Example**:
+```dart
+// ✅ GOOD: Using toEntity() method
+class TodoRepositoryImpl implements TodoRepository {
+  @override
+  Future<Result<List<Todo>, Failure>> getTodos() async {
+    try {
+      final models = await dataSource.getTodos();
+      return Success(models.map((m) => m.toEntity()).toList()); // ✓ Method call
+    } on DataException catch (e) {
+      return Failure(TodoFailure.fromDataException(e));
+    }
+  }
+}
+
+// ❌ BAD: Direct .entity access
+class TodoRepositoryImpl implements TodoRepository {
+  @override
+  Future<Result<List<Todo>, Failure>> getTodos() async {
+    try {
+      final models = await dataSource.getTodos();
+      return Success(models.map((m) => m.entity).toList()); // ❌ Direct access
+    } on DataException catch (e) {
+      return Failure(TodoFailure.fromDataException(e));
+    }
+  }
+}
+
+// ✅ GOOD: Direct access allowed in extension (implementation)
+extension TodoModelX on TodoModel {
+  Todo toEntity() => entity; // ✓ Allowed here - this is the conversion logic
+
+  static TodoModel fromEntity(Todo entity) {
+    return TodoModel(entity: entity);
+  }
 }
 ```
 

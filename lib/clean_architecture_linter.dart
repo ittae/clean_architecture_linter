@@ -37,6 +37,7 @@ import 'src/rules/data_rules/repository_must_return_result_rule.dart';
 import 'src/rules/data_rules/repository_no_throw_rule.dart';
 import 'src/rules/data_rules/datasource_exception_types_rule.dart';
 import 'src/rules/data_rules/failure_naming_convention_rule.dart';
+import 'src/rules/data_rules/model_entity_direct_access_rule.dart';
 
 // Presentation Layer Rules
 import 'src/rules/presentation_rules/no_presentation_models_rule.dart';
@@ -139,27 +140,30 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
       // 21. Failure Naming Convention - Feature prefix for Failure classes
       FailureNamingConventionRule(),
 
+      // 22. Model Entity Direct Access - Use toEntity() instead of .entity
+      ModelEntityDirectAccessRule(),
+
       // Presentation Layer Rules (7 rules)
 
-      // 22. No Presentation Models - Use Freezed State instead
+      // 23. No Presentation Models - Use Freezed State instead
       NoPresentationModelsRule(),
 
-      // 23. Extension Location - Extensions in same file
+      // 24. Extension Location - Extensions in same file
       ExtensionLocationRule(),
 
-      // 24. Freezed Usage - Use Freezed instead of Equatable
+      // 25. Freezed Usage - Use Freezed instead of Equatable
       FreezedUsageRule(),
 
-      // 25. Riverpod Generator - Use @riverpod annotation
+      // 26. Riverpod Generator - Use @riverpod annotation
       RiverpodGeneratorRule(),
 
-      // 26. Presentation No Data Exceptions - Use Domain exceptions only
+      // 27. Presentation No Data Exceptions - Use Domain exceptions only
       PresentationNoDataExceptionsRule(),
 
-      // 27. Presentation Use AsyncValue - Use AsyncValue for error handling
+      // 28. Presentation Use AsyncValue - Use AsyncValue for error handling
       PresentationUseAsyncValueRule(),
 
-      // 28. Presentation No Throw - States should not throw exceptions
+      // 29. Presentation No Throw - States should not throw exceptions
       PresentationNoThrowRule(),
     ];
 
