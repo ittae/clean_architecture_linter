@@ -94,7 +94,7 @@ class RepositoryNoThrowRule extends CleanArchitectureLintRule with RepositoryRul
           '  After:  return Failure(TodoFailure.notFound("Not found"))\n\n'
           'Repository must catch DataSource exceptions and convert to Result. '
           'See ERROR_HANDLING_GUIDE.md',
-        errorSeverity: ErrorSeverity.WARNING,
+      errorSeverity: ErrorSeverity.WARNING,
     );
     reporter.atNode(node, code);
   }

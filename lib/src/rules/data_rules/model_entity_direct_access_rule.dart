@@ -109,8 +109,6 @@ class ModelEntityDirectAccessRule extends CleanArchitectureLintRule {
   /// This is a redundant check since CleanArchitectureLintRule already
   /// excludes test files, but kept for explicit clarity.
   bool _isTestFile(String filePath) {
-    return filePath.contains('/test/') ||
-        filePath.contains('\\test\\') ||
-        filePath.endsWith('_test.dart');
+    return filePath.contains('/test/') || filePath.contains('\\test\\') || filePath.endsWith('_test.dart');
   }
 }

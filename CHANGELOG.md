@@ -5,6 +5,62 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2025-10-17
+
+### ✨ Added (3 new rules)
+
+- **model_entity_direct_access rule** - Enforce `.toEntity()` method usage instead of direct `.entity` property access in Data layer
+  - Prevents direct `.entity` access in Repository and DataSource implementations
+  - Allows direct access inside extension methods (where conversion logic is implemented)
+  - Allows direct access in test files
+  - Provides clear architectural boundaries for Model → Entity conversion
+
+- **model_naming_convention rule** - Enforce naming conventions for Models in Data layer
+  - Models must end with `Model` suffix
+  - Validates proper naming in `data/models/` directories
+  - Helps maintain consistent codebase structure
+
+- **presentation_no_throw rule** - Enforce no exception throwing in Presentation layer
+  - Presentation layer should use AsyncValue for error handling
+  - No direct exception throws in widgets, states, or notifiers
+  - Aligns with Riverpod best practices
+
+### 🔄 Changed
+
+- **model_conversion_methods rule** - Updated to align with Dart/Freezed best practices
+  - Now only requires `toEntity()` method in extensions (mandatory)
+  - `fromEntity()` implementation is optional and should use factory constructors in the Model class
+  - Removed extension static method pattern (not idiomatic in Dart)
+  - Updated error messages to guide users toward factory constructor pattern
+
+- **Total rules: 29** (was 26 in v1.0.2)
+  - Added: 3 new rules
+  - Modified: 1 rule (model_conversion_methods)
+
+### 🐛 Bug Fixes
+
+- Fixed `exception_naming_convention` rule to skip `core/` directory (framework-level exceptions)
+- Fixed `failure_naming_convention` rule to skip `core/` directory
+- Fixed data file detection to correctly exclude `domain/repositories/` from data layer
+- Fixed `model_conversion_methods` rule incorrectly requiring extension static methods
+- Improved error severity levels across multiple rules
+
+### 📝 Documentation
+
+- Updated CLAUDE.md with comprehensive `.entity` access control guidelines
+- Updated Data Layer rules README with all 3 new rules documentation
+- Enhanced Model conversion pattern examples with factory constructor approach
+- Added 48 new lines of documentation in CLAUDE.md
+- Added 55 new lines in Data Layer README
+- Updated README.md with accurate rule count
+
+### 📊 Statistics
+
+- **Files changed**: 23 files
+- **Lines added**: ~1,237 lines
+- **New test coverage**: 398+ lines of new tests for new rules
+- **Documentation improvements**: 100+ lines across multiple files
+
 ## [1.0.2] - 2025-10-09
 
 ### 🗑️ Removed
