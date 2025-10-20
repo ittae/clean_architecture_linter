@@ -846,13 +846,151 @@
         "status": "done",
         "subtasks": [],
         "updatedAt": "2025-10-07T07:29:04.136Z"
+      },
+      {
+        "id": "31",
+        "title": "CLAUDE.md에 Riverpod 상태 관리 패턴 섹션 추가",
+        "description": "CLAUDE.md에 3계층 Provider 아키텍처(Entity Providers → UI State Providers → Computed Logic Providers)와 AsyncNotifier 패턴을 포함한 Riverpod 상태 관리 섹션 추가",
+        "details": "기존 CLAUDE.md의 \"When You Need UI-Specific Data\" 섹션을 개선하고 새로운 \"Riverpod State Management Patterns\" 섹션을 추가한다. Entity Provider(AsyncNotifier), UI State Provider(entity 의존성), Computed Logic Provider(entity + UI 조합) 패턴을 문서화하고, AsyncValue 사용법과 family 패턴 모범 사례를 포함한다. 기존의 isLoading, errorMessage 필드를 사용하는 안티패턴을 제거하고 올바른 AsyncValue 패턴으로 교체한다.",
+        "testStrategy": "문서의 Dart 코드 예제가 올바른지 구문 검사하고, 기존 presentation_use_async_value 린트 규칙이 새로운 예제에서 경고를 발생시키지 않는지 확인한다.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-10-20T02:47:44.840Z"
+      },
+      {
+        "id": "32",
+        "title": "Entity Provider 패턴 예제 작성",
+        "description": "Schedule List와 Schedule Detail을 사용한 Entity Provider 예제를 작성하여 AsyncNotifier와 Future 반환 패턴을 보여준다",
+        "details": "riverpod_generator를 사용한 AsyncNotifier 패턴으로 Entity Provider 예제를 작성한다. ScheduleListProvider(날짜 범위 매개변수)와 ScheduleDetailProvider(scheduleId 매개변수)를 구현하고, UseCase 호출 및 Result 타입 처리 방법을 보여준다. family 패턴을 ID 기반으로 구현하고, AsyncValue 자동 래핑을 활용한다.",
+        "testStrategy": "작성된 예제 코드가 컴파일되는지 확인하고, riverpod_generator가 올바른 코드를 생성하는지 테스트한다.",
+        "priority": "medium",
+        "dependencies": [
+          "31"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-10-20T02:47:54.130Z"
+      },
+      {
+        "id": "33",
+        "title": "UI State Provider 패턴 예제 작성",
+        "description": "Entity Provider에 의존하는 UI State Provider 예제를 작성하여 UI 전용 상태 관리와 entity 의존성 처리 방법을 보여준다",
+        "details": "ScheduleDetailUIProvider를 구현하여 selectedAttendeeIds, isConfirmationDialogOpen, isSubmitting 등의 UI 전용 상태를 관리한다. ref.watch()와 ref.listen()을 사용하여 entity provider에 의존하는 방법을 보여주고, entity 변경 시 UI 상태 초기화 로직을 포함한다. Freezed State 클래스와 UI 상태 업데이트 메서드를 구현한다.",
+        "testStrategy": "UI State Provider가 Entity Provider 변경을 올바르게 감지하고 반응하는지 테스트하고, UI 상태가 독립적으로 관리되는지 확인한다.",
+        "priority": "medium",
+        "dependencies": [
+          "32"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-10-20T02:48:00.719Z"
+      },
+      {
+        "id": "34",
+        "title": "Computed Logic Provider 패턴 예제 작성",
+        "description": "Entity와 UI State를 조합한 Computed Logic Provider 예제를 작성하여 파생된 값과 유효성 검사 로직을 보여준다",
+        "details": "canConfirmScheduleProvider를 구현하여 entity 상태(schedule.isExpired, schedule.maxAttendees)와 UI 상태(uiState.selectedCount)를 조합한 비즈니스 로직을 보여준다. AsyncValue.when() 패턴을 사용하여 로딩/에러/데이터 상태를 처리하고, 여러 provider를 ref.watch()로 조합하는 방법을 문서화한다.",
+        "testStrategy": "Computed Provider가 의존하는 provider들의 변경에 올바르게 반응하는지 테스트하고, AsyncValue 상태 처리가 적절한지 확인한다.",
+        "priority": "medium",
+        "dependencies": [
+          "33"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-10-20T02:48:01.467Z"
+      },
+      {
+        "id": "35",
+        "title": "Widget에서 AsyncValue.when() 사용 예제 작성",
+        "description": "Widget에서 AsyncValue.when() 패턴을 사용하여 로딩, 에러, 데이터 상태를 처리하는 완전한 예제를 작성한다",
+        "details": "ScheduleDetailWidget에서 Entity Provider의 AsyncValue를 소비하는 방법을 보여준다. AsyncValue.when(data:, loading:, error:) 패턴을 사용하여 각 상태에 대한 UI를 구현하고, UI State Provider와 Computed Logic Provider를 함께 사용하는 방법을 문서화한다. 에러 처리 UI와 로딩 상태 표시도 포함한다.",
+        "testStrategy": "Widget이 모든 AsyncValue 상태(loading, error, data)를 올바르게 렌더링하는지 테스트하고, provider 변경 시 적절한 리빌드가 발생하는지 확인한다.",
+        "priority": "medium",
+        "dependencies": [
+          "34"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-10-20T02:48:02.230Z"
+      },
+      {
+        "id": "36",
+        "title": "Entity UI Extensions 패턴 문서화",
+        "description": "Entity에 대한 UI 전용 확장 메서드 패턴을 문서화하여 포매팅과 UI 관련 로직 분리 방법을 보여준다",
+        "details": "ScheduleUIX extension을 구현하여 formattedDate, statusColor, statusIcon 등의 UI 관련 계산 로직을 Entity에 확장으로 추가하는 방법을 보여준다. State 파일에서 공유 UI 확장을 정의하는 방법과 Widget 파일에서 private 확장을 정의하는 방법을 구분하여 문서화한다. UI 로직과 비즈니스 로직의 명확한 분리를 강조한다.",
+        "testStrategy": "Extension 메서드가 올바르게 동작하는지 테스트하고, Entity의 순수성이 유지되는지(side effect 없음) 확인한다.",
+        "priority": "low",
+        "dependencies": [
+          "35"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-10-20T02:48:02.969Z"
+      },
+      {
+        "id": "37",
+        "title": "CLEAN_ARCHITECTURE_GUIDE.md Riverpod 섹션 업데이트",
+        "description": "CLEAN_ARCHITECTURE_GUIDE.md에 포괄적인 Riverpod 상태 관리 섹션을 추가하고 기존 안티패턴을 제거한다",
+        "details": "기존 가이드의 Presentation Layer 섹션을 업데이트하여 3계층 Provider 아키텍처를 포함한다. State 클래스에 isLoading, errorMessage 필드를 포함하는 기존 예제를 AsyncValue 패턴으로 교체하고, family 패턴 모범 사례(ID 기반, entity 기반 아님)를 추가한다. Multi-Entity 관계 예제(User → UserSettings)도 포함하여 ref.watch() 의존성 체인을 보여준다.",
+        "testStrategy": "가이드의 모든 코드 예제가 유효한 Dart 코드인지 확인하고, presentation_use_async_value 규칙이 새로운 예제에서 경고를 발생시키지 않는지 테스트한다.",
+        "priority": "high",
+        "dependencies": [
+          "36"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-10-20T02:49:27.500Z"
+      },
+      {
+        "id": "38",
+        "title": "Family 패턴 ID 기반 모범 사례 문서화",
+        "description": "Riverpod family 패턴에서 ID 기반 의존성을 사용하는 모범 사례를 문서화하고 entity 기반 안티패턴을 경고한다",
+        "details": "Provider family에서 entity 객체 대신 ID를 매개변수로 사용하는 이유와 방법을 문서화한다. scheduleDetailProvider(String scheduleId) vs scheduleDetailProvider(Schedule schedule) 패턴을 비교하고, ID 기반 접근법의 이점(메모리 효율성, 캐싱, 재계산 최적화)을 설명한다. ref.invalidate()와 ref.refresh() 사용법도 포함한다.",
+        "testStrategy": "ID 기반 family provider가 올바르게 캐싱되고 무효화되는지 테스트하고, entity 기반 패턴과 성능을 비교한다.",
+        "priority": "medium",
+        "dependencies": [
+          "37"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-10-20T02:49:28.245Z"
+      },
+      {
+        "id": "39",
+        "title": "README.md Riverpod 기능 추가",
+        "description": "README.md의 기능 목록에 Riverpod 상태 관리 패턴을 추가하고 관련 가이드 링크를 업데이트한다",
+        "details": "README.md의 \"Features\" 섹션에 \"Riverpod State Management Patterns\" 항목을 추가하고, AsyncValue 사용 강제, 3계층 Provider 아키텍처, Entity UI Extensions 패턴을 언급한다. CLEAN_ARCHITECTURE_GUIDE.md의 새로운 Riverpod 섹션에 대한 링크를 추가하고, presentation_use_async_value 규칙에 대한 설명을 포함한다.",
+        "testStrategy": "README의 모든 링크가 올바르게 연결되는지 확인하고, 기능 설명이 정확한지 검토한다.",
+        "priority": "low",
+        "dependencies": [
+          "38"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-10-20T02:50:03.548Z"
+      },
+      {
+        "id": "40",
+        "title": "기존 문서의 안티패턴 제거 및 검토",
+        "description": "모든 문서에서 isLoading, errorMessage 필드를 포함하는 안티패턴 예제를 찾아 제거하고 AsyncValue 패턴으로 교체한다",
+        "details": "전체 문서를 검토하여 State 클래스에 수동 로딩/에러 관리 필드가 포함된 예제를 찾아 제거한다. presentation_use_async_value 규칙의 정책과 일치하도록 모든 예제를 업데이트하고, Riverpod AsyncValue 패턴의 일관성을 보장한다. doc/, README.md, CLAUDE.md의 모든 코드 예제를 검토한다.",
+        "testStrategy": "grep을 사용하여 'isLoading', 'errorMessage' 등의 안티패턴을 검색하고, 발견된 모든 사례가 적절히 수정되었는지 확인한다. presentation_use_async_value 규칙을 example 프로젝트에서 실행하여 경고가 없는지 테스트한다.",
+        "priority": "medium",
+        "dependencies": [
+          "39"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-10-20T02:51:50.883Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-10-07T07:29:04.138Z",
-      "taskCount": 20,
-      "completedCount": 20,
+      "lastModified": "2025-10-20T02:51:50.884Z",
+      "taskCount": 30,
+      "completedCount": 30,
       "tags": [
         "master"
       ]
