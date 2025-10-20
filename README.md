@@ -12,6 +12,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 - 🛡️ **Automatic Clean Architecture Protection** - Write code freely, linter catches violations
 - 🎯 **29 Specialized Rules** - Comprehensive coverage of all Clean Architecture layers
 - 🚀 **Flutter-Optimized** - Built specifically for Flutter development patterns
+- 🎨 **Riverpod State Management** - Enforces 3-tier provider architecture (Entity → UI → Computed)
 - 📚 **Educational** - Learn Clean Architecture through guided corrections
 - ⚡ **Real-time Feedback** - Immediate warnings with actionable solutions
 - 🔧 **Zero Configuration** - Works out of the box with sensible defaults
@@ -53,13 +54,15 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 25. **Freezed Usage** - Use Freezed instead of Equatable
 26. **Riverpod Generator** - Use `@riverpod` annotation
 27. **Presentation No Data Exceptions** - Use domain exceptions only
-28. **Presentation Use AsyncValue** - Use AsyncValue for error handling
+28. **Presentation Use AsyncValue** - Use AsyncValue for error handling (3-tier architecture)
 29. **Presentation No Throw** - No exception throwing in Presentation layer
 
 ### 🧪 Optional: Test Coverage Rule
 **Test Coverage** - Enforces test files for UseCases, Repositories, DataSources, and Notifiers (disabled by default)
 
 > 📖 **Implementation Guide**: See [CLEAN_ARCHITECTURE_GUIDE.md](doc/CLEAN_ARCHITECTURE_GUIDE.md) for detailed patterns and examples.
+>
+> 🎨 **Riverpod State Management**: See [CLAUDE.md § Riverpod State Management Patterns](CLAUDE.md#riverpod-state-management-patterns) for 3-tier provider architecture guide.
 
 ## 🚀 Quick Start
 

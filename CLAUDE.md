@@ -46,56 +46,458 @@ import 'package:app/features/todos/data/models/todo_model.dart';  // ❌ WRONG
 import 'package:app/features/todos/domain/entities/todo.dart';  // ✅ CORRECT
 ```
 
-### When You Need UI-Specific Data
+## Riverpod State Management Patterns
 
-**Option 1 - Entity UI Extensions in State file** (recommended for shared UI logic):
+The linter enforces proper Riverpod state management using a **3-tier provider architecture** that separates entity data, UI state, and computed logic.
+
+### 3-Tier Provider Architecture
+
+```
+┌─────────────────────────────────────┐
+│  Tier 1: Entity Providers          │  ← AsyncNotifier + AsyncValue
+│  (scheduleListProvider)             │     (Data from Domain/UseCases)
+└─────────────┬───────────────────────┘
+              │ ref.watch() / ref.listen()
+              ↓
+┌─────────────────────────────────────┐
+│  Tier 2: UI State Providers        │  ← Notifier (UI-only state)
+│  (scheduleDetailUIProvider)         │     (selection, dialogs, etc.)
+└─────────────┬───────────────────────┘
+              │
+              ↓
+┌─────────────────────────────────────┐
+│  Tier 3: Computed Logic Providers  │  ← Functions combining
+│  (canConfirmScheduleProvider)       │     Entity + UI state
+└─────────────────────────────────────┘
+```
+
+### ✅ Tier 1: Entity Providers (AsyncNotifier)
+
+Entity providers manage domain data using `AsyncNotifier` with `AsyncValue` for automatic loading/error/data state management.
+
 ```dart
-// presentation/states/todo_state.dart
+// presentation/providers/schedule_providers.dart
+
+/// Entity Provider: Schedule List (with date range parameters)
+@riverpod
+class ScheduleList extends _$ScheduleList {
+  @override
+  Future<List<Schedule>> build({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    final result = await ref.read(getScheduleListUseCaseProvider)(
+      startDate: startDate,
+      endDate: endDate,
+    );
+
+    return result.when(
+      success: (schedules) => schedules,
+      failure: (failure) => throw failure,  // ✅ AsyncValue.error conversion
+    );
+  }
+
+  Future<void> refresh() async {
+    ref.invalidateSelf();
+  }
+}
+
+/// Entity Provider: Schedule Detail (Family pattern with ID)
+@riverpod
+class ScheduleDetail extends _$ScheduleDetail {
+  @override
+  Future<Schedule> build(String scheduleId) async {  // ✅ ID parameter, not entity
+    final result = await ref.read(getScheduleDetailUseCaseProvider)(scheduleId);
+
+    return result.when(
+      success: (schedule) => schedule,
+      failure: (failure) => throw failure,
+    );
+  }
+
+  Future<void> confirmSchedule(List<String> attendeeIds) async {
+    final currentSchedule = state.value;
+    if (currentSchedule == null) return;
+
+    state = const AsyncValue.loading();
+
+    state = await AsyncValue.guard(() async {
+      final result = await ref.read(confirmScheduleUseCaseProvider)(
+        currentSchedule.id,
+        attendeeIds,
+      );
+
+      return result.when(
+        success: (updatedSchedule) => updatedSchedule,
+        failure: (failure) => throw failure,
+      );
+    });
+  }
+}
+
+/// Entity UI Extensions (formatting only)
+extension ScheduleUIX on Schedule {
+  String get formattedDate => DateFormat('MMM dd, yyyy').format(startDate);
+  String get formattedTimeRange =>
+      '${DateFormat.Hm().format(startTime)} - ${DateFormat.Hm().format(endTime)}';
+  Color get statusColor {
+    if (isExpired) return Colors.grey;
+    if (isConfirmed) return Colors.green;
+    return Colors.orange;
+  }
+  IconData get statusIcon {
+    if (isExpired) return Icons.event_busy;
+    if (isConfirmed) return Icons.check_circle;
+    return Icons.pending;
+  }
+}
+```
+
+### ✅ Tier 2: UI State Providers (Depends on Entity)
+
+UI State providers manage presentation-specific state and depend on entity providers via `ref.watch()` or `ref.listen()`.
+
+```dart
+// presentation/providers/schedule_ui_providers.dart
+
+/// UI State (Freezed)
 @freezed
-class TodoState with _$TodoState {
-  const factory TodoState({
-    @Default([]) List<Todo> todos,
-    @Default(false) bool isLoading,
-  }) = _TodoState;
+sealed class ScheduleDetailUIState with _$ScheduleDetailUIState {
+  const factory ScheduleDetailUIState({
+    @Default([]) List<String> selectedAttendeeIds,
+    @Default(false) bool isConfirmationDialogOpen,
+    @Default(false) bool isSubmitting,
+  }) = _ScheduleDetailUIState;
 }
 
-// State extensions
-extension TodoStateX on TodoState {
-  int get completedCount => todos.where((t) => t.isCompleted).length;
-  double get completionRate => todos.isEmpty ? 0.0 : completedCount / todos.length;
+extension ScheduleDetailUIStateX on ScheduleDetailUIState {
+  int get selectedCount => selectedAttendeeIds.length;
+  bool get hasSelection => selectedAttendeeIds.isNotEmpty;
 }
 
-// Entity UI extensions in same file (shared across widgets)
-extension TodoUIX on Todo {
-  String get formattedDueDate => dueDate != null
-    ? DateFormat('MMM dd').format(dueDate!)
-    : 'No due date';
-  Color get statusColor => isCompleted ? Colors.green : (isOverdue ? Colors.red : Colors.grey);
-  IconData get icon => isCompleted ? Icons.check_circle : Icons.circle_outlined;
+/// UI State Provider (depends on Entity Provider)
+@riverpod
+class ScheduleDetailUI extends _$ScheduleDetailUI {
+  @override
+  ScheduleDetailUIState build(String scheduleId) {
+    // ✅ Listen to entity changes
+    ref.listen(
+      scheduleDetailProvider(scheduleId),
+      (previous, next) {
+        // Reset UI state when entity changes
+        next.whenData((_) {
+          if (previous?.value?.id != next.value?.id) {
+            state = const ScheduleDetailUIState();
+          }
+        });
+      },
+    );
+
+    return const ScheduleDetailUIState();
+  }
+
+  void toggleAttendee(String attendeeId) {
+    final updated = state.selectedAttendeeIds.contains(attendeeId)
+        ? state.selectedAttendeeIds.where((id) => id != attendeeId).toList()
+        : [...state.selectedAttendeeIds, attendeeId];
+
+    state = state.copyWith(selectedAttendeeIds: updated);
+  }
+
+  void openConfirmationDialog() {
+    state = state.copyWith(isConfirmationDialogOpen: true);
+  }
+
+  void closeConfirmationDialog() {
+    state = state.copyWith(isConfirmationDialogOpen: false);
+  }
+
+  Future<void> confirmSchedule() async {
+    if (!state.hasSelection || state.isSubmitting) return;
+
+    state = state.copyWith(isSubmitting: true);
+
+    try {
+      await ref.read(scheduleDetailProvider(scheduleId).notifier)
+          .confirmSchedule(state.selectedAttendeeIds);
+
+      // Success: reset UI state
+      state = const ScheduleDetailUIState();
+    } catch (e) {
+      state = state.copyWith(isSubmitting: false);
+      rethrow;
+    }
+  }
 }
 ```
 
-**Option 2 - Widget-specific Extensions** (for widget-only logic):
+### ✅ Tier 3: Computed Logic Providers (Entity + UI Combination)
+
+Computed providers derive values from entity and UI state.
+
 ```dart
-// presentation/widgets/todo_card.dart
-// Private extension (only used in this widget)
-extension _TodoCardX on Todo {
-  EdgeInsets get cardPadding => isPriority
-    ? EdgeInsets.all(16.0)
-    : EdgeInsets.all(8.0);
+// presentation/providers/schedule_computed_providers.dart
+
+/// Can confirm schedule? (combines entity + UI state)
+@riverpod
+bool canConfirmSchedule(CanConfirmScheduleRef ref, String scheduleId) {
+  final scheduleAsync = ref.watch(scheduleDetailProvider(scheduleId));
+  final uiState = ref.watch(scheduleDetailUIProvider(scheduleId));
+
+  return scheduleAsync.when(
+    data: (schedule) =>
+        uiState.hasSelection &&
+        !schedule.isExpired &&
+        !schedule.isConfirmed &&
+        uiState.selectedCount <= schedule.maxAttendees,
+    loading: () => false,
+    error: (_, __) => false,
+  );
 }
 
-class TodoCard extends StatelessWidget {
-  // Uses shared UI extensions from state file + widget-specific extensions
+/// Remaining slots
+@riverpod
+int remainingSlots(RemainingSlotsRef ref, String scheduleId) {
+  final scheduleAsync = ref.watch(scheduleDetailProvider(scheduleId));
+  final uiState = ref.watch(scheduleDetailUIProvider(scheduleId));
+
+  return scheduleAsync.when(
+    data: (schedule) => schedule.maxAttendees - uiState.selectedCount,
+    loading: () => 0,
+    error: (_, __) => 0,
+  );
 }
 ```
 
-**❌ DON'T:**
-- Don't create Presentation Models
-- Don't create separate extensions/ or ui/ directories
-- Don't use ViewModels (use Freezed State + Riverpod instead)
+### ✅ Widget Usage (AsyncValue.when Pattern)
 
-See [CLEAN_ARCHITECTURE_GUIDE.md](doc/CLEAN_ARCHITECTURE_GUIDE.md) for complete examples.
+```dart
+// presentation/pages/schedule_detail_page.dart
+
+class ScheduleDetailPage extends ConsumerWidget {
+  final String scheduleId;
+
+  const ScheduleDetailPage({required this.scheduleId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // ✅ Watch entity provider (AsyncValue)
+    final scheduleAsync = ref.watch(scheduleDetailProvider(scheduleId));
+
+    // ✅ Watch UI state provider
+    final uiState = ref.watch(scheduleDetailUIProvider(scheduleId));
+    final uiNotifier = ref.read(scheduleDetailUIProvider(scheduleId).notifier);
+
+    // ✅ Watch computed providers
+    final canConfirm = ref.watch(canConfirmScheduleProvider(scheduleId));
+    final remainingSlots = ref.watch(remainingSlotsProvider(scheduleId));
+
+    // ✅ AsyncValue.when() pattern
+    return scheduleAsync.when(
+      loading: () => Center(child: CircularProgressIndicator()),
+
+      error: (error, stack) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error, color: Colors.red, size: 48),
+            SizedBox(height: 16),
+            Text('Error: $error'),
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => ref.invalidate(scheduleDetailProvider(scheduleId)),
+              child: Text('Retry'),
+            ),
+          ],
+        ),
+      ),
+
+      data: (schedule) {  // ✅ schedule is non-nullable here
+        return Column(
+          children: [
+            // ✅ Entity UI Extensions
+            Card(
+              child: ListTile(
+                leading: Icon(schedule.statusIcon, color: schedule.statusColor),
+                title: Text(schedule.title),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(schedule.formattedDate),
+                    Text(schedule.formattedTimeRange),
+                  ],
+                ),
+              ),
+            ),
+
+            // ✅ Computed logic
+            Text('Remaining: $remainingSlots slots'),
+
+            // ✅ Attendee list
+            Expanded(
+              child: ListView.builder(
+                itemCount: schedule.attendees.length,
+                itemBuilder: (context, index) {
+                  final attendee = schedule.attendees[index];
+                  final isSelected = uiState.selectedAttendeeIds.contains(attendee.id);
+
+                  return CheckboxListTile(
+                    value: isSelected,
+                    onChanged: (_) => uiNotifier.toggleAttendee(attendee.id),
+                    title: Text(attendee.name),
+                  );
+                },
+              ),
+            ),
+
+            // ✅ Confirm button
+            ElevatedButton(
+              onPressed: canConfirm && !uiState.isSubmitting
+                  ? uiNotifier.openConfirmationDialog
+                  : null,
+              child: uiState.isSubmitting
+                  ? CircularProgressIndicator()
+                  : Text('Confirm Schedule'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+```
+
+### ❌ Common Violations
+
+#### ❌ Violation: Manual isLoading/errorMessage in State
+
+**Problem**:
+```dart
+// ❌ WRONG - Manual state management
+@freezed
+sealed class ScheduleState with _$ScheduleState {
+  const factory ScheduleState({
+    Schedule? schedule,
+    @Default(false) bool isLoading,      // ❌ Manual loading
+    @Default('') String errorMessage,    // ❌ Manual error
+  }) = _ScheduleState;
+}
+
+@riverpod
+class ScheduleNotifier extends _$ScheduleNotifier {
+  @override
+  ScheduleState build() => const ScheduleState();
+
+  Future<void> loadSchedule(String id) async {
+    state = state.copyWith(isLoading: true);  // ❌ Manual management
+    // ...
+  }
+}
+```
+
+**Solution**:
+```dart
+// ✅ CORRECT - AsyncNotifier with AsyncValue
+@riverpod
+class Schedule extends _$Schedule {
+  @override
+  Future<entities.Schedule> build(String scheduleId) async {
+    final result = await ref.read(getScheduleUseCaseProvider)(scheduleId);
+    return result.when(
+      success: (schedule) => schedule,
+      failure: (failure) => throw failure,  // ✅ Auto AsyncValue.error
+    );
+  }
+}
+
+// Widget
+final scheduleAsync = ref.watch(scheduleProvider(scheduleId));
+scheduleAsync.when(
+  loading: () => Loader(),      // ✅ Automatic
+  error: (e, s) => Error(e),    // ✅ Automatic
+  data: (schedule) => UI(),     // ✅ Automatic
+);
+```
+
+#### ❌ Violation: Mixed Entity and UI State
+
+**Problem**:
+```dart
+// ❌ WRONG - Entity and UI mixed
+@freezed
+class ScheduleState with _$ScheduleState {
+  const factory ScheduleState({
+    Schedule? schedule,                    // ❌ Entity
+    @Default([]) List<String> selectedIds, // ❌ UI state
+  }) = _ScheduleState;
+}
+```
+
+**Solution**:
+```dart
+// ✅ CORRECT - Separated concerns
+
+// Entity Provider
+@riverpod
+class Schedule extends _$Schedule {
+  Future<entities.Schedule> build(String id) async { }
+}
+
+// UI State Provider
+@freezed
+class ScheduleUIState with _$ScheduleUIState {
+  const factory ScheduleUIState({
+    @Default([]) List<String> selectedIds,  // ✅ UI only
+  }) = _ScheduleUIState;
+}
+
+@riverpod
+class ScheduleUI extends _$ScheduleUI {
+  ScheduleUIState build(String scheduleId) {
+    ref.watch(scheduleProvider(scheduleId));  // ✅ Depends on entity
+    return const ScheduleUIState();
+  }
+}
+```
+
+#### ❌ Violation: Family Provider with Entity Parameter
+
+**Problem**:
+```dart
+// ❌ WRONG - Entity as family parameter
+@riverpod
+class ScheduleUI extends _$ScheduleUI {
+  ScheduleUIState build(Schedule schedule) {  // ❌ Entity parameter
+    // ...
+  }
+}
+```
+
+**Solution**:
+```dart
+// ✅ CORRECT - ID as family parameter
+@riverpod
+class ScheduleUI extends _$ScheduleUI {
+  ScheduleUIState build(String scheduleId) {  // ✅ ID parameter
+    final schedule = ref.watch(scheduleDetailProvider(scheduleId));
+    // ...
+  }
+}
+```
+
+**Why**: IDs are immutable and stable, entities change. Using IDs enables proper caching, invalidation, and dependency tracking.
+
+### Key Principles
+
+1. **Entity Providers**: Use `AsyncNotifier` with `Future<T> build()` for domain data
+2. **UI State Providers**: Use `Notifier` with synchronous `build()` for UI-only state
+3. **Family Pattern**: Always use IDs, never entity objects as parameters
+4. **Dependencies**: Use `ref.watch()` or `ref.listen()` to depend on entity providers
+5. **AsyncValue**: Let Riverpod manage loading/error/data states automatically
+6. **Computed Logic**: Create separate providers for derived values
+7. **Entity UI Extensions**: Keep formatting/display logic in extensions, not business logic
+
+See [CLEAN_ARCHITECTURE_GUIDE.md](doc/CLEAN_ARCHITECTURE_GUIDE.md) for more comprehensive examples.
 
 ### ❌ Violation: Domain Repository is Concrete (Not Abstract)
 

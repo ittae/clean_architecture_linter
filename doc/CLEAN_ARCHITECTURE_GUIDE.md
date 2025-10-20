@@ -401,108 +401,165 @@ class TodoViewModel extends ChangeNotifier {
   }
 }
 
-// ✅ NEW: State Pattern (Use this)
-@freezed
-sealed class TodoState with _$TodoState {
-  const factory TodoState({
-    @Default([]) List<Todo> todos,  // Immutable
-    @Default(false) bool isLoading,
-  }) = _TodoState;
-}
-
+// ✅ NEW: AsyncNotifier Pattern (Use this)
 @riverpod
-class TodoNotifier extends _$TodoNotifier {
+class TodoList extends _$TodoList {
   @override
-  TodoState build() => const TodoState();
+  Future<List<Todo>> build() async {
+    // ✅ AsyncValue automatically manages loading/error/data
+    final result = await ref.read(getTodosUseCaseProvider)();
+    return result.when(
+      success: (todos) => todos,
+      failure: (failure) => throw failure,
+    );
+  }
 
-  Future<void> loadTodos() async {
-    state = state.copyWith(isLoading: true);  // Immutable update
+  Future<void> refresh() async {
+    ref.invalidateSelf();
   }
 }
+
+// Widget uses AsyncValue.when()
+final todosAsync = ref.watch(todoListProvider);
+todosAsync.when(
+  loading: () => CircularProgressIndicator(),
+  error: (e, s) => ErrorWidget(e),
+  data: (todos) => TodoList(todos),
+);
 ```
 
-#### Riverpod with riverpod_generator
+#### Riverpod State Management with 3-Tier Architecture
 
-**State Class:**
+This package enforces a **3-tier provider architecture** for proper separation of concerns:
+
+1. **Tier 1: Entity Providers** - AsyncNotifier for domain data (loading/error/data auto-managed)
+2. **Tier 2: UI State Providers** - Notifier for UI-only state (depends on Entity Providers)
+3. **Tier 3: Computed Logic Providers** - Functions combining Entity + UI state
+
+**Tier 1: Entity Provider (AsyncNotifier)**
 
 ```dart
-// presentation/states/todo_state.dart
-import 'package:freezed_annotation/freezed_annotation.dart';
+// presentation/providers/todo_list_provider.dart
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../domain/entities/todo.dart';
+import '../../domain/usecases/get_todos_usecase.dart';
 
-part 'todo_state.freezed.dart';
+part 'todo_list_provider.g.dart';
 
-@freezed
-sealed class TodoState with _$TodoState {
-  const factory TodoState({
-    @Default([]) List<Todo> todos,
-    @Default(null) String? selectedTodoId,
-    @Default(false) bool isLoading,
-    @Default(null) String? error,
-  }) = _TodoState;
+/// Entity Provider: Manages Todo list data
+@riverpod
+class TodoList extends _$TodoList {
+  @override
+  Future<List<Todo>> build() async {
+    // ✅ AsyncNotifier automatically manages loading/error/data states
+    final result = await ref.read(getTodosUseCaseProvider)();
+
+    return result.when(
+      success: (todos) => todos,
+      failure: (failure) => throw failure,  // ✅ Auto converted to AsyncValue.error
+    );
+  }
+
+  Future<void> toggleTodoComplete(String todoId) async {
+    final currentTodos = state.value;
+    if (currentTodos == null) return;
+
+    final todo = currentTodos.firstWhere((t) => t.id == todoId);
+    final updated = todo.isCompleted
+        ? todo.markAsIncomplete()
+        : todo.markAsCompleted();
+
+    state = const AsyncValue.loading();
+
+    state = await AsyncValue.guard(() async {
+      await ref.read(updateTodoUseCaseProvider)(updated);
+      final result = await ref.read(getTodosUseCaseProvider)();
+
+      return result.when(
+        success: (todos) => todos,
+        failure: (failure) => throw failure,
+      );
+    });
+  }
+
+  Future<void> refresh() async {
+    ref.invalidateSelf();
+  }
 }
 
-// UI logic extensions in the same file
-extension TodoStateX on TodoState {
-  List<Todo> get completedTodos =>
+/// Entity UI Extensions (formatting only)
+extension TodoUIX on Todo {
+  String get formattedDueDate => dueDate != null
+      ? DateFormat('MMM dd').format(dueDate!)
+      : 'No due date';
+
+  Color get statusColor {
+    if (isCompleted) return Colors.green;
+    if (isOverdue) return Colors.red;
+    return Colors.grey;
+  }
+
+  IconData get statusIcon {
+    if (isCompleted) return Icons.check_circle;
+    if (isOverdue) return Icons.warning;
+    return Icons.circle_outlined;
+  }
+
+  List<Todo> filterCompleted(List<Todo> todos) =>
       todos.where((t) => t.isCompleted).toList();
 
-  List<Todo> get incompleteTodos =>
+  List<Todo> filterIncomplete(List<Todo> todos) =>
       todos.where((t) => !t.isCompleted).toList();
 
-  List<Todo> get overdueTodos =>
+  List<Todo> filterOverdue(List<Todo> todos) =>
       todos.where((t) => t.isOverdue).toList();
-
-  Todo? get selectedTodo =>
-      todos.cast<Todo?>().firstWhere(
-        (t) => t?.id == selectedTodoId,
-        orElse: () => null,
-      );
-
-  int get totalCount => todos.length;
-
-  int get completedCount => completedTodos.length;
-
-  double get completionRate =>
-      totalCount == 0 ? 0.0 : completedCount / totalCount;
-
-  bool isSelected(String id) => selectedTodoId == id;
 }
 ```
 
-**Notifier with riverpod_generator:**
+**Tier 2: UI State Provider (depends on Entity Provider)**
 
 ```dart
-// presentation/providers/todo_provider.dart
+// presentation/providers/todo_ui_provider.dart
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../domain/usecases/get_todos_usecase.dart';
-import '../states/todo_state.dart';
+import 'todo_list_provider.dart';
 
-part 'todo_provider.g.dart';
+part 'todo_ui_provider.freezed.dart';
+part 'todo_ui_provider.g.dart';
 
+/// UI State (Freezed) - UI-only state
+@freezed
+sealed class TodoUIState with _$TodoUIState {
+  const factory TodoUIState({
+    @Default(null) String? selectedTodoId,
+    @Default(false) bool isEditDialogOpen,
+    @Default(TodoFilter.all) TodoFilter activeFilter,
+  }) = _TodoUIState;
+}
+
+extension TodoUIStateX on TodoUIState {
+  bool isSelected(String id) => selectedTodoId == id;
+}
+
+enum TodoFilter { all, completed, incomplete, overdue }
+
+/// UI State Provider (depends on Entity Provider)
 @riverpod
-class TodoNotifier extends _$TodoNotifier {
+class TodoUI extends _$TodoUI {
   @override
-  TodoState build() {
-    return const TodoState();
-  }
+  TodoUIState build() {
+    // ✅ Listen to entity changes
+    ref.listen(
+      todoListProvider,
+      (previous, next) {
+        // Clear selection when todos change
+        next.whenData((_) {
+          state = state.copyWith(selectedTodoId: null);
+        });
+      },
+    );
 
-  Future<void> loadTodos({
-    bool onlyIncomplete = false,
-    bool onlyOverdue = false,
-  }) async {
-    state = state.copyWith(isLoading: true, error: null);
-
-    try {
-      final getTodosUseCase = ref.read(getTodosUseCaseProvider);
-      final todos = await getTodosUseCase(
-        onlyIncomplete: onlyIncomplete,
-        onlyOverdue: onlyOverdue,
-      );
-      state = state.copyWith(todos: todos, isLoading: false);
-    } catch (e) {
-      state = state.copyWith(error: e.toString(), isLoading: false);
-    }
+    return const TodoUIState();
   }
 
   void selectTodo(String todoId) {
@@ -513,71 +570,230 @@ class TodoNotifier extends _$TodoNotifier {
     state = state.copyWith(selectedTodoId: null);
   }
 
-  Future<void> toggleTodoComplete(String todoId) async {
-    final todo = state.todos.firstWhere((t) => t.id == todoId);
-    final updated = todo.isCompleted
-        ? todo.markAsIncomplete()
-        : todo.markAsCompleted();
+  void setFilter(TodoFilter filter) {
+    state = state.copyWith(activeFilter: filter);
+  }
 
-    // Update in repository and refresh
-    await ref.read(updateTodoUseCaseProvider)(updated);
-    await loadTodos();
+  void openEditDialog() {
+    state = state.copyWith(isEditDialogOpen: true);
+  }
+
+  void closeEditDialog() {
+    state = state.copyWith(isEditDialogOpen: false);
   }
 }
 ```
 
-**Widget:**
+**Tier 3: Computed Logic Providers (Entity + UI combination)**
+
+```dart
+// presentation/providers/todo_computed_providers.dart
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../domain/entities/todo.dart';
+import 'todo_list_provider.dart';
+import 'todo_ui_provider.dart';
+
+part 'todo_computed_providers.g.dart';
+
+/// Filtered todos based on active filter
+@riverpod
+List<Todo> filteredTodos(FilteredTodosRef ref) {
+  final todosAsync = ref.watch(todoListProvider);
+  final uiState = ref.watch(todoUIProvider);
+
+  return todosAsync.when(
+    data: (todos) {
+      switch (uiState.activeFilter) {
+        case TodoFilter.completed:
+          return todos.where((t) => t.isCompleted).toList();
+        case TodoFilter.incomplete:
+          return todos.where((t) => !t.isCompleted).toList();
+        case TodoFilter.overdue:
+          return todos.where((t) => t.isOverdue).toList();
+        case TodoFilter.all:
+        default:
+          return todos;
+      }
+    },
+    loading: () => [],
+    error: (_, __) => [],
+  );
+}
+
+/// Selected todo (combines entity + UI state)
+@riverpod
+Todo? selectedTodo(SelectedTodoRef ref) {
+  final todosAsync = ref.watch(todoListProvider);
+  final uiState = ref.watch(todoUIProvider);
+
+  if (uiState.selectedTodoId == null) return null;
+
+  return todosAsync.when(
+    data: (todos) => todos.cast<Todo?>().firstWhere(
+      (t) => t?.id == uiState.selectedTodoId,
+      orElse: () => null,
+    ),
+    loading: () => null,
+    error: (_, __) => null,
+  );
+}
+
+/// Completion statistics
+@riverpod
+TodoStats todoStats(TodoStatsRef ref) {
+  final todosAsync = ref.watch(todoListProvider);
+
+  return todosAsync.when(
+    data: (todos) {
+      final completed = todos.where((t) => t.isCompleted).length;
+      final total = todos.length;
+      final rate = total == 0 ? 0.0 : completed / total;
+
+      return TodoStats(
+        total: total,
+        completed: completed,
+        incomplete: total - completed,
+        completionRate: rate,
+      );
+    },
+    loading: () => const TodoStats(),
+    error: (_, __) => const TodoStats(),
+  );
+}
+
+class TodoStats {
+  final int total;
+  final int completed;
+  final int incomplete;
+  final double completionRate;
+
+  const TodoStats({
+    this.total = 0,
+    this.completed = 0,
+    this.incomplete = 0,
+    this.completionRate = 0.0,
+  });
+}
+```
+
+**Widget (using AsyncValue.when pattern):**
 
 ```dart
 // presentation/widgets/todo_list.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/todo_provider.dart';
-import '../states/todo_state.dart';
+import '../providers/todo_list_provider.dart';
+import '../providers/todo_ui_provider.dart';
+import '../providers/todo_computed_providers.dart';
 
 class TodoList extends ConsumerWidget {
   const TodoList({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(todoNotifierProvider);
+    // ✅ Watch Entity Provider (AsyncValue)
+    final todosAsync = ref.watch(todoListProvider);
 
-    if (state.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    // ✅ Watch UI State Provider
+    final uiState = ref.watch(todoUIProvider);
+    final uiNotifier = ref.read(todoUIProvider.notifier);
 
-    if (state.error != null) {
-      return Center(child: Text('Error: ${state.error}'));
-    }
+    // ✅ Watch Computed Providers
+    final filteredTodos = ref.watch(filteredTodosProvider);
+    final stats = ref.watch(todoStatsProvider);
+    final selectedTodo = ref.watch(selectedTodoProvider);
 
-    return Column(
-      children: [
-        // Use computed property from extension
-        Text('Completion: ${(state.completionRate * 100).toStringAsFixed(1)}%'),
-        Text('${state.completedCount} / ${state.totalCount} completed'),
-        Expanded(
-          child: ListView.builder(
-            itemCount: state.todos.length,
-            itemBuilder: (context, index) {
-              final todo = state.todos[index];
-              final isSelected = state.isSelected(todo.id);
+    // ✅ AsyncValue.when() pattern for loading/error/data
+    return todosAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
 
-              return TodoItem(
-                todo: todo,
-                isSelected: isSelected,
-                onTap: () {
-                  ref.read(todoNotifierProvider.notifier)
-                      .selectTodo(todo.id);
-                },
-                onToggle: () {
-                  ref.read(todoNotifierProvider.notifier)
-                      .toggleTodoComplete(todo.id);
-                },
-              );
-            },
-          ),
+      error: (error, stack) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error, color: Colors.red, size: 48),
+            const SizedBox(height: 16),
+            Text('Error: $error'),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => ref.invalidate(todoListProvider),
+              child: const Text('Retry'),
+            ),
+          ],
         ),
-      ],
+      ),
+
+      data: (todos) {  // ✅ todos is non-nullable here
+        return Column(
+          children: [
+            // ✅ Statistics from computed provider
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Text('Completion: ${(stats.completionRate * 100).toStringAsFixed(1)}%'),
+                    Text('${stats.completed} / ${stats.total} completed'),
+                  ],
+                ),
+              ),
+            ),
+
+            // ✅ Filter buttons
+            SegmentedButton<TodoFilter>(
+              selected: {uiState.activeFilter},
+              onSelectionChanged: (filters) {
+                uiNotifier.setFilter(filters.first);
+              },
+              segments: const [
+                ButtonSegment(value: TodoFilter.all, label: Text('All')),
+                ButtonSegment(value: TodoFilter.completed, label: Text('Completed')),
+                ButtonSegment(value: TodoFilter.incomplete, label: Text('Active')),
+                ButtonSegment(value: TodoFilter.overdue, label: Text('Overdue')),
+              ],
+            ),
+
+            // ✅ Todo list (filtered)
+            Expanded(
+              child: ListView.builder(
+                itemCount: filteredTodos.length,
+                itemBuilder: (context, index) {
+                  final todo = filteredTodos[index];
+                  final isSelected = uiState.isSelected(todo.id);
+
+                  return ListTile(
+                    // ✅ Entity UI Extensions
+                    leading: Icon(todo.statusIcon, color: todo.statusColor),
+                    title: Text(todo.title),
+                    subtitle: Text(todo.formattedDueDate),
+                    selected: isSelected,
+                    onTap: () => uiNotifier.selectTodo(todo.id),
+                    trailing: Checkbox(
+                      value: todo.isCompleted,
+                      onChanged: (_) {
+                        ref.read(todoListProvider.notifier)
+                            .toggleTodoComplete(todo.id);
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            // ✅ Selected todo detail
+            if (selectedTodo != null)
+              Card(
+                child: ListTile(
+                  title: Text('Selected: ${selectedTodo.title}'),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: uiNotifier.clearSelection,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }
@@ -655,56 +871,31 @@ return Text('Count: ${state.todos.length}');    // Use Entity
 
 ## Common Patterns
 
-### Pattern 1: UI-Specific Extensions on Entities
+> 📖 **See above** for comprehensive Riverpod State Management patterns with 3-tier architecture (Entity Providers → UI State Providers → Computed Logic Providers).
 
-When you need UI formatting or calculations, add extensions in the **State file** or **Widget file**:
+### Quick Reference: Entity UI Extensions
 
-**Option A: In State file (recommended for shared UI logic)**
+When you need UI formatting or display logic, add extensions to entities:
+
 ```dart
-// presentation/states/todo_state.dart
-import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import '../../domain/entities/todo.dart';
+// presentation/providers/todo_providers.dart (or in State file)
 
-part 'todo_state.freezed.dart';
-
-@freezed
-sealed class TodoState with _$TodoState {
-  const factory TodoState({
-    @Default([]) List<Todo> todos,
-    @Default(false) bool isLoading,
-  }) = _TodoState;
-}
-
-// State extensions
-extension TodoStateX on TodoState {
-  int get totalCount => todos.length;
-  double get completionRate =>
-      totalCount == 0 ? 0.0 : completedTodos.length / totalCount;
-}
-
-// Entity UI extensions in the same file (shared across widgets)
+/// Entity UI Extensions (formatting only - no business logic)
 extension TodoUIX on Todo {
-  String get formattedDueDate {
-    if (dueDate == null) return 'No due date';
-    return DateFormat('MMM dd, yyyy').format(dueDate!);
-  }
+  String get formattedDueDate => dueDate != null
+      ? DateFormat('MMM dd').format(dueDate!)
+      : 'No due date';
 
-  Color get priorityColor {
-    switch (priority) {
-      case TodoPriority.high:
-        return Colors.red;
-      case TodoPriority.medium:
-        return Colors.orange;
-      case TodoPriority.low:
-        return Colors.grey;
-    }
+  Color get statusColor {
+    if (isCompleted) return Colors.green;
+    if (isOverdue) return Colors.red;
+    if (isPriority) return Colors.orange;
+    return Colors.grey;
   }
 
   IconData get statusIcon {
     if (isCompleted) return Icons.check_circle;
-    if (isOverdue) return Icons.warning;  // Uses domain extension
+    if (isOverdue) return Icons.warning;
     return Icons.circle_outlined;
   }
 
@@ -714,184 +905,26 @@ extension TodoUIX on Todo {
     if (daysUntilDue != null && daysUntilDue! <= 3) return 'Due soon';
     return 'Active';
   }
-
-  Color get statusColor {
-    if (isCompleted) return Colors.green;
-    if (isOverdue) return Colors.red;
-    if (isPriority) return Colors.orange;
-    return Colors.grey;
-  }
 }
-```
 
-**Option B: In Widget file (for widget-specific logic only)**
-```dart
-// presentation/widgets/todo_card.dart
-import 'package:flutter/material.dart';
-import '../../domain/entities/todo.dart';
-import '../states/todo_state.dart';  // Imports shared UI extensions
-
-// Widget-specific extensions (only used in this widget)
+// Widget-specific extensions (private, widget-only)
 extension _TodoCardX on Todo {
-  EdgeInsets get cardPadding {
-    return isPriority
+  EdgeInsets get cardPadding => isPriority
       ? EdgeInsets.all(16.0)
       : EdgeInsets.all(8.0);
-  }
 
-  double get cardElevation {
-    return isOverdue ? 4.0 : 1.0;
-  }
-}
-
-class TodoCard extends StatelessWidget {
-  final Todo todo;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: todo.cardElevation,  // Widget-specific extension
-      child: Padding(
-        padding: todo.cardPadding,
-        child: Column(
-          children: [
-            Text(todo.formattedDueDate),  // Shared UI extension from state file
-            Icon(todo.statusIcon, color: todo.statusColor),
-            Text(todo.statusLabel),
-          ],
-        ),
-      ),
-    );
-  }
+  double get cardElevation => isOverdue ? 4.0 : 1.0;
 }
 ```
 
-### Pattern 2: Complex UI State (Freezed State + Extensions)
+### Key Principles
 
-When you need to combine multiple entities or track complex UI state:
-
-```dart
-// presentation/states/todo_ui_state.dart
-import 'package:freezed_annotation/freezed_annotation.dart';
-import '../../domain/entities/todo.dart';
-
-part 'todo_ui_state.freezed.dart';
-
-enum TodoFilter { all, active, completed, overdue }
-enum TodoSortOrder { byDueDate, byPriority, byTitle }
-
-@freezed
-sealed class TodoUIState with _$TodoUIState {
-  const factory TodoUIState({
-    @Default([]) List<Todo> todos,
-    @Default({}) Set<String> selectedIds,
-    @Default({}) Map<String, bool> expandedStates,
-    @Default(TodoFilter.all) TodoFilter filter,
-    @Default(TodoSortOrder.byDueDate) TodoSortOrder sortOrder,
-  }) = _TodoUIState;
-}
-
-// Computed properties in extension
-extension TodoUIStateX on TodoUIState {
-  List<Todo> get filteredTodos {
-    var result = todos;
-
-    switch (filter) {
-      case TodoFilter.active:
-        result = result.where((t) => !t.isCompleted).toList();
-        break;
-      case TodoFilter.completed:
-        result = result.where((t) => t.isCompleted).toList();
-        break;
-      case TodoFilter.overdue:
-        result = result.where((t) => t.isOverdue).toList();
-        break;
-      default:
-        break;
-    }
-
-    return _sortTodos(result);
-  }
-
-  List<Todo> get selectedTodos =>
-      todos.where((t) => selectedIds.contains(t.id)).toList();
-
-  int get totalSelectedCount => selectedIds.length;
-
-  bool isSelected(String id) => selectedIds.contains(id);
-
-  bool isExpanded(String id) => expandedStates[id] ?? false;
-
-  List<Todo> _sortTodos(List<Todo> todos) {
-    final sorted = List<Todo>.from(todos);
-    switch (sortOrder) {
-      case TodoSortOrder.byDueDate:
-        sorted.sort((a, b) {
-          if (a.dueDate == null) return 1;
-          if (b.dueDate == null) return -1;
-          return a.dueDate!.compareTo(b.dueDate!);
-        });
-        break;
-      case TodoSortOrder.byPriority:
-        sorted.sort((a, b) => b.priority.index.compareTo(a.priority.index));
-        break;
-      case TodoSortOrder.byTitle:
-        sorted.sort((a, b) => a.title.compareTo(b.title));
-        break;
-    }
-    return sorted;
-  }
-}
-```
-
-### Pattern 3: UI-Specific State (Use State, Not Presentation Models)
-
-When you need UI-specific data like selection or validation, use State classes that contain Entities:
-
-```dart
-// presentation/states/todo_state.dart
-import 'package:freezed_annotation/freezed_annotation.dart';
-import '../../domain/entities/todo.dart';
-
-part 'todo_state.freezed.dart';
-
-@freezed
-sealed class TodoState with _$TodoState {
-  const factory TodoState({
-    @Default([]) List<Todo> todos,  // Domain Entities
-    @Default({}) Set<String> selectedIds,  // UI state
-    @Default({}) Map<String, String> validationErrors,  // UI validation
-  }) = _TodoState;
-}
-
-// UI logic via extensions
-extension TodoStateX on TodoState {
-  List<Todo> get selectedTodos =>
-      todos.where((t) => selectedIds.contains(t.id)).toList();
-
-  bool isSelected(String id) => selectedIds.contains(id);
-
-  String? validationError(String id) => validationErrors[id];
-
-  bool canSelect(String id) => validationErrors[id] == null;
-
-  // Computed UI properties using Entity extensions
-  Color getStatusColor(Todo todo) {
-    if (validationErrors[todo.id] != null) return Colors.red;
-    if (isSelected(todo.id)) return Colors.blue;
-    if (todo.isPriority) return Colors.orange;  // From Entity extension
-    return Colors.grey;
-  }
-}
-
-// Usage in Widget
-final state = ref.watch(todoNotifierProvider);
-final todo = state.todos[0];
-final color = state.getStatusColor(todo);  // Use State extension
-final label = todo.formattedDueDate;  // Use Entity extension
-```
-
-**Key Principle**: NO separate Presentation Models. State contains Entities + UI-specific fields.
+1. **NO** manual `isLoading` or `errorMessage` fields - Use AsyncValue
+2. **NO** Presentation Models - Use Entity Providers + UI State Providers
+3. **NO** ViewModels - Use AsyncNotifier + Notifier
+4. **Entity Extensions**: UI formatting/display only, no business logic
+5. **State Extensions**: Computed properties combining UI state
+6. **Computed Providers**: Derived values from Entity + UI State
 
 ## Examples
 
