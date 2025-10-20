@@ -47,27 +47,41 @@ class TodoViewModel {
   final bool isLoading;
 }
 
-// ✅ GOOD: Using Freezed State
-@freezed
-class TodoState with _$TodoState {
-  const factory TodoState({
-    @Default([]) List<Todo> todos,
-    @Default(false) bool isLoading,
-  }) = _TodoState;
-}
+// ✅ GOOD: Using 3-Tier Provider Architecture
 
-// State extensions in same file
-extension TodoStateX on TodoState {
-  int get completedCount => todos.where((t) => t.isCompleted).length;
-}
-
-// Riverpod Notifier
+// Tier 1: Entity Provider (AsyncNotifier)
 @riverpod
-class TodoNotifier extends _$TodoNotifier {
+class TodoList extends _$TodoList {
   @override
-  FutureOr<TodoState> build() async {
-    return TodoState();
+  Future<List<Todo>> build() async {
+    final result = await ref.read(getTodosUseCaseProvider)();
+    return result.when(
+      success: (todos) => todos,
+      failure: (failure) => throw failure,
+    );
   }
+}
+
+// Tier 2: UI State Provider (UI-only state)
+@freezed
+class TodoUIState with _$TodoUIState {
+  const factory TodoUIState({
+    @Default([]) List<String> selectedIds,
+  }) = _TodoUIState;
+}
+
+@riverpod
+class TodoUI extends _$TodoUI {
+  @override
+  TodoUIState build() {
+    ref.watch(todoListProvider);
+    return const TodoUIState();
+  }
+}
+
+// Entity UI Extensions
+extension TodoUIX on Todo {
+  int get completedCount => isCompleted ? 1 : 0;
 }
 ```
 
@@ -138,14 +152,17 @@ class TodoState extends Equatable {
   List<Object?> get props => [todos, isLoading];
 }
 
-// ✅ GOOD: Using Freezed
+// ✅ GOOD: Using Freezed (for UI State)
 @freezed
-class TodoState with _$TodoState {
-  const factory TodoState({
-    @Default([]) List<Todo> todos,
-    @Default(false) bool isLoading,
-  }) = _TodoState;
+class TodoUIState with _$TodoUIState {
+  const factory TodoUIState({
+    @Default([]) List<String> selectedIds,
+    @Default(false) bool isEditMode,
+  }) = _TodoUIState;
 }
+
+// Note: For entity data, use AsyncNotifier instead of storing in State
+// See CLAUDE.md § Riverpod State Management Patterns
 ```
 
 ---
@@ -165,30 +182,30 @@ final todoNotifierProvider = StateNotifierProvider<TodoNotifier, TodoState>((ref
   return TodoNotifier(ref.watch(todoRepositoryProvider));
 });
 
-// ✅ GOOD: Using @riverpod
+// ✅ GOOD: Using @riverpod with AsyncNotifier
 @riverpod
-class TodoNotifier extends _$TodoNotifier {
+class TodoList extends _$TodoList {
   @override
-  FutureOr<TodoState> build() async {
-    final repository = ref.watch(todoRepositoryProvider);
-    final result = await repository.getTodos();
+  Future<List<Todo>> build() async {
+    final result = await ref.read(getTodosUseCaseProvider)();
 
     return result.when(
-      success: (todos) => TodoState(todos: todos),
-      failure: (failure) => throw failure.toException(),
+      success: (todos) => todos,
+      failure: (failure) => throw failure,
     );
   }
 
   Future<void> addTodo(Todo todo) async {
-    final repository = ref.read(todoRepositoryProvider);
-    final result = await repository.createTodo(todo);
+    final result = await ref.read(createTodoUseCaseProvider)(todo);
 
     result.when(
       success: (_) => ref.invalidateSelf(),
-      failure: (failure) => throw failure.toException(),
+      failure: (failure) => throw failure,
     );
   }
 }
+
+// See CLAUDE.md § Riverpod State Management Patterns for complete 3-tier architecture
 ```
 
 ---
@@ -224,11 +241,15 @@ Future<void> loadTodos() async {
 
 // ✅ BETTER: Using AsyncValue (no try-catch needed)
 @riverpod
-class TodoNotifier extends _$TodoNotifier {
+class TodoList extends _$TodoList {
   @override
-  FutureOr<TodoState> build() async {
+  Future<List<Todo>> build() async {
+    final result = await ref.read(getTodosUseCaseProvider)();
     // Riverpod automatically wraps exceptions in AsyncValue.error
-    return TodoState(todos: await getTodosUseCase());
+    return result.when(
+      success: (todos) => todos,
+      failure: (failure) => throw failure,
+    );
   }
 }
 ```

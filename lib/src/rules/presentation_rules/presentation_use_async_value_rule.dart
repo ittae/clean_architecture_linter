@@ -7,75 +7,90 @@ import '../../clean_architecture_linter_base.dart';
 /// Enforces that Presentation State should use AsyncValue for error handling.
 ///
 /// In Clean Architecture with Riverpod, error states should be managed through
-/// AsyncValue pattern, not by storing error fields in State classes. This
-/// ensures proper error handling and UI state management.
+/// AsyncValue pattern, not by storing error fields in State classes. This rule
+/// detects common anti-patterns where error information is manually stored.
 ///
-/// Error handling flow:
-/// - Notifier: Returns Future → Riverpod auto-wraps in AsyncValue
-/// - State: Pure data, no error fields
-/// - Widget: Uses AsyncValue.when() to handle loading/error/data states
+/// **This rule is intentionally conservative** - it only flags obvious error fields
+/// to avoid false positives. For comprehensive guidance on state management patterns,
+/// see CLAUDE.md § Riverpod State Management Patterns.
 ///
-/// ✅ Correct Pattern:
+/// ✅ Recommended Pattern (3-Tier Architecture):
 /// ```dart
-/// // presentation/states/todo_notifier.dart
+/// // Tier 1: Entity Provider (AsyncNotifier)
 /// @riverpod
-/// class TodoNotifier extends _$TodoNotifier {
+/// class TodoList extends _$TodoList {
 ///   @override
 ///   Future<List<Todo>> build() async {
-///     // ✅ Return Future - Riverpod wraps in AsyncValue
-///     return repository.getTodos();
+///     final result = await ref.read(getTodosUseCaseProvider)();
+///     return result.when(
+///       success: (todos) => todos,
+///       failure: (failure) => throw failure,
+///     );
 ///   }
 /// }
 ///
-/// // presentation/widgets/todo_list.dart
-/// Widget build(BuildContext context, WidgetRef ref) {
-///   final todosAsync = ref.watch(todoNotifierProvider);
-///
-///   // ✅ Use AsyncValue.when() for error handling
-///   return todosAsync.when(
-///     data: (todos) => ListView(...),
-///     loading: () => CircularProgressIndicator(),
-///     error: (error, stack) => ErrorWidget(error),
-///   );
+/// // Tier 2: UI State Provider (UI-only state)
+/// @freezed
+/// class TodoUIState with _$TodoUIState {
+///   const factory TodoUIState({
+///     @Default([]) List<String> selectedIds,  // ✅ UI state only
+///   }) = _TodoUIState;
 /// }
+///
+/// // Widget uses AsyncValue.when()
+/// final todosAsync = ref.watch(todoListProvider);
+/// todosAsync.when(
+///   data: (todos) => ListView(...),
+///   loading: () => CircularProgressIndicator(),
+///   error: (error, stack) => ErrorWidget(error),
+/// );
 /// ```
 ///
-/// ❌ Wrong Pattern:
+/// ❌ Anti-pattern (detected by this rule):
 /// ```dart
-/// // ❌ Storing error in State
 /// @freezed
 /// class TodoState with _$TodoState {
 ///   const factory TodoState({
 ///     @Default([]) List<Todo> todos,
-///     String? errorMessage,  // ❌ Don't store errors in State
-///     bool isLoading,        // ❌ AsyncValue handles loading state
+///     String? errorMessage,  // ❌ Storing error in State
+///     Failure? failure,      // ❌ Storing failure in State
 ///   }) = _TodoState;
 /// }
 /// ```
 ///
-/// See ERROR_HANDLING_GUIDE.md for complete error handling patterns.
+/// **Note**: This rule does NOT enforce the 3-tier architecture strictly.
+/// It only flags obvious error storage anti-patterns. For best practices,
+/// see CLAUDE.md § Riverpod State Management Patterns.
 class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
   const PresentationUseAsyncValueRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'presentation_use_async_value',
     problemMessage:
-        'Presentation State should NOT store error fields. Use AsyncValue for error handling.',
+        'State should NOT store error fields. Use AsyncValue for error handling.',
     correctionMessage:
-        'Remove error fields from State and use AsyncValue pattern:\\n'
-        '  ❌ Bad:  @freezed class State { String? errorMessage; }\\n'
-        '  ✅ Good: @riverpod Future<T> build() => repository.getData()\\n\\n'
-        'AsyncValue automatically handles loading, error, and data states.\\n'
-        'See ERROR_HANDLING_GUIDE.md',
+        'Remove error field and use AsyncValue pattern (3-tier architecture):\\n\\n'
+        'See CLAUDE.md § Riverpod State Management Patterns for complete guide.\\n\\n'
+        'Quick fix:\\n'
+        '  ❌ @freezed class State { String? errorMessage; }\\n'
+        '  ✅ @riverpod class EntityProvider { Future<T> build() {...} }\\n\\n'
+        'AsyncValue automatically handles loading, error, and data states.',
   );
 
-  /// Error-related field names to detect
+  /// Error-related field names to detect (conservative list)
+  ///
+  /// This list intentionally excludes generic names like 'isLoading' to avoid
+  /// false positives. We only flag obvious error storage patterns.
   static const errorFieldNames = {
     'error',
     'errorMessage',
     'errorMsg',
+    'errorText',
+    'errorDescription',
     'failure',
+    'failureMessage',
     'exception',
+    'exceptionMessage',
   };
 
   @override
@@ -132,14 +147,18 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
                   'State should NOT have error field "${variable.name.lexeme}". Use AsyncValue instead.',
               correctionMessage:
                   'Remove error field and use AsyncValue pattern:\\n\\n'
+                  'See CLAUDE.md § Riverpod State Management Patterns\\n\\n'
                   'Instead of storing errors in State:\\n'
-                  '  ❌ @freezed class TodoState { String? ${variable.name.lexeme}; }\\n\\n'
-                  'Use Riverpod AsyncValue:\\n'
+                  '  ❌ @freezed class State { String? ${variable.name.lexeme}; }\\n\\n'
+                  'Use AsyncNotifier with AsyncValue:\\n'
                   '  ✅ @riverpod\\n'
-                  '     class TodoNotifier extends _\$TodoNotifier {\\n'
-                  '       @override\\n'
-                  '       Future<List<Todo>> build() async {\\n'
-                  '         return repository.getTodos();\\n'
+                  '     class EntityProvider extends _\$EntityProvider {\\n'
+                  '       Future<List<Entity>> build() async {\\n'
+                  '         final result = await useCase();\\n'
+                  '         return result.when(\\n'
+                  '           success: (data) => data,\\n'
+                  '           failure: (f) => throw f,\\n'
+                  '         );\\n'
                   '       }\\n'
                   '     }\\n\\n'
                   'AsyncValue handles loading, error, and data states automatically.',
@@ -182,10 +201,11 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
           problemMessage:
               'State should NOT have error parameter "$paramName". Use AsyncValue instead.',
           correctionMessage:
-              'Remove error parameter and use AsyncValue pattern:\\n'
+              'Remove error parameter and use AsyncValue pattern:\\n\\n'
+              'See CLAUDE.md § Riverpod State Management Patterns\\n\\n'
               '  ❌ factory State({ String? $paramName })\\n'
-              '  ✅ Use @riverpod Future<T> build() pattern\\n\\n'
-              'See ERROR_HANDLING_GUIDE.md',
+              '  ✅ @riverpod Future<Entity> build() pattern\\n\\n'
+              'AsyncValue handles loading, error, and data states automatically.',
         );
         reporter.atNode(nameNode, code);
       }
