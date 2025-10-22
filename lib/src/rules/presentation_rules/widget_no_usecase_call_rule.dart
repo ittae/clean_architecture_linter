@@ -124,8 +124,7 @@ class WidgetNoUseCaseCallRule extends CleanArchitectureLintRule {
     if (_isUseCaseImport(importUri)) {
       final code = LintCode(
         name: 'widget_no_usecase_call',
-        problemMessage:
-            'Widget/Page should NOT import UseCase: $importUri',
+        problemMessage: 'Widget/Page should NOT import UseCase: $importUri',
         correctionMessage:
             'Remove UseCase import. Create a Provider that calls the UseCase instead.\n\n'
             '❌ Current:\n'

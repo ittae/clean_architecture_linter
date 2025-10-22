@@ -103,7 +103,7 @@ Follow the official [Dart Style Guide](https://dart.dev/effective-dart/style) wi
 
 1. **Formatting**: Always run `dart format` before committing:
    ```bash
-   dart format --line-length=120 .
+   dart format .
    ```
 
 2. **Analysis**: Ensure no analysis issues:
@@ -265,7 +265,7 @@ BREAKING CHANGE: bloc_proper_state_management now requires different patterns
 
 2. **Run all checks**:
    ```bash
-   dart format --line-length=120 .
+   dart format .
    dart analyze
    dart test
    cd example && dart pub run custom_lint
@@ -420,7 +420,7 @@ We use [Semantic Versioning](https://semver.org/):
 2. **Update CHANGELOG.md** with release notes
 3. **Run all checks**:
    ```bash
-   dart format --line-length=120 .
+   dart format .
    dart analyze
    dart test
    dart pub publish --dry-run

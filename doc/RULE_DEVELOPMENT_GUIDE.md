@@ -547,7 +547,7 @@ return _normalizePath(filePath).contains('/domain/') ||
 - [ ] Tested with `dart run custom_lint` in example
 - [ ] All tests passing (`dart pub test`)
 - [ ] No warnings (`dart analyze`)
-- [ ] Formatted (`dart format --line-length=120 .`)
+- [ ] Formatted (`dart format .`)
 - [ ] Documentation updated (README.md, CLAUDE.md)
 
 ## Common Pitfalls

@@ -30,8 +30,7 @@ void main() {
       });
 
       test('detects file ending with _screen.dart', () {
-        final path =
-            '/project/lib/features/todo/presentation/todo_screen.dart';
+        final path = '/project/lib/features/todo/presentation/todo_screen.dart';
         expect(rule.isWidgetOrPageFile(path), isTrue);
       });
 
@@ -86,8 +85,7 @@ void main() {
       });
 
       test('rejects Entity import', () {
-        final importUri =
-            'package:app/features/todo/domain/entities/todo.dart';
+        final importUri = 'package:app/features/todo/domain/entities/todo.dart';
         expect(rule.isUseCaseImport(importUri), isFalse);
       });
 

@@ -49,8 +49,8 @@ dart pub test
 # Check code quality
 dart analyze
 
-# Format code (IMPORTANT: use 120 character line length)
-dart format --line-length=120 .
+# Format code
+dart format .
 
 # Test with example project
 cd example && dart run custom_lint
@@ -458,9 +458,8 @@ dart pub test --watch
 ### Dart Style Guidelines
 
 1. **Formatting**:
-   - **Important**: This project uses 120 characters line length instead of the default 80
-   - Use `dart format --line-length=120 .` before committing
-   - Your IDE should be configured to use 120 characters (see `.vscode/settings.json`)
+   - Use `dart format .` before committing
+   - Follow Dart's default formatting style (80 character line length)
    - Follow naming conventions (camelCase, PascalCase)
    - Prefer expression bodies for simple functions
 
@@ -507,7 +506,7 @@ dart pub test --watch
 1. **Run Quality Checks**:
    ```bash
    dart analyze
-   dart format --line-length=120 .
+   dart format .
    dart pub test
    cd example && dart run custom_lint
    ```

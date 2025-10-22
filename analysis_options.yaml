@@ -30,8 +30,7 @@ analyzer:
     - custom_lint
 
 # Code formatting guidelines for contributors:
-# This project uses 120 characters line length instead of the default 80.
-# Please format your code using: dart format --line-length=120 .
+# Please format your code using: dart format .
 
 # For more information about the core and recommended set of lints, see
 # https://dart.dev/go/core-lints
