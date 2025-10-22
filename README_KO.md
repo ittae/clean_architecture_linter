@@ -112,10 +112,6 @@ dart pub custom_lint
 custom_lint:
   rules:
     - clean_architecture_linter_require_test: true
-      check_usecases: true       # UseCase 테스트 필수
-      check_repositories: true   # Repository 테스트 필수
-      check_datasources: true    # DataSource 테스트 필수
-      check_notifiers: true      # Notifier 테스트 필수
 ```
 
 ## 🚦 사용법
@@ -126,18 +122,19 @@ custom_lint:
 
 ```
 lib/
-├── domain/
-│   ├── entities/
-│   ├── repositories/
-│   └── usecases/
-├── data/
-│   ├── datasources/
-│   ├── models/
-│   └── repositories/
-└── presentation/
-    ├── providers/
-    ├── widgets/
-    └── pages/
+├── {feature_name}/
+│   ├── domain/
+│   │   ├── entities/
+│   │   ├── repositories/
+│   │   └── usecases/
+│   ├── data/
+│   │   ├── datasources/
+│   │   ├── models/
+│   │   └── repositories/
+│   └── presentation/
+│       ├── providers/
+│       ├── widgets/
+│       └── pages/
 ```
 
 ### 린터 실행
@@ -147,7 +144,7 @@ lib/
 dart pub global activate custom_lint
 
 # 린터 실행
-dart pub custom_lint
+dart run custom_lint
 ```
 
 ### IDE 통합

@@ -6,20 +6,19 @@
 
 ```
 lib/
-├── data/           # 데이터 레이어
-│   ├── datasources/
-│   ├── models/
-│   └── repositories/
-├── domain/         # 도메인 레이어  
-│   ├── entities/
-│   ├── repositories/
-│   └── usecases/
-├── presentation/   # 프레젠테이션 레이어
-│   ├── providers/
-│   ├── widgets/
-│   └── pages/
-└── framework/      # 프레임워크 레이어
-    └── main.dart
+├── {feature_name}/
+│   ├── data/           # 데이터 레이어
+│   │   ├── datasources/
+│   │   ├── models/
+│   │   └── repositories/
+│   ├── domain/         # 도메인 레이어
+│   │   ├── entities/
+│   │   ├── repositories/
+│   │   └── usecases/
+│   ├── presentation/   # 프레젠테이션 레이어
+│   │   ├── providers/
+│   │   ├── widgets/
+│   │   └── pages/
 ```
 
 ## ✅ Good Examples
@@ -470,13 +469,7 @@ analyzer:
 
 custom_lint:
   rules:
-    - avoid_layer_dependency_violation
-    - avoid_exception_throwing_in_repository
-    - ensure_exception_prefix
-    - entity_immutability
-    - domain_purity
-    - business_logic_isolation
-    - avoid_circular_dependency
+      - clean_architecture_linter_require_test: true
 ```
 
 2. Run the linter:

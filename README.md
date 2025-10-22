@@ -128,18 +128,19 @@ Organize your Flutter project following Clean Architecture:
 
 ```
 lib/
-├── domain/
-│   ├── entities/
-│   ├── repositories/
-│   └── usecases/
-├── data/
-│   ├── datasources/
-│   ├── models/
-│   └── repositories/
-└── presentation/
-    ├── providers/
-    ├── widgets/
-    └── pages/
+├── {feature_name}/
+│   ├── domain/
+│   │   ├── entities/
+│   │   ├── repositories/
+│   │   └── usecases/
+│   ├── data/
+│   │   ├── datasources/
+│   │   ├── models/
+│   │   └── repositories/
+│   └── presentation/
+│       ├── providers/
+│       ├── widgets/
+│       └── pages/
 ```
 
 ### Running the Linter
@@ -149,7 +150,7 @@ lib/
 dart pub global activate custom_lint
 
 # Run the linter
-dart pub custom_lint
+dart run custom_lint
 ```
 
 ### IDE Integration
