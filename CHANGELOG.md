@@ -5,6 +5,63 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2025-10-22
+
+### ✨ Added (2 new rules)
+
+- **widget_no_usecase_call rule** - Enforce proper Riverpod architecture: Widget → Provider → UseCase
+  - Prevents widgets from directly importing or calling UseCases
+  - Enforces proper separation: Widgets should only interact with Providers
+  - Detects UseCase imports in widget/page files
+  - Detects direct UseCase provider calls via `ref.read()` or `ref.watch()`
+  - Provides comprehensive correction messages with proper Riverpod patterns
+  - Severity: WARNING
+
+- **widget_ref_read_then_when rule** - Prevent anti-pattern of using `.when()` after `ref.read()`
+  - Detects `ref.read()` followed by `.when()` in the same function
+  - Enforces proper patterns: `ref.watch()` + `.when()` for UI, `ref.listen()` for side effects
+  - Prevents misuse of AsyncValue state management
+  - Explains why this pattern is incorrect (state is already settled after operation)
+  - Provides three correct alternatives based on use case
+  - Severity: WARNING
+
+### 🔄 Changed
+
+- **presentation_no_throw rule** - Enhanced detection capabilities
+  - Now checks `/providers/` directory in addition to `/states/` and `/state/`
+  - Improved State/Notifier class detection with three methods:
+    1. Detects `@riverpod` annotation (Riverpod Generator pattern)
+    2. Detects `extends AsyncNotifier/Notifier/StateNotifier/ChangeNotifier`
+    3. Detects generated classes with `_$` prefix
+  - More robust validation of Riverpod-based state management classes
+  - Better coverage of modern Riverpod code generation patterns
+
+- **Total rules: 31** (was 29 in v1.0.3)
+  - Added: 2 new presentation layer rules
+  - Modified: 1 rule (presentation_no_throw)
+
+### 📝 Documentation
+
+- Enhanced CLAUDE.md with comprehensive Riverpod state management patterns
+  - Added 3-tier provider architecture documentation
+  - Documented Entity Providers (AsyncNotifier), UI State Providers (Notifier), and Computed Logic Providers
+  - Added detailed examples of AsyncValue.when() pattern usage
+  - Included common violations and their solutions
+  - Comprehensive Widget usage examples with proper error handling
+
+### 📊 Statistics
+
+- **Files changed**: 5 files
+  - 2 new rule implementations
+  - 1 rule enhancement
+  - 1 test file
+  - 1 main registration file
+- **Lines added**: ~600+ lines
+  - widget_no_usecase_call_rule.dart: 265 lines
+  - widget_ref_read_then_when_rule.dart: 301 lines
+  - Enhanced presentation_no_throw_rule.dart
+- **Test coverage**: Comprehensive unit tests for widget_no_usecase_call rule
+
 ## [1.0.3] - 2025-10-17
 
 ### ✨ Added (3 new rules)

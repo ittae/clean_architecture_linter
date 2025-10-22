@@ -48,7 +48,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 21. **DataSource Exception Types** - Use defined data layer exceptions only
 22. **Failure Naming Convention** - Feature prefix for Failure classes
 
-### 🎨 Presentation Layer Rules (7 rules)
+### 🎨 Presentation Layer Rules (9 rules)
 23. **No Presentation Models** - Use Freezed State instead of ViewModels
 24. **Extension Location** - Extensions in same file as the class
 25. **Freezed Usage** - Use Freezed instead of Equatable
@@ -56,6 +56,8 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 27. **Presentation No Data Exceptions** - Use domain exceptions only
 28. **Presentation Use AsyncValue** - Use AsyncValue for error handling (3-tier architecture)
 29. **Presentation No Throw** - No exception throwing in Presentation layer
+30. **Widget No UseCase Call** - Widgets should not call UseCases directly (use Providers)
+31. **Widget Ref Read Then When** - Avoid using .when() after ref.read() (anti-pattern)
 
 ### 🧪 Optional: Test Coverage Rule
 **Test Coverage** - Enforces test files for UseCases, Repositories, DataSources, and Notifiers (disabled by default)
@@ -76,7 +78,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 ```yaml
 # pubspec.yaml
 dev_dependencies:
-  clean_architecture_linter: ^1.0.3
+  clean_architecture_linter: ^1.0.4
   custom_lint: ^0.7.6
 ```
 

@@ -47,6 +47,8 @@ import 'src/rules/presentation_rules/riverpod_generator_rule.dart';
 import 'src/rules/presentation_rules/presentation_no_data_exceptions_rule.dart';
 import 'src/rules/presentation_rules/presentation_use_async_value_rule.dart';
 import 'src/rules/presentation_rules/presentation_no_throw_rule.dart';
+import 'src/rules/presentation_rules/widget_no_usecase_call_rule.dart';
+import 'src/rules/presentation_rules/widget_ref_read_then_when_rule.dart';
 
 /// Plugin entry point for Clean Architecture Linter.
 PluginBase createPlugin() => _CleanArchitectureLinterPlugin();
@@ -145,7 +147,7 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
       // 22. Model Entity Direct Access - Use toEntity() instead of .entity
       ModelEntityDirectAccessRule(),
 
-      // Presentation Layer Rules (7 rules)
+      // Presentation Layer Rules (9 rules)
 
       // 23. No Presentation Models - Use Freezed State instead
       NoPresentationModelsRule(),
@@ -167,6 +169,12 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
 
       // 29. Presentation No Throw - States should not throw exceptions
       PresentationNoThrowRule(),
+
+      // 30. Widget No UseCase Call - Widgets should not call UseCases directly
+      WidgetNoUseCaseCallRule(),
+
+      // 31. Widget Ref Read Then When - Avoid using .when() after ref.read()
+      WidgetRefReadThenWhenRule(),
     ];
 
     // Conditionally add test coverage rule if enabled

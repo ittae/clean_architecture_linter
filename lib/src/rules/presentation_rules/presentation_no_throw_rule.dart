@@ -96,8 +96,12 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
     // Only check Presentation layer files
     if (!CleanArchitectureUtils.isPresentationFile(filePath)) return;
 
-    // Only check /states/ directory (Riverpod Notifiers, Bloc, etc.)
-    if (!filePath.contains('/states/') && !filePath.contains('/state/')) return;
+    // Check /states/, /state/, or /providers/ directories
+    if (!filePath.contains('/states/') &&
+        !filePath.contains('/state/') &&
+        !filePath.contains('/providers/')) {
+      return;
+    }
 
     // Check if throw is inside a State/Notifier class
     final classNode = CleanArchitectureUtils.findParentClass(node);
@@ -105,8 +109,8 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
 
     final className = classNode.name.lexeme;
 
-    // Skip if not a State/Notifier class
-    if (!_isStateOrNotifierClass(className)) return;
+    // Skip if not a State/Notifier/Provider class
+    if (!_isStateOrNotifierClass(className, classNode)) return;
 
     // Find the method containing this throw
     final methodNode = _findParentMethod(node);
@@ -144,8 +148,36 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
     reporter.atNode(node, code);
   }
 
-  /// Checks if class name suggests it's a State or Notifier class
-  bool _isStateOrNotifierClass(String className) {
+  /// Checks if class is a State/Notifier/Provider class
+  ///
+  /// Detection methods:
+  /// 1. Has @riverpod annotation (Riverpod Generator pattern)
+  /// 2. Extends AsyncNotifier, Notifier, StateNotifier
+  /// 3. Class name contains State/Notifier/Provider/Bloc keywords
+  bool _isStateOrNotifierClass(String className, ClassDeclaration classNode) {
+    // Check for @riverpod annotation (Riverpod Generator)
+    for (final metadata in classNode.metadata) {
+      final name = metadata.name.name;
+      if (name == 'riverpod' || name == 'Riverpod') {
+        return true;
+      }
+    }
+
+    // Check if extends AsyncNotifier, Notifier, StateNotifier
+    final extendsClause = classNode.extendsClause;
+    if (extendsClause != null) {
+      final superclass = extendsClause.superclass.name2.lexeme;
+      if (superclass == 'AsyncNotifier' ||
+          superclass == 'Notifier' ||
+          superclass == 'StateNotifier' ||
+          superclass == 'ChangeNotifier' ||
+          superclass.startsWith('_\$')) {
+        // _$ prefix indicates generated Riverpod class
+        return true;
+      }
+    }
+
+    // Fallback: Check class name pattern
     return className.contains('Notifier') ||
         className.contains('State') ||
         className.contains('Provider') ||
