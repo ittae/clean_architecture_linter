@@ -1,5 +1,5 @@
 name: clean_architecture_linter
-description: A comprehensive custom lint package that automatically enforces Clean Architecture principles in Flutter projects with specialized rules.
+description: A comprehensive custom lint package that automatically enforces Clean Architecture principles in Flutter projects with Riverpod state management.
 version: 1.0.4
 repository: https://github.com/ittae/clean_architecture_linter
 homepage: https://github.com/ittae/clean_architecture_linter
@@ -12,6 +12,8 @@ topics:
   - custom-lint
   - linter
   - static-analysis
+  - riverpod
+  - flutter
 
 environment:
   sdk: '^3.6.0'

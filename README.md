@@ -5,12 +5,14 @@
 
 > 🇰🇷 [한국어 README](README_KO.md) | 🇺🇸 English README
 
-A comprehensive custom lint package that **automatically enforces Clean Architecture principles** in Flutter/Dart projects. Write code naturally while the linter guides you toward perfect Clean Architecture compliance with real-time feedback and actionable corrections.
+A comprehensive custom lint package that **automatically enforces Clean Architecture principles** in Flutter/Dart projects with **Riverpod state management**. Write code naturally while the linter guides you toward perfect Clean Architecture compliance with real-time feedback and actionable corrections.
+
+> ⚠️ **Note**: This package is designed for projects using [Riverpod](https://pub.dev/packages/riverpod) for state management. Some presentation layer rules specifically validate Riverpod patterns.
 
 ## ✨ Key Features
 
 - 🛡️ **Automatic Clean Architecture Protection** - Write code freely, linter catches violations
-- 🎯 **29 Specialized Rules** - Comprehensive coverage of all Clean Architecture layers
+- 🎯 **33 Specialized Rules** - Comprehensive coverage of all Clean Architecture layers
 - 🚀 **Flutter-Optimized** - Built specifically for Flutter development patterns
 - 🎨 **Riverpod State Management** - Enforces 3-tier provider architecture (Entity → UI → Computed)
 - 📚 **Educational** - Learn Clean Architecture through guided corrections
@@ -18,7 +20,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 - 🔧 **Zero Configuration** - Works out of the box with sensible defaults
 - 🧪 **Test-Aware** - Smart exceptions for test files and development contexts
 
-## 📋 Rules Overview (29 Rules)
+## 📋 Rules Overview (33 Rules)
 
 ### 🌐 Core Clean Architecture Principles (6 rules)
 1. **Layer Dependency** - Enforces dependency direction (inward only)
@@ -48,7 +50,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 21. **DataSource Exception Types** - Use defined data layer exceptions only
 22. **Failure Naming Convention** - Feature prefix for Failure classes
 
-### 🎨 Presentation Layer Rules (9 rules)
+### 🎨 Presentation Layer Rules (11 rules)
 23. **No Presentation Models** - Use Freezed State instead of ViewModels
 24. **Extension Location** - Extensions in same file as the class
 25. **Freezed Usage** - Use Freezed instead of Equatable
@@ -58,6 +60,8 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 29. **Presentation No Throw** - No exception throwing in Presentation layer
 30. **Widget No UseCase Call** - Widgets should not call UseCases directly (use Providers)
 31. **Widget Ref Read Then When** - Avoid using .when() after ref.read() (anti-pattern)
+32. **Riverpod Ref Usage** - Use ref.watch() in build(), ref.read() in methods (with UseCase detection)
+33. **Riverpod Provider Naming** - Provider functions must include type suffix (repository/usecase/datasource)
 
 ### 🧪 Optional: Test Coverage Rule
 **Test Coverage** - Enforces test files for UseCases, Repositories, DataSources, and Notifiers (disabled by default)
@@ -72,6 +76,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 
 - **Dart SDK**: 3.6.0+
 - **Flutter**: 3.0+ (optional, for Flutter projects)
+- **Riverpod**: Required for presentation layer rules (riverpod_generator recommended)
 
 ### 1. Add to your project
 
