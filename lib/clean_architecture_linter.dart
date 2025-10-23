@@ -49,6 +49,8 @@ import 'src/rules/presentation_rules/presentation_use_async_value_rule.dart';
 import 'src/rules/presentation_rules/presentation_no_throw_rule.dart';
 import 'src/rules/presentation_rules/widget_no_usecase_call_rule.dart';
 import 'src/rules/presentation_rules/widget_ref_read_then_when_rule.dart';
+import 'src/rules/presentation_rules/riverpod_ref_usage_rule.dart';
+import 'src/rules/presentation_rules/riverpod_provider_naming_rule.dart';
 
 /// Plugin entry point for Clean Architecture Linter.
 PluginBase createPlugin() => _CleanArchitectureLinterPlugin();
@@ -147,7 +149,7 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
       // 22. Model Entity Direct Access - Use toEntity() instead of .entity
       ModelEntityDirectAccessRule(),
 
-      // Presentation Layer Rules (9 rules)
+      // Presentation Layer Rules (11 rules)
 
       // 23. No Presentation Models - Use Freezed State instead
       NoPresentationModelsRule(),
@@ -175,6 +177,12 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
 
       // 31. Widget Ref Read Then When - Avoid using .when() after ref.read()
       WidgetRefReadThenWhenRule(),
+
+      // 32. Riverpod Ref Usage - Use ref.watch() in build(), ref.read() in methods
+      RiverpodRefUsageRule(),
+
+      // 33. Riverpod Provider Naming - Provider functions must include type suffix
+      RiverpodProviderNamingRule(),
     ];
 
     // Conditionally add test coverage rule if enabled

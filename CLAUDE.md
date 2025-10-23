@@ -487,6 +487,155 @@ class ScheduleUI extends _$ScheduleUI {
 
 **Why**: IDs are immutable and stable, entities change. Using IDs enables proper caching, invalidation, and dependency tracking.
 
+#### ❌ Violation: Incorrect ref.watch() / ref.read() Usage
+
+**Problem**:
+```dart
+// ❌ WRONG - ref.read() for State provider in build() misses reactive updates
+@riverpod
+class TodoList extends _$TodoList {
+  @override
+  Future<List<Todo>> build() async {
+    final user = ref.read(currentUserProvider);  // ❌ Won't rebuild when user changes
+    return getTodos(user.id);
+  }
+}
+
+// ❌ WRONG - ref.watch() in method creates unwanted dependency
+@riverpod
+class TodoNotifier extends _$TodoNotifier {
+  Future<void> createTodo(String title) async {
+    final user = ref.watch(currentUserProvider);  // ❌ Creates unwanted dependency
+    await repository.createTodo(user.id, title);
+  }
+}
+```
+
+**Solution**:
+```dart
+// ✅ CORRECT - ref.watch() for State provider in build()
+@riverpod
+class TodoList extends _$TodoList {
+  @override
+  Future<List<Todo>> build() async {
+    final user = ref.watch(currentUserProvider);  // ✅ Rebuilds when user changes
+    return getTodos(user.id);
+  }
+}
+
+// ✅ CORRECT - ref.read() for UseCase provider in build()
+@riverpod
+class ScheduleList extends _$ScheduleList {
+  @override
+  Future<List<Schedule>> build() async {
+    final result = await ref.read(getScheduleListUseCaseProvider)();  // ✅ One-time UseCase call
+    return result.when(
+      success: (schedules) => schedules,
+      failure: (failure) => throw failure,
+    );
+  }
+}
+
+// ✅ CORRECT - ref.read() in methods for one-time access
+@riverpod
+class TodoNotifier extends _$TodoNotifier {
+  Future<void> createTodo(String title) async {
+    final user = ref.read(currentUserProvider);  // ✅ One-time read
+    await repository.createTodo(user.id, title);
+  }
+}
+
+// ✅ CORRECT - ref.read() for .notifier access
+@riverpod
+class TodoUI extends _$TodoUI {
+  void confirmSchedule() {
+    ref.read(scheduleProvider.notifier).confirm();  // ✅ .notifier always uses ref.read()
+  }
+}
+```
+
+**Why**:
+- `ref.watch()` creates reactive dependencies that rebuild when the provider changes
+- `ref.read()` reads the current value without creating dependencies
+- **State providers** (other Notifiers) need `ref.watch()` in `build()` to rebuild when data changes
+- **UseCase providers** (one-time function calls) use `ref.read()` because they don't need reactive tracking
+- Using `ref.read()` for State providers in `build()` means the provider won't rebuild (stale data)
+- Using `ref.watch()` in methods creates unwanted dependencies and can cause unnecessary rebuilds
+
+**Rules**:
+- ✅ In `build()` methods: Use `ref.watch()` for **State providers** (reactive dependencies)
+- ✅ In `build()` methods: Use `ref.read()` for **UseCase providers** (one-time function calls)
+- ✅ In `build()` methods: Use `ref.read()` for **`.notifier` access**
+- ✅ In other methods: Use `ref.read()` for all providers (one-time reads)
+- ✅ Exception: `ref.listen()` can be used in `build()` for side effects without returning values
+
+**UseCase Provider Identification**:
+- Provider name ends with `UseCaseProvider` (e.g., `getTodosUseCaseProvider`)
+- Provider name starts with action verbs: `get`, `create`, `update`, `delete`, `fetch`, `save`, `load`, `submit`, `send`, `retrieve`
+- Followed by immediate function call: `ref.read(useCaseProvider)()`
+
+#### ❌ Violation: Provider Function Missing Type Suffix
+
+**Problem**:
+```dart
+// ❌ WRONG - Missing 'usecase' suffix
+@riverpod
+GetEventsUsecase getEvents(Ref ref) {
+  return GetEventsUsecase(ref.watch(eventRepositoryProvider));
+}
+// Generates: getEventsProvider (ambiguous!)
+
+// ❌ WRONG - Missing 'repository' suffix
+@riverpod
+EventRepository eventRepo(Ref ref) {
+  return EventRepositoryImpl(ref.watch(eventDataSourceProvider));
+}
+// Generates: eventRepoProvider (ambiguous!)
+
+// ❌ WRONG - Missing 'datasource' suffix
+@riverpod
+EventDataSource eventData(Ref ref) {
+  return EventRemoteDataSource();
+}
+// Generates: eventDataProvider (ambiguous!)
+```
+
+**Solution**:
+```dart
+// ✅ CORRECT - Includes 'usecase' suffix
+@riverpod
+GetEventsUsecase getEventsUsecase(Ref ref) {
+  return GetEventsUsecase(ref.watch(eventRepositoryProvider));
+}
+// Generates: getEventsUsecaseProvider (clear!)
+
+// ✅ CORRECT - Includes 'repository' suffix
+@riverpod
+EventRepository eventRepository(Ref ref) {
+  return EventRepositoryImpl(ref.watch(eventDataSourceProvider));
+}
+// Generates: eventRepositoryProvider (clear!)
+
+// ✅ CORRECT - Includes 'datasource' suffix
+@riverpod
+EventDataSource eventDataSource(Ref ref) {
+  return EventRemoteDataSource();
+}
+// Generates: eventDataSourceProvider (clear!)
+```
+
+**Why**:
+- Riverpod code generation creates provider names from function names
+- Without proper suffix, generated provider names are ambiguous (e.g., `getEventsProvider`)
+- With proper suffix, provider names are clear (e.g., `getEventsUsecaseProvider`)
+- Proper naming enables automatic UseCase provider detection in `ref.watch()`/`ref.read()` rules
+- Consistent naming improves codebase maintainability
+
+**Rules**:
+- ✅ Repository return type: function name must end with `repository`
+- ✅ UseCase return type: function name must end with `usecase`
+- ✅ DataSource return type: function name must end with `datasource`
+
 ### Key Principles
 
 1. **Entity Providers**: Use `AsyncNotifier` with `Future<T> build()` for domain data
