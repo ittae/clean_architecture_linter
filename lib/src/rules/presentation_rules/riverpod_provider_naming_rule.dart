@@ -182,39 +182,67 @@ class RiverpodProviderNamingRule extends CleanArchitectureLintRule {
   ///
   /// Returns:
   /// - "repository" for Repository types
-  /// - "usecase" for UseCase types
+  /// - "usecase" for UseCase/Usecase types (case-insensitive)
   /// - "datasource" for DataSource types
   /// - null for other types
   String? _getRequiredSuffix(String returnTypeName) {
-    final lowerTypeName = returnTypeName.toLowerCase();
+    // Extract the actual suffix from the return type to preserve casing
+    // e.g., "GetEventsUsecase" -> "Usecase"
+    // e.g., "GetEventsUseCase" -> "UseCase"
+    // e.g., "EventRepository" -> "Repository"
 
     // Check for Repository
-    if (lowerTypeName.contains('repository')) {
-      return 'repository';
-    }
+    final repositoryMatch = _extractSuffix(returnTypeName, 'repository');
+    if (repositoryMatch != null) return repositoryMatch;
 
-    // Check for UseCase
-    if (lowerTypeName.contains('usecase')) {
-      return 'usecase';
-    }
+    // Check for UseCase (handle UseCase/Usecase/usecase variations)
+    final usecaseMatch = _extractSuffix(returnTypeName, 'usecase');
+    if (usecaseMatch != null) return usecaseMatch;
 
     // Check for DataSource
-    if (lowerTypeName.contains('datasource')) {
-      return 'datasource';
-    }
+    final datasourceMatch = _extractSuffix(returnTypeName, 'datasource');
+    if (datasourceMatch != null) return datasourceMatch;
 
     return null;
+  }
+
+  /// Extract suffix from return type name (case-insensitive)
+  ///
+  /// Returns the actual suffix with original casing from the return type.
+  /// Example:
+  /// - extractSuffix("GetEventsUsecase", "usecase") -> "Usecase"
+  /// - extractSuffix("GetEventsUseCase", "usecase") -> "UseCase"
+  /// - extractSuffix("EventRepository", "repository") -> "Repository"
+  String? _extractSuffix(String returnTypeName, String suffix) {
+    final lowerTypeName = returnTypeName.toLowerCase();
+    final lowerSuffix = suffix.toLowerCase();
+
+    if (!lowerTypeName.contains(lowerSuffix)) return null;
+
+    // Find the position of the suffix (case-insensitive)
+    final index = lowerTypeName.lastIndexOf(lowerSuffix);
+    if (index == -1) return null;
+
+    // Extract the suffix with original casing
+    return returnTypeName.substring(index, index + suffix.length);
   }
 
   /// Suggest function name with proper suffix
   String _suggestFunctionName(String currentName, String requiredSuffix) {
     // If name is in camelCase, preserve it
-    // Example: getEvents -> getEventsUsecase
-    // Example: eventRepo -> eventRepository
+    // Example: getEvents -> getEventsUsecase (if suffix is "Usecase")
+    // Example: getEvents -> getEventsUseCase (if suffix is "UseCase")
+    // Example: eventRepo -> eventRepository (if suffix is "Repository")
 
-    // Capitalize first letter of suffix for camelCase
-    final capitalizedSuffix =
-        requiredSuffix[0].toUpperCase() + requiredSuffix.substring(1);
+    // Capitalize first letter of suffix for camelCase if it's not already capitalized
+    if (requiredSuffix.isEmpty) return currentName;
+
+    final firstChar = requiredSuffix[0];
+    final isAlreadyCapitalized = firstChar == firstChar.toUpperCase();
+
+    final capitalizedSuffix = isAlreadyCapitalized
+        ? requiredSuffix
+        : firstChar.toUpperCase() + requiredSuffix.substring(1);
 
     return '$currentName$capitalizedSuffix';
   }

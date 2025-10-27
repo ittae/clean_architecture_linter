@@ -70,20 +70,22 @@ void main() {
         }
       });
 
-      test('detects UseCase return types', () {
+      test('detects UseCase return types with different casings', () {
         final useCaseTypes = [
-          'GetEventsUsecase',
+          'GetEventsUsecase',  // Capital U, lowercase c
           'CreateEventUsecase',
           'UpdateEventUsecase',
           'DeleteEventUsecase',
-          'GetEventsUseCase',
+          'GetEventsUseCase',  // Capital U, Capital C
+          'GetMyFollowEventsUsecase',  // Real-world example
         ];
 
         for (final typeName in useCaseTypes) {
+          final suffix = _getRequiredSuffix(typeName);
           expect(
-            _getRequiredSuffix(typeName),
+            suffix?.toLowerCase(),
             'usecase',
-            reason: '$typeName should require "usecase" suffix',
+            reason: '$typeName should require "usecase" suffix (case-insensitive)',
           );
         }
       });
@@ -217,6 +219,31 @@ void main() {
             _hasViolation(naming),
             isFalse,
             reason: '${naming.functionName} should be valid (case-insensitive)',
+          );
+        }
+      });
+
+      test('handles all UseCase/Usecase/usecase casing variations', () {
+        final testCases = [
+          // Return type: GetEventsUsecase (capital U, lowercase c)
+          ProviderNaming(functionName: 'getEventsUsecase', returnType: 'GetEventsUsecase'),
+          ProviderNaming(functionName: 'getEventsUseCase', returnType: 'GetEventsUsecase'),
+          ProviderNaming(functionName: 'getEventsusecase', returnType: 'GetEventsUsecase'),
+
+          // Return type: GetEventsUseCase (capital U, capital C)
+          ProviderNaming(functionName: 'getEventsUsecase', returnType: 'GetEventsUseCase'),
+          ProviderNaming(functionName: 'getEventsUseCase', returnType: 'GetEventsUseCase'),
+          ProviderNaming(functionName: 'getEventsusecase', returnType: 'GetEventsUseCase'),
+
+          // Real-world example from error message
+          ProviderNaming(functionName: 'getMyFollowEventsUsecase', returnType: 'GetMyFollowEventsUsecase'),
+        ];
+
+        for (final naming in testCases) {
+          expect(
+            _hasViolation(naming),
+            isFalse,
+            reason: '${naming.functionName} should be valid for return type ${naming.returnType}',
           );
         }
       });
