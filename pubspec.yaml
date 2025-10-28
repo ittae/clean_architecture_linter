@@ -21,10 +21,12 @@ platforms:
   macos:
   windows:
 
-dev_dependencies:
+dependencies:
   analyzer: ^7.6.0
-  custom_lint: ^0.8.0
   custom_lint_builder: ^0.8.0
-  lints: ^6.0.0
   path: ^1.9.1
+
+dev_dependencies:
+  custom_lint: ^0.8.0
+  lints: ^6.0.0
   test: ^1.26.3

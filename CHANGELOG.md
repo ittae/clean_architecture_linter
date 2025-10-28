@@ -9,15 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🔧 Fixed
 
-- **Fixed pub.dev installation instructions**
-  - Moved all dependencies to `dev_dependencies` section
-  - Now correctly displays as dev dependency in pub.dev Installing tab
-  - Users will see: `dev_dependencies: clean_architecture_linter: ^1.0.6`
+- **Fixed package dependencies structure**
+  - Moved `analyzer`, `custom_lint_builder`, and `path` back to `dependencies`
+  - These packages are used in `lib/` code and must be runtime dependencies
+  - `custom_lint`, `lints`, and `test` remain in `dev_dependencies`
+  - Note: End users still add this package to `dev_dependencies` in their projects
 
 ### 📦 Dependencies
 
-- Moved `analyzer`, `custom_lint_builder`, and `path` from `dependencies` to `dev_dependencies`
-- This package is a development tool and should only be used as a dev dependency
+- Runtime dependencies (used in lib/): `analyzer`, `custom_lint_builder`, `path`
+- Dev dependencies (development only): `custom_lint`, `lints`, `test`
 
 ## [1.0.5] - 2025-10-28
 
