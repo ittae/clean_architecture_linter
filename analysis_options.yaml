@@ -29,9 +29,6 @@ analyzer:
   plugins:
     - custom_lint
 
-# Code formatting guidelines for contributors:
-# Please format your code using: dart format .
-
 # For more information about the core and recommended set of lints, see
 # https://dart.dev/go/core-lints
 

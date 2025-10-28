@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.5] - 2025-10-28
+
+### 🔧 Changed
+
+- **Upgraded custom_lint_builder** from `0.7.6` to `0.8.0`
+  - Ensures compatibility with riverpod_generator 3.0.0
+  - Upgraded custom_lint dev dependency to `0.8.0`
+  - All 527 tests pass successfully
+  - No breaking API changes required
+  - Maintains backward compatibility
+
+### 📦 Dependencies
+
+- `custom_lint_builder`: ^0.7.6 → ^0.8.0
+- `custom_lint`: ^0.7.6 → ^0.8.0 (dev dependency)
+
 ## [Unreleased]
 
 ### ✨ Added (2 new rules)

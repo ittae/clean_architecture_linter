@@ -72,12 +72,12 @@ void main() {
 
       test('detects UseCase return types with different casings', () {
         final useCaseTypes = [
-          'GetEventsUsecase',  // Capital U, lowercase c
+          'GetEventsUsecase', // Capital U, lowercase c
           'CreateEventUsecase',
           'UpdateEventUsecase',
           'DeleteEventUsecase',
-          'GetEventsUseCase',  // Capital U, Capital C
-          'GetMyFollowEventsUsecase',  // Real-world example
+          'GetEventsUseCase', // Capital U, Capital C
+          'GetMyFollowEventsUsecase', // Real-world example
         ];
 
         for (final typeName in useCaseTypes) {
@@ -85,7 +85,8 @@ void main() {
           expect(
             suffix?.toLowerCase(),
             'usecase',
-            reason: '$typeName should require "usecase" suffix (case-insensitive)',
+            reason:
+                '$typeName should require "usecase" suffix (case-insensitive)',
           );
         }
       });
@@ -209,9 +210,12 @@ void main() {
 
       test('handles case-insensitive suffix matching', () {
         final testCases = [
-          ProviderNaming(functionName: 'getEventsUseCase', returnType: 'GetEventsUsecase'),
-          ProviderNaming(functionName: 'eventREPOSITORY', returnType: 'EventRepository'),
-          ProviderNaming(functionName: 'eventDATASOURCE', returnType: 'EventDataSource'),
+          ProviderNaming(
+              functionName: 'getEventsUseCase', returnType: 'GetEventsUsecase'),
+          ProviderNaming(
+              functionName: 'eventREPOSITORY', returnType: 'EventRepository'),
+          ProviderNaming(
+              functionName: 'eventDATASOURCE', returnType: 'EventDataSource'),
         ];
 
         for (final naming in testCases) {
@@ -226,24 +230,33 @@ void main() {
       test('handles all UseCase/Usecase/usecase casing variations', () {
         final testCases = [
           // Return type: GetEventsUsecase (capital U, lowercase c)
-          ProviderNaming(functionName: 'getEventsUsecase', returnType: 'GetEventsUsecase'),
-          ProviderNaming(functionName: 'getEventsUseCase', returnType: 'GetEventsUsecase'),
-          ProviderNaming(functionName: 'getEventsusecase', returnType: 'GetEventsUsecase'),
+          ProviderNaming(
+              functionName: 'getEventsUsecase', returnType: 'GetEventsUsecase'),
+          ProviderNaming(
+              functionName: 'getEventsUseCase', returnType: 'GetEventsUsecase'),
+          ProviderNaming(
+              functionName: 'getEventsusecase', returnType: 'GetEventsUsecase'),
 
           // Return type: GetEventsUseCase (capital U, capital C)
-          ProviderNaming(functionName: 'getEventsUsecase', returnType: 'GetEventsUseCase'),
-          ProviderNaming(functionName: 'getEventsUseCase', returnType: 'GetEventsUseCase'),
-          ProviderNaming(functionName: 'getEventsusecase', returnType: 'GetEventsUseCase'),
+          ProviderNaming(
+              functionName: 'getEventsUsecase', returnType: 'GetEventsUseCase'),
+          ProviderNaming(
+              functionName: 'getEventsUseCase', returnType: 'GetEventsUseCase'),
+          ProviderNaming(
+              functionName: 'getEventsusecase', returnType: 'GetEventsUseCase'),
 
           // Real-world example from error message
-          ProviderNaming(functionName: 'getMyFollowEventsUsecase', returnType: 'GetMyFollowEventsUsecase'),
+          ProviderNaming(
+              functionName: 'getMyFollowEventsUsecase',
+              returnType: 'GetMyFollowEventsUsecase'),
         ];
 
         for (final naming in testCases) {
           expect(
             _hasViolation(naming),
             isFalse,
-            reason: '${naming.functionName} should be valid for return type ${naming.returnType}',
+            reason:
+                '${naming.functionName} should be valid for return type ${naming.returnType}',
           );
         }
       });

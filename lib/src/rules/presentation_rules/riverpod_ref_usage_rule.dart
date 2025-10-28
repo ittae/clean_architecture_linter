@@ -91,8 +91,7 @@ class RiverpodRefUsageRule extends CleanArchitectureLintRule {
     name: 'riverpod_ref_usage',
     problemMessage:
         'Incorrect ref usage: Use ref.watch() in build() and ref.read() in other methods.',
-    correctionMessage:
-        'ref.watch() vs ref.read() usage rules:\n\n'
+    correctionMessage: 'ref.watch() vs ref.read() usage rules:\n\n'
         '✅ In build() methods: Use ref.watch() for reactive dependencies\n'
         '✅ In other methods: Use ref.read() for one-time reads\n\n'
         'See CLAUDE.md § Riverpod State Management Patterns',
@@ -327,8 +326,16 @@ class RiverpodRefUsageRule extends CleanArchitectureLintRule {
 
     // Check for common UseCase naming patterns
     final useCasePrefixes = [
-      'get', 'create', 'update', 'delete', 'fetch',
-      'save', 'load', 'submit', 'send', 'retrieve',
+      'get',
+      'create',
+      'update',
+      'delete',
+      'fetch',
+      'save',
+      'load',
+      'submit',
+      'send',
+      'retrieve',
     ];
 
     for (final prefix in useCasePrefixes) {
