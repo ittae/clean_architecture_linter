@@ -188,6 +188,35 @@ class UserEntity {
 }
 ```
 
+**Data Model with Database (ObjectBox Example)**
+```dart
+// lib/data/models/user_model.dart
+import 'package:objectbox/objectbox.dart';  // ✅ Allowed
+
+@Entity()  // ✅ Database annotation instead of @freezed
+class UserModel {
+  @Id()
+  int id = 0;
+
+  String name;
+  String email;
+
+  UserModel({required this.name, required this.email});
+
+  // ✅ Private database access is allowed
+  static Box<UserModel> get _box => objectBoxService.store.box<UserModel>();
+
+  // Conversion method
+  UserEntity toEntity() => UserEntity(
+    id: id.toString(),
+    name: name,
+    email: email,
+  );
+}
+```
+
+> **Note**: When using database libraries (ObjectBox, Realm, Isar, Drift), Models are **mutable** and use database-specific annotations instead of `@freezed`. This is an exception to the standard Freezed pattern.
+
 **Repository Interface**
 ```dart
 // lib/domain/repositories/user_repository.dart

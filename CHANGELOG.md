@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### 🔧 Fixed
+
+- **Database Library Support** - Added proper exceptions for database libraries (ObjectBox, Realm, Isar, Drift)
+  - `layer_dependency_rule`: Data layer can now import `package:objectbox/`, `package:realm/`, `package:isar/`, `package:drift/`
+  - `datasource_abstraction_rule`:
+    - Private methods/getters (starting with `_`) are now skipped from validation
+    - Database entity types (Box<*Entity>, *ObjectBoxEntity, *RealmEntity, etc.) are allowed in return types
+  - `model_structure_rule`: Models with database annotations (@Entity, @RealmModel, @collection, etc.) are exempt from @freezed requirement
+  - These libraries require mutable classes with their own code generation, incompatible with Freezed
+
+### 📝 Documentation
+
+- **CLAUDE.md**
+  - Added "Database Library Exceptions" section with comprehensive examples
+  - Explained why database Models don't use @freezed (mutability requirement)
+  - Listed all allowed database imports and annotations
+
+- **README.md**
+  - Added ObjectBox example in "Good Examples" section
+  - Documented database library exceptions with clear note
+
 ## [1.0.8] - 2025-10-30
 
 ### 🔧 Changed

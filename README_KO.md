@@ -177,6 +177,35 @@ class UserEntity {
 }
 ```
 
+**데이터베이스를 사용하는 데이터 모델 (ObjectBox 예시)**
+```dart
+// lib/data/models/user_model.dart
+import 'package:objectbox/objectbox.dart';  // ✅ 허용됨
+
+@Entity()  // ✅ @freezed 대신 데이터베이스 어노테이션 사용
+class UserModel {
+  @Id()
+  int id = 0;
+
+  String name;
+  String email;
+
+  UserModel({required this.name, required this.email});
+
+  // ✅ Private 데이터베이스 접근은 허용됨
+  static Box<UserModel> get _box => objectBoxService.store.box<UserModel>();
+
+  // 변환 메서드
+  UserEntity toEntity() => UserEntity(
+    id: id.toString(),
+    name: name,
+    email: email,
+  );
+}
+```
+
+> **참고**: 데이터베이스 라이브러리(ObjectBox, Realm, Isar, Drift)를 사용할 때, Model은 **mutable**이며 `@freezed` 대신 데이터베이스 전용 어노테이션을 사용합니다. 이는 표준 Freezed 패턴의 예외입니다.
+
 **리포지토리 인터페이스**
 ```dart
 // lib/domain/repositories/user_repository.dart
