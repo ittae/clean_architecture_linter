@@ -146,6 +146,10 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
     final filePath = resolver.path;
     if (!CleanArchitectureUtils.isDataFile(filePath)) return;
 
+    // Skip private methods/getters (internal implementation details)
+    final methodName = method.name.lexeme;
+    if (methodName.startsWith('_')) return;
+
     // Check if this method is in a DataSource class
     final classNode = method.thisOrAncestorOfType<ClassDeclaration>();
     if (classNode == null) return;
@@ -207,6 +211,15 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
     // Check for Entity in return type (not Model)
     // Entity, List<Entity>, Future<Entity>, Future<List<Entity>>
     if (typeStr.contains('Entity') && !typeStr.contains('Model')) {
+      // Allow ObjectBox entities (Box<*Entity>, *ObjectBoxEntity)
+      if (typeStr.contains('Box<') ||
+          typeStr.contains('ObjectBoxEntity') ||
+          typeStr.contains('RealmEntity') ||
+          typeStr.contains('IsarEntity') ||
+          typeStr.contains('DriftEntity')) {
+        return false;
+      }
+
       // Make sure it's not just a word containing "entity"
       final pattern = RegExp(r'\b\w+Entity\b');
       if (pattern.hasMatch(typeStr)) {

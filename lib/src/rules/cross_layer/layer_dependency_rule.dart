@@ -257,6 +257,8 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
       'package:cloud_', // Cloud services
       'package:supabase_', // Supabase
       'package:isar/', // Database packages
+      'package:objectbox/', // ObjectBox database
+      'package:realm/', // Realm database
       'dart:convert',
       'dart:async',
     ];

@@ -73,198 +73,64 @@ The linter enforces proper Riverpod state management using a **3-tier provider a
 
 ### ✅ Tier 1: Entity Providers (AsyncNotifier)
 
-Entity providers manage domain data using `AsyncNotifier` with `AsyncValue` for automatic loading/error/data state management.
+Entity providers manage domain data using `AsyncNotifier` with `AsyncValue`.
 
 ```dart
-// presentation/providers/schedule_providers.dart
-
-/// Entity Provider: Schedule List (with date range parameters)
-@riverpod
-class ScheduleList extends _$ScheduleList {
-  @override
-  Future<List<Schedule>> build({
-    required DateTime startDate,
-    required DateTime endDate,
-  }) async {
-    final result = await ref.read(getScheduleListUseCaseProvider)(
-      startDate: startDate,
-      endDate: endDate,
-    );
-
-    return result.when(
-      success: (schedules) => schedules,
-      failure: (failure) => throw failure,  // ✅ AsyncValue.error conversion
-    );
-  }
-
-  Future<void> refresh() async {
-    ref.invalidateSelf();
-  }
-}
-
-/// Entity Provider: Schedule Detail (Family pattern with ID)
 @riverpod
 class ScheduleDetail extends _$ScheduleDetail {
   @override
   Future<Schedule> build(String scheduleId) async {  // ✅ ID parameter, not entity
     final result = await ref.read(getScheduleDetailUseCaseProvider)(scheduleId);
-
     return result.when(
       success: (schedule) => schedule,
-      failure: (failure) => throw failure,
+      failure: (failure) => throw failure,  // ✅ AsyncValue.error conversion
     );
-  }
-
-  Future<void> confirmSchedule(List<String> attendeeIds) async {
-    final currentSchedule = state.value;
-    if (currentSchedule == null) return;
-
-    state = const AsyncValue.loading();
-
-    state = await AsyncValue.guard(() async {
-      final result = await ref.read(confirmScheduleUseCaseProvider)(
-        currentSchedule.id,
-        attendeeIds,
-      );
-
-      return result.when(
-        success: (updatedSchedule) => updatedSchedule,
-        failure: (failure) => throw failure,
-      );
-    });
   }
 }
 
-/// Entity UI Extensions (formatting only)
 extension ScheduleUIX on Schedule {
   String get formattedDate => DateFormat('MMM dd, yyyy').format(startDate);
-  String get formattedTimeRange =>
-      '${DateFormat.Hm().format(startTime)} - ${DateFormat.Hm().format(endTime)}';
-  Color get statusColor {
-    if (isExpired) return Colors.grey;
-    if (isConfirmed) return Colors.green;
-    return Colors.orange;
-  }
-  IconData get statusIcon {
-    if (isExpired) return Icons.event_busy;
-    if (isConfirmed) return Icons.check_circle;
-    return Icons.pending;
-  }
+  Color get statusColor => isExpired ? Colors.grey : isConfirmed ? Colors.green : Colors.orange;
 }
 ```
 
 ### ✅ Tier 2: UI State Providers (Depends on Entity)
 
-UI State providers manage presentation-specific state and depend on entity providers via `ref.watch()` or `ref.listen()`.
-
 ```dart
-// presentation/providers/schedule_ui_providers.dart
-
-/// UI State (Freezed)
 @freezed
 sealed class ScheduleDetailUIState with _$ScheduleDetailUIState {
   const factory ScheduleDetailUIState({
     @Default([]) List<String> selectedAttendeeIds,
-    @Default(false) bool isConfirmationDialogOpen,
     @Default(false) bool isSubmitting,
   }) = _ScheduleDetailUIState;
 }
 
-extension ScheduleDetailUIStateX on ScheduleDetailUIState {
-  int get selectedCount => selectedAttendeeIds.length;
-  bool get hasSelection => selectedAttendeeIds.isNotEmpty;
-}
-
-/// UI State Provider (depends on Entity Provider)
 @riverpod
 class ScheduleDetailUI extends _$ScheduleDetailUI {
   @override
   ScheduleDetailUIState build(String scheduleId) {
-    // ✅ Listen to entity changes
-    ref.listen(
-      scheduleDetailProvider(scheduleId),
-      (previous, next) {
-        // Reset UI state when entity changes
-        next.whenData((_) {
-          if (previous?.value?.id != next.value?.id) {
-            state = const ScheduleDetailUIState();
-          }
-        });
-      },
-    );
-
+    ref.listen(scheduleDetailProvider(scheduleId), (prev, next) {
+      next.whenData((_) {
+        if (prev?.value?.id != next.value?.id) state = const ScheduleDetailUIState();
+      });
+    });
     return const ScheduleDetailUIState();
-  }
-
-  void toggleAttendee(String attendeeId) {
-    final updated = state.selectedAttendeeIds.contains(attendeeId)
-        ? state.selectedAttendeeIds.where((id) => id != attendeeId).toList()
-        : [...state.selectedAttendeeIds, attendeeId];
-
-    state = state.copyWith(selectedAttendeeIds: updated);
-  }
-
-  void openConfirmationDialog() {
-    state = state.copyWith(isConfirmationDialogOpen: true);
-  }
-
-  void closeConfirmationDialog() {
-    state = state.copyWith(isConfirmationDialogOpen: false);
-  }
-
-  Future<void> confirmSchedule() async {
-    if (!state.hasSelection || state.isSubmitting) return;
-
-    state = state.copyWith(isSubmitting: true);
-
-    try {
-      await ref.read(scheduleDetailProvider(scheduleId).notifier)
-          .confirmSchedule(state.selectedAttendeeIds);
-
-      // Success: reset UI state
-      state = const ScheduleDetailUIState();
-    } catch (e) {
-      state = state.copyWith(isSubmitting: false);
-      rethrow;
-    }
   }
 }
 ```
 
-### ✅ Tier 3: Computed Logic Providers (Entity + UI Combination)
-
-Computed providers derive values from entity and UI state.
+### ✅ Tier 3: Computed Logic Providers
 
 ```dart
-// presentation/providers/schedule_computed_providers.dart
-
-/// Can confirm schedule? (combines entity + UI state)
 @riverpod
 bool canConfirmSchedule(CanConfirmScheduleRef ref, String scheduleId) {
   final scheduleAsync = ref.watch(scheduleDetailProvider(scheduleId));
   final uiState = ref.watch(scheduleDetailUIProvider(scheduleId));
 
   return scheduleAsync.when(
-    data: (schedule) =>
-        uiState.hasSelection &&
-        !schedule.isExpired &&
-        !schedule.isConfirmed &&
-        uiState.selectedCount <= schedule.maxAttendees,
+    data: (s) => uiState.selectedAttendeeIds.isNotEmpty && !s.isExpired,
     loading: () => false,
     error: (_, __) => false,
-  );
-}
-
-/// Remaining slots
-@riverpod
-int remainingSlots(RemainingSlotsRef ref, String scheduleId) {
-  final scheduleAsync = ref.watch(scheduleDetailProvider(scheduleId));
-  final uiState = ref.watch(scheduleDetailUIProvider(scheduleId));
-
-  return scheduleAsync.when(
-    data: (schedule) => schedule.maxAttendees - uiState.selectedCount,
-    loading: () => 0,
-    error: (_, __) => 0,
   );
 }
 ```
@@ -272,96 +138,15 @@ int remainingSlots(RemainingSlotsRef ref, String scheduleId) {
 ### ✅ Widget Usage (AsyncValue.when Pattern)
 
 ```dart
-// presentation/pages/schedule_detail_page.dart
-
 class ScheduleDetailPage extends ConsumerWidget {
-  final String scheduleId;
-
-  const ScheduleDetailPage({required this.scheduleId});
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // ✅ Watch entity provider (AsyncValue)
     final scheduleAsync = ref.watch(scheduleDetailProvider(scheduleId));
 
-    // ✅ Watch UI state provider
-    final uiState = ref.watch(scheduleDetailUIProvider(scheduleId));
-    final uiNotifier = ref.read(scheduleDetailUIProvider(scheduleId).notifier);
-
-    // ✅ Watch computed providers
-    final canConfirm = ref.watch(canConfirmScheduleProvider(scheduleId));
-    final remainingSlots = ref.watch(remainingSlotsProvider(scheduleId));
-
-    // ✅ AsyncValue.when() pattern
     return scheduleAsync.when(
-      loading: () => Center(child: CircularProgressIndicator()),
-
-      error: (error, stack) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error, color: Colors.red, size: 48),
-            SizedBox(height: 16),
-            Text('Error: $error'),
-            SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => ref.invalidate(scheduleDetailProvider(scheduleId)),
-              child: Text('Retry'),
-            ),
-          ],
-        ),
-      ),
-
-      data: (schedule) {  // ✅ schedule is non-nullable here
-        return Column(
-          children: [
-            // ✅ Entity UI Extensions
-            Card(
-              child: ListTile(
-                leading: Icon(schedule.statusIcon, color: schedule.statusColor),
-                title: Text(schedule.title),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(schedule.formattedDate),
-                    Text(schedule.formattedTimeRange),
-                  ],
-                ),
-              ),
-            ),
-
-            // ✅ Computed logic
-            Text('Remaining: $remainingSlots slots'),
-
-            // ✅ Attendee list
-            Expanded(
-              child: ListView.builder(
-                itemCount: schedule.attendees.length,
-                itemBuilder: (context, index) {
-                  final attendee = schedule.attendees[index];
-                  final isSelected = uiState.selectedAttendeeIds.contains(attendee.id);
-
-                  return CheckboxListTile(
-                    value: isSelected,
-                    onChanged: (_) => uiNotifier.toggleAttendee(attendee.id),
-                    title: Text(attendee.name),
-                  );
-                },
-              ),
-            ),
-
-            // ✅ Confirm button
-            ElevatedButton(
-              onPressed: canConfirm && !uiState.isSubmitting
-                  ? uiNotifier.openConfirmationDialog
-                  : null,
-              child: uiState.isSubmitting
-                  ? CircularProgressIndicator()
-                  : Text('Confirm Schedule'),
-            ),
-          ],
-        );
-      },
+      loading: () => CircularProgressIndicator(),
+      error: (e, s) => ErrorWidget(e),
+      data: (schedule) => ScheduleContent(schedule),  // ✅ Non-nullable
     );
   }
 }
@@ -648,196 +433,45 @@ EventDataSource eventDataSource(Ref ref) {
 
 See [CLEAN_ARCHITECTURE_GUIDE.md](doc/CLEAN_ARCHITECTURE_GUIDE.md) for more comprehensive examples.
 
-### ❌ Violation: Domain Repository is Concrete (Not Abstract)
+## Repository Pattern Violations
 
-**Problem**:
+### Common Issues
+
+**❌ Domain Repository Concrete**: Use `abstract interface class`
+**❌ RepositoryImpl No Interface**: Must `implements` domain interface
+**❌ Returns Model**: Must return `Result<Entity, Failure>`
+**❌ No Result Type**: Wrap return in `Result<T, Failure>`
+**❌ Throws Exceptions**: Return `Failure` instead
+**❌ Direct `.entity` Access**: Use `.toEntity()` method
+
+### Correct Pattern
+
 ```dart
 // domain/repositories/user_repository.dart
-class UserRepository {  // ❌ WRONG - Concrete class in domain
-  Future<User?> getUser(String id) {
-    // Implementation in domain layer
-  }
-}
-```
-
-**Solution**:
-```dart
-// domain/repositories/user_repository.dart
-abstract interface class UserRepository {  // ✅ CORRECT - Abstract interface
+abstract interface class UserRepository {
   Future<Result<User, Failure>> getUser(String id);
 }
 
 // data/repositories/user_repository_impl.dart
-class UserRepositoryImpl implements UserRepository {  // ✅ Implementation in data layer
+class UserRepositoryImpl implements UserRepository {
   @override
   Future<Result<User, Failure>> getUser(String id) async {
+    if (id.isEmpty) return Failure(UserFailure.invalidInput());
+
     try {
       final model = await dataSource.getUser(id);
-      return Success(model.toEntity());
+      return Success(model.toEntity());  // ✅ Use method, not .entity
     } on DataException catch (e) {
-      return Failure(UserFailure.notFound(message: e.message));
+      return Failure(UserFailure.fromException(e));
     }
   }
 }
-```
 
-### ❌ Violation: RepositoryImpl Missing Interface Implementation
-
-**Problem**:
-```dart
-// data/repositories/user_repository_impl.dart
-class UserRepositoryImpl {  // ❌ WRONG - No implements clause
-  Future<Result<User, Failure>> getUser(String id) async { }
-}
-```
-
-**Solution**:
-```dart
-// data/repositories/user_repository_impl.dart
-class UserRepositoryImpl implements UserRepository {  // ✅ CORRECT
-  final UserDataSource dataSource;
-
-  UserRepositoryImpl({required this.dataSource});
-
-  @override
-  Future<Result<User, Failure>> getUser(String id) async {
-    try {
-      final model = await dataSource.getUser(id);
-      return Success(model.toEntity());
-    } on DataException catch (e) {
-      return Failure(UserFailure.fromDataException(e));
-    }
-  }
-}
-```
-
-### ❌ Violation: Repository Method Returns Model Instead of Entity
-
-**Problem**:
-```dart
-// domain/repositories/user_repository.dart
-abstract interface class UserRepository {
-  Future<Result<UserModel, Failure>> getUser(String id);  // ❌ WRONG - Returns Model
-  Future<List<UserModel>> getUsers();  // ❌ WRONG - Returns Model
-}
-```
-
-**Solution**:
-```dart
-// domain/repositories/user_repository.dart
-abstract interface class UserRepository {
-  Future<Result<User, Failure>> getUser(String id);  // ✅ CORRECT - Returns Entity
-  Future<Result<List<User>, Failure>> getUsers();  // ✅ CORRECT - Returns Entity
-}
-```
-
-### ❌ Violation: Repository Method Doesn't Return Result Type
-
-**Problem**:
-```dart
-// data/repositories/user_repository_impl.dart
-class UserRepositoryImpl implements UserRepository {
-  Future<User?> getUser(String id) async {  // ❌ WRONG - No Result wrapper
-    final model = await dataSource.getUser(id);
-    return model.toEntity();
-  }
-}
-```
-
-**Solution**:
-```dart
-// data/repositories/user_repository_impl.dart
-class UserRepositoryImpl implements UserRepository {
-  Future<Result<User, Failure>> getUser(String id) async {  // ✅ CORRECT
-    try {
-      final model = await dataSource.getUser(id);
-      return Success(model.toEntity());
-    } on DataException catch (e) {
-      return Failure(UserFailure.fromDataException(e));
-    }
-  }
-}
-```
-
-### ❌ Violation: Repository Throws Exceptions
-
-**Problem**:
-```dart
-// data/repositories/user_repository_impl.dart
-class UserRepositoryImpl implements UserRepository {
-  Future<Result<User, Failure>> getUser(String id) async {
-    if (id.isEmpty) {
-      throw ArgumentError('ID required');  // ❌ WRONG - Repository throwing
-    }
-    // ...
-  }
-}
-```
-
-**Solution**:
-```dart
-// data/repositories/user_repository_impl.dart
-class UserRepositoryImpl implements UserRepository {
-  Future<Result<User, Failure>> getUser(String id) async {
-    if (id.isEmpty) {
-      return Failure(UserFailure.invalidInput(message: 'ID required'));  // ✅ CORRECT
-    }
-
-    try {
-      final model = await dataSource.getUser(id);  // DataSource throws
-      return Success(model.toEntity());
-    } on DataException catch (e) {
-      return Failure(UserFailure.fromDataException(e));  // ✅ Convert to Failure
-    }
-  }
-}
-```
-
-### ❌ Violation: Direct .entity Property Access in Data Layer
-
-**Problem**:
-```dart
-// data/repositories/user_repository_impl.dart
-class UserRepositoryImpl implements UserRepository {
-  Future<Result<List<User>, Failure>> getUsers() async {
-    try {
-      final models = await dataSource.getUsers();
-      return Success(models.map((m) => m.entity).toList());  // ❌ WRONG - Direct access
-    } on DataException catch (e) {
-      return Failure(UserFailure.fromDataException(e));
-    }
-  }
-}
-```
-
-**Solution**:
-```dart
-// data/repositories/user_repository_impl.dart
-class UserRepositoryImpl implements UserRepository {
-  Future<Result<List<User>, Failure>> getUsers() async {
-    try {
-      final models = await dataSource.getUsers();
-      return Success(models.map((m) => m.toEntity()).toList());  // ✅ CORRECT - Use method
-    } on DataException catch (e) {
-      return Failure(UserFailure.fromDataException(e));
-    }
-  }
-}
-```
-
-**Why**: Using `.toEntity()` method instead of direct `.entity` access:
-- Provides explicit conversion boundary between Model and Entity
-- Allows future conversion logic changes in one place
-- Makes architectural boundaries clear in code
-- Exception: Direct `.entity` access is allowed inside extension methods where conversion is implemented
-
-**Note on fromEntity()**: While `toEntity()` is required in extensions, `fromEntity()` should be implemented as a factory constructor in the Model class:
-```dart
+// Model with factory
 factory TodoModel.fromEntity(Todo entity, {String? etag}) {
   return TodoModel(entity: entity, etag: etag);
 }
 ```
-This is the Dart/Freezed way and allows calling `TodoModel.fromEntity(entity)` naturally.
 
 ### Repository Pattern Summary
 
@@ -860,164 +494,37 @@ This is the Dart/Freezed way and allows calling `TodoModel.fromEntity(entity)` n
 
 ## Exception Naming & Layer Patterns
 
-### ❌ Violation: Domain Exception Missing Feature Prefix
+### Common Issues
 
-**Problem**:
+**❌ Domain Exceptions No Prefix**: Use feature prefix (e.g., `TodoNotFoundException`)
+**❌ DataSource Generic Exceptions**: Use defined exceptions (NetworkException, etc.)
+**❌ Presentation Uses Data Exceptions**: Only handle domain Failure types
+
+### Correct Pattern
+
 ```dart
 // domain/exceptions/todo_exceptions.dart
-class NotFoundException implements Exception {  // ❌ WRONG - Too generic
-  final String message;
-  NotFoundException(this.message);
-}
+class TodoNotFoundException implements Exception { }  // ✅ Feature prefix
+class TodoValidationException implements Exception { }
 
-class ValidationException implements Exception {  // ❌ WRONG - Missing feature prefix
-  final String message;
-  ValidationException(this.message);
-}
-```
-
-**Solution**:
-```dart
-// domain/exceptions/todo_exceptions.dart
-class TodoNotFoundException implements Exception {  // ✅ CORRECT - Feature prefix
-  final String message;
-  TodoNotFoundException(this.message);
-}
-
-class TodoValidationException implements Exception {  // ✅ CORRECT - Feature prefix
-  final String message;
-  TodoValidationException(this.message);
-}
-```
-
-**Why**: Feature prefixes prevent naming conflicts and clearly indicate which feature the exception belongs to.
-
-### ❌ Violation: DataSource Using Generic Exceptions
-
-**Problem**:
-```dart
 // data/datasources/todo_remote_datasource.dart
 class TodoRemoteDataSource {
   Future<Todo> getTodo(String id) async {
-    throw Exception('Custom error');  // ❌ WRONG - Generic Exception
-  }
-
-  Future<List<Todo>> getTodos() async {
-    throw StateError('Invalid state');  // ❌ WRONG - Dart built-in
-  }
-
-  Future<void> deleteTodo(String id) async {
-    throw CustomApiException('API error');  // ❌ WRONG - Custom exception
-  }
-}
-```
-
-**Solution**:
-```dart
-// data/datasources/todo_remote_datasource.dart
-class TodoRemoteDataSource {
-  Future<Todo> getTodo(String id) async {
-    final response = await client.get('/todos/$id');
-
-    if (response.statusCode == 404) {
-      throw NotFoundException('Todo not found: $id');  // ✅ CORRECT
-    }
-
-    if (response.statusCode == 401) {
-      throw UnauthorizedException('Auth required');  // ✅ CORRECT
-    }
-
-    if (response.statusCode >= 500) {
-      throw ServerException('Server error');  // ✅ CORRECT
-    }
-
+    if (response.statusCode == 404) throw NotFoundException();  // ✅
+    if (response.statusCode >= 500) throw ServerException();  // ✅
     return Todo.fromJson(response.data);
   }
-
-  Future<List<Todo>> getTodos() async {
-    try {
-      return await client.get('/todos');
-    } catch (e) {
-      throw NetworkException('Connection failed: $e');  // ✅ CORRECT
-    }
-  }
-
-  Future<void> deleteTodo(String id) async {
-    throw DataSourceException('Delete operation failed');  // ✅ CORRECT
-  }
 }
-```
 
-**Allowed Data Layer Exceptions**:
-- ✅ `NotFoundException` - For 404 errors
-- ✅ `UnauthorizedException` - For 401/403 errors
-- ✅ `NetworkException` - For connection errors
-- ✅ `ServerException` - For 5xx server errors
-- ✅ `CacheException` - For cache errors
-- ✅ `DatabaseException` - For database errors
-- ✅ `DataSourceException` - For generic data source errors
-
-### ❌ Violation: Presentation Layer Using Data Exceptions
-
-**Problem**:
-```dart
 // presentation/widgets/todo_list.dart
-class TodoList extends StatelessWidget {
-  void _loadTodos() {
-    try {
-      // ...
-    } on NetworkException catch (e) {  // ❌ WRONG - Data exception in Presentation
-      showError(e.message);
-    } on CacheException catch (e) {  // ❌ WRONG - Data exception in Presentation
-      showError(e.message);
-    }
-  }
-}
+result.when(
+  success: (todos) => _showTodos(todos),
+  failure: (failure) => _handleFailure(failure),  // ✅ Domain Failure
+);
 ```
 
-**Solution**:
-```dart
-// presentation/widgets/todo_list.dart
-class TodoList extends StatelessWidget {
-  void _loadTodos() {
-    try {
-      // UseCase returns Result, unwrap it
-      final result = await getTodosUseCase();
-
-      result.when(
-        success: (todos) => _showTodos(todos),
-        failure: (failure) => _handleFailure(failure),  // ✅ Handle domain Failure
-      );
-    } on TodoNotFoundException catch (e) {  // ✅ CORRECT - Domain exception
-      showError('Todos not found');
-    } on TodoNetworkFailure catch (e) {  // ✅ CORRECT - Domain Failure type
-      showError('Network error');
-    }
-  }
-}
-```
-
-**Why**: Presentation layer should only handle domain-level exceptions/failures. Data layer exceptions (NetworkException, CacheException) should be caught by Repository and converted to domain Failures.
-
-### Exception Handling Layer Pattern Summary
-
-**Domain Layer**:
-- ✅ Feature-prefixed exceptions (e.g., `TodoNotFoundException`, `UserValidationException`)
-- ✅ Domain-specific Failure types
-- ❌ No generic exception names without prefix
-- ❌ No data layer exceptions
-
-**Data Layer**:
-- ✅ DataSource throws defined Data exceptions (NetworkException, CacheException, etc.)
-- ✅ Repository catches Data exceptions and converts to `Result<T, Failure>`
-- ❌ No generic `Exception`, `StateError`, or custom exception types in DataSource
-- ❌ Repository never throws exceptions (returns Result instead)
-
-**Presentation Layer**:
-- ✅ Handle domain exceptions and Failure types only
-- ✅ Unwrap Result from UseCases
-- ❌ Never catch or handle Data layer exceptions (NetworkException, CacheException, etc.)
-- ❌ No direct DataSource or Repository usage
+### Allowed Data Layer Exceptions
+- `NotFoundException`, `UnauthorizedException`, `NetworkException`, `ServerException`, `CacheException`, `DatabaseException`, `DataSourceException`
 
 ## Configuration
 

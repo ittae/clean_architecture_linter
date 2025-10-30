@@ -72,6 +72,12 @@ class ModelStructureRule extends CleanArchitectureLintRule {
     // Check if class name ends with Model
     if (!className.endsWith('Model')) return;
 
+    // Skip Freezed checks for database entities (ObjectBox, Realm, Isar, Drift)
+    // These libraries require mutable classes with their own annotations
+    if (_hasDatabaseAnnotation(node)) {
+      return;
+    }
+
     // Check for Freezed annotation
     if (!_hasFreezedAnnotation(node)) {
       final code = LintCode(
@@ -119,6 +125,26 @@ class ModelStructureRule extends CleanArchitectureLintRule {
     return metadata.any((annotation) {
       final name = annotation.name.toString();
       return name == 'freezed' || name == 'Freezed';
+    });
+  }
+
+  bool _hasDatabaseAnnotation(ClassDeclaration node) {
+    // Check for database entity annotations (ObjectBox, Realm, Isar, Drift)
+    final metadata = node.metadata;
+    return metadata.any((annotation) {
+      final name = annotation.name.toString();
+      // ObjectBox: @Entity
+      // Realm: @RealmModel, @MapTo
+      // Isar: @collection, @Collection
+      // Drift: @UseRowClass, @DataClassName
+      return name == 'Entity' ||
+          name == 'entity' ||
+          name == 'RealmModel' ||
+          name == 'MapTo' ||
+          name == 'collection' ||
+          name == 'Collection' ||
+          name == 'UseRowClass' ||
+          name == 'DataClassName';
     });
   }
 
