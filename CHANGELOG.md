@@ -5,12 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.7] - 2025-10-30
+## [1.0.8] - 2025-01-30
 
 ### 🔧 Changed
 
 - **Minimum Dart SDK updated to 3.7.0**
   - Updated from ^3.6.0 to ^3.7.0 for better compatibility
+  - Downgraded lints from ^6.0.0 to ^5.1.1 for Dart 3.7.0 compatibility
   - All existing features and tests remain compatible
   - No breaking changes to API or functionality
 
