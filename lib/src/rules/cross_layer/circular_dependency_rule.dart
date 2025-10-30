@@ -212,12 +212,13 @@ class CircularDependencyRule extends CleanArchitectureLintRule {
   }
 
   String _describeCycle(List<String> cycle, String currentFile) {
-    final simplifiedCycle = cycle.map((path) {
-      final parts = path.split('/');
-      return parts.length > 2
-          ? '${parts[parts.length - 2]}/${parts[parts.length - 1]}'
-          : path;
-    }).toList();
+    final simplifiedCycle =
+        cycle.map((path) {
+          final parts = path.split('/');
+          return parts.length > 2
+              ? '${parts[parts.length - 2]}/${parts[parts.length - 1]}'
+              : path;
+        }).toList();
 
     return simplifiedCycle.join(' → ');
   }

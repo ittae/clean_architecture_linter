@@ -177,7 +177,9 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
 
   /// Check factory constructor parameters for error fields
   void _checkConstructorParameters(
-      ConstructorDeclaration constructor, ErrorReporter reporter) {
+    ConstructorDeclaration constructor,
+    ErrorReporter reporter,
+  ) {
     for (final param in constructor.parameters.parameters) {
       String? paramName;
       AstNode? nameNode;

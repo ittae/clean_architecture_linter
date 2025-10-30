@@ -24,9 +24,13 @@ void main() {
 
       test('returns false for feature-prefixed exceptions', () {
         expect(
-            testRule.isGenericExceptionName('TodoNotFoundException'), isFalse);
-        expect(testRule.isGenericExceptionName('UserValidationException'),
-            isFalse);
+          testRule.isGenericExceptionName('TodoNotFoundException'),
+          isFalse,
+        );
+        expect(
+          testRule.isGenericExceptionName('UserValidationException'),
+          isFalse,
+        );
       });
 
       test('returns true for very short generic names', () {
@@ -34,8 +38,10 @@ void main() {
       });
 
       test('returns false for longer feature-specific names', () {
-        expect(testRule.isGenericExceptionName('AuthenticationException'),
-            isFalse);
+        expect(
+          testRule.isGenericExceptionName('AuthenticationException'),
+          isFalse,
+        );
       });
     });
 

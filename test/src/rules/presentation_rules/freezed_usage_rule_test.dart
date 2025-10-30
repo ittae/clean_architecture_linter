@@ -60,7 +60,8 @@ void main() {
       test('rejects non-equatable imports', () {
         expect(
           _hasEquatableImport(
-              'package:freezed_annotation/freezed_annotation.dart'),
+            'package:freezed_annotation/freezed_annotation.dart',
+          ),
           isFalse,
           reason: 'Should not detect non-equatable imports',
         );
@@ -87,7 +88,8 @@ void main() {
       test('checks presentation layer files', () {
         expect(
           _isArchitectureLayer(
-              '/project/lib/presentation/states/user_state.dart'),
+            '/project/lib/presentation/states/user_state.dart',
+          ),
           isTrue,
           reason: 'Should check presentation layer',
         );
@@ -212,11 +214,7 @@ void main() {
 
 // Helper enums and classes for testing
 
-enum ErrorType {
-  extendsEquatable,
-  implementsEquatable,
-  equatableImport,
-}
+enum ErrorType { extendsEquatable, implementsEquatable, equatableImport }
 
 // Helper functions that simulate rule logic
 

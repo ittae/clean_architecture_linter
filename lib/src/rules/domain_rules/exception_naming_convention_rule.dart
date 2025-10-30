@@ -54,7 +54,8 @@ class ExceptionNamingConventionRule extends CleanArchitectureLintRule
     name: 'exception_naming_convention',
     problemMessage:
         'Domain Exception should have feature prefix: {Feature}{ExceptionType}',
-    correctionMessage: 'Add feature prefix to exception name:\\n'
+    correctionMessage:
+        'Add feature prefix to exception name:\\n'
         '  ❌ Bad:  class NotFoundException implements Exception\\n'
         '  ✅ Good: class TodoNotFoundException implements Exception\\n\\n'
         'Pattern: {Feature}{ExceptionType}\\n'
@@ -106,7 +107,8 @@ class ExceptionNamingConventionRule extends CleanArchitectureLintRule
         name: 'exception_naming_convention',
         problemMessage:
             'Domain Exception "$className" should have feature prefix',
-        correctionMessage: 'Add feature prefix to exception name:\\n'
+        correctionMessage:
+            'Add feature prefix to exception name:\\n'
             '  Current:  class $className implements Exception\\n'
             '  Suggested: class $suggestedName implements Exception\\n\\n'
             'Pattern: {Feature}{ExceptionType}\\n'

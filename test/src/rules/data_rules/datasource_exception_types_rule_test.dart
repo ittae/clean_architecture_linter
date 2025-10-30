@@ -292,12 +292,7 @@ void main() {
       });
 
       test('handles exception names without Exception suffix', () {
-        final testCases = [
-          'NotFound',
-          'Network',
-          'Server',
-          'Cache',
-        ];
+        final testCases = ['NotFound', 'Network', 'Server', 'Cache'];
 
         for (final name in testCases) {
           expect(

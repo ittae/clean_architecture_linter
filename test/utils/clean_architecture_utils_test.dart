@@ -28,9 +28,7 @@ void main() {
 
       test('should exclude generated files', () {
         expect(
-          CleanArchitectureUtils.shouldExcludeFile(
-            'lib/models/user.g.dart',
-          ),
+          CleanArchitectureUtils.shouldExcludeFile('lib/models/user.g.dart'),
           isTrue,
         );
         expect(
@@ -40,18 +38,14 @@ void main() {
           isTrue,
         );
         expect(
-          CleanArchitectureUtils.shouldExcludeFile(
-            'lib/mocks/user.mocks.dart',
-          ),
+          CleanArchitectureUtils.shouldExcludeFile('lib/mocks/user.mocks.dart'),
           isTrue,
         );
       });
 
       test('should exclude build artifacts', () {
         expect(
-          CleanArchitectureUtils.shouldExcludeFile(
-            'build/app.js',
-          ),
+          CleanArchitectureUtils.shouldExcludeFile('build/app.js'),
           isTrue,
         );
         expect(
@@ -60,19 +54,11 @@ void main() {
           ),
           isTrue,
         );
-        expect(
-          CleanArchitectureUtils.shouldExcludeFile(
-            '.packages',
-          ),
-          isTrue,
-        );
+        expect(CleanArchitectureUtils.shouldExcludeFile('.packages'), isTrue);
       });
 
       test('should exclude documentation files', () {
-        expect(
-          CleanArchitectureUtils.shouldExcludeFile('README.md'),
-          isTrue,
-        );
+        expect(CleanArchitectureUtils.shouldExcludeFile('README.md'), isTrue);
         expect(
           CleanArchitectureUtils.shouldExcludeFile('docs/guide.txt'),
           isTrue,
@@ -541,9 +527,7 @@ void main() {
           isTrue,
         );
         expect(
-          CleanArchitectureUtils.isRepositoryInterfaceClass(
-            'IAuthRepository',
-          ),
+          CleanArchitectureUtils.isRepositoryInterfaceClass('IAuthRepository'),
           isTrue,
         );
       });
@@ -640,10 +624,7 @@ void main() {
       });
 
       test('should not identify non-data exceptions', () {
-        expect(
-          CleanArchitectureUtils.isDataException('AuthFailure'),
-          isFalse,
-        );
+        expect(CleanArchitectureUtils.isDataException('AuthFailure'), isFalse);
         expect(
           CleanArchitectureUtils.isDataException('ValidationException'),
           isFalse,
@@ -653,10 +634,7 @@ void main() {
 
     group('isDomainException', () {
       test('should identify domain layer exception names', () {
-        expect(
-          CleanArchitectureUtils.isDomainException('AuthFailure'),
-          isTrue,
-        );
+        expect(CleanArchitectureUtils.isDomainException('AuthFailure'), isTrue);
         expect(
           CleanArchitectureUtils.isDomainException('ValidationFailure'),
           isTrue,

@@ -91,20 +91,22 @@ void main() {
       });
 
       test(
-          'accepts RepositoryImpl with multiple interfaces including repository',
-          () {
-        final impl = TestRepositoryImpl(
-          className: 'UserRepositoryImpl',
-          implementsInterfaces: ['UserRepository', 'Disposable', 'Cacheable'],
-          inDataLayer: true,
-        );
+        'accepts RepositoryImpl with multiple interfaces including repository',
+        () {
+          final impl = TestRepositoryImpl(
+            className: 'UserRepositoryImpl',
+            implementsInterfaces: ['UserRepository', 'Disposable', 'Cacheable'],
+            inDataLayer: true,
+          );
 
-        expect(
-          _hasRepositoryInterface(impl),
-          isTrue,
-          reason: 'Should accept multiple interfaces when one is a repository',
-        );
-      });
+          expect(
+            _hasRepositoryInterface(impl),
+            isTrue,
+            reason:
+                'Should accept multiple interfaces when one is a repository',
+          );
+        },
+      );
     });
 
     group('Naming Convention Validation', () {
@@ -166,29 +168,30 @@ void main() {
       });
 
       test(
-          'detects repository implementations in wrong location (domain layer)',
-          () {
-        final testCases = [
-          TestRepositoryImpl(
-            className: 'UserRepositoryImpl',
-            implementsInterfaces: ['UserRepository'],
-            inDataLayer: false,
-          ),
-          TestRepositoryImpl(
-            className: 'TodoRepositoryImpl',
-            implementsInterfaces: ['TodoRepository'],
-            inDataLayer: false,
-          ),
-        ];
+        'detects repository implementations in wrong location (domain layer)',
+        () {
+          final testCases = [
+            TestRepositoryImpl(
+              className: 'UserRepositoryImpl',
+              implementsInterfaces: ['UserRepository'],
+              inDataLayer: false,
+            ),
+            TestRepositoryImpl(
+              className: 'TodoRepositoryImpl',
+              implementsInterfaces: ['TodoRepository'],
+              inDataLayer: false,
+            ),
+          ];
 
-        for (final impl in testCases) {
-          expect(
-            _isImplementationInWrongLayer(impl),
-            isTrue,
-            reason: 'Repository implementation should not be in domain layer',
-          );
-        }
-      });
+          for (final impl in testCases) {
+            expect(
+              _isImplementationInWrongLayer(impl),
+              isTrue,
+              reason: 'Repository implementation should not be in domain layer',
+            );
+          }
+        },
+      );
     });
 
     group('Layer Detection', () {
@@ -361,7 +364,7 @@ void main() {
           implementsInterfaces: [
             'UserRepository',
             'CacheableRepository',
-            'RefreshableRepository'
+            'RefreshableRepository',
           ],
           inDataLayer: true,
         );
@@ -429,8 +432,9 @@ bool _isRepositoryInterface(String interfaceName) {
 }
 
 bool _hasRepositoryInterface(TestRepositoryImpl impl) {
-  return impl.implementsInterfaces
-      .any((interface) => _isRepositoryInterface(interface));
+  return impl.implementsInterfaces.any(
+    (interface) => _isRepositoryInterface(interface),
+  );
 }
 
 bool _isRepositoryInWrongLayer(TestRepositoryInterface interface) {

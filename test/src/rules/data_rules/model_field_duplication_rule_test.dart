@@ -25,11 +25,7 @@ void main() {
   group('ModelFieldDuplicationRule', () {
     group('Field Duplication Detection', () {
       test('detects duplicate domain fields', () {
-        final duplicateFields = [
-          'id',
-          'title',
-          'isCompleted',
-        ];
+        final duplicateFields = ['id', 'title', 'isCompleted'];
 
         for (final fieldName in duplicateFields) {
           expect(
@@ -63,11 +59,7 @@ void main() {
       });
 
       test('detects entity field by name', () {
-        final entityFieldNames = [
-          'entity',
-          'todoEntity',
-          'userEntity',
-        ];
+        final entityFieldNames = ['entity', 'todoEntity', 'userEntity'];
 
         for (final fieldName in entityFieldNames) {
           expect(
@@ -81,12 +73,7 @@ void main() {
 
     group('Domain Field Patterns', () {
       test('recognizes common ID fields', () {
-        final idFields = [
-          'id',
-          'userId',
-          'productId',
-          'orderId',
-        ];
+        final idFields = ['id', 'userId', 'productId', 'orderId'];
 
         for (final fieldName in idFields) {
           expect(
@@ -98,12 +85,7 @@ void main() {
       });
 
       test('recognizes common name/title fields', () {
-        final nameFields = [
-          'name',
-          'title',
-          'description',
-          'content',
-        ];
+        final nameFields = ['name', 'title', 'description', 'content'];
 
         for (final fieldName in nameFields) {
           expect(
@@ -133,11 +115,7 @@ void main() {
       });
 
       test('recognizes date fields', () {
-        final dateFields = [
-          'dueDate',
-          'startDate',
-          'endDate',
-        ];
+        final dateFields = ['dueDate', 'startDate', 'endDate'];
 
         for (final fieldName in dateFields) {
           expect(
@@ -149,12 +127,7 @@ void main() {
       });
 
       test('recognizes value fields', () {
-        final valueFields = [
-          'value',
-          'amount',
-          'price',
-          'quantity',
-        ];
+        final valueFields = ['value', 'amount', 'price', 'quantity'];
 
         for (final fieldName in valueFields) {
           expect(
@@ -228,11 +201,7 @@ void main() {
 
       test('handles custom field names', () {
         // Custom fields not in the domain pattern list
-        final customFields = [
-          'customData',
-          'extraInfo',
-          'metadata',
-        ];
+        final customFields = ['customData', 'extraInfo', 'metadata'];
 
         for (final fieldName in customFields) {
           expect(

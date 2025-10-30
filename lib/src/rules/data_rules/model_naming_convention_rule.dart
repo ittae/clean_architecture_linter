@@ -79,7 +79,8 @@ class ModelNamingConventionRule extends CleanArchitectureLintRule {
     problemMessage:
         'Model name should not include DataSource implementation details. '
         'Use entity-based naming instead.',
-    correctionMessage: 'Remove DataSource implementation from Model name:\n'
+    correctionMessage:
+        'Remove DataSource implementation from Model name:\n'
         '  ❌ Bad:  class TodoFirestoreModel\n'
         '  ✅ Good: class TodoModel\n\n'
         'Models should be independent of DataSource implementation.',

@@ -67,7 +67,10 @@ class BoundaryCrossingRule extends CleanArchitectureLintRule {
   }
 
   bool _isConcreteDependency(
-      String importUri, ArchitecturalLayer source, ArchitecturalLayer target) {
+    String importUri,
+    ArchitecturalLayer source,
+    ArchitecturalLayer target,
+  ) {
     // Check for obvious concrete implementation patterns
     if (importUri.contains('_impl.dart') ||
         importUri.contains('_implementation.dart') ||
@@ -131,8 +134,10 @@ class BoundaryCrossingRule extends CleanArchitectureLintRule {
       'main.dart', // main.dart often contains DI setup
     ];
 
-    return diPatterns.any((pattern) =>
-        normalizedPath.endsWith(pattern) || normalizedPath.contains(pattern));
+    return diPatterns.any(
+      (pattern) =>
+          normalizedPath.endsWith(pattern) || normalizedPath.contains(pattern),
+    );
   }
 }
 

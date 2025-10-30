@@ -242,8 +242,10 @@ void main() {
         ];
 
         for (final filePath in testCases) {
-          final suggestion =
-              _suggestDomainException('NotFoundException', filePath);
+          final suggestion = _suggestDomainException(
+            'NotFoundException',
+            filePath,
+          );
 
           expect(
             suggestion,
@@ -353,12 +355,7 @@ void main() {
       });
 
       test('handles exception names without Exception suffix', () {
-        final testCases = [
-          'NotFound',
-          'Network',
-          'Server',
-          'Cache',
-        ];
+        final testCases = ['NotFound', 'Network', 'Server', 'Cache'];
 
         for (final name in testCases) {
           expect(
@@ -487,8 +484,10 @@ void main() {
 
       test('uses suggestFeaturePrefix from mixin', () {
         final filePath = 'lib/features/todos/presentation/pages/todo_page.dart';
-        final suggestion =
-            _suggestDomainException('NotFoundException', filePath);
+        final suggestion = _suggestDomainException(
+          'NotFoundException',
+          filePath,
+        );
 
         expect(
           suggestion,

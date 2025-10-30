@@ -127,22 +127,24 @@ void main() {
         }
       });
 
-      test('rejects domain exceptions needing prefix (not in allowed lists)',
-          () {
-        final testCases = [
-          'ValidationException',
-          'TimeoutException',
-          'CancelledException',
-        ];
+      test(
+        'rejects domain exceptions needing prefix (not in allowed lists)',
+        () {
+          final testCases = [
+            'ValidationException',
+            'TimeoutException',
+            'CancelledException',
+          ];
 
-        for (final className in testCases) {
-          expect(
-            _isAllowedWithoutPrefix(className),
-            isFalse,
-            reason: '$className should require feature prefix',
-          );
-        }
-      });
+          for (final className in testCases) {
+            expect(
+              _isAllowedWithoutPrefix(className),
+              isFalse,
+              reason: '$className should require feature prefix',
+            );
+          }
+        },
+      );
     });
 
     group('Feature Prefix Suggestion', () {
@@ -221,8 +223,10 @@ void main() {
         ];
 
         for (final filePath in testCases) {
-          final suggestion =
-              _suggestFeaturePrefix('NotFoundException', filePath);
+          final suggestion = _suggestFeaturePrefix(
+            'NotFoundException',
+            filePath,
+          );
 
           expect(
             suggestion,
@@ -345,11 +349,7 @@ void main() {
       });
 
       test('handles exception names without Exception suffix', () {
-        final testCases = [
-          'NotFound',
-          'Validation',
-          'Unauthorized',
-        ];
+        final testCases = ['NotFound', 'Validation', 'Unauthorized'];
 
         for (final className in testCases) {
           expect(

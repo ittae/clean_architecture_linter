@@ -23,24 +23,27 @@ import 'package:test/test.dart';
 void main() {
   group('RepositoryNoThrowRule', () {
     group('Repository Implementation Detection', () {
-      test('detects Repository implementation by class name with Impl suffix',
-          () {
-        expect(
-          _isRepositoryImplementation('TodoRepositoryImpl'),
-          isTrue,
-          reason: 'Class name ending with Impl should be detected',
-        );
-      });
+      test(
+        'detects Repository implementation by class name with Impl suffix',
+        () {
+          expect(
+            _isRepositoryImplementation('TodoRepositoryImpl'),
+            isTrue,
+            reason: 'Class name ending with Impl should be detected',
+          );
+        },
+      );
 
       test(
-          'detects Repository implementation by class name with Implementation suffix',
-          () {
-        expect(
-          _isRepositoryImplementation('UserRepositoryImplementation'),
-          isTrue,
-          reason: 'Class name ending with Implementation should be detected',
-        );
-      });
+        'detects Repository implementation by class name with Implementation suffix',
+        () {
+          expect(
+            _isRepositoryImplementation('UserRepositoryImplementation'),
+            isTrue,
+            reason: 'Class name ending with Implementation should be detected',
+          );
+        },
+      );
 
       test('detects Repository by interface implementation', () {
         // This would be checked via AST analysis
@@ -377,11 +380,7 @@ void main() {
       });
 
       test('handles non-Result return types', () {
-        final returnTypes = [
-          'Future<Todo>',
-          'void',
-          'bool',
-        ];
+        final returnTypes = ['Future<Todo>', 'void', 'bool'];
 
         for (final returnType in returnTypes) {
           expect(

@@ -94,11 +94,7 @@ class ExtensionLocationRule extends CleanArchitectureLintRule {
           correctionMessage:
               'Move extensions to the $layerName file. Extensions should be in the same file as the class they extend.',
         );
-        reporter.atOffset(
-          offset: 0,
-          length: 1,
-          errorCode: code,
-        );
+        reporter.atOffset(offset: 0, length: 1, errorCode: code);
         break;
       }
     }

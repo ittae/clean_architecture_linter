@@ -72,7 +72,8 @@ class RiverpodProviderNamingRule extends CleanArchitectureLintRule {
     name: 'riverpod_provider_naming',
     problemMessage:
         'Provider function name must include type suffix (repository/usecase/datasource).',
-    correctionMessage: 'Riverpod provider function naming rules:\n\n'
+    correctionMessage:
+        'Riverpod provider function naming rules:\n\n'
         '✅ Repository return type: name must end with "repository"\n'
         '✅ UseCase return type: name must end with "usecase"\n'
         '✅ DataSource return type: name must end with "datasource"\n\n'
@@ -137,7 +138,8 @@ class RiverpodProviderNamingRule extends CleanArchitectureLintRule {
         name: 'riverpod_provider_naming',
         problemMessage:
             'Provider function returning $returnTypeName must end with "$requiredSuffix".',
-        correctionMessage: 'Provider function naming convention:\n\n'
+        correctionMessage:
+            'Provider function naming convention:\n\n'
             '❌ Current:\n'
             '   @riverpod\n'
             '   $returnTypeName $functionName(Ref ref) { }\n'
@@ -238,9 +240,10 @@ class RiverpodProviderNamingRule extends CleanArchitectureLintRule {
     final firstChar = requiredSuffix[0];
     final isAlreadyCapitalized = firstChar == firstChar.toUpperCase();
 
-    final capitalizedSuffix = isAlreadyCapitalized
-        ? requiredSuffix
-        : firstChar.toUpperCase() + requiredSuffix.substring(1);
+    final capitalizedSuffix =
+        isAlreadyCapitalized
+            ? requiredSuffix
+            : firstChar.toUpperCase() + requiredSuffix.substring(1);
 
     return '$currentName$capitalizedSuffix';
   }

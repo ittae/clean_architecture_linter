@@ -225,10 +225,9 @@ class TestCoverageRule extends CleanArchitectureLintRule {
     final libIndex = normalized.indexOf('/lib/');
     if (libIndex == -1) {
       // Fallback: just replace lib with test
-      return normalized.replaceFirst('/lib/', '/test/').replaceFirst(
-            '.dart',
-            '_test.dart',
-          );
+      return normalized
+          .replaceFirst('/lib/', '/test/')
+          .replaceFirst('.dart', '_test.dart');
     }
 
     final projectRoot = normalized.substring(0, libIndex);
@@ -274,9 +273,4 @@ class TestCoverageRule extends CleanArchitectureLintRule {
 }
 
 /// Types of components that should have test coverage
-enum ComponentType {
-  useCase,
-  repositoryImpl,
-  dataSource,
-  notifier,
-}
+enum ComponentType { useCase, repositoryImpl, dataSource, notifier }

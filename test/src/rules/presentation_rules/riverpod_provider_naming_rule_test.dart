@@ -211,11 +211,17 @@ void main() {
       test('handles case-insensitive suffix matching', () {
         final testCases = [
           ProviderNaming(
-              functionName: 'getEventsUseCase', returnType: 'GetEventsUsecase'),
+            functionName: 'getEventsUseCase',
+            returnType: 'GetEventsUsecase',
+          ),
           ProviderNaming(
-              functionName: 'eventREPOSITORY', returnType: 'EventRepository'),
+            functionName: 'eventREPOSITORY',
+            returnType: 'EventRepository',
+          ),
           ProviderNaming(
-              functionName: 'eventDATASOURCE', returnType: 'EventDataSource'),
+            functionName: 'eventDATASOURCE',
+            returnType: 'EventDataSource',
+          ),
         ];
 
         for (final naming in testCases) {
@@ -231,24 +237,37 @@ void main() {
         final testCases = [
           // Return type: GetEventsUsecase (capital U, lowercase c)
           ProviderNaming(
-              functionName: 'getEventsUsecase', returnType: 'GetEventsUsecase'),
+            functionName: 'getEventsUsecase',
+            returnType: 'GetEventsUsecase',
+          ),
           ProviderNaming(
-              functionName: 'getEventsUseCase', returnType: 'GetEventsUsecase'),
+            functionName: 'getEventsUseCase',
+            returnType: 'GetEventsUsecase',
+          ),
           ProviderNaming(
-              functionName: 'getEventsusecase', returnType: 'GetEventsUsecase'),
+            functionName: 'getEventsusecase',
+            returnType: 'GetEventsUsecase',
+          ),
 
           // Return type: GetEventsUseCase (capital U, capital C)
           ProviderNaming(
-              functionName: 'getEventsUsecase', returnType: 'GetEventsUseCase'),
+            functionName: 'getEventsUsecase',
+            returnType: 'GetEventsUseCase',
+          ),
           ProviderNaming(
-              functionName: 'getEventsUseCase', returnType: 'GetEventsUseCase'),
+            functionName: 'getEventsUseCase',
+            returnType: 'GetEventsUseCase',
+          ),
           ProviderNaming(
-              functionName: 'getEventsusecase', returnType: 'GetEventsUseCase'),
+            functionName: 'getEventsusecase',
+            returnType: 'GetEventsUseCase',
+          ),
 
           // Real-world example from error message
           ProviderNaming(
-              functionName: 'getMyFollowEventsUsecase',
-              returnType: 'GetMyFollowEventsUsecase'),
+            functionName: 'getMyFollowEventsUsecase',
+            returnType: 'GetMyFollowEventsUsecase',
+          ),
         ];
 
         for (final naming in testCases) {
@@ -296,9 +315,10 @@ void main() {
         };
 
         for (final entry in testCases.entries) {
-          final suffix = entry.value.contains('Usecase')
-              ? 'usecase'
-              : entry.value.contains('Repository')
+          final suffix =
+              entry.value.contains('Usecase')
+                  ? 'usecase'
+                  : entry.value.contains('Repository')
                   ? 'repository'
                   : 'datasource';
 
@@ -326,10 +346,12 @@ GetEventsUsecase getEvents(Ref ref) {
           reason: 'Should detect @riverpod annotation',
         );
         expect(
-          _hasViolation(ProviderNaming(
-            functionName: 'getEvents',
-            returnType: 'GetEventsUsecase',
-          )),
+          _hasViolation(
+            ProviderNaming(
+              functionName: 'getEvents',
+              returnType: 'GetEventsUsecase',
+            ),
+          ),
           isTrue,
           reason: 'Should detect missing "usecase" suffix',
         );
@@ -344,10 +366,12 @@ EventRepository eventRepo(Ref ref) {
 ''';
 
         expect(
-          _hasViolation(ProviderNaming(
-            functionName: 'eventRepo',
-            returnType: 'EventRepository',
-          )),
+          _hasViolation(
+            ProviderNaming(
+              functionName: 'eventRepo',
+              returnType: 'EventRepository',
+            ),
+          ),
           isTrue,
           reason: 'Should detect missing "repository" suffix',
         );
@@ -362,10 +386,12 @@ GetEventsUsecase getEventsUsecase(Ref ref) {
 ''';
 
         expect(
-          _hasViolation(ProviderNaming(
-            functionName: 'getEventsUsecase',
-            returnType: 'GetEventsUsecase',
-          )),
+          _hasViolation(
+            ProviderNaming(
+              functionName: 'getEventsUsecase',
+              returnType: 'GetEventsUsecase',
+            ),
+          ),
           isFalse,
           reason: 'Should accept correct naming with "usecase" suffix',
         );
@@ -380,10 +406,12 @@ EventRepository eventRepository(Ref ref) {
 ''';
 
         expect(
-          _hasViolation(ProviderNaming(
-            functionName: 'eventRepository',
-            returnType: 'EventRepository',
-          )),
+          _hasViolation(
+            ProviderNaming(
+              functionName: 'eventRepository',
+              returnType: 'EventRepository',
+            ),
+          ),
           isFalse,
           reason: 'Should accept correct naming with "repository" suffix',
         );
@@ -398,10 +426,12 @@ EventDataSource eventDataSource(Ref ref) {
 ''';
 
         expect(
-          _hasViolation(ProviderNaming(
-            functionName: 'eventDataSource',
-            returnType: 'EventDataSource',
-          )),
+          _hasViolation(
+            ProviderNaming(
+              functionName: 'eventDataSource',
+              returnType: 'EventDataSource',
+            ),
+          ),
           isFalse,
           reason: 'Should accept correct naming with "datasource" suffix',
         );
@@ -468,10 +498,7 @@ class ProviderNaming {
   final String functionName;
   final String returnType;
 
-  ProviderNaming({
-    required this.functionName,
-    required this.returnType,
-  });
+  ProviderNaming({required this.functionName, required this.returnType});
 }
 
 // Helper functions that simulate rule logic

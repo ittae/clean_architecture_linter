@@ -101,8 +101,9 @@ class RepositoryImplementationRule extends CleanArchitectureLintRule
     });
 
     if (!hasRepositoryInterface) {
-      final implementedInterfaces =
-          implementsClause.interfaces.map((i) => i.name2.lexeme).join(', ');
+      final implementedInterfaces = implementsClause.interfaces
+          .map((i) => i.name2.lexeme)
+          .join(', ');
       final code = LintCode(
         name: 'repository_implementation',
         problemMessage:

@@ -96,7 +96,8 @@ void main() {
       test('detects presentation/viewmodels directory', () {
         expect(
           _hasForbiddenDirectory(
-              '/lib/presentation/viewmodels/user_viewmodel.dart'),
+            '/lib/presentation/viewmodels/user_viewmodel.dart',
+          ),
           isTrue,
           reason: 'Should detect presentation/viewmodels/ directory',
         );
@@ -216,7 +217,8 @@ void main() {
       test('handles Windows path separators', () {
         expect(
           _hasForbiddenDirectory(
-              'C:\\project\\lib\\presentation\\models\\user.dart'),
+            'C:\\project\\lib\\presentation\\models\\user.dart',
+          ),
           isTrue,
           reason: 'Should handle Windows paths',
         );
@@ -225,7 +227,8 @@ void main() {
       test('handles nested directory structures', () {
         expect(
           _hasForbiddenDirectory(
-              '/lib/features/user/presentation/models/user_ui.dart'),
+            '/lib/features/user/presentation/models/user_ui.dart',
+          ),
           isTrue,
           reason: 'Should detect forbidden directories in nested structures',
         );
@@ -239,9 +242,7 @@ void main() {
             'RankingViewModel class name',
             'extends ChangeNotifier',
           ],
-          'user_ui_model_bad.dart': [
-            'presentation/models/ directory',
-          ],
+          'user_ui_model_bad.dart': ['presentation/models/ directory'],
         };
 
         expect(

@@ -69,7 +69,8 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule
     name: 'datasource_exception_types',
     problemMessage:
         'DataSource should only use defined Data layer exceptions. Found: {0}',
-    correctionMessage: 'Use one of the defined Data exceptions:\n'
+    correctionMessage:
+        'Use one of the defined Data exceptions:\n'
         '  - NotFoundException (for 404 errors)\n'
         '  - UnauthorizedException (for 401/403 errors)\n'
         '  - NetworkException (for connection errors)\n'
@@ -128,7 +129,8 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule
         name: 'datasource_exception_types',
         problemMessage:
             'DataSource should NOT use "$exceptionType". Use defined Data layer exceptions instead.',
-        correctionMessage: 'Replace with appropriate Data exception:\n'
+        correctionMessage:
+            'Replace with appropriate Data exception:\n'
             '  - NotFoundException (for 404 errors)\n'
             '  - UnauthorizedException (for 401/403 errors)\n'
             '  - NetworkException (for network/connection errors)\n'

@@ -67,7 +67,8 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
     name: 'presentation_no_throw',
     problemMessage:
         'Presentation States/Notifiers should NOT throw exceptions. Use state management instead.',
-    correctionMessage: 'Replace throw with state update:\n'
+    correctionMessage:
+        'Replace throw with state update:\n'
         '  Before: throw TodoException("Error")\n'
         '  After:  state = AsyncValue.error(TodoFailure.error(), stack)\n\n'
         'Presentation should handle errors through state, not exceptions.\n'
@@ -133,7 +134,8 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
       problemMessage:
           'Presentation State "$className.${methodNode.name.lexeme}" should NOT throw $exceptionType. '
           'Use state management instead.',
-      correctionMessage: 'Replace throw with state update:\n'
+      correctionMessage:
+          'Replace throw with state update:\n'
           '  ❌ Current: throw $exceptionType\n'
           '  ✅ Better:  state = AsyncValue.error(failure, stack)\n\n'
           'Presentation layer should handle errors through state objects:\n'

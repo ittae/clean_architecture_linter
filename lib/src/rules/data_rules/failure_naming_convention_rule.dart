@@ -16,7 +16,8 @@ class FailureNamingConventionRule extends CleanArchitectureLintRule {
   static const _code = LintCode(
     name: 'failure_naming_convention',
     problemMessage: 'Failure should have feature prefix: {Feature}Failure',
-    correctionMessage: 'Add feature prefix:\\n'
+    correctionMessage:
+        'Add feature prefix:\\n'
         '  ❌ Bad:  class Failure\\n'
         '  ✅ Good: class TodoFailure',
   );

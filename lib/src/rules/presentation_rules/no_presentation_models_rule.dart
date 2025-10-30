@@ -73,11 +73,7 @@ class NoPresentationModelsRule extends CleanArchitectureLintRule {
         correctionMessage:
             'Remove presentation/models/ directory. Use states/ directory with Freezed State containing Entities.',
       );
-      reporter.atOffset(
-        offset: 0,
-        length: 1,
-        errorCode: code,
-      );
+      reporter.atOffset(offset: 0, length: 1, errorCode: code);
     }
 
     if (normalized.contains('/presentation/viewmodels/')) {
@@ -87,11 +83,7 @@ class NoPresentationModelsRule extends CleanArchitectureLintRule {
         correctionMessage:
             'Remove presentation/viewmodels/ directory. Use Freezed State with Riverpod instead.',
       );
-      reporter.atOffset(
-        offset: 0,
-        length: 1,
-        errorCode: code,
-      );
+      reporter.atOffset(offset: 0, length: 1, errorCode: code);
     }
   }
 

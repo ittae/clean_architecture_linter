@@ -13,7 +13,7 @@ import '../../mixins/return_type_validation_mixin.dart';
 ///
 /// This enforces proper error handling boundaries:
 /// - DataSource: Throws exceptions (NotFoundException, NetworkException, etc.)
-/// - Repository: Catches exceptions and returns Result<Success, Failure>
+/// - Repository: Catches exceptions and returns `Result<Success, Failure>`
 /// - UseCase: Unwraps Result and throws domain exceptions
 /// - Presentation: Catches exceptions and updates UI state (AsyncValue)
 ///

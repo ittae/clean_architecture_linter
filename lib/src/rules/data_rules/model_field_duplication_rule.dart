@@ -166,11 +166,7 @@ class ModelFieldDuplicationRule extends CleanArchitectureLintRule {
 
     if (name == null || type == null) return null;
 
-    return _FieldInfo(
-      name: name,
-      type: type,
-      offset: offset,
-    );
+    return _FieldInfo(name: name, type: type, offset: offset);
   }
 
   _FieldInfo? _findEntityField(List<_FieldInfo> fields) {
@@ -215,7 +211,7 @@ class ModelFieldDuplicationRule extends CleanArchitectureLintRule {
       'DateTime',
       'List',
       'Map',
-      'Set'
+      'Set',
     ];
     if (primitiveTypes.any((type) => cleanTypeName.startsWith(type))) {
       return false;
@@ -287,9 +283,5 @@ class _FieldInfo {
   final String type;
   final int offset;
 
-  _FieldInfo({
-    required this.name,
-    required this.type,
-    required this.offset,
-  });
+  _FieldInfo({required this.name, required this.type, required this.offset});
 }

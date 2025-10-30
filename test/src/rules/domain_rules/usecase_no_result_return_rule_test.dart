@@ -183,9 +183,7 @@ void main() {
 
     group('Void Method Exclusion', () {
       test('identifies void return type', () {
-        final voidTypes = [
-          'void',
-        ];
+        final voidTypes = ['void'];
 
         for (final typeStr in voidTypes) {
           expect(
@@ -197,9 +195,7 @@ void main() {
       });
 
       test('identifies Future<void> return type', () {
-        final futureVoidTypes = [
-          'Future<void>',
-        ];
+        final futureVoidTypes = ['Future<void>'];
 
         for (final typeStr in futureVoidTypes) {
           expect(
@@ -301,7 +297,8 @@ void main() {
           'throw domain exception',
         ];
 
-        const errorMessage = 'UseCase method "call" should NOT return Result. '
+        const errorMessage =
+            'UseCase method "call" should NOT return Result. '
             'UseCase should unwrap Result and return Entity or throw domain exception.';
 
         for (final phrase in expectedPhrases) {
@@ -323,7 +320,8 @@ void main() {
           'toException',
         ];
 
-        const correctionMessage = 'Unwrap Result from Repository:\n'
+        const correctionMessage =
+            'Unwrap Result from Repository:\n'
             '  Before: Future<Result<Todo, TodoFailure>> call()\n'
             '  After:  Future<Todo> call() // unwrap and throw on failure\n\n'
             'Pattern:\n'

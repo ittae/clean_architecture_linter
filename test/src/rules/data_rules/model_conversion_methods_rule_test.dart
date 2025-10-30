@@ -56,11 +56,7 @@ void main() {
       test('requires toEntity method (fromEntity is optional)', () {
         final hasToEntity = _hasMethod('toEntity', isStatic: false);
 
-        expect(
-          hasToEntity,
-          isTrue,
-          reason: 'toEntity() method is required',
-        );
+        expect(hasToEntity, isTrue, reason: 'toEntity() method is required');
       });
     });
 
@@ -229,9 +225,7 @@ void main() {
 
 // Helper enums and classes for testing
 
-enum ErrorType {
-  missingConversion,
-}
+enum ErrorType { missingConversion }
 
 // Helper functions that simulate rule logic
 
@@ -240,7 +234,7 @@ const _mockExtensions = {
     'toEntity': {'isStatic': false, 'returnType': 'Todo'},
     'fromEntity': {
       'isStatic': true,
-      'params': ['Todo']
+      'params': ['Todo'],
     },
   },
 };
@@ -264,8 +258,10 @@ bool _isExtensionInSameFile(String className) {
   return _hasExtensionOn(className);
 }
 
-bool _hasCorrectReturnType(String methodName,
-    {required String expectedReturn}) {
+bool _hasCorrectReturnType(
+  String methodName, {
+  required String expectedReturn,
+}) {
   final extension = _mockExtensions['TodoModel'];
   if (extension == null) return false;
 
@@ -276,8 +272,10 @@ bool _hasCorrectReturnType(String methodName,
   return method['returnType'] != null;
 }
 
-bool _hasCorrectParameters(String methodName,
-    {required List<String> expectedParams}) {
+bool _hasCorrectParameters(
+  String methodName, {
+  required List<String> expectedParams,
+}) {
   final extension = _mockExtensions['TodoModel'];
   if (extension == null) return false;
 

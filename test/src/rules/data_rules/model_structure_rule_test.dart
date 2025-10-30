@@ -137,11 +137,7 @@ void main() {
       });
 
       test('detects entity field ending with "Entity"', () {
-        final testCases = [
-          'todoEntity',
-          'userEntity',
-          'productEntity',
-        ];
+        final testCases = ['todoEntity', 'userEntity', 'productEntity'];
 
         for (final fieldName in testCases) {
           expect(
@@ -211,11 +207,7 @@ void main() {
 
     group('Model Naming Convention', () {
       test('validates Model suffix', () {
-        final validNames = [
-          'TodoModel',
-          'UserModel',
-          'ProductModel',
-        ];
+        final validNames = ['TodoModel', 'UserModel', 'ProductModel'];
 
         for (final name in validNames) {
           expect(
@@ -227,11 +219,7 @@ void main() {
       });
 
       test('rejects names without Model suffix', () {
-        final invalidNames = [
-          'Todo',
-          'UserEntity',
-          'ProductDto',
-        ];
+        final invalidNames = ['Todo', 'UserEntity', 'ProductDto'];
 
         for (final name in invalidNames) {
           expect(
@@ -376,11 +364,7 @@ void main() {
 
 // Helper enums and classes for testing
 
-enum ErrorType {
-  missingFreezed,
-  missingSealed,
-  missingEntity,
-}
+enum ErrorType { missingFreezed, missingSealed, missingEntity }
 
 // Helper functions that simulate rule logic
 
@@ -430,7 +414,7 @@ bool _isEntityType(String typeName) {
     'DateTime',
     'List',
     'Map',
-    'Set'
+    'Set',
   ];
   if (primitiveTypes.any((type) => cleanTypeName.startsWith(type))) {
     return false;

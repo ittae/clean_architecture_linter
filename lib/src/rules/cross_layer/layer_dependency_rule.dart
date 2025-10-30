@@ -299,8 +299,10 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
       'main.dart', // main.dart often contains DI setup
     ];
 
-    return diPatterns.any((pattern) =>
-        normalizedPath.endsWith(pattern) || normalizedPath.contains(pattern));
+    return diPatterns.any(
+      (pattern) =>
+          normalizedPath.endsWith(pattern) || normalizedPath.contains(pattern),
+    );
   }
 
   bool _isCrossCuttingConcern(String importUri) {
@@ -340,8 +342,5 @@ class LayerViolation {
   final String message;
   final String suggestion;
 
-  const LayerViolation({
-    required this.message,
-    required this.suggestion,
-  });
+  const LayerViolation({required this.message, required this.suggestion});
 }

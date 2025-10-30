@@ -122,9 +122,7 @@ class TodoPage extends ConsumerWidget {
 
     group('build() Method Detection', () {
       test('detects build() method', () {
-        final methodNames = [
-          'build',
-        ];
+        final methodNames = ['build'];
 
         for (final name in methodNames) {
           expect(

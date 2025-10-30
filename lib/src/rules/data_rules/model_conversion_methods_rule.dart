@@ -152,10 +152,7 @@ class ModelConversionMethodsRule extends CleanArchitectureLintRule {
   }
 
   /// Checks if toEntity() method exists in any extension on this Model
-  bool _hasToEntityMethod(
-    CompilationUnit compilationUnit,
-    String className,
-  ) {
+  bool _hasToEntityMethod(CompilationUnit compilationUnit, String className) {
     for (final declaration in compilationUnit.declarations) {
       if (declaration is ExtensionDeclaration) {
         // Check if extension is on this Model class

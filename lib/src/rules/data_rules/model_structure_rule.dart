@@ -189,7 +189,7 @@ class ModelStructureRule extends CleanArchitectureLintRule {
       'DateTime',
       'List',
       'Map',
-      'Set'
+      'Set',
     ];
     if (primitiveTypes.any((type) => typeName.startsWith(type))) {
       return false;

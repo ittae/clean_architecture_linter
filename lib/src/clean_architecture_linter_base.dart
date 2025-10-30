@@ -110,7 +110,7 @@ class CleanArchitectureUtils {
         'pubspec.yaml',
         'analysis_options.yaml',
         'build.yaml',
-        'dependency_validator.yaml'
+        'dependency_validator.yaml',
       ];
       return !importantYamlFiles.contains(fileName);
     }
@@ -348,8 +348,10 @@ class CleanArchitectureUtils {
   /// - [excludeFiles]: Whether to exclude test/generated files (default: true)
   ///
   /// Returns `true` if the file is a repository implementation.
-  static bool isRepositoryImplFile(String filePath,
-      {bool excludeFiles = true}) {
+  static bool isRepositoryImplFile(
+    String filePath, {
+    bool excludeFiles = true,
+  }) {
     if (excludeFiles && shouldExcludeFile(filePath)) return false;
 
     final normalized = _normalizePath(filePath);
@@ -545,8 +547,9 @@ class CleanArchitectureUtils {
 
     // Step 1: Check naming patterns
     final repositoryPatterns = ['Repository', 'DataSource', 'Gateway', 'Port'];
-    final isRepositoryClass =
-        repositoryPatterns.any((pattern) => className.contains(pattern));
+    final isRepositoryClass = repositoryPatterns.any(
+      (pattern) => className.contains(pattern),
+    );
 
     if (!isRepositoryClass) return false;
 
@@ -556,8 +559,9 @@ class CleanArchitectureUtils {
     // Step 3: Check if all methods are abstract
     final hasOnlyAbstractMethods = classDeclaration.members
         .whereType<MethodDeclaration>()
-        .every((method) =>
-            method.isAbstract || method.isGetter || method.isSetter);
+        .every(
+          (method) => method.isAbstract || method.isGetter || method.isSetter,
+        );
 
     return isRepositoryClass && (isAbstractClass || hasOnlyAbstractMethods);
   }
@@ -784,11 +788,13 @@ class CleanArchitectureUtils {
 
     return (extendsClause?.superclass.toString().contains('Exception') ??
             false) ||
-        (implementsClause?.interfaces
-                .any((i) => i.toString().contains('Exception')) ??
+        (implementsClause?.interfaces.any(
+              (i) => i.toString().contains('Exception'),
+            ) ??
             false) ||
-        (withClause?.mixinTypes
-                .any((m) => m.toString().contains('Exception')) ??
+        (withClause?.mixinTypes.any(
+              (m) => m.toString().contains('Exception'),
+            ) ??
             false);
   }
 

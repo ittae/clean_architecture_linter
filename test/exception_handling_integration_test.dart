@@ -64,26 +64,28 @@ void main() {
         );
       });
 
-      test('detects violation: Repository throws instead of returning Result',
-          () {
-        // Violation Flow:
-        // Repository throws ArgumentError (should return Failure)
+      test(
+        'detects violation: Repository throws instead of returning Result',
+        () {
+          // Violation Flow:
+          // Repository throws ArgumentError (should return Failure)
 
-        final flow = ExceptionFlow(
-          dataSourceException: 'NotFoundException',
-          repositoryConvertsTo: 'throws ArgumentError', // ❌ Repository throws
-          useCaseThrows: 'TodoNotFoundException',
-          presentationCatches: 'TodoNotFoundException',
-        );
+          final flow = ExceptionFlow(
+            dataSourceException: 'NotFoundException',
+            repositoryConvertsTo: 'throws ArgumentError', // ❌ Repository throws
+            useCaseThrows: 'TodoNotFoundException',
+            presentationCatches: 'TodoNotFoundException',
+          );
 
-        final violations = _detectViolations(flow);
+          final violations = _detectViolations(flow);
 
-        expect(
-          violations,
-          contains(RuleViolation.repositoryThrows),
-          reason: 'Should detect Repository throwing exception',
-        );
-      });
+          expect(
+            violations,
+            contains(RuleViolation.repositoryThrows),
+            reason: 'Should detect Repository throwing exception',
+          );
+        },
+      );
 
       test('detects violation: DataSource uses generic Exception', () {
         // Violation Flow:
@@ -128,33 +130,34 @@ void main() {
 
     group('Inter-Rule Consistency', () {
       test(
-          'exception_naming_convention and presentation_no_data_exceptions agree',
-          () {
-        // Both rules should recognize the difference between:
-        // - Data exceptions: NotFoundException (no prefix)
-        // - Domain exceptions: TodoNotFoundException (with prefix)
+        'exception_naming_convention and presentation_no_data_exceptions agree',
+        () {
+          // Both rules should recognize the difference between:
+          // - Data exceptions: NotFoundException (no prefix)
+          // - Domain exceptions: TodoNotFoundException (with prefix)
 
-        expect(
-          _isDataLayerException('NotFoundException'),
-          isTrue,
-          reason: 'NotFoundException is data layer exception',
-        );
-        expect(
-          _isDataLayerException('TodoNotFoundException'),
-          isFalse,
-          reason: 'TodoNotFoundException is domain exception',
-        );
-        expect(
-          _needsFeaturePrefix('NotFoundException'),
-          isTrue,
-          reason: 'NotFoundException needs feature prefix in domain layer',
-        );
-        expect(
-          _needsFeaturePrefix('TodoNotFoundException'),
-          isFalse,
-          reason: 'TodoNotFoundException already has feature prefix',
-        );
-      });
+          expect(
+            _isDataLayerException('NotFoundException'),
+            isTrue,
+            reason: 'NotFoundException is data layer exception',
+          );
+          expect(
+            _isDataLayerException('TodoNotFoundException'),
+            isFalse,
+            reason: 'TodoNotFoundException is domain exception',
+          );
+          expect(
+            _needsFeaturePrefix('NotFoundException'),
+            isTrue,
+            reason: 'NotFoundException needs feature prefix in domain layer',
+          );
+          expect(
+            _needsFeaturePrefix('TodoNotFoundException'),
+            isFalse,
+            reason: 'TodoNotFoundException already has feature prefix',
+          );
+        },
+      );
 
       test('datasource_exception_types and repository_no_throw coordinate', () {
         // DataSource can throw data exceptions
@@ -186,27 +189,38 @@ void main() {
 
       test('all rules recognize layer boundaries correctly', () {
         // Domain layer
-        expect(_isDomainLayer('lib/domain/exceptions/todo_exceptions.dart'),
-            isTrue);
         expect(
-            _isDomainLayer('lib/features/todos/domain/usecases/get_todo.dart'),
-            isTrue);
+          _isDomainLayer('lib/domain/exceptions/todo_exceptions.dart'),
+          isTrue,
+        );
+        expect(
+          _isDomainLayer('lib/features/todos/domain/usecases/get_todo.dart'),
+          isTrue,
+        );
 
         // Data layer
-        expect(_isDataLayer('lib/data/datasources/todo_remote_datasource.dart'),
-            isTrue);
         expect(
-            _isDataLayer(
-                'lib/features/todos/data/repositories/todo_repository_impl.dart'),
-            isTrue);
+          _isDataLayer('lib/data/datasources/todo_remote_datasource.dart'),
+          isTrue,
+        );
+        expect(
+          _isDataLayer(
+            'lib/features/todos/data/repositories/todo_repository_impl.dart',
+          ),
+          isTrue,
+        );
 
         // Presentation layer
-        expect(_isPresentationLayer('lib/presentation/pages/todo_page.dart'),
-            isTrue);
         expect(
-            _isPresentationLayer(
-                'lib/features/todos/presentation/widgets/todo_list.dart'),
-            isTrue);
+          _isPresentationLayer('lib/presentation/pages/todo_page.dart'),
+          isTrue,
+        );
+        expect(
+          _isPresentationLayer(
+            'lib/features/todos/presentation/widgets/todo_list.dart',
+          ),
+          isTrue,
+        );
       });
     });
 
@@ -300,14 +314,8 @@ void main() {
         // Domain: TodoNotFoundException extends DomainException
         // Presentation should catch TodoNotFoundException, not NotFoundException
 
-        expect(
-          _isDataLayerException('NotFoundException'),
-          isTrue,
-        );
-        expect(
-          _isDataLayerException('TodoNotFoundException'),
-          isFalse,
-        );
+        expect(_isDataLayerException('NotFoundException'), isTrue);
+        expect(_isDataLayerException('TodoNotFoundException'), isFalse);
       });
 
       test('handles exception in multiple layers with same name', () {
@@ -432,64 +440,40 @@ void main() {
 
     group('Rule Interaction Matrix', () {
       test(
-          'exception_naming_convention does not conflict with datasource_exception_types',
-          () {
-        // Data layer can use NotFoundException (no feature prefix)
-        // Domain layer needs TodoNotFoundException (with feature prefix)
+        'exception_naming_convention does not conflict with datasource_exception_types',
+        () {
+          // Data layer can use NotFoundException (no feature prefix)
+          // Domain layer needs TodoNotFoundException (with feature prefix)
 
-        expect(
-          _isAllowedInDataSource('NotFoundException'),
-          isTrue,
-        );
-        expect(
-          _needsFeaturePrefixInDomain('NotFoundException'),
-          isTrue,
-        );
-      });
+          expect(_isAllowedInDataSource('NotFoundException'), isTrue);
+          expect(_needsFeaturePrefixInDomain('NotFoundException'), isTrue);
+        },
+      );
 
       test(
-          'datasource_exception_types does not conflict with repository_no_throw',
-          () {
-        // DataSource can throw NotFoundException
-        // Repository must catch and convert to Result
+        'datasource_exception_types does not conflict with repository_no_throw',
+        () {
+          // DataSource can throw NotFoundException
+          // Repository must catch and convert to Result
 
-        expect(
-          _isAllowedInDataSource('NotFoundException'),
-          isTrue,
-        );
-        expect(
-          _mustBeCaughtByRepository('NotFoundException'),
-          isTrue,
-        );
-        expect(
-          _isAllowedRepositoryThrow(ThrowContext.publicMethod),
-          isFalse,
-        );
-      });
+          expect(_isAllowedInDataSource('NotFoundException'), isTrue);
+          expect(_mustBeCaughtByRepository('NotFoundException'), isTrue);
+          expect(_isAllowedRepositoryThrow(ThrowContext.publicMethod), isFalse);
+        },
+      );
 
       test(
-          'repository_no_throw does not conflict with presentation_no_data_exceptions',
-          () {
-        // Repository converts to Result (no throw)
-        // Presentation catches domain exceptions (not data exceptions)
+        'repository_no_throw does not conflict with presentation_no_data_exceptions',
+        () {
+          // Repository converts to Result (no throw)
+          // Presentation catches domain exceptions (not data exceptions)
 
-        expect(
-          _isAllowedRepositoryThrow(ThrowContext.publicMethod),
-          isFalse,
-        );
-        expect(
-          _isDataLayerException('NotFoundException'),
-          isTrue,
-        );
-        expect(
-          _canPresentationCatch('TodoNotFoundException'),
-          isTrue,
-        );
-        expect(
-          _canPresentationCatch('NotFoundException'),
-          isFalse,
-        );
-      });
+          expect(_isAllowedRepositoryThrow(ThrowContext.publicMethod), isFalse);
+          expect(_isDataLayerException('NotFoundException'), isTrue);
+          expect(_canPresentationCatch('TodoNotFoundException'), isTrue);
+          expect(_canPresentationCatch('NotFoundException'), isFalse);
+        },
+      );
     });
   });
 }
@@ -525,11 +509,7 @@ enum ThrowContext {
   newExceptionInCatch,
 }
 
-enum Layer {
-  domain,
-  data,
-  presentation,
-}
+enum Layer { domain, data, presentation }
 
 // Helper functions that simulate combined rule logic
 

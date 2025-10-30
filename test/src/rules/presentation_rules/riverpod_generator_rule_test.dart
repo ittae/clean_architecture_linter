@@ -107,9 +107,7 @@ void main() {
 
     group('Error Messages', () {
       test('provides clear message for StateNotifierProvider', () {
-        final message = _getErrorMessage(
-          ProviderType.stateNotifier,
-        );
+        final message = _getErrorMessage(ProviderType.stateNotifier);
 
         expect(
           message,
@@ -124,9 +122,7 @@ void main() {
       });
 
       test('provides correction guidance', () {
-        final message = _getErrorMessage(
-          ProviderType.changeNotifier,
-        );
+        final message = _getErrorMessage(ProviderType.changeNotifier);
 
         expect(
           message,
@@ -136,9 +132,7 @@ void main() {
       });
 
       test('explains riverpod_generator benefits', () {
-        final message = _getErrorMessage(
-          ProviderType.stateNotifier,
-        );
+        final message = _getErrorMessage(ProviderType.stateNotifier);
 
         final hasRiverpodGenerator = message.contains('riverpod_generator');
         final hasTypeSafety = message.contains('type safety');
@@ -156,7 +150,8 @@ void main() {
       test('handles provider with complex generics', () {
         expect(
           _isManualProvider(
-              'StateNotifierProvider<RankingNotifier, AsyncValue<RankingState>>'),
+            'StateNotifierProvider<RankingNotifier, AsyncValue<RankingState>>',
+          ),
           isTrue,
           reason: 'Should detect manual providers with complex generics',
         );
@@ -223,13 +218,7 @@ void main() {
 
 // Helper enums and classes for testing
 
-enum ProviderType {
-  stateNotifier,
-  changeNotifier,
-  state,
-  future,
-  stream,
-}
+enum ProviderType { stateNotifier, changeNotifier, state, future, stream }
 
 // Helper functions that simulate rule logic
 

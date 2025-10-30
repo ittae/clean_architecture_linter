@@ -134,12 +134,7 @@ class WidgetRefReadThenWhenRule extends CleanArchitectureLintRule {
     final variableAssignments = <String, MethodInvocation>{};
 
     // Collect all relevant nodes
-    _collectNodes(
-      functionBody,
-      refReadCalls,
-      whenCalls,
-      variableAssignments,
-    );
+    _collectNodes(functionBody, refReadCalls, whenCalls, variableAssignments);
 
     // Check for anti-pattern
     if (refReadCalls.isEmpty || whenCalls.isEmpty) return;

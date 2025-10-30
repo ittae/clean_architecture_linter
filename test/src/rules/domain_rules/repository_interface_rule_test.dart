@@ -423,7 +423,7 @@ void main() {
           ('lib/domain/repositories/user_repository.dart', true),
           (
             'lib/features/todos/data/repositories/todo_repository_impl.dart',
-            false
+            false,
           ),
           ('lib/presentation/pages/home_page.dart', false),
         ];
@@ -539,11 +539,7 @@ void main() {
 
       test('handles repository implementing multiple interfaces', () {
         final repo = TestRepository(
-          implementedInterfaces: [
-            'UserRepository',
-            'Searchable',
-            'Cacheable',
-          ],
+          implementedInterfaces: ['UserRepository', 'Searchable', 'Cacheable'],
         );
 
         expect(
@@ -570,10 +566,7 @@ void main() {
       });
 
       test('handles private repository classes', () {
-        final testCases = [
-          '_UserRepository',
-          '_TodoRepositoryImpl',
-        ];
+        final testCases = ['_UserRepository', '_TodoRepositoryImpl'];
 
         for (final className in testCases) {
           expect(
@@ -776,8 +769,9 @@ bool _isValidAbstractRepository(TestRepository repo) {
 
 /// Checks if implements Repository interface
 bool _implementsRepositoryInterface(TestRepository repo) {
-  return repo.implementedInterfaces
-      .any((interface) => interface.contains('Repository'));
+  return repo.implementedInterfaces.any(
+    (interface) => interface.contains('Repository'),
+  );
 }
 
 /// Detects generic repository types
@@ -830,10 +824,7 @@ class TestImportContext {
   final String importUri;
   final String currentFilePath;
 
-  TestImportContext({
-    required this.importUri,
-    required this.currentFilePath,
-  });
+  TestImportContext({required this.importUri, required this.currentFilePath});
 }
 
 class TestConstructor {
