@@ -21,6 +21,8 @@ import '../../mixins/exception_validation_mixin.dart';
 /// - ServerException
 /// - CacheException
 /// - DatabaseException
+/// - ConflictException
+/// - TimeoutException
 ///
 /// ✅ Correct Pattern:
 /// ```dart
@@ -75,6 +77,8 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule
         '  - UnauthorizedException (for 401/403 errors)\n'
         '  - NetworkException (for connection errors)\n'
         '  - ServerException (for 5xx errors)\n'
+        '  - ConflictException (for 409 conflict errors)\n'
+        '  - TimeoutException (for request timeout errors)\n'
         '  - DataSourceException (for data source errors)\n'
         '  - CacheException (for cache errors)\n'
         '  - DatabaseException (for database errors)\n\n'
@@ -135,6 +139,8 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule
             '  - UnauthorizedException (for 401/403 errors)\n'
             '  - NetworkException (for network/connection errors)\n'
             '  - ServerException (for 5xx server errors)\n'
+            '  - ConflictException (for 409 conflict errors)\n'
+            '  - TimeoutException (for request timeout errors)\n'
             '  - DataSourceException (for data source specific errors)\n'
             '  - CacheException (for cache errors)\n'
             '  - DatabaseException (for database errors)\n\n'

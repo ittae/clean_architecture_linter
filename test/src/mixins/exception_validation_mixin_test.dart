@@ -57,11 +57,13 @@ void main() {
         expect(testRule.isAllowedWithoutPrefix('DataSourceException'), isTrue);
         expect(testRule.isAllowedWithoutPrefix('CacheException'), isTrue);
         expect(testRule.isAllowedWithoutPrefix('DatabaseException'), isTrue);
+        expect(testRule.isAllowedWithoutPrefix('TimeoutException'), isTrue);
+        expect(testRule.isAllowedWithoutPrefix('ConflictException'), isTrue);
       });
 
       test('returns false for domain exceptions needing prefix', () {
         expect(testRule.isAllowedWithoutPrefix('ValidationException'), isFalse);
-        expect(testRule.isAllowedWithoutPrefix('TimeoutException'), isFalse);
+        expect(testRule.isAllowedWithoutPrefix('CancelledException'), isFalse);
       });
     });
 

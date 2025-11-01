@@ -70,10 +70,12 @@ mixin ExceptionValidationMixin {
     'DataSourceException',
     'CacheException',
     'DatabaseException',
-    'NotFoundException', // Data layer version
-    'UnauthorizedException', // Data layer version
-    'NetworkException', // Data layer version
-    'ServerException', // Data layer version
+    'NotFoundException', // Data layer version (404)
+    'UnauthorizedException', // Data layer version (401/403)
+    'NetworkException', // Data layer version (connection errors)
+    'ServerException', // Data layer version (5xx errors)
+    'ConflictException', // Data layer version (409 conflict)
+    'TimeoutException', // Data layer version (request timeout)
   };
 
   /// Dart built-in exceptions that are allowed without feature prefix.
