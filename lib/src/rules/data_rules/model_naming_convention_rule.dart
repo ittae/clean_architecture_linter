@@ -80,9 +80,9 @@ class ModelNamingConventionRule extends CleanArchitectureLintRule {
         'Model name should not include DataSource implementation details. '
         'Use entity-based naming instead.',
     correctionMessage:
-        'Remove DataSource implementation from Model name:\n'
-        '  ❌ Bad:  class TodoFirestoreModel\n'
-        '  ✅ Good: class TodoModel\n\n'
+        'Remove DataSource implementation from Model name:\\n'
+        '  ❌ Bad:  class TodoFirestoreModel\\n'
+        '  ✅ Good: class TodoModel\\n\\n'
         'Models should be independent of DataSource implementation.',
   );
 
@@ -187,13 +187,13 @@ class ModelNamingConventionRule extends CleanArchitectureLintRule {
               'Model name "$className" should not include DataSource implementation "$keyword". '
               'This violates implementation independence.',
           correctionMessage:
-              'Remove DataSource implementation from Model name:\n'
-              '  ❌ Current:  class $className\n'
-              '  ✅ Suggested: class $suggestedName\n\n'
-              'Models should be independent of DataSource implementation.\n'
-              'This allows swapping DataSources (e.g., Firestore → Supabase) without changing Models.\n\n'
-              'Pattern: {Entity}Model\n'
-              'Examples: TodoModel, UserModel, OrderModel\n\n'
+              'Remove DataSource implementation from Model name:\\n'
+              '  ❌ Current:  class $className\\n'
+              '  ✅ Suggested: class $suggestedName\\n\\n'
+              'Models should be independent of DataSource implementation.\\n'
+              'This allows swapping DataSources (e.g., Firestore → Supabase) without changing Models.\\n\\n'
+              'Pattern: {Entity}Model\\n'
+              'Examples: TodoModel, UserModel, OrderModel\\n\\n'
               'See CLEAN_ARCHITECTURE_GUIDE.md for Model naming conventions.',
         );
 

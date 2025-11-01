@@ -31,9 +31,8 @@ class FailureNamingConventionRule extends CleanArchitectureLintRule {
     context.registry.addClassDeclaration((node) {
       final className = node.name.lexeme;
 
-      // Check if it's a Failure class
-      if (className == 'Failure' ||
-          (className.endsWith('Failure') && className.length < 12)) {
+      // Check if it's a Failure class that needs feature prefix
+      if (_isGenericFailureName(className)) {
         final filePath = resolver.path;
 
         // Skip /core/ directory - core failures don't need feature prefix
@@ -46,5 +45,11 @@ class FailureNamingConventionRule extends CleanArchitectureLintRule {
         }
       }
     });
+  }
+
+  /// Checks if the Failure class name is too generic and needs feature prefix
+  bool _isGenericFailureName(String className) {
+    // Use shared utility for generic class name validation
+    return CleanArchitectureUtils.isGenericClassName(className, 'Failure');
   }
 }

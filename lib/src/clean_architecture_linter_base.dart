@@ -926,7 +926,111 @@ class CleanArchitectureUtils {
   }
 
   // ============================================================================
-  // Category 10: Internal Helpers (Private)
+  // Category 10: Naming Convention Validation
+  // ============================================================================
+
+  /// Checks if a prefix is a common generic word that doesn't represent a feature.
+  ///
+  /// Generic prefixes like "Data", "Api", "App" are too generic to serve as
+  /// feature identifiers in Clean Architecture naming conventions.
+  ///
+  /// Used by:
+  /// - Exception naming validation (e.g., `DataException` is too generic)
+  /// - Failure naming validation (e.g., `ApiFailure` is too generic)
+  ///
+  /// Examples:
+  /// ```dart
+  /// isGenericPrefix('Data');     // true
+  /// isGenericPrefix('Todo');     // false
+  /// isGenericPrefix('User');     // false
+  /// isGenericPrefix('Schedule'); // false
+  /// ```
+  static bool isGenericPrefix(String prefix) {
+    const genericPrefixes = {
+      'Data',
+      'Api',
+      'App',
+      'Base',
+      'Core',
+      'Http',
+      'Json',
+      'Xml',
+      'Custom',
+    };
+    return genericPrefixes.contains(prefix);
+  }
+
+  /// Checks if a string starts with an uppercase letter (PascalCase convention).
+  ///
+  /// This validates that a potential feature prefix follows Dart naming conventions.
+  ///
+  /// Used by:
+  /// - Exception naming validation
+  /// - Failure naming validation
+  ///
+  /// Examples:
+  /// ```dart
+  /// hasCapitalizedWord('Todo');     // true
+  /// hasCapitalizedWord('User');     // true
+  /// hasCapitalizedWord('');         // false
+  /// hasCapitalizedWord('lowercase'); // false (doesn't start with uppercase)
+  /// ```
+  static bool hasCapitalizedWord(String text) {
+    if (text.isEmpty) return false;
+    return text[0] == text[0].toUpperCase();
+  }
+
+  /// Checks if a class name ending with the given suffix has a valid feature prefix.
+  ///
+  /// Returns `false` if the name has a proper feature prefix (non-generic, capitalized).
+  /// Returns `true` if the name is generic and needs a feature prefix.
+  ///
+  /// This is used to validate Exception and Failure naming conventions.
+  ///
+  /// Algorithm:
+  /// 1. If the name is just the suffix (e.g., "Exception", "Failure"), it's generic
+  /// 2. If the prefix is a generic word (e.g., "Data", "Api"), it's generic
+  /// 3. If the prefix is capitalized and specific, it's valid (not generic)
+  ///
+  /// Used by:
+  /// - `ExceptionNamingConventionRule`
+  /// - `FailureNamingConventionRule`
+  ///
+  /// Examples:
+  /// ```dart
+  /// isGenericClassName('Exception', 'Exception');         // true
+  /// isGenericClassName('DataException', 'Exception');     // true (generic prefix)
+  /// isGenericClassName('TodoException', 'Exception');     // false (valid prefix)
+  /// isGenericClassName('ScheduleException', 'Exception'); // false (valid prefix)
+  /// isGenericClassName('Failure', 'Failure');             // true
+  /// isGenericClassName('TodoFailure', 'Failure');         // false (valid prefix)
+  /// ```
+  static bool isGenericClassName(String className, String suffix) {
+    // Exact match for suffix only
+    if (className == suffix) return true;
+
+    if (className.endsWith(suffix)) {
+      final withoutSuffix = className.replaceAll(suffix, '');
+
+      // Check if prefix is a common generic word
+      if (isGenericPrefix(withoutSuffix)) {
+        return true;
+      }
+
+      // If there's a proper feature prefix (capitalized word), it's valid
+      if (withoutSuffix.isNotEmpty && hasCapitalizedWord(withoutSuffix)) {
+        return false; // Not generic - has valid feature prefix
+      }
+
+      // No valid prefix found, it's generic
+      return true;
+    }
+
+    return false;
+  }
+
+  // ============================================================================
+  // Category 11: Internal Helpers (Private)
   // ============================================================================
 
   /// Normalizes a file path by converting backslashes to forward slashes.

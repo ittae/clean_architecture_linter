@@ -118,16 +118,8 @@ mixin ExceptionValidationMixin {
       return true;
     }
 
-    // Check if it's a very short, generic exception name
-    if (className.endsWith('Exception') && className.length < 20) {
-      final withoutSuffix = className.replaceAll('Exception', '');
-      if (withoutSuffix.length < 5) {
-        // Very short prefix suggests it might be generic
-        return true;
-      }
-    }
-
-    return false;
+    // Use shared utility for generic class name validation
+    return CleanArchitectureUtils.isGenericClassName(className, 'Exception');
   }
 
   /// Checks if the [className] is allowed without a feature prefix.
