@@ -12,7 +12,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 ## ✨ Key Features
 
 - 🛡️ **Automatic Clean Architecture Protection** - Write code freely, linter catches violations
-- 🎯 **33 Specialized Rules** - Comprehensive coverage of all Clean Architecture layers
+- 🎯 **34 Specialized Rules** - Comprehensive coverage of all Clean Architecture layers
 - 🚀 **Flutter-Optimized** - Built specifically for Flutter development patterns
 - 🎨 **Riverpod State Management** - Enforces 3-tier provider architecture (Entity → UI → Computed)
 - 📚 **Educational** - Learn Clean Architecture through guided corrections
@@ -20,48 +20,49 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 - 🔧 **Zero Configuration** - Works out of the box with sensible defaults
 - 🧪 **Test-Aware** - Smart exceptions for test files and development contexts
 
-## 📋 Rules Overview (33 Rules)
+## 📋 Rules Overview (34 Rules)
 
-### 🌐 Core Clean Architecture Principles (6 rules)
+### 🌐 Core Clean Architecture Principles (7 rules)
 1. **Layer Dependency** - Enforces dependency direction (inward only)
 2. **Domain Purity** - Prevents external framework dependencies in domain layer
 3. **Dependency Inversion** - Validates abstraction-based dependencies
 4. **Repository Interface** - Ensures proper repository abstractions
 5. **Circular Dependency** - Prevents circular dependencies between layers
 6. **Boundary Crossing** - Validates proper layer boundary crossing
+7. **Allowed Instance Variables** - Enforces stateless architecture (UseCase/Repository/DataSource)
 
 ### 🎯 Domain Layer Rules (4 rules)
-7. **UseCase No Result Return** - UseCases should unwrap Result types
-8. **UseCase Must Convert Failure** - UseCases convert Failures to Exceptions
-9. **Exception Naming Convention** - Feature prefix for domain exceptions
-10. **Exception Message Localization** - Consistent exception messages
+8. **UseCase No Result Return** - UseCases should unwrap Result types
+9. **UseCase Must Convert Failure** - UseCases convert Failures to Exceptions
+10. **Exception Naming Convention** - Feature prefix for domain exceptions
+11. **Exception Message Localization** - Consistent exception messages
 
 ### 💾 Data Layer Rules (13 rules)
-11. **Model Structure** - Freezed models with entity composition
-12. **Model Field Duplication** - No duplicate entity fields in models
-13. **Model Conversion Methods** - Required `toEntity()` method in extensions
-14. **Model Entity Direct Access** - Use `.toEntity()` instead of direct `.entity` access
-15. **Model Naming Convention** - Models must end with `Model` suffix
-16. **DataSource Abstraction** - Abstract interfaces for data sources
-17. **DataSource No Result Return** - DataSources throw exceptions
-18. **Repository Implementation** - RepositoryImpl must implement domain interface
-19. **Repository Must Return Result** - Repositories wrap results in Result type
-20. **Repository No Throw** - Repositories convert exceptions to Result
-21. **DataSource Exception Types** - Use defined data layer exceptions only
-22. **Failure Naming Convention** - Feature prefix for Failure classes
+12. **Model Structure** - Freezed models with entity composition
+13. **Model Field Duplication** - No duplicate entity fields in models
+14. **Model Conversion Methods** - Required `toEntity()` method in extensions
+15. **Model Entity Direct Access** - Use `.toEntity()` instead of direct `.entity` access
+16. **Model Naming Convention** - Models must end with `Model` suffix
+17. **DataSource Abstraction** - Abstract interfaces for data sources
+18. **DataSource No Result Return** - DataSources throw exceptions
+19. **Repository Implementation** - RepositoryImpl must implement domain interface
+20. **Repository Must Return Result** - Repositories wrap results in Result type
+21. **Repository No Throw** - Repositories convert exceptions to Result
+22. **DataSource Exception Types** - Use defined data layer exceptions only
+23. **Failure Naming Convention** - Feature prefix for Failure classes
 
 ### 🎨 Presentation Layer Rules (11 rules)
-23. **No Presentation Models** - Use Freezed State instead of ViewModels
-24. **Extension Location** - Extensions in same file as the class
-25. **Freezed Usage** - Use Freezed instead of Equatable
-26. **Riverpod Generator** - Use `@riverpod` annotation
-27. **Presentation No Data Exceptions** - Use domain exceptions only
-28. **Presentation Use AsyncValue** - Use AsyncValue for error handling (3-tier architecture)
-29. **Presentation No Throw** - No exception throwing in Presentation layer
-30. **Widget No UseCase Call** - Widgets should not call UseCases directly (use Providers)
-31. **Widget Ref Read Then When** - Avoid using .when() after ref.read() (anti-pattern)
-32. **Riverpod Ref Usage** - Use ref.watch() in build(), ref.read() in methods (with UseCase detection)
-33. **Riverpod Provider Naming** - Provider functions must include type suffix (repository/usecase/datasource)
+24. **No Presentation Models** - Use Freezed State instead of ViewModels
+25. **Extension Location** - Extensions in same file as the class
+26. **Freezed Usage** - Use Freezed instead of Equatable
+27. **Riverpod Generator** - Use `@riverpod` annotation
+28. **Presentation No Data Exceptions** - Use domain exceptions only
+29. **Presentation Use AsyncValue** - Use AsyncValue for error handling (3-tier architecture)
+30. **Presentation No Throw** - No exception throwing in Presentation layer
+31. **Widget No UseCase Call** - Widgets should not call UseCases directly (use Providers)
+32. **Widget Ref Read Then When** - Avoid using .when() after ref.read() (anti-pattern)
+33. **Riverpod Ref Usage** - Use ref.watch() in build(), ref.read() in methods (with UseCase detection)
+34. **Riverpod Provider Naming** - Provider functions must include type suffix (repository/usecase/datasource)
 
 ### 🧪 Optional: Test Coverage Rule
 **Test Coverage** - Enforces test files for UseCases, Repositories, DataSources, and Notifiers (disabled by default)
@@ -83,7 +84,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 ```yaml
 # pubspec.yaml
 dev_dependencies:
-  clean_architecture_linter: ^1.0.4
+  clean_architecture_linter: ^1.0.9
   custom_lint: ^0.7.6
 ```
 

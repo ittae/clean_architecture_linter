@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.9] - 2025-11-12
+
+### ✨ Added (1 new rule)
+
+- **allowed_instance_variables_rule** - Enforce stateless architecture in UseCase, Repository, and DataSource classes
+  - **UseCase**: Only `final`/`const` Repository and Service dependencies allowed
+  - **Repository**: Only `final`/`const` DataSource and infrastructure dependencies (primitives, Stream, HTTP, Firebase, Database) allowed
+  - **DataSource**: Only `final`/`const` primitives and infrastructure dependencies allowed
+  - Mock/Fake classes can have mutable state for testing purposes
+  - Prevents hidden state bugs and enables testability
+  - Comprehensive validation with clear error messages
+  - Total rules: **34** (was 33)
+  - Cross-layer rules: 3 (was 2)
+
 ### 🔧 Fixed
 
 - **Domain Layer dart:io Support** - Fixed false positive for `dart:io` imports in domain layer
@@ -25,15 +39,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 📝 Documentation
 
 - **CLAUDE.md**
+  - Added "Instance Variables & Stateless Architecture" section with comprehensive examples
   - Added "Domain Layer with dart:io Types" example showing allowed usage of File type in repository signatures
   - Updated Layer Dependencies section to clarify dart:io is allowed for type references
+  - Documented allowed infrastructure types for each layer
+  - Explained Mock/Fake exception for testing
   - Added "Database Library Exceptions" section with comprehensive examples
   - Explained why database Models don't use @freezed (mutability requirement)
   - Listed all allowed database imports and annotations
 
 - **README.md**
+  - Updated rule count from 33 to 34
+  - Added allowed_instance_variables_rule to Core Clean Architecture Principles section
   - Added ObjectBox example in "Good Examples" section
   - Documented database library exceptions with clear note
+
+- **README_KO.md**
+  - Updated rule count from 29 to 34
+  - Synchronized with English README structure
+
+### 🎨 Improved
+
+- **exception_naming_convention_rule** - More concise error messages for better VS Code PROBLEMS panel display
 
 ## [1.0.8] - 2025-10-30
 
