@@ -71,8 +71,7 @@ void main() {
         expect(
           _isValidRepositoryDependency('GetTodoUseCase'),
           isFalse,
-          reason:
-              'Repository should not depend on UseCase (wrong direction)',
+          reason: 'Repository should not depend on UseCase (wrong direction)',
         );
 
         expect(

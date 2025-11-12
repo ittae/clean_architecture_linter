@@ -92,9 +92,11 @@ class AllowedInstanceVariablesRule extends CleanArchitectureLintRule {
 
     // Identify class type
     final isUseCase = CleanArchitectureUtils.isUseCaseClass(className);
-    final isRepository =
-        CleanArchitectureUtils.isRepositoryImplClass(className);
-    final isDataSource = CleanArchitectureUtils.isDataSourceClass(className) &&
+    final isRepository = CleanArchitectureUtils.isRepositoryImplClass(
+      className,
+    );
+    final isDataSource =
+        CleanArchitectureUtils.isDataSourceClass(className) &&
         node.abstractKeyword == null; // Only concrete DataSources
 
     if (!isUseCase && !isRepository && !isDataSource) return;
@@ -116,19 +118,35 @@ class AllowedInstanceVariablesRule extends CleanArchitectureLintRule {
             // Validate based on class type
             if (isUseCase) {
               _validateUseCaseField(
-                  variable, typeName, isImmutable, reporter, className);
+                variable,
+                typeName,
+                isImmutable,
+                reporter,
+                className,
+              );
             } else if (isRepository) {
               _validateRepositoryField(
-                  variable, typeName, isImmutable, reporter, className);
+                variable,
+                typeName,
+                isImmutable,
+                reporter,
+                className,
+              );
             } else if (isDataSource) {
               _validateDataSourceField(
-                  variable, typeName, isImmutable, reporter, className);
+                variable,
+                typeName,
+                isImmutable,
+                reporter,
+                className,
+              );
             }
           } else if (!isImmutable) {
             // Non-final fields without explicit type (var, dynamic)
-            final classType = isUseCase
-                ? 'UseCase'
-                : isRepository
+            final classType =
+                isUseCase
+                    ? 'UseCase'
+                    : isRepository
                     ? 'Repository'
                     : 'DataSource';
             final fieldName = variable.name.lexeme;
@@ -137,7 +155,8 @@ class AllowedInstanceVariablesRule extends CleanArchitectureLintRule {
               name: 'allowed_instance_variables',
               problemMessage:
                   '$classType "$className" has mutable state variable "$fieldName". $classType classes must be stateless',
-              correctionMessage: 'Use final/const. State belongs in Presentation layer.',
+              correctionMessage:
+                  'Use final/const. State belongs in Presentation layer.',
             );
 
             reporter.atNode(variable, code);
@@ -166,9 +185,10 @@ class AllowedInstanceVariablesRule extends CleanArchitectureLintRule {
         (!hasRepositoryDependency && !hasServiceDependency) ||
         hasDataSourceDependency) {
       final fieldName = variable.name.lexeme;
-      final problemMsg = isImmutable
-          ? 'UseCase "$className" should only have Repository or Service dependencies. Found field "$fieldName" of type "$typeName"'
-          : 'UseCase "$className" has mutable state variable "$fieldName" of type "$typeName". UseCase classes must be stateless';
+      final problemMsg =
+          isImmutable
+              ? 'UseCase "$className" should only have Repository or Service dependencies. Found field "$fieldName" of type "$typeName"'
+              : 'UseCase "$className" has mutable state variable "$fieldName" of type "$typeName". UseCase classes must be stateless';
 
       final code = LintCode(
         name: 'allowed_instance_variables',
@@ -201,9 +221,10 @@ class AllowedInstanceVariablesRule extends CleanArchitectureLintRule {
         (!hasDataSourceDependency && !isPrimitiveOrInfra) ||
         hasUseCaseDependency) {
       final fieldName = variable.name.lexeme;
-      final problemMsg = isImmutable
-          ? 'Repository "$className" should only have DataSource or infrastructure dependencies. Found field "$fieldName" of type "$typeName"'
-          : 'Repository "$className" has mutable state variable "$fieldName" of type "$typeName". Repository classes must be stateless';
+      final problemMsg =
+          isImmutable
+              ? 'Repository "$className" should only have DataSource or infrastructure dependencies. Found field "$fieldName" of type "$typeName"'
+              : 'Repository "$className" has mutable state variable "$fieldName" of type "$typeName". Repository classes must be stateless';
 
       final code = LintCode(
         name: 'allowed_instance_variables',
@@ -232,9 +253,10 @@ class AllowedInstanceVariablesRule extends CleanArchitectureLintRule {
 
     if ((!isImmutable && !isMockOrFake) || (isImmutable && isDisallowed)) {
       final fieldName = variable.name.lexeme;
-      final problemMsg = isImmutable
-          ? 'DataSource "$className" should only have infrastructure dependencies. Found field "$fieldName" of type "$typeName"'
-          : 'DataSource "$className" has mutable state variable "$fieldName" of type "$typeName". DataSource classes must be stateless';
+      final problemMsg =
+          isImmutable
+              ? 'DataSource "$className" should only have infrastructure dependencies. Found field "$fieldName" of type "$typeName"'
+              : 'DataSource "$className" has mutable state variable "$fieldName" of type "$typeName". DataSource classes must be stateless';
 
       final code = LintCode(
         name: 'allowed_instance_variables',
@@ -281,8 +303,7 @@ class AllowedInstanceVariablesRule extends CleanArchitectureLintRule {
       'Http',
     ];
 
-    return infrastructurePatterns
-        .any((pattern) => typeName.contains(pattern));
+    return infrastructurePatterns.any((pattern) => typeName.contains(pattern));
   }
 
   /// Checks if a type is disallowed in DataSource classes
