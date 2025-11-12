@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🔧 Fixed
 
+- **Domain Layer dart:io Support** - Fixed false positive for `dart:io` imports in domain layer
+  - `domain_purity_rule`: Now allows `dart:io` imports for type references (File, Directory) in domain layer method signatures
+  - Actual I/O operations should still be implemented in data layer
+  - Addresses legitimate use cases where domain repositories need File type parameters
+
 - **Database Library Support** - Added proper exceptions for database libraries (ObjectBox, Realm, Isar, Drift)
   - `layer_dependency_rule`: Data layer can now import `package:objectbox/`, `package:realm/`, `package:isar/`, `package:drift/`
   - `datasource_abstraction_rule`:
@@ -20,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 📝 Documentation
 
 - **CLAUDE.md**
+  - Added "Domain Layer with dart:io Types" example showing allowed usage of File type in repository signatures
+  - Updated Layer Dependencies section to clarify dart:io is allowed for type references
   - Added "Database Library Exceptions" section with comprehensive examples
   - Explained why database Models don't use @freezed (mutability requirement)
   - Listed all allowed database imports and annotations

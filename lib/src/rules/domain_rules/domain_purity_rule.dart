@@ -93,7 +93,6 @@ class DomainPurityRule extends CleanArchitectureLintRule {
       'package:http/',
       'package:dio/',
       'package:connectivity_plus/',
-      'dart:io',
     ];
     for (final lib in networkingLibs) {
       if (importUri.startsWith(lib)) {
@@ -104,6 +103,9 @@ class DomainPurityRule extends CleanArchitectureLintRule {
         );
       }
     }
+
+    // Note: dart:io is allowed for type references (File, Directory) in domain layer
+    // The actual I/O operations should be implemented in data layer
 
     // Storage violations
     final storageLibs = [

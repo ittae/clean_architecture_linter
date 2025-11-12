@@ -55,12 +55,7 @@ class ExceptionNamingConventionRule extends CleanArchitectureLintRule
     problemMessage:
         'Domain Exception should have feature prefix: {Feature}{ExceptionType}',
     correctionMessage:
-        'Add feature prefix to exception name:\\n'
-        '  ❌ Bad:  class NotFoundException implements Exception\\n'
-        '  ✅ Good: class TodoNotFoundException implements Exception\\n\\n'
-        'Pattern: {Feature}{ExceptionType}\\n'
-        'Examples: TodoNotFoundException, UserValidationException\\n'
-        'See ERROR_HANDLING_GUIDE.md',
+        'Use pattern: {Feature}{ExceptionType} (e.g., TodoNotFoundException)',
   );
 
   @override

@@ -15,6 +15,7 @@ import 'src/rules/cross_layer/layer_dependency_rule.dart';
 import 'src/rules/cross_layer/circular_dependency_rule.dart';
 import 'src/rules/cross_layer/boundary_crossing_rule.dart';
 import 'src/rules/cross_layer/test_coverage_rule.dart';
+import 'src/rules/cross_layer/allowed_instance_variables_rule.dart';
 
 // Domain Layer Rules
 import 'src/rules/domain_rules/domain_purity_rule.dart';
@@ -183,6 +184,9 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
 
       // 33. Riverpod Provider Naming - Provider functions must include type suffix
       RiverpodProviderNamingRule(),
+
+      // 34. Allowed Instance Variables - Validate dependencies in UseCase/Repository/DataSource
+      AllowedInstanceVariablesRule(),
     ];
 
     // Conditionally add test coverage rule if enabled

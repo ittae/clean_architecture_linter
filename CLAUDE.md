@@ -13,6 +13,7 @@ This linter enforces the following Clean Architecture principles:
 ### Layer Dependencies
 - ✅ **Allowed**: Presentation → Domain
 - ✅ **Allowed**: Data → Domain
+- ✅ **Allowed**: Domain can use `dart:io` for type references (File, Directory) in method signatures
 - ❌ **Violation**: Presentation → Data
 - ❌ **Violation**: Domain → Presentation
 - ❌ **Violation**: Domain → Data
@@ -45,6 +46,23 @@ import 'package:app/features/todos/data/models/todo_model.dart';  // ❌ WRONG
 // presentation/widgets/todo_list.dart
 import 'package:app/features/todos/domain/entities/todo.dart';  // ✅ CORRECT
 ```
+
+### ✅ Allowed: Domain Layer with dart:io Types
+
+**Allowed Usage** (Type references only):
+```dart
+// domain/repositories/profile_image_repository.dart
+import 'dart:io';  // ✅ CORRECT - Used only for File type in method signature
+
+abstract interface class ProfileImageRepository {
+  Future<Result<ProfileImage, Failure>> saveProfileImage({
+    required File imageFile,  // ✅ Type reference is allowed
+    required String userId,
+  });
+}
+```
+
+**Why**: Domain layer can use `dart:io` types (File, Directory) in method signatures for abstraction purposes. The actual I/O operations are implemented in the data layer.
 
 ## Riverpod State Management Patterns
 
@@ -492,6 +510,153 @@ factory TodoModel.fromEntity(Todo entity, {String? etag}) {
 - ❌ No Model types in return signatures (convert to Entity)
 - ❌ Never access `.entity` property directly (use `.toEntity()` method)
 
+## Instance Variables & Stateless Architecture
+
+UseCase, Repository, and DataSource classes must be **stateless** and only contain **final** dependency injection fields.
+
+### Allowed Instance Variables
+
+**UseCase** - Only `final`/`const` Repository and Service dependencies:
+```dart
+// ✅ CORRECT
+class GetTodoUseCase {
+  final TodoRepository repository;  // ✅ Repository dependency
+  final RankingService rankingService;  // ✅ Domain Service dependency
+
+  const GetTodoUseCase(this.repository, this.rankingService);
+
+  Future<Todo> call(String id) {
+    return repository.getTodo(id);
+  }
+}
+```
+
+**Repository** - Only `final`/`const` DataSource and infrastructure dependencies:
+```dart
+// ✅ CORRECT - Both "DataSource" and "Datasource" are accepted
+class TodoRepositoryImpl implements TodoRepository {
+  final TodoRemoteDataSource remoteDataSource;  // ✅ DataSource (uppercase S)
+  final TodoLocalDataSource localDataSource;    // ✅ DataSource
+  final AuthDatasource authDatasource;          // ✅ Datasource (lowercase s)
+  final StreamController<User> authStateController;  // ✅ Infrastructure
+  final String userId;  // ✅ Configuration primitive
+
+  const TodoRepositoryImpl({
+    required this.remoteDataSource,
+    required this.localDataSource,
+    required this.authDatasource,
+    required this.authStateController,
+    required this.userId,
+  });
+}
+```
+
+**DataSource** - Only `final`/`const` infrastructure dependencies:
+```dart
+// ✅ CORRECT
+class TodoRemoteDataSource {
+  final Dio client;       // ✅ HTTP client
+  final String baseUrl;   // ✅ Configuration value
+
+  // ✅ const fields for magic strings (best practice)
+  static const String _todoCollection = 'todos';
+  static const String _userIdField = 'userId';
+
+  const TodoRemoteDataSource({
+    required this.client,
+    required this.baseUrl,
+  });
+}
+
+// ✅ Mock/Fake can have mutable state for testing
+class MockAuthDatasource implements AuthDatasource {
+  User? _currentUser;  // ✅ Allowed in Mock/Fake
+
+  void setUser(User user) {
+    _currentUser = user;
+  }
+}
+```
+
+### Violations
+
+**❌ Mutable State Variables**:
+```dart
+// ❌ WRONG - UseCase with mutable state
+class GetTodoUseCase {
+  final TodoRepository repository;
+  int callCount = 0;  // ❌ Mutable state variable
+
+  Future<Todo> call(String id) {
+    callCount++;  // ❌ State mutation
+    return repository.getTodo(id);
+  }
+}
+
+// ❌ WRONG - Repository with cache state
+class TodoRepositoryImpl implements TodoRepository {
+  final TodoRemoteDataSource remoteDataSource;
+  Todo? _cachedTodo;  // ❌ Mutable state variable
+
+  Future<Result<Todo, Failure>> getTodo(String id) async {
+    if (_cachedTodo?.id == id) return Success(_cachedTodo!);
+    // ...
+  }
+}
+```
+
+**❌ Wrong Layer Dependencies**:
+```dart
+// ❌ WRONG - UseCase directly depending on DataSource
+class GetTodoUseCase {
+  final TodoRemoteDataSource dataSource;  // ❌ Should use Repository
+
+  Future<Todo> call(String id) {
+    return dataSource.getTodo(id);
+  }
+}
+
+// ❌ WRONG - Repository depending on UseCase (wrong direction)
+class TodoRepositoryImpl implements TodoRepository {
+  final GetTodoUseCase useCase;  // ❌ Wrong dependency direction
+
+  Future<Result<Todo, Failure>> getTodo(String id) {
+    return useCase.call(id);
+  }
+}
+
+// ❌ WRONG - DataSource depending on Domain layer
+class TodoRemoteDataSource {
+  final Dio client;
+  final TodoRepository repository;  // ❌ Domain dependency in Data layer
+}
+```
+
+### Summary
+
+| Component | Allowed Variables | Disallowed |
+|-----------|------------------|------------|
+| **UseCase** | `final` Repository, Service (Domain) | Mutable state, DataSource dependencies |
+| **Repository** | `final` DataSource, primitives (String, int), infrastructure (Stream, Firebase) | Mutable state, UseCase dependencies |
+| **DataSource** | `final` primitives, infrastructure (HTTP, DB, Firebase, Stream), Mock/Fake can have mutable state | Domain dependencies (Repository, UseCase, Entity), Service, Manager, Controller |
+
+**Why Stateless?**
+- State management belongs in Presentation layer (Riverpod Notifiers)
+- Enables testability and predictability
+- Prevents hidden state bugs
+- Supports concurrent operations
+
+**Allowed Infrastructure Types:**
+- Primitives: `String`, `int`, `double`, `bool`, `num`, `List`, `Map`, `Set`
+- Async: `Stream`, `Future`, `Completer`, `StreamController`, `StreamSubscription`
+- HTTP: `Dio`, `Client`, `Http`
+- Firebase: `Firebase*`, `Firestore*`
+- Database: `Database*`, `Cache*`, `Storage*`
+- Messaging: `Messaging*`
+
+**Mock/Fake Exception:**
+- Classes starting with `Mock` or `Fake` can have mutable state for testing purposes
+
 ## Exception Naming & Layer Patterns
 
 ### Common Issues
@@ -525,6 +690,38 @@ result.when(
 
 ### Allowed Data Layer Exceptions
 - `NotFoundException`, `UnauthorizedException`, `NetworkException`, `ServerException`, `CacheException`, `DatabaseException`, `DataSourceException`
+
+## Error Message Guidelines
+
+The linter provides concise error messages optimized for VS Code PROBLEMS panel:
+
+### Message Structure
+- **Problem Message**: Specific issue with context (class name, field name, type)
+- **Correction Message**: Brief, actionable fix (1 line, no examples)
+
+### Examples
+
+**✅ Good (Concise)**:
+```
+Problem: UseCase "GetTodoUseCase" should only have Repository or Service dependencies. Found field "dataSource" of type "TodoDataSource"
+Correction: UseCase should depend on Repository or Service only. Use final/const.
+```
+
+**❌ Bad (Verbose)**:
+```
+Problem: Field validation failed
+Correction: UseCase classes should only depend on Repository interfaces or Domain Services.
+Make the field final/const and use a Repository or Service type, or remove it if it's state management.
+Examples:
+  ❌ Bad:  final TodoDataSource dataSource
+  ✅ Good: final TodoRepository repository
+```
+
+### Design Principles
+1. **Problem messages**: Include specific details (class, field, type)
+2. **Correction messages**: Brief, actionable (≤ 80 chars preferred)
+3. **No examples**: Users understand from problem context
+4. **Consistency**: Similar issues use similar wording
 
 ## Configuration
 
