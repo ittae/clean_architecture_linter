@@ -25,7 +25,6 @@ import 'src/rules/domain_rules/usecase_no_result_return_rule.dart';
 import 'src/rules/domain_rules/usecase_must_convert_failure_rule.dart';
 import 'src/rules/domain_rules/exception_naming_convention_rule.dart';
 import 'src/rules/domain_rules/exception_message_localization_rule.dart';
-import 'src/rules/domain_rules/entity_no_json_serialization_rule.dart';
 
 // Data Layer Rules
 import 'src/rules/data_rules/model_structure_rule.dart';
@@ -112,9 +111,6 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
 
       // 10. Exception Message Localization - Use Korean messages
       ExceptionMessageLocalizationRule(),
-
-      // 11. Entity No JSON Serialization - Entity should not have fromJson/toJson
-      EntityNoJsonSerializationRule(),
 
       // Data Layer Rules (12 rules)
 
