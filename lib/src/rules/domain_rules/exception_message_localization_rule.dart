@@ -17,9 +17,7 @@ class ExceptionMessageLocalizationRule extends CleanArchitectureLintRule {
     name: 'exception_message_localization',
     problemMessage: 'Consider using Korean message for user-facing exceptions',
     correctionMessage:
-        'Use Korean for better UX:\\n'
-        '  ⚠️ English: TodoNotFoundException("Not found")\\n'
-        '  ✅ Korean:  TodoNotFoundException("할 일을 찾을 수 없습니다")',
+        'Use Korean message for better UX, e.g., "할 일을 찾을 수 없습니다" instead of "Not found".',
   );
 
   @override

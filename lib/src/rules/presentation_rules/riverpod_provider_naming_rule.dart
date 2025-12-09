@@ -73,11 +73,7 @@ class RiverpodProviderNamingRule extends CleanArchitectureLintRule {
     problemMessage:
         'Provider function name must include type suffix (repository/usecase/datasource).',
     correctionMessage:
-        'Riverpod provider function naming rules:\n\n'
-        '✅ Repository return type: name must end with "repository"\n'
-        '✅ UseCase return type: name must end with "usecase"\n'
-        '✅ DataSource return type: name must end with "datasource"\n\n'
-        'See CLAUDE.md § Riverpod State Management Patterns',
+        'Function name must end with matching suffix: repository, usecase, or datasource.',
     errorSeverity: ErrorSeverity.WARNING,
   );
 
@@ -137,22 +133,9 @@ class RiverpodProviderNamingRule extends CleanArchitectureLintRule {
       final code = LintCode(
         name: 'riverpod_provider_naming',
         problemMessage:
-            'Provider function returning $returnTypeName must end with "$requiredSuffix".',
+            'Provider function "$functionName" returning $returnTypeName must end with "$requiredSuffix".',
         correctionMessage:
-            'Provider function naming convention:\n\n'
-            '❌ Current:\n'
-            '   @riverpod\n'
-            '   $returnTypeName $functionName(Ref ref) { }\n'
-            '   // Generates: ${functionName}Provider (ambiguous!)\n\n'
-            '✅ Correct:\n'
-            '   @riverpod\n'
-            '   $returnTypeName $suggestedName(Ref ref) { }\n'
-            '   // Generates: ${suggestedName}Provider (clear!)\n\n'
-            'Why: Function name must include "$requiredSuffix" suffix for:\n'
-            '• Clear provider name generation\n'
-            '• Proper UseCase provider detection\n'
-            '• Consistent naming across codebase\n\n'
-            'See CLAUDE.md § Riverpod State Management Patterns',
+            'Rename to "$suggestedName" to generate "${suggestedName}Provider".',
         errorSeverity: ErrorSeverity.WARNING,
       );
       reporter.atNode(node, code);

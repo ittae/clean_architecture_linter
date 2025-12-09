@@ -17,9 +17,7 @@ class FailureNamingConventionRule extends CleanArchitectureLintRule {
     name: 'failure_naming_convention',
     problemMessage: 'Failure should have feature prefix: {Feature}Failure',
     correctionMessage:
-        'Add feature prefix:\\n'
-        '  ❌ Bad:  class Failure\\n'
-        '  ✅ Good: class TodoFailure',
+        'Rename to include feature prefix, e.g., "TodoFailure" instead of "Failure".',
   );
 
   @override

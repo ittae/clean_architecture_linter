@@ -126,21 +126,7 @@ class WidgetNoUseCaseCallRule extends CleanArchitectureLintRule {
         name: 'widget_no_usecase_call',
         problemMessage: 'Widget/Page should NOT import UseCase: $importUri',
         correctionMessage:
-            'Remove UseCase import. Create a Provider that calls the UseCase instead.\n\n'
-            '❌ Current:\n'
-            '   import \'$importUri\';\n'
-            '   // Widget calls UseCase directly\n\n'
-            '✅ Better:\n'
-            '   // In presentation/providers/:\n'
-            '   @riverpod\n'
-            '   class EntityProvider extends _\$EntityProvider {\n'
-            '     Future<Entity> build() async {\n'
-            '       return await ref.read(useCaseProvider)();\n'
-            '     }\n'
-            '   }\n\n'
-            '   // In Widget:\n'
-            '   final entityAsync = ref.watch(entityProvider);\n\n'
-            'See CLAUDE.md § Riverpod State Management Patterns',
+            'Remove UseCase import. Create a Provider that calls the UseCase instead.',
         errorSeverity: ErrorSeverity.WARNING,
       );
       reporter.atNode(node, code);
@@ -181,26 +167,7 @@ class WidgetNoUseCaseCallRule extends CleanArchitectureLintRule {
         problemMessage:
             'Widget/Page should NOT call UseCase provider "$providerName" directly via $methodName()',
         correctionMessage:
-            'Create an Entity Provider that calls the UseCase, then watch that provider.\n\n'
-            '❌ Current (in Widget):\n'
-            '   final useCase = ref.$methodName($providerName);\n'
-            '   await useCase();  // Direct UseCase call\n\n'
-            '✅ Better:\n'
-            '   // 1. Create Entity Provider in presentation/providers/:\n'
-            '   @riverpod\n'
-            '   class Entity extends _\$Entity {\n'
-            '     Future<EntityType> build() async {\n'
-            '       return await ref.read($providerName)();\n'
-            '     }\n'
-            '   }\n\n'
-            '   // 2. In Widget:\n'
-            '   final entityAsync = ref.watch(entityProvider);\n'
-            '   entityAsync.when(\n'
-            '     data: (entity) => UI(entity),\n'
-            '     loading: () => Loader(),\n'
-            '     error: (e, s) => ErrorWidget(e),\n'
-            '   );\n\n'
-            'See CLAUDE.md § Riverpod State Management Patterns',
+            'Create an Entity Provider that calls the UseCase, then ref.watch() that provider.',
         errorSeverity: ErrorSeverity.WARNING,
       );
       reporter.atNode(node, code);
