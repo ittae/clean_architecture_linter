@@ -84,8 +84,8 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 ```yaml
 # pubspec.yaml
 dev_dependencies:
-  clean_architecture_linter: ^1.0.9
-  custom_lint: ^0.7.6
+  clean_architecture_linter: ^1.0.10
+  custom_lint: ^0.8.0
 ```
 
 ### 2. Enable custom lint
