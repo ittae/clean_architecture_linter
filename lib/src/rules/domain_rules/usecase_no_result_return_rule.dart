@@ -56,12 +56,7 @@ class UseCaseNoResultReturnRule extends CleanArchitectureLintRule
     problemMessage:
         'UseCase should NOT return Result type. UseCase should unwrap Result and return Entity or throw domain exception.',
     correctionMessage:
-        'Unwrap Result and return Entity:\n'
-        '  return result.when(\n'
-        '    success: (data) => data,\n'
-        '    failure: (error) => throw error.toException(),\n'
-        '  );\n\n'
-        'See ERROR_HANDLING_GUIDE.md for complete patterns.',
+        'Unwrap Result using result.when() and return Entity or throw domain exception.',
   );
 
   @override
@@ -101,16 +96,7 @@ class UseCaseNoResultReturnRule extends CleanArchitectureLintRule
             'UseCase method "${method.name.lexeme}" should NOT return Result. '
             'UseCase should unwrap Result and return Entity or throw domain exception.',
         correctionMessage:
-            'Unwrap Result from Repository:\n'
-            '  Before: Future<Result<Todo, TodoFailure>> call()\n'
-            '  After:  Future<Todo> call() // unwrap and throw on failure\n\n'
-            'Pattern:\n'
-            '  final result = await repository.getTodo(id);\n'
-            '  return result.when(\n'
-            '    success: (data) => data,\n'
-            '    failure: (error) => throw error.toException(),\n'
-            '  );\n\n'
-            'See ERROR_HANDLING_GUIDE.md',
+            'Return Entity directly and use result.when() to unwrap Result.',
       );
       reporter.atNode(returnType, code);
     }

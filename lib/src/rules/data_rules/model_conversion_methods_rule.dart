@@ -49,12 +49,7 @@ class ModelConversionMethodsRule extends CleanArchitectureLintRule {
     name: 'model_conversion_methods',
     problemMessage: 'Data model should have toEntity() method in extension',
     correctionMessage:
-        'Add extension with toEntity() method in the same file:\n'
-        '  extension ModelNameX on ModelName {\n'
-        '    Entity toEntity() => entity;\n'
-        '  }\n\n'
-        'For creating Models from Entities, use factory constructors:\n'
-        '  factory ModelName.fromEntity(Entity entity) => ModelName(entity: entity);',
+        'Add extension with toEntity() method (e.g., extension ModelX on Model { Entity toEntity() => entity; }).',
   );
 
   @override

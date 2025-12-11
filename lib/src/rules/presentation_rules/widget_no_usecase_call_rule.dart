@@ -63,11 +63,7 @@ class WidgetNoUseCaseCallRule extends CleanArchitectureLintRule {
     name: 'widget_no_usecase_call',
     problemMessage:
         'Widgets/Pages should NOT directly call or import UseCases. Use Providers instead.',
-    correctionMessage:
-        'Create a Provider that calls the UseCase, then use ref.watch(provider) in the Widget.\n\n'
-        'Current: Widget → UseCase (direct)\n'
-        'Correct: Widget → Provider → UseCase\n\n'
-        'See CLAUDE.md § Riverpod State Management Patterns',
+    correctionMessage: 'Use Provider instead: Widget → Provider → UseCase.',
     errorSeverity: ErrorSeverity.WARNING,
   );
 

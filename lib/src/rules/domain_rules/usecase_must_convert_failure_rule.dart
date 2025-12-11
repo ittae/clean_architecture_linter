@@ -55,11 +55,7 @@ class UseCaseMustConvertFailureRule extends CleanArchitectureLintRule {
     problemMessage:
         'UseCase should convert Failure to Domain Exception using .toException()',
     correctionMessage:
-        'In Result.when() failure case, call .toException():\\n'
-        '  Before: failure: (error) => throw error\\n'
-        '  After:  failure: (error) => throw error.toException()\\n\\n'
-        'This converts Failure to Domain Exception for Presentation layer.\\n'
-        'See ERROR_HANDLING_GUIDE.md',
+        'Use error.toException() in failure case to convert Failure to Domain Exception.',
   );
 
   @override

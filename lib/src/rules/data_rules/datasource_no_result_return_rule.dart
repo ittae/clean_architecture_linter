@@ -97,10 +97,7 @@ class DataSourceNoResultReturnRule extends CleanArchitectureLintRule
             'DataSource method "${method.name.lexeme}" should NOT return Result. '
             'DataSource should throw exceptions instead.',
         correctionMessage:
-            'Remove Result wrapper and throw exceptions for errors:\n'
-            '  Before: Future<Result<TodoModel, Failure>> getTodo()\n'
-            '  After:  Future<TodoModel> getTodo() // throws NotFoundException\n\n'
-            'Repository will catch and convert to Result. See ERROR_HANDLING_GUIDE.md',
+            'Return data type directly and throw exceptions. Repository will convert to Result.',
       );
       reporter.atNode(returnType, code);
     }

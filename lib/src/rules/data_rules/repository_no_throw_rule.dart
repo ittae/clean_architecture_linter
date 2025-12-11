@@ -93,11 +93,7 @@ class RepositoryNoThrowRule extends CleanArchitectureLintRule
       problemMessage:
           'Repository should NOT throw exceptions. Convert to Result instead.',
       correctionMessage:
-          'Replace throw with Result.Failure:\n'
-          '  Before: throw NotFoundException("Not found")\n'
-          '  After:  return Failure(TodoFailure.notFound("Not found"))\n\n'
-          'Repository must catch DataSource exceptions and convert to Result. '
-          'See ERROR_HANDLING_GUIDE.md',
+          'Return Failure instead of throwing. Repository should convert exceptions to Result.',
       errorSeverity: ErrorSeverity.WARNING,
     );
     reporter.atNode(node, code);

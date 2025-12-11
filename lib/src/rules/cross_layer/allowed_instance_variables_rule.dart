@@ -61,10 +61,7 @@ class AllowedInstanceVariablesRule extends CleanArchitectureLintRule {
     name: 'allowed_instance_variables',
     problemMessage: 'Invalid instance variable detected',
     correctionMessage:
-        'UseCase classes should only depend on Repository interfaces.\\n'
-        'Repository implementations should only depend on DataSource interfaces.\\n'
-        'DataSource classes should only depend on infrastructure (HTTP clients, DB clients, etc.).\\n'
-        'Remove mutable state variables or incorrect dependencies.',
+        'Use correct dependencies per layer and ensure fields are final/const.',
   );
 
   @override

@@ -102,13 +102,7 @@ class ExceptionNamingConventionRule extends CleanArchitectureLintRule
         name: 'exception_naming_convention',
         problemMessage:
             'Domain Exception "$className" should have feature prefix',
-        correctionMessage:
-            'Add feature prefix to exception name:\\n'
-            '  Current:  class $className implements Exception\\n'
-            '  Suggested: class $suggestedName implements Exception\\n\\n'
-            'Pattern: {Feature}{ExceptionType}\\n'
-            'Examples: TodoNotFoundException, UserValidationException\\n\\n'
-            'This helps identify which feature the exception belongs to.',
+        correctionMessage: 'Rename to "$suggestedName" with feature prefix.',
       );
       reporter.atNode(node, code);
     }

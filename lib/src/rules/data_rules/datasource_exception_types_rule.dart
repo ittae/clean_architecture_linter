@@ -72,17 +72,7 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule
     problemMessage:
         'DataSource should only use defined Data layer exceptions. Found: {0}',
     correctionMessage:
-        'Use one of the defined Data exceptions:\n'
-        '  - NotFoundException (for 404 errors)\n'
-        '  - UnauthorizedException (for 401/403 errors)\n'
-        '  - NetworkException (for connection errors)\n'
-        '  - ServerException (for 5xx errors)\n'
-        '  - ConflictException (for 409 conflict errors)\n'
-        '  - TimeoutException (for request timeout errors)\n'
-        '  - DataSourceException (for data source errors)\n'
-        '  - CacheException (for cache errors)\n'
-        '  - DatabaseException (for database errors)\n\n'
-        'See ERROR_HANDLING_GUIDE.md',
+        'Use Data layer exceptions (e.g., NotFoundException, ServerException, CacheException).',
     errorSeverity: ErrorSeverity.WARNING,
   );
 
@@ -134,18 +124,7 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule
         problemMessage:
             'DataSource should NOT use "$exceptionType". Use defined Data layer exceptions instead.',
         correctionMessage:
-            'Replace with appropriate Data exception:\n'
-            '  - NotFoundException (for 404 errors)\n'
-            '  - UnauthorizedException (for 401/403 errors)\n'
-            '  - NetworkException (for network/connection errors)\n'
-            '  - ServerException (for 5xx server errors)\n'
-            '  - ConflictException (for 409 conflict errors)\n'
-            '  - TimeoutException (for request timeout errors)\n'
-            '  - DataSourceException (for data source specific errors)\n'
-            '  - CacheException (for cache errors)\n'
-            '  - DatabaseException (for database errors)\n\n'
-            'Current: throw $exceptionType(...)\n'
-            'Example: throw NotFoundException(\'Resource not found\')',
+            'Use Data layer exceptions (e.g., NotFoundException, ServerException, CacheException).',
         errorSeverity: ErrorSeverity.WARNING,
       );
       reporter.atNode(expression, code);

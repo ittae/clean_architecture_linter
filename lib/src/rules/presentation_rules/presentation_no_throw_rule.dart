@@ -68,11 +68,7 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
     problemMessage:
         'Presentation States/Notifiers should NOT throw exceptions. Use state management instead.',
     correctionMessage:
-        'Replace throw with state update:\n'
-        '  Before: throw TodoException("Error")\n'
-        '  After:  state = AsyncValue.error(TodoFailure.error(), stack)\n\n'
-        'Presentation should handle errors through state, not exceptions.\n'
-        'See ERROR_HANDLING_GUIDE.md',
+        'Use state management (e.g., AsyncValue.error) instead of throwing.',
     errorSeverity: ErrorSeverity.WARNING,
   );
 
@@ -132,18 +128,8 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
     final code = LintCode(
       name: 'presentation_no_throw',
       problemMessage:
-          'Presentation State "$className.${methodNode.name.lexeme}" should NOT throw $exceptionType. '
-          'Use state management instead.',
-      correctionMessage:
-          'Replace throw with state update:\n'
-          '  ❌ Current: throw $exceptionType\n'
-          '  ✅ Better:  state = AsyncValue.error(failure, stack)\n\n'
-          'Presentation layer should handle errors through state objects:\n'
-          '  - Riverpod: AsyncValue.error(error, stack)\n'
-          '  - Bloc: emit(ErrorState(failure))\n'
-          '  - StateNotifier: state = ErrorState(failure)\n\n'
-          'This prevents app crashes and enables declarative error UI.\n'
-          'See ERROR_HANDLING_GUIDE.md',
+          '"$className.${methodNode.name.lexeme}" should not throw $exceptionType. '
+          'Use state management instead (e.g., AsyncValue.error).',
       errorSeverity: ErrorSeverity.WARNING,
     );
 
