@@ -69,12 +69,7 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
     problemMessage:
         'State should NOT store error fields. Use AsyncValue for error handling.',
     correctionMessage:
-        'Remove error field and use AsyncValue pattern (3-tier architecture):\\n\\n'
-        'See CLAUDE.md § Riverpod State Management Patterns for complete guide.\\n\\n'
-        'Quick fix:\\n'
-        '  ❌ @freezed class State { String? errorMessage; }\\n'
-        '  ✅ @riverpod class EntityProvider { Future<T> build() {...} }\\n\\n'
-        'AsyncValue automatically handles loading, error, and data states.',
+        'Remove error field. Use AsyncNotifier with AsyncValue.when() pattern instead.',
   );
 
   /// Error-related field names to detect (conservative list)
@@ -146,22 +141,7 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
               problemMessage:
                   'State should NOT have error field "${variable.name.lexeme}". Use AsyncValue instead.',
               correctionMessage:
-                  'Remove error field and use AsyncValue pattern:\\n\\n'
-                  'See CLAUDE.md § Riverpod State Management Patterns\\n\\n'
-                  'Instead of storing errors in State:\\n'
-                  '  ❌ @freezed class State { String? ${variable.name.lexeme}; }\\n\\n'
-                  'Use AsyncNotifier with AsyncValue:\\n'
-                  '  ✅ @riverpod\\n'
-                  '     class EntityProvider extends _\$EntityProvider {\\n'
-                  '       Future<List<Entity>> build() async {\\n'
-                  '         final result = await useCase();\\n'
-                  '         return result.when(\\n'
-                  '           success: (data) => data,\\n'
-                  '           failure: (f) => throw f,\\n'
-                  '         );\\n'
-                  '       }\\n'
-                  '     }\\n\\n'
-                  'AsyncValue handles loading, error, and data states automatically.',
+                  'Remove error field. Use AsyncNotifier with AsyncValue.when() pattern instead.',
             );
             reporter.atNode(variable, code);
           }
@@ -203,11 +183,7 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
           problemMessage:
               'State should NOT have error parameter "$paramName". Use AsyncValue instead.',
           correctionMessage:
-              'Remove error parameter and use AsyncValue pattern:\\n\\n'
-              'See CLAUDE.md § Riverpod State Management Patterns\\n\\n'
-              '  ❌ factory State({ String? $paramName })\\n'
-              '  ✅ @riverpod Future<Entity> build() pattern\\n\\n'
-              'AsyncValue handles loading, error, and data states automatically.',
+              'Remove error parameter. Use AsyncNotifier with AsyncValue.when() pattern instead.',
         );
         reporter.atNode(nameNode, code);
       }

@@ -251,7 +251,16 @@ class AllowedInstanceVariablesRule extends CleanArchitectureLintRule {
     final isMockOrFake =
         className.startsWith('Mock') || className.startsWith('Fake');
 
-    if ((!isImmutable && !isMockOrFake) || (isImmutable && isDisallowed)) {
+    // Allow mutable state for infrastructure SDK types
+    // Reason: Some SDKs (Google Mobile Ads, in_app_purchase) require
+    // holding references to SDK objects for lifecycle management
+    final isInfrastructureType = _isPrimitiveOrInfrastructureType(typeName);
+
+    // Error conditions:
+    // 1. Mutable state that is NOT infrastructure type (and not Mock/Fake)
+    // 2. Final field of disallowed type
+    if ((!isImmutable && !isMockOrFake && !isInfrastructureType) ||
+        (isImmutable && isDisallowed)) {
       final fieldName = variable.name.lexeme;
       final problemMsg =
           isImmutable
@@ -292,6 +301,7 @@ class AllowedInstanceVariablesRule extends CleanArchitectureLintRule {
       'Future',
       'Completer',
       'Sink',
+      'Subscription', // StreamSubscription, etc.
       'Dio',
       'Client',
       'Firebase',
@@ -301,6 +311,17 @@ class AllowedInstanceVariablesRule extends CleanArchitectureLintRule {
       'Storage',
       'Messaging',
       'Http',
+      // Google Mobile Ads SDK types
+      'BannerAd',
+      'InterstitialAd',
+      'RewardedAd',
+      'NativeAd',
+      'AppOpenAd',
+      'AdWidget',
+      // In-App Purchase SDK types
+      'InAppPurchase',
+      'ProductDetails',
+      'PurchaseDetails',
     ];
 
     return infrastructurePatterns.any((pattern) => typeName.contains(pattern));

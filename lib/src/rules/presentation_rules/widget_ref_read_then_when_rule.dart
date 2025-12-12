@@ -81,13 +81,9 @@ class WidgetRefReadThenWhenRule extends CleanArchitectureLintRule {
   static const _code = LintCode(
     name: 'widget_ref_read_then_when',
     problemMessage:
-        'Do NOT use .when() after ref.read() in the same function. Use ref.watch() in build() or ref.listen() for side effects.',
+        'Do NOT use .when() after ref.read(). Use ref.watch() in build() or ref.listen() for side effects.',
     correctionMessage:
-        'ref.read() + .when() is an anti-pattern. The correct approach depends on your use case:\n\n'
-        '1. For UI rendering: Use ref.watch() + .when() in build()\n'
-        '2. For side effects (Toast/Dialog): Use ref.listen() in build()\n'
-        '3. For one-off operations: Use try-catch instead of .when()\n\n'
-        'See CLAUDE.md § Riverpod State Management Patterns',
+        'Use ref.watch() + .when() in build() for UI, ref.listen() for side effects, or try-catch for one-off operations.',
     errorSeverity: ErrorSeverity.WARNING,
   );
 
@@ -147,32 +143,7 @@ class WidgetRefReadThenWhenRule extends CleanArchitectureLintRule {
           problemMessage:
               'Anti-pattern: Using .when() after ref.read() in the same function',
           correctionMessage:
-              'ref.read() is for one-time reads. Using .when() after it defeats the purpose.\n\n'
-              '❌ Current pattern:\n'
-              '   final state = ref.read(provider);\n'
-              '   state.when(...)  // Wrong - state is already settled\n\n'
-              '✅ Better patterns:\n\n'
-              '1. For reactive UI (in build()):\n'
-              '   final stateAsync = ref.watch(provider);\n'
-              '   return stateAsync.when(\n'
-              '     data: (data) => UI(data),\n'
-              '     loading: () => Loader(),\n'
-              '     error: (e, s) => ErrorWidget(e),\n'
-              '   );\n\n'
-              '2. For side effects like Toast (in build()):\n'
-              '   ref.listen(provider, (previous, next) {\n'
-              '     if (previous?.isLoading == true && next.hasValue) {\n'
-              '       showSuccessToast();\n'
-              '     }\n'
-              '   });\n\n'
-              '3. For one-off operations:\n'
-              '   try {\n'
-              '     await ref.read(provider.notifier).method();\n'
-              '     showSuccessToast();\n'
-              '   } catch (e) {\n'
-              '     showErrorToast(e);\n'
-              '   }\n\n'
-              'See CLAUDE.md § Riverpod State Management Patterns',
+              'Use ref.watch() + .when() in build() for UI, ref.listen() for side effects, or try-catch for one-off operations.',
           errorSeverity: ErrorSeverity.WARNING,
         );
         reporter.atNode(whenCall, code);

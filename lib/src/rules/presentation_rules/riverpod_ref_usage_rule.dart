@@ -92,10 +92,7 @@ class RiverpodRefUsageRule extends CleanArchitectureLintRule {
     problemMessage:
         'Incorrect ref usage: Use ref.watch() in build() and ref.read() in other methods.',
     correctionMessage:
-        'ref.watch() vs ref.read() usage rules:\n\n'
-        '✅ In build() methods: Use ref.watch() for reactive dependencies\n'
-        '✅ In other methods: Use ref.read() for one-time reads\n\n'
-        'See CLAUDE.md § Riverpod State Management Patterns',
+        'Use ref.watch() for reactive dependencies in build(), ref.read() for one-time reads.',
     errorSeverity: ErrorSeverity.WARNING,
   );
 
@@ -197,16 +194,7 @@ class RiverpodRefUsageRule extends CleanArchitectureLintRule {
           problemMessage:
               'Use ref.watch() instead of ref.read() for State providers in build().',
           correctionMessage:
-              'In build() methods, use ref.watch() for State providers:\n\n'
-              '❌ Current:\n'
-              '   final user = ref.read(userProvider);  // Won\'t rebuild\n\n'
-              '✅ Correct:\n'
-              '   final user = ref.watch(userProvider);  // Rebuilds when user changes\n\n'
-              'Note: ref.read() is correct for UseCase providers:\n'
-              '✅ Allowed:\n'
-              '   await ref.read(getTodosUseCaseProvider)();  // One-time UseCase call\n'
-              '   ref.read(provider.notifier).method();       // .notifier access\n\n'
-              'See CLAUDE.md § Riverpod State Management Patterns',
+              'Change ref.read() to ref.watch() for reactive State provider dependencies.',
           errorSeverity: ErrorSeverity.WARNING,
         );
         reporter.atNode(refReadCall, code);
@@ -219,15 +207,7 @@ class RiverpodRefUsageRule extends CleanArchitectureLintRule {
           problemMessage:
               'Use ref.read() instead of ref.watch() in methods for one-time reads.',
           correctionMessage:
-              'In methods other than build(), use ref.read() for one-time reads:\n\n'
-              '❌ Current:\n'
-              '   final value = ref.watch(provider);  // Creates unwanted dependency\n\n'
-              '✅ Correct:\n'
-              '   final value = ref.read(provider);  // One-time read\n\n'
-              'ref.watch() in methods creates reactive dependencies that can cause\n'
-              'unexpected rebuilds and side effects.\n\n'
-              'ref.read() provides one-time access without creating dependencies.\n\n'
-              'See CLAUDE.md § Riverpod State Management Patterns',
+              'Change ref.watch() to ref.read() for one-time provider access in methods.',
           errorSeverity: ErrorSeverity.WARNING,
         );
         reporter.atNode(refWatchCall, code);

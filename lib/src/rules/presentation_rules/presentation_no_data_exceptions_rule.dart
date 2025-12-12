@@ -69,11 +69,7 @@ class PresentationNoDataExceptionsRule extends CleanArchitectureLintRule
     problemMessage:
         'Presentation layer should NOT handle Data layer exceptions. Use Domain exceptions instead.',
     correctionMessage:
-        'Replace Data exception with Domain exception:\n'
-        '  Before: if (error is NotFoundException)\n'
-        '  After:  if (error is TodoNotFoundException)\n\n'
-        'UseCase should convert Data exceptions to Domain exceptions. '
-        'See ERROR_HANDLING_GUIDE.md',
+        'Replace with feature-prefixed Domain exception, e.g., "TodoNotFoundException".',
     errorSeverity: ErrorSeverity.WARNING,
   );
 
@@ -114,12 +110,7 @@ class PresentationNoDataExceptionsRule extends CleanArchitectureLintRule
             'Presentation should NOT handle Data exception "$typeName". '
             'Use Domain exception instead.',
         correctionMessage:
-            'Replace with Domain exception:\n'
-            '  Before: if (error is $typeName)\n'
-            '  After:  if (error is $domainException)\n\n'
-            'UseCase layer should convert Data exceptions to Domain exceptions. '
-            'Data exceptions should never reach Presentation layer.\n\n'
-            'See ERROR_HANDLING_GUIDE.md for complete patterns.',
+            'Replace with Domain exception "$domainException". UseCase should convert Data exceptions.',
         errorSeverity: ErrorSeverity.WARNING,
       );
       reporter.atNode(type, code);

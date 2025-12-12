@@ -648,11 +648,13 @@ class TodoRemoteDataSource {
 
 **Allowed Infrastructure Types:**
 - Primitives: `String`, `int`, `double`, `bool`, `num`, `List`, `Map`, `Set`
-- Async: `Stream`, `Future`, `Completer`, `StreamController`, `StreamSubscription`
+- Async: `Stream`, `Future`, `Completer`, `StreamController`, `StreamSubscription`, `Subscription`
 - HTTP: `Dio`, `Client`, `Http`
 - Firebase: `Firebase*`, `Firestore*`
 - Database: `Database*`, `Cache*`, `Storage*`
 - Messaging: `Messaging*`
+- Google Mobile Ads: `BannerAd`, `InterstitialAd`, `RewardedAd`, `NativeAd`, `AppOpenAd`, `AdWidget`
+- In-App Purchase: `InAppPurchase`, `ProductDetails`, `PurchaseDetails`
 
 **Mock/Fake Exception:**
 - Classes starting with `Mock` or `Fake` can have mutable state for testing purposes

@@ -5,7 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.10] - 2025-12-10
+
+### ✨ Added
+
+- **allowed_instance_variables_rule** - Extended infrastructure SDK type support
+  - Google Mobile Ads SDK: `BannerAd`, `InterstitialAd`, `RewardedAd`, `NativeAd`, `AppOpenAd`, `AdWidget`
+  - In-App Purchase SDK: `InAppPurchase`, `ProductDetails`, `PurchaseDetails`
+  - `Subscription` type (StreamSubscription, etc.)
+  - These SDK types require mutable state for lifecycle management
+
+### 🎨 Improved
+
+- **Correction messages** - Made all rule correction messages more concise for better VS Code PROBLEMS panel display
+  - Removed verbose examples from correction messages
+  - Focused on brief, actionable fix instructions
+  - Affected rules: `failure_naming_convention`, `model_naming_convention`, `exception_message_localization`, `presentation_no_data_exceptions`, `presentation_use_async_value`, `riverpod_provider_naming`, `riverpod_ref_usage`, `widget_no_usecase_call`, `widget_ref_read_then_when`
 
 ## [1.0.9] - 2025-11-12
 
@@ -102,64 +117,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `custom_lint_builder`: ^0.7.6 → ^0.8.0
 - `custom_lint`: ^0.7.6 → ^0.8.0 (dev dependency)
-
-## [Unreleased]
-
-### ✨ Added (2 new rules)
-
-- **riverpod_ref_usage rule** - Enforce proper ref.watch() vs ref.read() usage in Riverpod providers
-  - Validates State providers in build(): use `ref.watch()` for reactive dependencies
-  - Validates UseCase providers in build(): use `ref.read()` for one-time calls
-  - Validates all providers in methods: use `ref.read()` for one-time reads
-  - Smart UseCase provider detection by naming convention and immediate function calls
-  - Allows `.notifier` access with `ref.read()`
-  - Comprehensive error messages explaining State vs UseCase provider distinction
-  - 34 unit tests with 100% pass rate
-  - Severity: WARNING
-
-- **riverpod_provider_naming rule** - Enforce provider function naming conventions for code generation
-  - Repository return type → function name must end with "repository"
-  - UseCase return type → function name must end with "usecase"
-  - DataSource return type → function name must end with "datasource"
-  - Ensures clear provider name generation (e.g., `getEventsUsecaseProvider` vs `getEventsProvider`)
-  - Enables automatic UseCase provider detection in ref usage rules
-  - Auto-suggests corrected function names
-  - 24 unit tests with 100% pass rate
-  - Severity: WARNING
-
-### 🔄 Changed
-
-- **Total rules: 33** (was 31 in v1.0.4)
-  - Added: 2 new Riverpod validation rules
-  - Presentation layer rules: 11 (was 9)
-
-### 📝 Documentation
-
-- **README.md**
-  - Added Riverpod dependency note at the top
-  - Updated requirements section to mention Riverpod
-  - Updated rule count from 29 to 33
-  - Added descriptions for new Riverpod rules
-
-- **CLAUDE.md**
-  - Added "Incorrect ref.watch() / ref.read() Usage" violation section
-  - Added "Provider Function Missing Type Suffix" violation section
-  - Comprehensive examples for both good and bad patterns
-  - Explained UseCase vs State provider distinction
-  - Provider naming conventions and code generation impact
-  - UseCase provider identification patterns
-
-- **pubspec.yaml**
-  - Updated description to mention Riverpod state management
-  - Added "riverpod" and "flutter" to topics
-
-### 🧪 Testing
-
-- Added 58 new unit tests (34 + 24) for Riverpod rules
-- All tests passing with comprehensive coverage
-- Test files:
-  - `test/src/rules/presentation_rules/riverpod_ref_usage_rule_test.dart`
-  - `test/src/rules/presentation_rules/riverpod_provider_naming_rule_test.dart`
 
 ## [1.0.4] - 2025-10-22
 
