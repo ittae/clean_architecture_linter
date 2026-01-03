@@ -49,8 +49,24 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
     final importUri = node.uri.stringValue;
     if (importUri == null) return;
 
-    // Skip dependency checking for DI/provider files - they act as composition root
+    // DI/provider files can import DataSource and Repository implementations,
+    // but Data Models import is still forbidden
     if (_isDependencyInjectionFile(filePath)) {
+      // Even in DI files, Data Models should NOT be imported
+      if (_isDataModelImport(importUri)) {
+        final enhancedCode = LintCode(
+          name: 'layer_dependency',
+          problemMessage:
+              'Data Models should not be imported even in DI/Provider files. Found import: $importUri',
+          correctionMessage:
+              'DI files can import DataSource and Repository implementations, '
+              'but Data Models should remain internal to the Data layer. '
+              'Use Domain Entities in Presentation layer instead.',
+          errorSeverity: ErrorSeverity.ERROR,
+        );
+        reporter.atNode(node, enhancedCode);
+      }
+      // Skip other dependency checks for DI files
       return;
     }
 
@@ -74,6 +90,17 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
       );
       reporter.atNode(node, enhancedCode);
     }
+  }
+
+  /// Checks if the import path refers to a Data Model.
+  ///
+  /// Data Models are files in /data/models/ directory.
+  /// These should NOT be imported in DI/Provider files or Presentation layer.
+  bool _isDataModelImport(String importUri) {
+    final normalizedPath = importUri.replaceAll('\\', '/').toLowerCase();
+    return normalizedPath.contains('/data/models/') ||
+        normalizedPath.contains('/models/') &&
+            normalizedPath.contains('/data/');
   }
 
   LayerViolation? _checkDependencyViolation(

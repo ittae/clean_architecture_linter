@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.11] - 2025-12-31
+
+### 🔧 Fixed
+
+- **layer_dependency_rule** - DI Provider 파일에서 Data Models import 금지 추가
+  - DI/Provider 파일(`*_providers.dart`, `providers.dart`)에서 DataSource/Repository 구현체 import는 허용
+  - 하지만 **Data Models(`/data/models/`)** import는 DI 파일에서도 **금지**
+  - Data Models는 Data 레이어 내부용이며, Presentation 레이어(DI 포함)에서 사용하면 안됨
+  - 새로운 `_isDataModelImport()` 헬퍼 메서드 추가
+
 ## [1.0.10] - 2025-12-10
 
 ### ✨ Added

@@ -112,7 +112,7 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
       // 10. Exception Message Localization - Use Korean messages
       ExceptionMessageLocalizationRule(),
 
-      // Data Layer Rules (11 rules)
+      // Data Layer Rules (12 rules)
 
       // 11. Model Structure - Freezed Model with Entity
       ModelStructureRule(),
