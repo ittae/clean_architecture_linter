@@ -47,6 +47,7 @@ class ModelFieldDuplicationRule extends CleanArchitectureLintRule {
 
   /// Allowed metadata field names that can exist alongside Entity
   static const _allowedMetadataFields = {
+    'id', // Database primary key (e.g., SQLite auto-increment)
     'etag',
     'version',
     'cachedAt',
@@ -252,7 +253,6 @@ class ModelFieldDuplicationRule extends CleanArchitectureLintRule {
   bool _isPotentialDomainField(_FieldInfo field) {
     // Common domain field patterns (not metadata)
     final domainFieldPatterns = [
-      'id',
       'name',
       'title',
       'description',
