@@ -33,7 +33,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 
 ### 🎯 Domain Layer Rules (4 rules)
 8. **UseCase No Result Return** - UseCases should unwrap Result types
-9. **UseCase Must Convert Failure** - UseCases convert Failures to Exceptions
+9. **UseCase Must Convert Failure** - ~~Deprecated~~ (pass-through pattern)
 10. **Exception Naming Convention** - Feature prefix for domain exceptions
 11. **Exception Message Localization** - Consistent exception messages
 
@@ -46,10 +46,10 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 17. **DataSource Abstraction** - Abstract interfaces for data sources
 18. **DataSource No Result Return** - DataSources throw exceptions
 19. **Repository Implementation** - RepositoryImpl must implement domain interface
-20. **Repository Must Return Result** - Repositories wrap results in Result type
-21. **Repository No Throw** - Repositories convert exceptions to Result
+20. **Repository Pass Through** - Repositories return `Future<Entity>` (warns on Result pattern)
+21. **Repository No Throw** - Repositories use pass-through pattern (AppException types allowed)
 22. **DataSource Exception Types** - Use defined data layer exceptions only
-23. **Failure Naming Convention** - Feature prefix for Failure classes
+23. **Failure Naming Convention** - ~~Deprecated~~ (warns about Failure class usage)
 
 ### 🎨 Presentation Layer Rules (11 rules)
 24. **No Presentation Models** - Use Freezed State instead of ViewModels
@@ -84,7 +84,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 ```yaml
 # pubspec.yaml
 dev_dependencies:
-  clean_architecture_linter: ^1.0.10
+  clean_architecture_linter: ^1.1.0
   custom_lint: ^0.8.0
 ```
 
@@ -278,16 +278,27 @@ class UserWidget extends StatelessWidget {
 }
 ```
 
-**Repository Throwing Exceptions**
+**Repository Using Result Pattern**
 ```dart
-// ❌ This will be flagged by avoid_exception_throwing_in_repository
+// ❌ This will be flagged - use pass-through pattern instead
+class UserRepositoryImpl implements UserRepository {
+  @override
+  Future<Result<UserEntity, Failure>> getUser(String id) async {
+    try {
+      final model = await dataSource.getUser(id);
+      return Success(model.toEntity());
+    } catch (e) {
+      return Failure(UserFailure.fromException(e));
+    }
+  }
+}
+
+// ✅ Correct: Pass-through pattern
 class UserRepositoryImpl implements UserRepository {
   @override
   Future<UserEntity> getUser(String id) async {
-    if (id.isEmpty) {
-      throw ArgumentError('ID cannot be empty'); // Should return Result instead
-    }
-    // ...
+    final model = await dataSource.getUser(id);  // Errors pass through
+    return model.toEntity();
   }
 }
 ```
@@ -313,29 +324,49 @@ class NetworkException extends Exception { // Should be UserNetworkException
 
 ### 🔄 Common Patterns
 
-**Proper Error Handling with Result Type**
+**Pass-through Error Handling (Recommended)**
 ```dart
-// ✅ Good: Using Result pattern
-sealed class Result<T, E> {}
-class Success<T, E> extends Result<T, E> {
-  final T value;
-  Success(this.value);
-}
-class Failure<T, E> extends Result<T, E> {
-  final E error;
-  Failure(this.error);
+// ✅ Good: Pass-through pattern
+// DataSource throws AppException
+class UserRemoteDataSource {
+  Future<UserModel> getUser(String id) async {
+    try {
+      final response = await client.get('/users/$id');
+      return UserModel.fromJson(response.data);
+    } on DioException catch (e) {
+      throw e.toAppException();  // Convert to AppException
+    }
+  }
 }
 
-// Repository implementation
+// Repository passes through (no try-catch)
 class UserRepositoryImpl implements UserRepository {
   @override
-  Future<Result<UserEntity, UserException>> getUser(String id) async {
-    try {
-      final userData = await dataSource.getUser(id);
-      return Success(userData.toEntity());
-    } catch (e) {
-      return Failure(UserDataException(e.toString()));
+  Future<UserEntity> getUser(String id) async {
+    final model = await dataSource.getUser(id);  // Errors pass through
+    return model.toEntity();
+  }
+}
+
+// UseCase adds business validation
+class GetUserUseCase {
+  Future<UserEntity> call(String id) {
+    if (id.isEmpty) {
+      throw const InvalidInputException.withCode('errorValidationIdRequired');
     }
+    return repository.getUser(id);  // Pass-through
+  }
+}
+
+// Presentation uses AsyncValue.guard()
+@riverpod
+class UserNotifier extends _$UserNotifier {
+  @override
+  Future<User> build(String id) => ref.read(getUserUseCaseProvider)(id);
+
+  Future<void> refresh() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() => ref.read(getUserUseCaseProvider)(id));
   }
 }
 ```

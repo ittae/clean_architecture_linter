@@ -16,6 +16,7 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 - ⚡ **실시간 피드백** - 즉각적인 경고와 실행 가능한 해결책
 - 🔧 **제로 설정** - 기본값으로 즉시 작동
 - 🧪 **테스트 인식** - 테스트 파일과 개발 컨텍스트에 대한 스마트 예외처리
+- 🎨 **Riverpod 상태 관리** - 3-tier provider 아키텍처 강제 (Entity → UI → Computed)
 
 ## 📋 규칙 개요 (34개 규칙)
 
@@ -30,7 +31,7 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 
 ### 🎯 도메인 계층 규칙 (4개 규칙)
 8. **UseCase No Result Return** - UseCase는 Result 타입 언래핑
-9. **UseCase Must Convert Failure** - UseCase는 Failure를 Exception으로 변환
+9. **UseCase Must Convert Failure** - ~~Deprecated~~ (pass-through 패턴)
 10. **Exception Naming Convention** - 도메인 예외에 기능 접두사
 11. **Exception Message Localization** - 일관된 예외 메시지
 
@@ -43,10 +44,10 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 17. **DataSource Abstraction** - 데이터 소스용 추상 인터페이스
 18. **DataSource No Result Return** - DataSource는 예외 발생
 19. **Repository Implementation** - RepositoryImpl은 도메인 인터페이스 구현 필수
-20. **Repository Must Return Result** - Repository는 Result 타입으로 래핑
-21. **Repository No Throw** - Repository는 예외를 Result로 변환
+20. **Repository Pass Through** - Repository는 `Future<Entity>` 반환 (Result 패턴 사용 시 경고)
+21. **Repository No Throw** - Repository는 pass-through 패턴 사용 (AppException 타입 허용)
 22. **DataSource Exception Types** - 정의된 데이터 계층 예외만 사용
-23. **Failure Naming Convention** - Failure 클래스에 기능 접두사
+23. **Failure Naming Convention** - ~~Deprecated~~ (Failure 클래스 사용 시 경고)
 
 ### 🎨 프레젠테이션 계층 규칙 (11개 규칙)
 24. **No Presentation Models** - ViewModel 대신 Freezed State 사용
@@ -65,6 +66,8 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 **Test Coverage** - UseCase, Repository, DataSource, Notifier에 대한 테스트 파일 강제 (기본값: 비활성화)
 
 > 📖 **구현 가이드**: 자세한 패턴과 예제는 [CLEAN_ARCHITECTURE_GUIDE.md](doc/CLEAN_ARCHITECTURE_GUIDE.md)를 참조하세요.
+>
+> 🎨 **Riverpod 상태 관리**: 3-tier provider 아키텍처 가이드는 [CLAUDE.md § Riverpod State Management Patterns](CLAUDE.md#riverpod-state-management-patterns)를 참조하세요.
 
 ## 🚀 빠른 시작
 
@@ -72,13 +75,14 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 
 - **Dart SDK**: 3.6.0+
 - **Flutter**: 3.0+ (Flutter 프로젝트의 경우 선택사항)
+- **Riverpod**: 프레젠테이션 계층 규칙에 필수 (riverpod_generator 권장)
 
 ### 1. 프로젝트에 추가
 
 ```yaml
 # pubspec.yaml
 dev_dependencies:
-  clean_architecture_linter: ^1.0.10
+  clean_architecture_linter: ^1.1.0
   custom_lint: ^0.8.0
 ```
 
@@ -271,16 +275,27 @@ class UserWidget extends StatelessWidget {
 }
 ```
 
-**예외를 던지는 Repository**
+**Result 패턴을 사용하는 Repository**
 ```dart
-// ❌ avoid_exception_throwing_in_repository에 걸림
+// ❌ 이 패턴은 경고됨 - 대신 pass-through 패턴 사용
+class UserRepositoryImpl implements UserRepository {
+  @override
+  Future<Result<UserEntity, Failure>> getUser(String id) async {
+    try {
+      final model = await dataSource.getUser(id);
+      return Success(model.toEntity());
+    } catch (e) {
+      return Failure(UserFailure.fromException(e));
+    }
+  }
+}
+
+// ✅ 올바름: Pass-through 패턴
 class UserRepositoryImpl implements UserRepository {
   @override
   Future<UserEntity> getUser(String id) async {
-    if (id.isEmpty) {
-      throw ArgumentError('ID cannot be empty'); // Result를 반환해야 함
-    }
-    // ...
+    final model = await dataSource.getUser(id);  // 에러는 pass-through
+    return model.toEntity();
   }
 }
 ```
@@ -306,29 +321,49 @@ class NetworkException extends Exception { // UserNetworkException이어야 함
 
 ### 🔄 일반적인 패턴
 
-**Result 타입을 사용한 올바른 에러 처리**
+**Pass-through 에러 처리 (권장)**
 ```dart
-// ✅ 좋음: Result 패턴 사용
-sealed class Result<T, E> {}
-class Success<T, E> extends Result<T, E> {
-  final T value;
-  Success(this.value);
-}
-class Failure<T, E> extends Result<T, E> {
-  final E error;
-  Failure(this.error);
+// ✅ 좋음: Pass-through 패턴
+// DataSource가 AppException을 throw
+class UserRemoteDataSource {
+  Future<UserModel> getUser(String id) async {
+    try {
+      final response = await client.get('/users/$id');
+      return UserModel.fromJson(response.data);
+    } on DioException catch (e) {
+      throw e.toAppException();  // AppException으로 변환
+    }
+  }
 }
 
-// Repository 구현
+// Repository는 pass-through (try-catch 없음)
 class UserRepositoryImpl implements UserRepository {
   @override
-  Future<Result<UserEntity, UserException>> getUser(String id) async {
-    try {
-      final userData = await dataSource.getUser(id);
-      return Success(userData.toEntity());
-    } catch (e) {
-      return Failure(UserDataException(e.toString()));
+  Future<UserEntity> getUser(String id) async {
+    final model = await dataSource.getUser(id);  // 에러는 pass-through
+    return model.toEntity();
+  }
+}
+
+// UseCase는 비즈니스 검증 추가
+class GetUserUseCase {
+  Future<UserEntity> call(String id) {
+    if (id.isEmpty) {
+      throw const InvalidInputException.withCode('errorValidationIdRequired');
     }
+    return repository.getUser(id);  // Pass-through
+  }
+}
+
+// Presentation은 AsyncValue.guard() 사용
+@riverpod
+class UserNotifier extends _$UserNotifier {
+  @override
+  Future<User> build(String id) => ref.read(getUserUseCaseProvider)(id);
+
+  Future<void> refresh() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() => ref.read(getUserUseCaseProvider)(id));
   }
 }
 ```

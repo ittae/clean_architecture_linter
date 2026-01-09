@@ -5,6 +5,73 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-01-09
+
+### 🚀 Breaking Changes
+
+- **Pass-through Repository Pattern** - Result 패턴 제거, pass-through 패턴으로 전환
+  - Repository는 이제 `Future<Entity>`를 직접 반환 (권장)
+  - `Future<Result<Entity, Failure>>` 사용 시 경고 표시
+  - 에러는 DataSource에서 발생하여 Presentation까지 pass-through
+  - `AsyncValue.guard()`로 에러 자동 캐치
+
+### ✨ Added
+
+- **AppException 타입 인식** - `exception_validation_mixin`에 AppException 타입 세트 추가
+  - 표준 AppException 타입: `AppException`, `NetworkException`, `TimeoutException`, `ServerException`, `UnauthorizedException`, `ForbiddenException`, `NotFoundException`, `InvalidInputException`, `ConflictException`, `CacheException`, `UnknownException`
+  - `isAppExceptionType()` 메서드 추가
+  - `isAllowedWithoutPrefix()`가 AppException 타입 인식
+
+- **Loading 필드 감지** - `presentation_use_async_value` 규칙 강화
+  - `isLoading`, `loading`, `isSubmitting`, `submitting`, `isFetching`, `fetching`, `isProcessing`, `processing` 필드 감지
+  - Freezed State에서 수동 로딩 상태 관리 금지 (AsyncValue가 자동 관리)
+
+### 🔄 Changed
+
+- **repository_must_return_result** - Result 패턴 사용 시 경고
+  - 이전: `Future<Entity>` 또는 `Future<Result<Entity, Failure>>` 모두 허용
+  - 이후: `Future<Entity>` 권장, Result 사용 시 WARNING
+
+- **repository_must_return_result** → **repository_pass_through** (이름 변경)
+  - 규칙 이름이 pass-through 패턴을 더 명확하게 반영
+
+- **repository_no_throw** - 문서 업데이트
+  - Pass-through 패턴 중심으로 문서 재작성
+  - AppException 타입 throw 허용
+  - 비표준 예외 throw 시 INFO 레벨 경고
+
+- **datasource_exception_types** - AppException 타입 체크 추가
+  - `isAppExceptionType()` 체크 추가
+  - DataSource에서 AppException 타입만 throw 허용
+
+### ⚠️ Deprecated
+
+- **usecase_must_convert_failure** - Pass-through 패턴으로 인해 더 이상 필요 없음
+  - UseCase에서 Failure→Exception 변환 불필요
+  - 에러가 DataSource에서 Presentation까지 직접 전달됨
+  - 규칙은 유지되지만 no-op (아무 동작 안함)
+
+- **failure_naming_convention** - Failure 클래스 사용 자체를 경고
+  - Result 패턴 제거로 Failure 클래스 불필요
+  - 규칙이 Failure 클래스 정의 시 경고 표시
+  - AppException 사용 권장
+
+### 📝 Documentation
+
+- **CLAUDE.md** - Pass-through 패턴 중심으로 업데이트
+  - Result 패턴 예제 제거
+  - STATE_MANAGEMENT_GUIDE.md 참조 추가
+
+- **doc/UNIFIED_ERROR_GUIDE.md** - 통합 에러 핸들링 가이드 추가
+- **doc/STATE_MANAGEMENT_GUIDE.md** - 상태 관리 가이드 추가
+
+### 🧪 Tests
+
+- 모든 테스트 업데이트 (568개 테스트 통과)
+  - `exception_validation_mixin_test.dart` - AppException 타입 테스트 추가
+  - `repository_no_throw_rule_test.dart` - Pass-through 패턴 테스트로 변경
+  - `exception_handling_integration_test.dart` - 전체 리팩토링
+
 ## [1.0.11] - 2025-12-31
 
 ### 🔧 Fixed
