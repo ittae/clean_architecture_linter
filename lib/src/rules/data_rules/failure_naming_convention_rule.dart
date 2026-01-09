@@ -3,21 +3,40 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
 
-/// Enforces Failure naming convention with feature prefix.
+/// @deprecated Failure classes are deprecated in pass-through error handling pattern.
 ///
-/// Failure classes in Data layer should include feature-specific prefixes.
-/// Pattern: {Feature}Failure
+/// With the pass-through pattern, we use AppException directly instead of
+/// Failure classes. This rule now warns when Failure classes are detected,
+/// suggesting migration to AppException.
 ///
-/// ✅ Correct: TodoFailure, UserFailure, OrderFailure
-/// ❌ Wrong: Failure, DataFailure, CustomFailure
+/// ## Pass-through Pattern (Current):
+/// ```dart
+/// // ❌ OLD - Failure class (deprecated)
+/// sealed class TodoFailure {
+///   const factory TodoFailure.notFound() = TodoNotFoundFailure;
+/// }
+///
+/// // ✅ NEW - AppException (recommended)
+/// throw NotFoundException('Todo $id');
+/// throw InvalidInputException.withCode('errorValidationTitleRequired');
+/// ```
+///
+/// See UNIFIED_ERROR_GUIDE.md for complete error handling patterns.
+@Deprecated(
+  'Use AppException instead of Failure classes. See UNIFIED_ERROR_GUIDE.md',
+)
 class FailureNamingConventionRule extends CleanArchitectureLintRule {
   const FailureNamingConventionRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'failure_naming_convention',
-    problemMessage: 'Failure should have feature prefix: {Feature}Failure',
+    problemMessage:
+        'Failure classes are deprecated. Use AppException instead (pass-through pattern).',
     correctionMessage:
-        'Rename to include feature prefix, e.g., "TodoFailure" instead of "Failure".',
+        'Migrate to AppException:\n'
+        '  Before: TodoFailure.notFound()\n'
+        '  After:  throw NotFoundException("Todo \$id")\n\n'
+        'See UNIFIED_ERROR_GUIDE.md for migration guide.',
   );
 
   @override
@@ -29,25 +48,20 @@ class FailureNamingConventionRule extends CleanArchitectureLintRule {
     context.registry.addClassDeclaration((node) {
       final className = node.name.lexeme;
 
-      // Check if it's a Failure class that needs feature prefix
-      if (_isGenericFailureName(className)) {
+      // Check if it's a Failure class (deprecated)
+      if (className.endsWith('Failure')) {
         final filePath = resolver.path;
 
-        // Skip /core/ directory - core failures don't need feature prefix
+        // Skip /core/ directory - core failures may still exist during migration
         if (filePath.contains('/core/')) {
           return;
         }
 
+        // Warn about Failure classes in data/domain layers
         if (filePath.contains('/data/') || filePath.contains('/domain/')) {
           reporter.atNode(node, _code);
         }
       }
     });
-  }
-
-  /// Checks if the Failure class name is too generic and needs feature prefix
-  bool _isGenericFailureName(String className) {
-    // Use shared utility for generic class name validation
-    return CleanArchitectureUtils.isGenericClassName(className, 'Failure');
   }
 }

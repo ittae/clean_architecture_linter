@@ -7,11 +7,12 @@ import '../../clean_architecture_linter_base.dart';
 import '../../mixins/repository_rule_visitor.dart';
 import '../../mixins/return_type_validation_mixin.dart';
 
-/// Validates Repository implementation return types.
+/// Validates Repository implementation uses pass-through pattern.
 ///
-/// In Clean Architecture, Repository implementations should use the pass-through
-/// pattern, returning `Future<Entity>` directly. Error handling is done by
-/// AsyncValue.guard() in the Presentation layer.
+/// In Clean Architecture with pass-through error handling, Repository
+/// implementations should NOT use Result pattern. Instead, they return
+/// `Future<Entity>` directly and let exceptions propagate to AsyncValue.guard()
+/// in the Presentation layer.
 ///
 /// ```dart
 /// // ✅ CORRECT - Pass-through pattern
@@ -32,13 +33,14 @@ import '../../mixins/return_type_validation_mixin.dart';
 /// - ✅ `Future<Entity>` - Allowed (pass-through pattern)
 ///
 /// See UNIFIED_ERROR_GUIDE.md for complete error handling patterns.
-class RepositoryMustReturnResultRule extends CleanArchitectureLintRule
+class RepositoryPassThroughRule extends CleanArchitectureLintRule
     with RepositoryRuleVisitor, ReturnTypeValidationMixin {
-  const RepositoryMustReturnResultRule() : super(code: _code);
+  const RepositoryPassThroughRule() : super(code: _code);
 
   static const _code = LintCode(
-    name: 'repository_must_return_result',
-    problemMessage: 'Repository must return Future<Entity> (pass-through pattern).',
+    name: 'repository_pass_through',
+    problemMessage:
+        'Repository must return Future<Entity> (pass-through pattern).',
     correctionMessage:
         'Return Future<Entity> directly. Errors pass through to AsyncValue.guard(). '
         'See UNIFIED_ERROR_GUIDE.md.',
@@ -82,7 +84,8 @@ class RepositoryMustReturnResultRule extends CleanArchitectureLintRule
     if (returnTypeString.startsWith('Stream<')) return;
 
     // Check if return type is Future-wrapped
-    final isFuture = returnTypeString.startsWith('Future<') ||
+    final isFuture =
+        returnTypeString.startsWith('Future<') ||
         returnTypeString.startsWith('FutureOr<');
 
     if (!isFuture) {
@@ -90,7 +93,7 @@ class RepositoryMustReturnResultRule extends CleanArchitectureLintRule
       // But we only warn if it looks like an Entity type
       if (_looksLikeEntityType(returnTypeString)) {
         final code = LintCode(
-          name: 'repository_must_return_result',
+          name: 'repository_pass_through',
           problemMessage:
               'Repository method "${method.name.lexeme}" should return Future<$returnTypeString>.',
           correctionMessage: 'Wrap in Future: Future<$returnTypeString>',
@@ -104,7 +107,7 @@ class RepositoryMustReturnResultRule extends CleanArchitectureLintRule
     // Check for Result pattern usage - warn to use pass-through instead
     if (isResultReturnType(returnType)) {
       final code = LintCode(
-        name: 'repository_must_return_result',
+        name: 'repository_pass_through',
         problemMessage:
             'Repository should NOT use Result pattern. Use pass-through pattern instead.',
         correctionMessage:

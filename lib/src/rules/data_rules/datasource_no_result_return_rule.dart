@@ -7,15 +7,15 @@ import '../../mixins/return_type_validation_mixin.dart';
 
 /// Enforces that DataSource methods should NOT return Result type.
 ///
-/// In Clean Architecture, DataSource should throw exceptions instead of
-/// returning Result. The Repository layer is responsible for catching
-/// exceptions and converting them to Result/Either types.
+/// In Clean Architecture with pass-through error handling, DataSource should
+/// throw AppException instead of returning Result. Exceptions propagate through
+/// Repository and UseCase to AsyncValue.guard() in Presentation layer.
 ///
-/// This enforces proper error handling boundaries:
-/// - DataSource: Throws exceptions (NotFoundException, NetworkException, etc.)
-/// - Repository: Catches exceptions and returns `Result<Success, Failure>`
-/// - UseCase: Unwraps Result and throws domain exceptions
-/// - Presentation: Catches exceptions and updates UI state (AsyncValue)
+/// Pass-through error handling flow:
+/// - DataSource: Throws AppException (NotFoundException, NetworkException, etc.)
+/// - Repository: Passes through (no error handling, just Model→Entity conversion)
+/// - UseCase: Passes through + validation (throws AppException for business rules)
+/// - Presentation: AsyncValue.guard() automatically catches exceptions
 ///
 /// ✅ Correct Pattern:
 /// ```dart
@@ -48,7 +48,7 @@ import '../../mixins/return_type_validation_mixin.dart';
 /// }
 /// ```
 ///
-/// See ERROR_HANDLING_GUIDE.md for complete error handling patterns.
+/// See UNIFIED_ERROR_GUIDE.md for complete error handling patterns.
 class DataSourceNoResultReturnRule extends CleanArchitectureLintRule
     with ReturnTypeValidationMixin {
   const DataSourceNoResultReturnRule() : super(code: _code);
@@ -99,8 +99,8 @@ class DataSourceNoResultReturnRule extends CleanArchitectureLintRule
         correctionMessage:
             'Remove Result wrapper and throw exceptions for errors:\n'
             '  Before: Future<Result<TodoModel, Failure>> getTodo()\n'
-            '  After:  Future<TodoModel> getTodo() // throws NotFoundException\n\n'
-            'Repository will catch and convert to Result. See ERROR_HANDLING_GUIDE.md',
+            '  After:  Future<TodoModel> getTodo() // throws AppException\n\n'
+            'Exceptions pass through to AsyncValue.guard(). See UNIFIED_ERROR_GUIDE.md',
       );
       reporter.atNode(returnType, code);
     }

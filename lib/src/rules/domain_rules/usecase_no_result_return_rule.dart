@@ -7,15 +7,16 @@ import '../../mixins/return_type_validation_mixin.dart';
 
 /// Enforces that UseCase should NOT return Result type.
 ///
-/// In Clean Architecture, UseCase is responsible for unwrapping Result from
-/// Repository and either returning the Entity or throwing a domain exception.
-/// This maintains proper error handling boundaries.
+/// In Clean Architecture with pass-through error handling, UseCase receives
+/// Entity directly from Repository (not Result). UseCase performs business
+/// validation and throws AppException for validation errors. Other exceptions
+/// pass through to AsyncValue.guard() in Presentation layer.
 ///
-/// Error handling flow:
-/// - DataSource: Throws exceptions
-/// - Repository: Catches exceptions → Returns Result
-/// - UseCase: Unwraps Result → Returns Entity OR throws domain exception
-/// - Presentation: Catches domain exceptions → Updates UI state (AsyncValue)
+/// Pass-through error handling flow:
+/// - DataSource: Throws AppException
+/// - Repository: Passes through (no error handling)
+/// - UseCase: Passes through + validation → Returns Entity OR throws AppException
+/// - Presentation: AsyncValue.guard() automatically catches exceptions
 ///
 /// ✅ Correct Pattern:
 /// ```dart
@@ -25,13 +26,12 @@ import '../../mixins/return_type_validation_mixin.dart';
 ///
 ///   GetTodoUseCase(this.repository);
 ///
-///   Future<Todo> call(String id) async {
-///     final result = await repository.getTodo(id);
-///
-///     return result.when(
-///       success: (data) => data,
-///       failure: (error) => throw error.toException(), // Convert to domain exception
-///     );
+///   Future<Todo> call(String id) {
+///     // Business validation
+///     if (id.isEmpty) {
+///       throw const InvalidInputException.withCode('errorValidationIdRequired');
+///     }
+///     return repository.getTodo(id);  // Errors pass through
 ///   }
 /// }
 /// ```
@@ -41,12 +41,12 @@ import '../../mixins/return_type_validation_mixin.dart';
 /// // ❌ UseCase should NOT return Result
 /// class GetTodoUseCase {
 ///   Future<Result<Todo, TodoFailure>> call(String id) async {
-///     return await repository.getTodo(id); // Just passing through
+///     return await repository.getTodo(id); // Result pattern is obsolete
 ///   }
 /// }
 /// ```
 ///
-/// See ERROR_HANDLING_GUIDE.md for complete error handling patterns.
+/// See UNIFIED_ERROR_GUIDE.md for complete error handling patterns.
 class UseCaseNoResultReturnRule extends CleanArchitectureLintRule
     with ReturnTypeValidationMixin {
   const UseCaseNoResultReturnRule() : super(code: _code);
@@ -54,14 +54,14 @@ class UseCaseNoResultReturnRule extends CleanArchitectureLintRule
   static const _code = LintCode(
     name: 'usecase_no_result_return',
     problemMessage:
-        'UseCase should NOT return Result type. UseCase should unwrap Result and return Entity or throw domain exception.',
+        'UseCase should NOT return Result type. UseCase should return Entity directly (pass-through pattern).',
     correctionMessage:
-        'Unwrap Result and return Entity:\n'
-        '  return result.when(\n'
-        '    success: (data) => data,\n'
-        '    failure: (error) => throw error.toException(),\n'
-        '  );\n\n'
-        'See ERROR_HANDLING_GUIDE.md for complete patterns.',
+        'Return Entity directly with pass-through pattern:\n'
+        '  Future<Todo> call(String id) {\n'
+        '    if (id.isEmpty) throw InvalidInputException(...);\n'
+        '    return repository.getTodo(id);  // Errors pass through\n'
+        '  }\n\n'
+        'See UNIFIED_ERROR_GUIDE.md for complete patterns.',
   );
 
   @override
@@ -99,18 +99,17 @@ class UseCaseNoResultReturnRule extends CleanArchitectureLintRule
         name: 'usecase_no_result_return',
         problemMessage:
             'UseCase method "${method.name.lexeme}" should NOT return Result. '
-            'UseCase should unwrap Result and return Entity or throw domain exception.',
+            'UseCase should return Entity directly (pass-through pattern).',
         correctionMessage:
-            'Unwrap Result from Repository:\n'
+            'Use pass-through pattern:\n'
             '  Before: Future<Result<Todo, TodoFailure>> call()\n'
-            '  After:  Future<Todo> call() // unwrap and throw on failure\n\n'
+            '  After:  Future<Todo> call() // pass-through with validation\n\n'
             'Pattern:\n'
-            '  final result = await repository.getTodo(id);\n'
-            '  return result.when(\n'
-            '    success: (data) => data,\n'
-            '    failure: (error) => throw error.toException(),\n'
-            '  );\n\n'
-            'See ERROR_HANDLING_GUIDE.md',
+            '  Future<Todo> call(String id) {\n'
+            '    if (id.isEmpty) throw InvalidInputException(...);\n'
+            '    return repository.getTodo(id);  // Errors pass through\n'
+            '  }\n\n'
+            'See UNIFIED_ERROR_GUIDE.md',
       );
       reporter.atNode(returnType, code);
     }

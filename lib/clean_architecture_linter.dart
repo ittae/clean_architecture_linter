@@ -22,7 +22,7 @@ import 'src/rules/domain_rules/domain_purity_rule.dart';
 import 'src/rules/domain_rules/dependency_inversion_rule.dart';
 import 'src/rules/domain_rules/repository_interface_rule.dart';
 import 'src/rules/domain_rules/usecase_no_result_return_rule.dart';
-import 'src/rules/domain_rules/usecase_must_convert_failure_rule.dart';
+import 'src/rules/domain_rules/usecase_must_convert_failure_rule.dart'; // @deprecated
 import 'src/rules/domain_rules/exception_naming_convention_rule.dart';
 import 'src/rules/domain_rules/exception_message_localization_rule.dart';
 
@@ -34,7 +34,7 @@ import 'src/rules/data_rules/model_naming_convention_rule.dart';
 import 'src/rules/data_rules/datasource_abstraction_rule.dart';
 import 'src/rules/data_rules/datasource_no_result_return_rule.dart';
 import 'src/rules/data_rules/repository_implementation_rule.dart';
-import 'src/rules/data_rules/repository_must_return_result_rule.dart';
+import 'src/rules/data_rules/repository_pass_through_rule.dart';
 import 'src/rules/data_rules/repository_no_throw_rule.dart';
 import 'src/rules/data_rules/datasource_exception_types_rule.dart';
 import 'src/rules/data_rules/failure_naming_convention_rule.dart';
@@ -103,7 +103,7 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
       // 7. UseCase No Result Return - UseCase should unwrap Result
       UseCaseNoResultReturnRule(),
 
-      // 8. UseCase Must Convert Failure - UseCase should use .toException()
+      // 8. UseCase Must Convert Failure - @deprecated (no-op for pass-through pattern)
       UseCaseMustConvertFailureRule(),
 
       // 9. Exception Naming Convention - Feature prefix for Domain exceptions
@@ -135,8 +135,8 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
       // 17. Repository Implementation - RepositoryImpl must implement domain interface
       RepositoryImplementationRule(),
 
-      // 18. Repository Must Return Result - Repository must wrap in Result type
-      RepositoryMustReturnResultRule(),
+      // 18. Repository Pass Through - Repository uses pass-through pattern (no Result)
+      RepositoryPassThroughRule(),
 
       // 19. Repository No Throw - Repository should not throw exceptions directly
       RepositoryNoThrowRule(),
@@ -144,7 +144,7 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
       // 20. DataSource Exception Types - Use defined Data exceptions only
       DataSourceExceptionTypesRule(),
 
-      // 21. Failure Naming Convention - Feature prefix for Failure classes
+      // 21. Failure Naming Convention - @deprecated (warns about Failure class usage)
       FailureNamingConventionRule(),
 
       // 22. Model Entity Direct Access - Use toEntity() instead of .entity
