@@ -7,61 +7,41 @@ import '../../clean_architecture_linter_base.dart';
 import '../../mixins/repository_rule_visitor.dart';
 import '../../mixins/return_type_validation_mixin.dart';
 
-/// Enforces that Repository implementations must return Result type.
+/// Validates Repository implementation return types.
 ///
-/// In Clean Architecture, Repository implementations in the Data Layer are
-/// responsible for catching exceptions from DataSources and converting them
-/// to Result types. This enforces proper error handling boundaries.
+/// In Clean Architecture, Repository implementations should use the pass-through
+/// pattern, returning `Future<Entity>` directly. Error handling is done by
+/// AsyncValue.guard() in the Presentation layer.
 ///
-/// Error handling flow:
-/// - DataSource: Throws exceptions
-/// - Repository Implementation: Catches exceptions → Returns Result
-/// - UseCase: Unwraps Result → Throws domain exceptions
-/// - Presentation: Catches exceptions → Updates UI state
-///
-/// ✅ Correct Pattern:
 /// ```dart
-/// // data/repositories/todo_repository_impl.dart
+/// // ✅ CORRECT - Pass-through pattern
 /// class TodoRepositoryImpl implements TodoRepository {
-///   final TodoRemoteDataSource remoteDataSource;
-///
 ///   @override
-///   Future<Result<Todo, TodoFailure>> getTodo(String id) async {
-///     try {
-///       final model = await remoteDataSource.getTodo(id);
-///       return Success(model.toEntity());
-///     } on NotFoundException catch (e) {
-///       return Failure(TodoFailure.notFound(message: e.message));
-///     } on NetworkException catch (e) {
-///       return Failure(TodoFailure.networkError(message: e.message));
-///     }
-///   }
-/// }
-/// ```
-///
-/// ❌ Wrong Pattern:
-/// ```dart
-/// // ❌ Repository should return Result, not throw
-/// class TodoRepositoryImpl implements TodoRepository {
 ///   Future<Todo> getTodo(String id) async {
 ///     final model = await remoteDataSource.getTodo(id);
-///     return model.toEntity(); // ❌ No error handling
+///     return model.toEntity();  // Errors pass through to AsyncValue
 ///   }
 /// }
 /// ```
 ///
-/// See ERROR_HANDLING_GUIDE.md for complete error handling patterns.
+/// ## What This Rule Checks
+///
+/// - ❌ Repository returning `Result<Entity, Failure>` - Use pass-through instead
+/// - ❌ Repository returning Model types (should return Entity)
+/// - ❌ Repository returning raw types without Future
+/// - ✅ `Future<Entity>` - Allowed (pass-through pattern)
+///
+/// See UNIFIED_ERROR_GUIDE.md for complete error handling patterns.
 class RepositoryMustReturnResultRule extends CleanArchitectureLintRule
     with RepositoryRuleVisitor, ReturnTypeValidationMixin {
   const RepositoryMustReturnResultRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'repository_must_return_result',
-    problemMessage:
-        'Repository implementation must return Result type to handle errors properly.',
+    problemMessage: 'Repository must return Future<Entity> (pass-through pattern).',
     correctionMessage:
-        'Wrap return type in Result (e.g., Future<Result<Todo, TodoFailure>>). '
-        'Catch DataSource exceptions and convert to Result.',
+        'Return Future<Entity> directly. Errors pass through to AsyncValue.guard(). '
+        'See UNIFIED_ERROR_GUIDE.md.',
     errorSeverity: ErrorSeverity.WARNING,
   );
 
@@ -93,20 +73,78 @@ class RepositoryMustReturnResultRule extends CleanArchitectureLintRule
     final returnType = method.returnType;
     if (returnType == null) return;
 
-    if (!isResultReturnType(returnType)) {
+    final returnTypeString = returnType.toString();
+
+    // Allow void returns
+    if (returnTypeString == 'void') return;
+
+    // Allow Stream returns
+    if (returnTypeString.startsWith('Stream<')) return;
+
+    // Check if return type is Future-wrapped
+    final isFuture = returnTypeString.startsWith('Future<') ||
+        returnTypeString.startsWith('FutureOr<');
+
+    if (!isFuture) {
+      // Non-Future, non-void, non-Stream returns are suspicious
+      // But we only warn if it looks like an Entity type
+      if (_looksLikeEntityType(returnTypeString)) {
+        final code = LintCode(
+          name: 'repository_must_return_result',
+          problemMessage:
+              'Repository method "${method.name.lexeme}" should return Future<$returnTypeString>.',
+          correctionMessage: 'Wrap in Future: Future<$returnTypeString>',
+          errorSeverity: ErrorSeverity.WARNING,
+        );
+        reporter.atNode(returnType, code);
+      }
+      return;
+    }
+
+    // Check for Result pattern usage - warn to use pass-through instead
+    if (isResultReturnType(returnType)) {
       final code = LintCode(
         name: 'repository_must_return_result',
         problemMessage:
-            'Repository method "${method.name.lexeme}" must return Result type. '
-            'Repository should catch exceptions and convert to Result.',
+            'Repository should NOT use Result pattern. Use pass-through pattern instead.',
         correctionMessage:
-            'Wrap return type in Result:\n'
-            '  Before: Future<${returnType.toString()}>\n'
-            '  After:  Future<Result<${returnType.toString()}, TodoFailure>>\n\n'
-            'Catch DataSource exceptions and convert to Failure. See ERROR_HANDLING_GUIDE.md',
+            'Return Future<Entity> directly. '
+            'Let errors pass through to AsyncValue.guard() in Presentation layer.',
         errorSeverity: ErrorSeverity.WARNING,
       );
       reporter.atNode(returnType, code);
     }
+  }
+
+  /// Checks if a type name looks like an Entity type.
+  bool _looksLikeEntityType(String typeName) {
+    // Skip primitive types
+    if (_isPrimitiveType(typeName)) return false;
+
+    // Skip common utility types
+    if (typeName == 'void' ||
+        typeName == 'dynamic' ||
+        typeName == 'Object' ||
+        typeName == 'Never') {
+      return false;
+    }
+
+    // Looks like an Entity if it's a capitalized name
+    return typeName.isNotEmpty && typeName[0] == typeName[0].toUpperCase();
+  }
+
+  bool _isPrimitiveType(String typeName) {
+    const primitives = {
+      'int',
+      'double',
+      'num',
+      'String',
+      'bool',
+      'void',
+      'dynamic',
+      'Object',
+      'Null',
+    };
+    return primitives.contains(typeName);
   }
 }

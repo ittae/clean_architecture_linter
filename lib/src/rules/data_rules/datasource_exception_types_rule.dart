@@ -6,45 +6,43 @@ import 'package:analyzer/error/error.dart' show ErrorSeverity;
 import '../../clean_architecture_linter_base.dart';
 import '../../mixins/exception_validation_mixin.dart';
 
-/// Enforces that DataSource should only use defined Data layer exceptions.
+/// Enforces that DataSource should only use defined AppException types.
 ///
-/// In Clean Architecture, DataSource should throw specific Data layer
-/// exceptions for consistent error handling. Using generic exceptions or
-/// custom exception types makes error handling inconsistent and harder to
-/// maintain.
+/// In Clean Architecture, DataSource should throw specific AppException types
+/// for consistent error handling. Using generic exceptions or custom exception
+/// types makes error handling inconsistent and harder to maintain.
 ///
-/// Allowed Data Layer Exceptions:
-/// - NotFoundException
-/// - UnauthorizedException
-/// - NetworkException
-/// - DataSourceException
-/// - ServerException
-/// - CacheException
-/// - DatabaseException
-/// - ConflictException
-/// - TimeoutException
+/// Allowed AppException Types:
+/// - AppException (base sealed class)
+/// - NetworkException (connection errors)
+/// - TimeoutException (request timeout)
+/// - ServerException (5xx server errors)
+/// - UnauthorizedException (401 authentication)
+/// - ForbiddenException (403 permission denied)
+/// - NotFoundException (404 resource not found)
+/// - InvalidInputException (400 validation errors)
+/// - ConflictException (409 resource conflict)
+/// - CacheException (local cache errors)
+/// - UnknownException (fallback for unknown errors)
 ///
 /// ✅ Correct Pattern:
 /// ```dart
 /// // data/datasources/todo_remote_datasource.dart
 /// class TodoRemoteDataSource {
-///   Future<Todo> getTodo(String id) async {
-///     final response = await client.get('/todos/$id');
-///
-///     if (response.statusCode == 404) {
-///       // ✅ Use defined Data exception
-///       throw NotFoundException('Todo not found: $id');
+///   Future<TodoModel> getTodo(String id) async {
+///     try {
+///       final response = await client.get('/todos/$id');
+///       return TodoModel.fromJson(response.data);
+///     } on DioException catch (e) {
+///       // ✅ Convert to AppException
+///       throw switch (e.response?.statusCode) {
+///         404 => NotFoundException('Todo not found: $id'),
+///         401 => UnauthorizedException('Authentication required'),
+///         403 => ForbiddenException('Access denied'),
+///         >= 500 => ServerException('Server error'),
+///         _ => UnknownException('Request failed', e),
+///       };
 ///     }
-///
-///     if (response.statusCode == 401) {
-///       throw UnauthorizedException('Authentication required');
-///     }
-///
-///     if (response.statusCode >= 500) {
-///       throw ServerException('Server error: ${response.statusCode}');
-///     }
-///
-///     return Todo.fromJson(response.data);
 ///   }
 /// }
 /// ```
@@ -62,7 +60,7 @@ import '../../mixins/exception_validation_mixin.dart';
 /// throw CustomDataException('Error');
 /// ```
 ///
-/// See ERROR_HANDLING_GUIDE.md for complete error handling patterns.
+/// See UNIFIED_ERROR_GUIDE.md for complete error handling patterns.
 class DataSourceExceptionTypesRule extends CleanArchitectureLintRule
     with ExceptionValidationMixin {
   const DataSourceExceptionTypesRule() : super(code: _code);
@@ -70,19 +68,20 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule
   static const _code = LintCode(
     name: 'datasource_exception_types',
     problemMessage:
-        'DataSource should only use defined Data layer exceptions. Found: {0}',
+        'DataSource should only use defined AppException types.',
     correctionMessage:
-        'Use one of the defined Data exceptions:\n'
+        'Use one of the defined AppException types:\n'
         '  - NotFoundException (for 404 errors)\n'
-        '  - UnauthorizedException (for 401/403 errors)\n'
+        '  - UnauthorizedException (for 401 errors)\n'
+        '  - ForbiddenException (for 403 errors)\n'
         '  - NetworkException (for connection errors)\n'
         '  - ServerException (for 5xx errors)\n'
-        '  - ConflictException (for 409 conflict errors)\n'
-        '  - TimeoutException (for request timeout errors)\n'
-        '  - DataSourceException (for data source errors)\n'
+        '  - ConflictException (for 409 errors)\n'
+        '  - TimeoutException (for timeout errors)\n'
+        '  - InvalidInputException (for validation errors)\n'
         '  - CacheException (for cache errors)\n'
-        '  - DatabaseException (for database errors)\n\n'
-        'See ERROR_HANDLING_GUIDE.md',
+        '  - UnknownException (for unknown errors)\n\n'
+        'See UNIFIED_ERROR_GUIDE.md',
     errorSeverity: ErrorSeverity.WARNING,
   );
 
@@ -127,23 +126,25 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule
 
     if (exceptionType == null) return;
 
-    // Check if it's an allowed Data layer exception
-    if (!isDataLayerException(exceptionType)) {
+    // Check if it's an allowed AppException or Data layer exception
+    if (!isAppExceptionType(exceptionType) &&
+        !isDataLayerException(exceptionType)) {
       final code = LintCode(
         name: 'datasource_exception_types',
         problemMessage:
-            'DataSource should NOT use "$exceptionType". Use defined Data layer exceptions instead.',
+            'DataSource should NOT use "$exceptionType". Use AppException types instead.',
         correctionMessage:
-            'Replace with appropriate Data exception:\n'
+            'Replace with AppException type:\n'
             '  - NotFoundException (for 404 errors)\n'
-            '  - UnauthorizedException (for 401/403 errors)\n'
-            '  - NetworkException (for network/connection errors)\n'
-            '  - ServerException (for 5xx server errors)\n'
-            '  - ConflictException (for 409 conflict errors)\n'
-            '  - TimeoutException (for request timeout errors)\n'
-            '  - DataSourceException (for data source specific errors)\n'
+            '  - UnauthorizedException (for 401 errors)\n'
+            '  - ForbiddenException (for 403 errors)\n'
+            '  - NetworkException (for connection errors)\n'
+            '  - ServerException (for 5xx errors)\n'
+            '  - ConflictException (for 409 errors)\n'
+            '  - TimeoutException (for timeout errors)\n'
+            '  - InvalidInputException (for validation errors)\n'
             '  - CacheException (for cache errors)\n'
-            '  - DatabaseException (for database errors)\n\n'
+            '  - UnknownException (for unknown errors)\n\n'
             'Current: throw $exceptionType(...)\n'
             'Example: throw NotFoundException(\'Resource not found\')',
         errorSeverity: ErrorSeverity.WARNING,

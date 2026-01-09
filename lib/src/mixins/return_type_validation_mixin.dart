@@ -22,7 +22,7 @@ import '../clean_architecture_linter_base.dart';
 ///     final returnType = method.returnType;
 ///     if (returnType == null) return;
 ///
-///     // Check for Result type
+///     // Check for Result type (to warn against using it)
 ///     if (isResultReturnType(returnType)) {
 ///       reporter.atNode(returnType, myLintCode);
 ///     }
@@ -33,7 +33,7 @@ import '../clean_architecture_linter_base.dart';
 /// ## Rules Using This Mixin
 ///
 /// - `datasource_no_result_return_rule` - DataSource should not return Result
-/// - `repository_must_return_result_rule` - Repository must return Result
+/// - `repository_must_return_result_rule` - Repository should not use Result (pass-through pattern)
 /// - `usecase_no_result_return_rule` - UseCase should not return Result
 ///
 /// ## Benefits

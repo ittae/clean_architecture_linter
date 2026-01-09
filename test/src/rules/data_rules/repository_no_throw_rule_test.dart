@@ -12,11 +12,11 @@ import 'package:test/test.dart';
 /// 4. Repository interface detection
 /// 5. Integration with RepositoryRuleVisitor mixin
 ///
-/// Error Handling Flow:
-/// - DataSource: Throws exceptions (NotFoundException, NetworkException)
-/// - Repository: Catches exceptions → Converts to Result<T, Failure>
-/// - UseCase: Unwraps Result → Throws domain exceptions
-/// - Presentation: Catches domain exceptions → Updates UI state
+/// Error Handling Flow (Pass-through pattern):
+/// - DataSource: Throws AppException (NotFoundException, NetworkException)
+/// - Repository: Pass-through (lets exceptions bubble up)
+/// - UseCase: May add business validation, throws AppException
+/// - Presentation: AsyncValue.guard() catches exceptions
 ///
 /// Note: These are unit tests for the rule logic. Integration tests are
 /// provided via the example/ directory's good_examples/ and bad_examples/.
@@ -242,18 +242,18 @@ void main() {
     });
 
     group('Error Messages', () {
-      test('provides clear message for direct throw', () {
+      test('provides clear message for non-standard throws', () {
         final message = _getErrorMessage(ThrowContext.publicMethod);
 
         expect(
           message,
-          contains('should NOT throw exceptions'),
-          reason: 'Error message should mention prohibition',
+          contains('non-standard exception'),
+          reason: 'Error message should mention non-standard',
         );
         expect(
           message,
-          contains('Convert to Result'),
-          reason: 'Error message should suggest Result',
+          contains('AppException'),
+          reason: 'Error message should suggest AppException',
         );
       });
 
@@ -262,38 +262,38 @@ void main() {
 
         expect(
           message,
-          contains('return Failure'),
-          reason: 'Error message should suggest Failure',
+          contains('AppException'),
+          reason: 'Error message should suggest AppException types',
         );
         expect(
           message,
-          contains('ERROR_HANDLING_GUIDE.md'),
+          contains('UNIFIED_ERROR_GUIDE.md'),
           reason: 'Error message should reference documentation',
         );
       });
 
-      test('includes Result conversion example', () {
+      test('includes AppException types example', () {
         final message = _getErrorMessage(ThrowContext.argumentValidation);
 
         expect(
           message,
-          contains('throw NotFoundException'),
-          reason: 'Error message should show before example',
+          contains('NotFoundException'),
+          reason: 'Error message should show AppException example',
         );
         expect(
           message,
-          contains('return Failure'),
-          reason: 'Error message should show after example',
+          contains('InvalidInputException'),
+          reason: 'Error message should show InvalidInputException example',
         );
       });
 
-      test('explains error handling flow', () {
+      test('explains pass-through pattern', () {
         final message = _getErrorMessage(ThrowContext.publicMethod);
 
         expect(
           message,
-          contains('catch DataSource exceptions'),
-          reason: 'Error message should explain Repository responsibility',
+          contains('pass through'),
+          reason: 'Error message should explain pass-through pattern',
         );
       });
     });
@@ -363,7 +363,7 @@ void main() {
         );
       });
 
-      test('handles generic Result types', () {
+      test('detects Result types to warn against them', () {
         final returnTypes = [
           'Result<Todo, TodoFailure>',
           'Future<Result<List<User>, Failure>>',
@@ -374,19 +374,19 @@ void main() {
           expect(
             _hasResultReturnType(returnType),
             isTrue,
-            reason: '$returnType should be recognized as Result',
+            reason: '$returnType should be detected to warn against Result usage',
           );
         }
       });
 
-      test('handles non-Result return types', () {
-        final returnTypes = ['Future<Todo>', 'void', 'bool'];
+      test('accepts pass-through return types', () {
+        final returnTypes = ['Future<Todo>', 'Future<List<User>>', 'Stream<Data>'];
 
         for (final returnType in returnTypes) {
           expect(
             _hasResultReturnType(returnType),
             isFalse,
-            reason: '$returnType is not Result type',
+            reason: '$returnType is pass-through pattern (no Result)',
           );
         }
       });
@@ -587,13 +587,14 @@ bool _hasResultReturnType(String returnType) {
 
 String _getErrorMessage(ThrowContext context) {
   return '''
-Repository should NOT throw exceptions. Convert to Result instead.
+Repository throws non-standard exception type. Use AppException types instead.
 
-Replace throw with Result.Failure:
-  Before: throw NotFoundException("Not found")
-  After:  return Failure(TodoFailure.notFound("Not found"))
+Use AppException types:
+  - NotFoundException("message")
+  - InvalidInputException("message")
+  - ServerException("message")
 
-Repository must catch DataSource exceptions and convert to Result.
-See ERROR_HANDLING_GUIDE.md
+Or let DataSource exceptions pass through to AsyncValue.guard().
+See UNIFIED_ERROR_GUIDE.md
 ''';
 }

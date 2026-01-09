@@ -78,6 +78,26 @@ mixin ExceptionValidationMixin {
     'TimeoutException', // Data layer version (request timeout)
   };
 
+  /// Core AppException types that are allowed without feature prefix.
+  ///
+  /// These are the unified exception types from the AppException sealed class
+  /// pattern. They use a `code` + `debugMessage` structure for i18n support.
+  ///
+  /// See: UNIFIED_ERROR_GUIDE.md for complete documentation.
+  static const appExceptionTypes = {
+    'AppException', // Base sealed class
+    'NetworkException', // Network connectivity errors
+    'TimeoutException', // Request timeout
+    'ServerException', // Server errors (5xx)
+    'UnauthorizedException', // Authentication required (401)
+    'ForbiddenException', // Permission denied (403)
+    'NotFoundException', // Resource not found (404)
+    'InvalidInputException', // Validation errors (400)
+    'ConflictException', // Resource conflict (409)
+    'CacheException', // Local cache errors
+    'UnknownException', // Fallback for unknown errors
+  };
+
   /// Dart built-in exceptions that are allowed without feature prefix.
   static const dartBuiltInExceptions = {
     'Exception',
@@ -108,13 +128,24 @@ mixin ExceptionValidationMixin {
   /// - The name matches a generic exception suffix exactly (e.g., "NotFoundException")
   /// - The name is very short and generic (e.g., "DataException", "CustomException")
   ///
+  /// Returns `false` for:
+  /// - Core AppException types (AppException, InvalidInputException, etc.)
+  /// - Feature-prefixed exceptions (TodoNotFoundException, UserValidationException)
+  ///
   /// Example:
   /// ```dart
-  /// isGenericExceptionName('NotFoundException') // true
-  /// isGenericExceptionName('TodoNotFoundException') // false
-  /// isGenericExceptionName('DataException') // true
+  /// isGenericExceptionName('NotFoundException') // true (generic, needs prefix)
+  /// isGenericExceptionName('TodoNotFoundException') // false (has feature prefix)
+  /// isGenericExceptionName('DataException') // true (generic)
+  /// isGenericExceptionName('AppException') // false (core AppException type)
+  /// isGenericExceptionName('InvalidInputException') // false (core AppException type)
   /// ```
   bool isGenericExceptionName(String className) {
+    // Core AppException types are allowed without feature prefix
+    if (appExceptionTypes.contains(className)) {
+      return false;
+    }
+
     // Check if it exactly matches a generic suffix
     if (exceptionSuffixes.contains(className)) {
       return true;
@@ -129,16 +160,35 @@ mixin ExceptionValidationMixin {
   /// Exceptions are allowed without feature prefix if they are:
   /// - Dart built-in exceptions (Exception, Error, StateError, etc.)
   /// - Data layer infrastructure exceptions (DataSourceException, CacheException, etc.)
+  /// - Core AppException types (AppException, NetworkException, etc.)
   ///
   /// Example:
   /// ```dart
   /// isAllowedWithoutPrefix('Exception') // true (Dart built-in)
   /// isAllowedWithoutPrefix('CacheException') // true (Data layer)
-  /// isAllowedWithoutPrefix('NotFoundException') // false (needs feature prefix)
+  /// isAllowedWithoutPrefix('AppException') // true (Core AppException)
+  /// isAllowedWithoutPrefix('InvalidInputException') // true (Core AppException)
+  /// isAllowedWithoutPrefix('TodoNotFoundException') // false (feature-specific)
   /// ```
   bool isAllowedWithoutPrefix(String className) {
     return dartBuiltInExceptions.contains(className) ||
-        dataLayerExceptions.contains(className);
+        dataLayerExceptions.contains(className) ||
+        appExceptionTypes.contains(className);
+  }
+
+  /// Checks if the [className] is a core AppException type.
+  ///
+  /// AppException types are the unified exception pattern using `code` + `debugMessage`.
+  /// They can be used across all layers (DataSource, Repository, UseCase, Presentation).
+  ///
+  /// Example:
+  /// ```dart
+  /// isAppExceptionType('AppException') // true
+  /// isAppExceptionType('InvalidInputException') // true
+  /// isAppExceptionType('TodoNotFoundException') // false (feature-specific)
+  /// ```
+  bool isAppExceptionType(String className) {
+    return appExceptionTypes.contains(className);
   }
 
   /// Checks if the [className] is a Data layer exception.

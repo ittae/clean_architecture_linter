@@ -4,36 +4,34 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
 
-/// Enforces that Presentation State should use AsyncValue for error handling.
+/// Enforces that Presentation State should use AsyncValue for error and loading handling.
 ///
-/// In Clean Architecture with Riverpod, error states should be managed through
-/// AsyncValue pattern, not by storing error fields in State classes. This rule
-/// detects common anti-patterns where error information is manually stored.
+/// In Clean Architecture with Riverpod, error and loading states should be managed
+/// through AsyncValue pattern, not by storing error/loading fields in State classes.
+/// This rule detects common anti-patterns where error or loading information is
+/// manually stored in state.
 ///
-/// **This rule is intentionally conservative** - it only flags obvious error fields
-/// to avoid false positives. For comprehensive guidance on state management patterns,
-/// see CLAUDE.md § Riverpod State Management Patterns.
+/// **Key Principle**: AsyncValue automatically manages loading/error/data states.
+/// Adding `isLoading` or `errorMessage` fields to your Freezed State is redundant
+/// and can lead to inconsistent state.
 ///
-/// ✅ Recommended Pattern (3-Tier Architecture):
+/// ✅ Recommended Pattern (AsyncNotifier + UI State separation):
 /// ```dart
-/// // Tier 1: Entity Provider (AsyncNotifier)
+/// // Entity Provider - AsyncValue manages loading/error/data
 /// @riverpod
 /// class TodoList extends _$TodoList {
 ///   @override
 ///   Future<List<Todo>> build() async {
-///     final result = await ref.read(getTodosUseCaseProvider)();
-///     return result.when(
-///       success: (todos) => todos,
-///       failure: (failure) => throw failure,
-///     );
+///     return ref.read(getTodosUseCaseProvider)();
 ///   }
 /// }
 ///
-/// // Tier 2: UI State Provider (UI-only state)
+/// // UI State Provider - UI-only state (no error/loading)
 /// @freezed
 /// class TodoUIState with _$TodoUIState {
 ///   const factory TodoUIState({
 ///     @Default([]) List<String> selectedIds,  // ✅ UI state only
+///     @Default(false) bool isEditing,         // ✅ UI state only
 ///   }) = _TodoUIState;
 /// }
 ///
@@ -41,41 +39,40 @@ import '../../clean_architecture_linter_base.dart';
 /// final todosAsync = ref.watch(todoListProvider);
 /// todosAsync.when(
 ///   data: (todos) => ListView(...),
-///   loading: () => CircularProgressIndicator(),
-///   error: (error, stack) => ErrorWidget(error),
+///   loading: () => CircularProgressIndicator(),  // ✅ Auto-managed
+///   error: (error, stack) => ErrorWidget(error), // ✅ Auto-managed
 /// );
 /// ```
 ///
-/// ❌ Anti-pattern (detected by this rule):
+/// ❌ Anti-patterns (detected by this rule):
 /// ```dart
 /// @freezed
 /// class TodoState with _$TodoState {
 ///   const factory TodoState({
 ///     @Default([]) List<Todo> todos,
-///     String? errorMessage,  // ❌ Storing error in State
-///     Failure? failure,      // ❌ Storing failure in State
+///     @Default(false) bool isLoading,  // ❌ AsyncValue manages this
+///     String? errorMessage,            // ❌ AsyncValue manages this
+///     Failure? failure,                // ❌ AsyncValue manages this
 ///   }) = _TodoState;
 /// }
 /// ```
 ///
-/// **Note**: This rule does NOT enforce the 3-tier architecture strictly.
-/// It only flags obvious error storage anti-patterns. For best practices,
-/// see CLAUDE.md § Riverpod State Management Patterns.
+/// See STATE_MANAGEMENT_GUIDE.md and UNIFIED_ERROR_GUIDE.md for complete patterns.
 class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
   const PresentationUseAsyncValueRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'presentation_use_async_value',
     problemMessage:
-        'State should NOT store error fields. Use AsyncValue for error handling.',
+        'State should NOT store error/loading fields. Use AsyncValue instead.',
     correctionMessage:
-        'Remove error field. Use AsyncNotifier with AsyncValue.when() pattern instead.',
+        'Remove this field. Use AsyncNotifier with AsyncValue.when() pattern. '
+        'AsyncValue automatically manages loading/error/data states.',
   );
 
-  /// Error-related field names to detect (conservative list)
+  /// Error-related field names to detect
   ///
-  /// This list intentionally excludes generic names like 'isLoading' to avoid
-  /// false positives. We only flag obvious error storage patterns.
+  /// These fields indicate manual error handling instead of using AsyncValue.
   static const errorFieldNames = {
     'error',
     'errorMessage',
@@ -86,6 +83,20 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
     'failureMessage',
     'exception',
     'exceptionMessage',
+  };
+
+  /// Loading-related field names to detect
+  ///
+  /// These fields indicate manual loading state management instead of AsyncValue.
+  static const loadingFieldNames = {
+    'isLoading',
+    'loading',
+    'isSubmitting',
+    'submitting',
+    'isFetching',
+    'fetching',
+    'isProcessing',
+    'processing',
   };
 
   @override
@@ -127,21 +138,36 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
     return false;
   }
 
-  /// Check for error-related fields in the class
+  /// Check for error/loading-related fields in the class
   void _checkForErrorFields(ClassDeclaration node, ErrorReporter reporter) {
     for (final member in node.members) {
       if (member is FieldDeclaration) {
         for (final variable in member.fields.variables) {
-          final fieldName = variable.name.lexeme.toLowerCase();
+          final fieldName = variable.name.lexeme;
+          final fieldNameLower = fieldName.toLowerCase();
 
-          // Check if field name contains error-related keywords
-          if (_isErrorField(fieldName)) {
+          // Check if field name is error-related
+          if (_isErrorField(fieldNameLower)) {
             final code = LintCode(
               name: 'presentation_use_async_value',
               problemMessage:
-                  'State should NOT have error field "${variable.name.lexeme}". Use AsyncValue instead.',
+                  'State should NOT have error field "$fieldName". Use AsyncValue instead.',
               correctionMessage:
-                  'Remove error field. Use AsyncNotifier with AsyncValue.when() pattern instead.',
+                  'Remove error field. Use AsyncNotifier with AsyncValue.when() pattern. '
+                  'AsyncValue automatically manages error states.',
+            );
+            reporter.atNode(variable, code);
+          }
+
+          // Check if field name is loading-related
+          if (_isLoadingField(fieldNameLower)) {
+            final code = LintCode(
+              name: 'presentation_use_async_value',
+              problemMessage:
+                  'State should NOT have loading field "$fieldName". Use AsyncValue instead.',
+              correctionMessage:
+                  'Remove loading field. Use AsyncNotifier with AsyncValue.when() pattern. '
+                  'AsyncValue automatically manages loading states.',
             );
             reporter.atNode(variable, code);
           }
@@ -155,7 +181,7 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
     }
   }
 
-  /// Check factory constructor parameters for error fields
+  /// Check factory constructor parameters for error/loading fields
   void _checkConstructorParameters(
     ConstructorDeclaration constructor,
     ErrorReporter reporter,
@@ -175,15 +201,32 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
         nameNode = param;
       }
 
-      if (paramName != null &&
-          nameNode != null &&
-          _isErrorField(paramName.toLowerCase())) {
+      if (paramName == null || nameNode == null) continue;
+
+      final paramNameLower = paramName.toLowerCase();
+
+      // Check error fields
+      if (_isErrorField(paramNameLower)) {
         final code = LintCode(
           name: 'presentation_use_async_value',
           problemMessage:
               'State should NOT have error parameter "$paramName". Use AsyncValue instead.',
           correctionMessage:
-              'Remove error parameter. Use AsyncNotifier with AsyncValue.when() pattern instead.',
+              'Remove error parameter. Use AsyncNotifier with AsyncValue.when() pattern. '
+              'AsyncValue automatically manages error states.',
+        );
+        reporter.atNode(nameNode, code);
+      }
+
+      // Check loading fields
+      if (_isLoadingField(paramNameLower)) {
+        final code = LintCode(
+          name: 'presentation_use_async_value',
+          problemMessage:
+              'State should NOT have loading parameter "$paramName". Use AsyncValue instead.',
+          correctionMessage:
+              'Remove loading parameter. Use AsyncNotifier with AsyncValue.when() pattern. '
+              'AsyncValue automatically manages loading states.',
         );
         reporter.atNode(nameNode, code);
       }
@@ -199,6 +242,23 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
 
     // Contains error-related keywords
     for (final keyword in errorFieldNames) {
+      if (fieldName.contains(keyword)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /// Check if field name is loading-related
+  bool _isLoadingField(String fieldName) {
+    // Direct match
+    if (loadingFieldNames.contains(fieldName)) {
+      return true;
+    }
+
+    // Contains loading-related keywords
+    for (final keyword in loadingFieldNames) {
       if (fieldName.contains(keyword)) {
         return true;
       }

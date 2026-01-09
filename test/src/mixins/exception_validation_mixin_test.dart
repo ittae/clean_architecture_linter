@@ -16,10 +16,27 @@ void main() {
     });
 
     group('isGenericExceptionName', () {
-      test('returns true for exact generic suffix match', () {
-        expect(testRule.isGenericExceptionName('NotFoundException'), isTrue);
+      test('returns false for AppException types (they are allowed)', () {
+        // AppException types should NOT be flagged as generic
+        expect(testRule.isGenericExceptionName('AppException'), isFalse);
+        expect(testRule.isGenericExceptionName('NotFoundException'), isFalse);
+        expect(testRule.isGenericExceptionName('NetworkException'), isFalse);
+        expect(testRule.isGenericExceptionName('ServerException'), isFalse);
+        expect(testRule.isGenericExceptionName('InvalidInputException'), isFalse);
+        expect(testRule.isGenericExceptionName('UnauthorizedException'), isFalse);
+        expect(testRule.isGenericExceptionName('ForbiddenException'), isFalse);
+        expect(testRule.isGenericExceptionName('TimeoutException'), isFalse);
+        expect(testRule.isGenericExceptionName('ConflictException'), isFalse);
+        expect(testRule.isGenericExceptionName('CacheException'), isFalse);
+        expect(testRule.isGenericExceptionName('UnknownException'), isFalse);
+      });
+
+      test('returns true for generic suffix needing feature prefix', () {
+        // These are in exceptionSuffixes but NOT in appExceptionTypes
         expect(testRule.isGenericExceptionName('ValidationException'), isTrue);
-        expect(testRule.isGenericExceptionName('NetworkException'), isTrue);
+        expect(testRule.isGenericExceptionName('CancelledException'), isTrue);
+        expect(testRule.isGenericExceptionName('InvalidException'), isTrue);
+        expect(testRule.isGenericExceptionName('DuplicateException'), isTrue);
       });
 
       test('returns false for feature-prefixed exceptions', () {
@@ -61,9 +78,43 @@ void main() {
         expect(testRule.isAllowedWithoutPrefix('ConflictException'), isTrue);
       });
 
+      test('returns true for AppException types', () {
+        expect(testRule.isAllowedWithoutPrefix('AppException'), isTrue);
+        expect(testRule.isAllowedWithoutPrefix('NotFoundException'), isTrue);
+        expect(testRule.isAllowedWithoutPrefix('NetworkException'), isTrue);
+        expect(testRule.isAllowedWithoutPrefix('ServerException'), isTrue);
+        expect(testRule.isAllowedWithoutPrefix('InvalidInputException'), isTrue);
+        expect(testRule.isAllowedWithoutPrefix('UnauthorizedException'), isTrue);
+        expect(testRule.isAllowedWithoutPrefix('ForbiddenException'), isTrue);
+        expect(testRule.isAllowedWithoutPrefix('UnknownException'), isTrue);
+      });
+
       test('returns false for domain exceptions needing prefix', () {
         expect(testRule.isAllowedWithoutPrefix('ValidationException'), isFalse);
         expect(testRule.isAllowedWithoutPrefix('CancelledException'), isFalse);
+      });
+    });
+
+    group('isAppExceptionType', () {
+      test('returns true for core AppException types', () {
+        expect(testRule.isAppExceptionType('AppException'), isTrue);
+        expect(testRule.isAppExceptionType('NotFoundException'), isTrue);
+        expect(testRule.isAppExceptionType('NetworkException'), isTrue);
+        expect(testRule.isAppExceptionType('ServerException'), isTrue);
+        expect(testRule.isAppExceptionType('InvalidInputException'), isTrue);
+        expect(testRule.isAppExceptionType('UnauthorizedException'), isTrue);
+        expect(testRule.isAppExceptionType('ForbiddenException'), isTrue);
+        expect(testRule.isAppExceptionType('TimeoutException'), isTrue);
+        expect(testRule.isAppExceptionType('ConflictException'), isTrue);
+        expect(testRule.isAppExceptionType('CacheException'), isTrue);
+        expect(testRule.isAppExceptionType('UnknownException'), isTrue);
+      });
+
+      test('returns false for non-AppException types', () {
+        expect(testRule.isAppExceptionType('TodoNotFoundException'), isFalse);
+        expect(testRule.isAppExceptionType('ValidationException'), isFalse);
+        expect(testRule.isAppExceptionType('CustomException'), isFalse);
+        expect(testRule.isAppExceptionType('Exception'), isFalse);
       });
     });
 
@@ -83,21 +134,21 @@ void main() {
     group('suggestFeaturePrefix', () {
       test('extracts feature name from file path', () {
         final result = testRule.suggestFeaturePrefix(
-          'NotFoundException',
+          'ValidationException',
           '/lib/features/todos/domain/exceptions/todo_exceptions.dart',
         );
-        expect(result, 'TodoNotFoundException');
+        expect(result, 'TodoValidationException');
       });
 
       test('returns original name when no feature extracted', () {
         // Since extractFeatureName returns null for unknown paths,
         // the current implementation doesn't add a prefix
         final result = testRule.suggestFeaturePrefix(
-          'NotFoundException',
+          'ValidationException',
           '/lib/unknown/path.dart',
         );
         // The method returns the prefixed name or falls back to FeatureX pattern
-        expect(result.contains('NotFoundException'), isTrue);
+        expect(result.contains('ValidationException'), isTrue);
       });
     });
   });

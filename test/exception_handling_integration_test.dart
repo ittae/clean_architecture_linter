@@ -23,17 +23,17 @@ void main() {
   group('Exception Handling Integration Tests', () {
     group('Complete Exception Flow Validation', () {
       test('validates correct exception flow end-to-end', () {
-        // Correct Flow:
-        // 1. DataSource throws NotFoundException (data layer exception)
-        // 2. Repository catches and converts to Result<Todo, TodoFailure>
-        // 3. UseCase unwraps Result and throws TodoNotFoundException (domain exception)
-        // 4. Presentation catches TodoNotFoundException (domain exception)
+        // Correct Flow (Pass-through pattern):
+        // 1. DataSource throws AppException (NotFoundException, etc.)
+        // 2. Repository passes through (Future<Entity>)
+        // 3. UseCase may add business validation, throws AppException
+        // 4. Presentation uses AsyncValue.guard() to catch exceptions
 
         final flow = ExceptionFlow(
-          dataSourceException: 'NotFoundException', // Data layer
-          repositoryConvertsTo: 'Result<Todo, TodoFailure>',
-          useCaseThrows: 'TodoNotFoundException', // Domain layer
-          presentationCatches: 'TodoNotFoundException', // Domain layer
+          dataSourceException: 'NotFoundException', // AppException type
+          repositoryPassesThrough: true, // Pass-through pattern
+          useCaseThrows: 'InvalidInputException', // AppException for validation
+          presentationUsesAsyncValue: true, // AsyncValue.guard()
         );
 
         expect(
@@ -45,57 +45,57 @@ void main() {
 
       test('detects violation: Presentation catches Data exception', () {
         // Violation Flow:
-        // Presentation catches NotFoundException (should catch TodoNotFoundException)
+        // Presentation manually catches exceptions instead of using AsyncValue
 
         final flow = ExceptionFlow(
           dataSourceException: 'NotFoundException',
-          repositoryConvertsTo: 'Result<Todo, TodoFailure>',
-          useCaseThrows: 'TodoNotFoundException',
-          presentationCatches:
-              'NotFoundException', // ❌ Data exception in Presentation
+          repositoryPassesThrough: true,
+          useCaseThrows: 'InvalidInputException',
+          presentationUsesAsyncValue: false, // ❌ Manual exception handling
         );
 
         final violations = _detectViolations(flow);
 
         expect(
           violations,
-          contains(RuleViolation.presentationDataException),
-          reason: 'Should detect Presentation catching Data exception',
+          contains(RuleViolation.presentationManualCatch),
+          reason: 'Should detect Presentation not using AsyncValue',
         );
       });
 
       test(
-        'detects violation: Repository throws instead of returning Result',
+        'detects violation: Repository throws non-AppException',
         () {
           // Violation Flow:
-          // Repository throws ArgumentError (should return Failure)
+          // Repository throws ArgumentError (should use AppException or pass through)
 
           final flow = ExceptionFlow(
             dataSourceException: 'NotFoundException',
-            repositoryConvertsTo: 'throws ArgumentError', // ❌ Repository throws
-            useCaseThrows: 'TodoNotFoundException',
-            presentationCatches: 'TodoNotFoundException',
+            repositoryPassesThrough: false, // ❌ Repository throws non-standard
+            repositoryThrowsType: 'ArgumentError',
+            useCaseThrows: 'InvalidInputException',
+            presentationUsesAsyncValue: true,
           );
 
           final violations = _detectViolations(flow);
 
           expect(
             violations,
-            contains(RuleViolation.repositoryThrows),
-            reason: 'Should detect Repository throwing exception',
+            contains(RuleViolation.repositoryNonStandardThrow),
+            reason: 'Should detect Repository throwing non-AppException',
           );
         },
       );
 
       test('detects violation: DataSource uses generic Exception', () {
         // Violation Flow:
-        // DataSource throws Exception (should throw NotFoundException)
+        // DataSource throws Exception (should throw AppException types)
 
         final flow = ExceptionFlow(
           dataSourceException: 'Exception', // ❌ Generic exception
-          repositoryConvertsTo: 'Result<Todo, TodoFailure>',
-          useCaseThrows: 'TodoNotFoundException',
-          presentationCatches: 'TodoNotFoundException',
+          repositoryPassesThrough: true,
+          useCaseThrows: 'InvalidInputException',
+          presentationUsesAsyncValue: true,
         );
 
         final violations = _detectViolations(flow);
@@ -107,15 +107,15 @@ void main() {
         );
       });
 
-      test('detects violation: Domain exception missing feature prefix', () {
+      test('detects violation: UseCase throws generic exception', () {
         // Violation Flow:
-        // UseCase throws NotFoundException (should throw TodoNotFoundException)
+        // UseCase throws ValidationException (should use InvalidInputException.withCode)
 
         final flow = ExceptionFlow(
           dataSourceException: 'NotFoundException',
-          repositoryConvertsTo: 'Result<Todo, TodoFailure>',
-          useCaseThrows: 'NotFoundException', // ❌ Missing feature prefix
-          presentationCatches: 'NotFoundException',
+          repositoryPassesThrough: true,
+          useCaseThrows: 'ValidationException', // ❌ Generic, needs feature prefix
+          presentationUsesAsyncValue: true,
         );
 
         final violations = _detectViolations(flow);
@@ -123,7 +123,7 @@ void main() {
         expect(
           violations,
           contains(RuleViolation.missingFeaturePrefix),
-          reason: 'Should detect domain exception missing feature prefix',
+          reason: 'Should detect UseCase using generic exception name',
         );
       });
     });
@@ -160,29 +160,29 @@ void main() {
       );
 
       test('datasource_exception_types and repository_no_throw coordinate', () {
-        // DataSource can throw data exceptions
-        // Repository must catch them and convert to Result
+        // DataSource can throw AppException types (infrastructure related)
+        // Repository passes through (or can throw AppException types)
+        // Note: InvalidInputException is for business validation (UseCase), not DataSource
 
-        final allowedDataExceptions = [
+        final allowedDataSourceExceptions = [
           'NotFoundException',
           'NetworkException',
           'ServerException',
           'CacheException',
-          'DatabaseException',
-          'DataSourceException',
+          'TimeoutException',
           'UnauthorizedException',
         ];
 
-        for (final exception in allowedDataExceptions) {
+        for (final exception in allowedDataSourceExceptions) {
           expect(
             _isAllowedInDataSource(exception),
             isTrue,
             reason: '$exception should be allowed in DataSource',
           );
           expect(
-            _mustBeCaughtByRepository(exception),
+            _isAppExceptionType(exception),
             isTrue,
-            reason: '$exception must be caught by Repository',
+            reason: '$exception is an AppException type',
           );
         }
       });
@@ -283,11 +283,11 @@ void main() {
       });
 
       test('detects subtle Repository throw violations', () {
-        // Repository throwing in catch block (not rethrow)
+        // Repository throwing non-AppException in catch block
         expect(
           _isAllowedRepositoryThrow(ThrowContext.newExceptionInCatch),
           isFalse,
-          reason: 'Creating new exception in catch should return Failure',
+          reason: 'Creating new non-AppException in catch should be avoided',
         );
       });
 
@@ -333,34 +333,34 @@ void main() {
       });
 
       test('handles async exception propagation', () {
-        // Future<Result<T, E>> pattern should work correctly
+        // Pass-through pattern with Future<Entity>
         final asyncFlow = ExceptionFlow(
           dataSourceException: 'NetworkException',
-          repositoryConvertsTo: 'Future<Result<Todo, TodoFailure>>',
-          useCaseThrows: 'TodoNetworkException',
-          presentationCatches: 'TodoNetworkException',
+          repositoryPassesThrough: true,
+          useCaseThrows: 'InvalidInputException',
+          presentationUsesAsyncValue: true,
         );
 
         expect(
           _validateExceptionFlow(asyncFlow),
           isTrue,
-          reason: 'Async exception flow should be valid',
+          reason: 'Async exception flow with pass-through should be valid',
         );
       });
 
       test('handles Stream exception propagation', () {
-        // Stream<Result<T, E>> pattern
+        // Stream<Entity> pattern with pass-through
         final streamFlow = ExceptionFlow(
           dataSourceException: 'ServerException',
-          repositoryConvertsTo: 'Stream<Result<Todo, TodoFailure>>',
-          useCaseThrows: 'TodoServerException',
-          presentationCatches: 'TodoServerException',
+          repositoryPassesThrough: true,
+          useCaseThrows: 'InvalidInputException',
+          presentationUsesAsyncValue: true,
         );
 
         expect(
           _validateExceptionFlow(streamFlow),
           isTrue,
-          reason: 'Stream exception flow should be valid',
+          reason: 'Stream exception flow with pass-through should be valid',
         );
       });
     });
@@ -442,36 +442,38 @@ void main() {
       test(
         'exception_naming_convention does not conflict with datasource_exception_types',
         () {
-          // Data layer can use NotFoundException (no feature prefix)
-          // Domain layer needs TodoNotFoundException (with feature prefix)
+          // All layers can use AppException types
+          // Generic exceptions need feature prefix in domain layer
 
           expect(_isAllowedInDataSource('NotFoundException'), isTrue);
-          expect(_needsFeaturePrefixInDomain('NotFoundException'), isTrue);
+          expect(_isAppExceptionType('NotFoundException'), isTrue);
+          expect(_needsFeaturePrefixInDomain('ValidationException'), isTrue);
         },
       );
 
       test(
         'datasource_exception_types does not conflict with repository_no_throw',
         () {
-          // DataSource can throw NotFoundException
-          // Repository must catch and convert to Result
+          // DataSource can throw AppException types
+          // Repository can pass through or throw AppException types
 
           expect(_isAllowedInDataSource('NotFoundException'), isTrue);
-          expect(_mustBeCaughtByRepository('NotFoundException'), isTrue);
+          expect(_isAppExceptionType('NotFoundException'), isTrue);
+          // Non-AppException throws are warned
           expect(_isAllowedRepositoryThrow(ThrowContext.publicMethod), isFalse);
         },
       );
 
       test(
-        'repository_no_throw does not conflict with presentation_no_data_exceptions',
+        'repository_no_throw does not conflict with presentation_use_async_value',
         () {
-          // Repository converts to Result (no throw)
-          // Presentation catches domain exceptions (not data exceptions)
+          // Repository passes through exceptions
+          // Presentation uses AsyncValue.guard() for error handling
 
+          expect(_isAppExceptionType('NotFoundException'), isTrue);
+          expect(_isAppExceptionType('InvalidInputException'), isTrue);
+          // Non-AppException throws are warned in Repository
           expect(_isAllowedRepositoryThrow(ThrowContext.publicMethod), isFalse);
-          expect(_isDataLayerException('NotFoundException'), isTrue);
-          expect(_canPresentationCatch('TodoNotFoundException'), isTrue);
-          expect(_canPresentationCatch('NotFoundException'), isFalse);
         },
       );
     });
@@ -482,21 +484,23 @@ void main() {
 
 class ExceptionFlow {
   final String dataSourceException;
-  final String repositoryConvertsTo;
+  final bool repositoryPassesThrough;
+  final String? repositoryThrowsType;
   final String useCaseThrows;
-  final String presentationCatches;
+  final bool presentationUsesAsyncValue;
 
   ExceptionFlow({
     required this.dataSourceException,
-    required this.repositoryConvertsTo,
+    this.repositoryPassesThrough = true,
+    this.repositoryThrowsType,
     required this.useCaseThrows,
-    required this.presentationCatches,
+    this.presentationUsesAsyncValue = true,
   });
 }
 
 enum RuleViolation {
-  presentationDataException,
-  repositoryThrows,
+  presentationManualCatch,
+  repositoryNonStandardThrow,
   dataSourceGenericException,
   missingFeaturePrefix,
 }
@@ -516,23 +520,25 @@ enum Layer { domain, data, presentation }
 bool _validateExceptionFlow(ExceptionFlow flow) {
   // Check each step of the flow
   if (!_isAllowedInDataSource(flow.dataSourceException)) return false;
-  if (!flow.repositoryConvertsTo.contains('Result<')) return false;
-  if (_isDataLayerException(flow.useCaseThrows)) return false;
-  if (_isDataLayerException(flow.presentationCatches)) return false;
+  if (!flow.repositoryPassesThrough && !_isAppExceptionType(flow.repositoryThrowsType ?? '')) return false;
+  if (!_isAppExceptionType(flow.useCaseThrows) && _needsFeaturePrefix(flow.useCaseThrows)) return false;
+  if (!flow.presentationUsesAsyncValue) return false;
   return true;
 }
 
 List<RuleViolation> _detectViolations(ExceptionFlow flow) {
   final violations = <RuleViolation>[];
 
-  // Check Presentation catches data exception
-  if (_isDataLayerException(flow.presentationCatches)) {
-    violations.add(RuleViolation.presentationDataException);
+  // Check Presentation not using AsyncValue
+  if (!flow.presentationUsesAsyncValue) {
+    violations.add(RuleViolation.presentationManualCatch);
   }
 
-  // Check Repository throws
-  if (flow.repositoryConvertsTo.contains('throws')) {
-    violations.add(RuleViolation.repositoryThrows);
+  // Check Repository throws non-AppException
+  if (!flow.repositoryPassesThrough &&
+      flow.repositoryThrowsType != null &&
+      !_isAppExceptionType(flow.repositoryThrowsType!)) {
+    violations.add(RuleViolation.repositoryNonStandardThrow);
   }
 
   // Check DataSource uses generic exception
@@ -540,16 +546,32 @@ List<RuleViolation> _detectViolations(ExceptionFlow flow) {
     violations.add(RuleViolation.dataSourceGenericException);
   }
 
-  // Check domain exception missing feature prefix
+  // Check exception missing feature prefix (generic exceptions)
   if (_needsFeaturePrefix(flow.useCaseThrows) &&
-      !_isDartBuiltIn(flow.useCaseThrows)) {
+      !_isDartBuiltIn(flow.useCaseThrows) &&
+      !_isAppExceptionType(flow.useCaseThrows)) {
     violations.add(RuleViolation.missingFeaturePrefix);
   }
 
   return violations;
 }
 
-// Data layer exceptions (Task 24.2)
+// AppException types (pass-through pattern)
+const _appExceptionTypes = {
+  'AppException',
+  'NotFoundException',
+  'UnauthorizedException',
+  'ForbiddenException',
+  'NetworkException',
+  'ServerException',
+  'TimeoutException',
+  'ConflictException',
+  'CacheException',
+  'InvalidInputException',
+  'UnknownException',
+};
+
+// Data layer exceptions (also allowed in DataSource)
 const _dataLayerExceptions = {
   'NotFoundException',
   'UnauthorizedException',
@@ -558,6 +580,8 @@ const _dataLayerExceptions = {
   'CacheException',
   'DatabaseException',
   'DataSourceException',
+  'TimeoutException',
+  'ConflictException',
 };
 
 // Dart built-in exceptions (Task 24.1)
@@ -589,6 +613,10 @@ bool _isDataLayerException(String exceptionName) {
   return _dataLayerExceptions.contains(exceptionName);
 }
 
+bool _isAppExceptionType(String exceptionName) {
+  return _appExceptionTypes.contains(exceptionName);
+}
+
 bool _needsFeaturePrefix(String exceptionName) {
   return _genericExceptionSuffixes.contains(exceptionName);
 }
@@ -605,10 +633,6 @@ bool _isAllowedInDataSource(String exceptionName) {
   return _dataLayerExceptions.contains(exceptionName);
 }
 
-bool _mustBeCaughtByRepository(String exceptionName) {
-  return _dataLayerExceptions.contains(exceptionName);
-}
-
 bool _isAllowedRepositoryThrow(ThrowContext context) {
   switch (context) {
     case ThrowContext.rethrowInCatch:
@@ -619,11 +643,6 @@ bool _isAllowedRepositoryThrow(ThrowContext context) {
     case ThrowContext.newExceptionInCatch:
       return false;
   }
-}
-
-bool _canPresentationCatch(String exceptionName) {
-  // Presentation can only catch domain exceptions (with feature prefix)
-  return !_isDataLayerException(exceptionName);
 }
 
 bool _isDomainLayer(String filePath) {

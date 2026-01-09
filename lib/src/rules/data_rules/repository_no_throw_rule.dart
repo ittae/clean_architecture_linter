@@ -5,61 +5,43 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
 import '../../mixins/repository_rule_visitor.dart';
+import '../../mixins/exception_validation_mixin.dart';
 
-/// Enforces that Repository implementations should NOT throw exceptions directly.
+/// Validates exception throwing patterns in Repository implementations.
 ///
-/// In Clean Architecture, Repository is responsible for error handling by
-/// catching exceptions from DataSource and converting them to Result types.
-/// Direct exception throwing breaks this error handling boundary.
+/// In Clean Architecture, Repository uses the pass-through pattern where
+/// DataSource exceptions bubble up and are handled by AsyncValue.guard()
+/// in the Presentation layer.
 ///
-/// Error handling flow:
-/// - DataSource: Throws exceptions (NotFoundException, NetworkException, etc.)
-/// - Repository Implementation: Catches exceptions → Converts to Result
-/// - UseCase: Unwraps Result → Throws domain exceptions
-/// - Presentation: Catches domain exceptions → Updates UI state
-///
-/// ✅ Allowed patterns:
-/// - Throwing exceptions in private helper methods (will be caught by public methods)
-/// - `rethrow` in catch blocks (re-throwing caught exceptions)
-/// - Argument validation in constructors
-///
-/// ✅ Correct Pattern:
 /// ```dart
+/// // ✅ CORRECT - Pass-through pattern (no error handling needed)
 /// class TodoRepositoryImpl implements TodoRepository {
-///   Future<Result<Todo, TodoFailure>> getTodo(String id) async {
-///     try {
-///       final model = await dataSource.getTodo(id); // DataSource throws
-///       return Success(model.toEntity());
-///     } on NotFoundException catch (e) {
-///       return Failure(TodoFailure.notFound(message: e.message));
-///     }
+///   Future<Todo> getTodo(String id) async {
+///     final model = await dataSource.getTodo(id); // Errors pass through
+///     return model.toEntity();
 ///   }
 /// }
 /// ```
 ///
-/// ❌ Wrong Pattern:
-/// ```dart
-/// class TodoRepositoryImpl implements TodoRepository {
-///   Future<Result<Todo, TodoFailure>> getTodo(String id) async {
-///     if (id.isEmpty) {
-///       throw ArgumentError('ID required'); // ❌ Repository shouldn't throw
-///     }
-///     // Should return Failure instead
-///   }
-/// }
-/// ```
+/// ## What This Rule Checks
 ///
-/// See ERROR_HANDLING_GUIDE.md for complete error handling patterns.
+/// - ✅ Pass-through (no throws, no try-catch) - Allowed
+/// - ✅ Throwing AppException types - Allowed
+/// - ✅ Rethrow in catch blocks - Allowed
+/// - ⚠️ Throwing non-AppException types - Warning (inconsistent with pattern)
+///
+/// See UNIFIED_ERROR_GUIDE.md for complete error handling patterns.
 class RepositoryNoThrowRule extends CleanArchitectureLintRule
-    with RepositoryRuleVisitor {
+    with RepositoryRuleVisitor, ExceptionValidationMixin {
   const RepositoryNoThrowRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'repository_no_throw',
     problemMessage:
-        'Repository should NOT throw exceptions directly. Convert exceptions to Result instead.',
+        'Repository should throw AppException types for consistent error handling.',
     correctionMessage:
-        'Remove throw statement and return Failure. Repository should catch exceptions and wrap in Result.',
+        'Use AppException types (NotFoundException, InvalidInputException, etc.) '
+        'or let DataSource exceptions pass through.',
   );
 
   @override
@@ -84,22 +66,55 @@ class RepositoryNoThrowRule extends CleanArchitectureLintRule
 
     if (!isRepositoryImplementation(classNode)) return;
 
-    // Check if this is an allowed throw (rethrow, private method, constructor)
+    // Allow rethrow (pass-through pattern)
     if (isAllowedRepositoryThrow(node)) return;
 
-    // This is a direct throw in a public method - report error
+    // Check what is being thrown
+    final thrownExpression = node.expression;
+    final thrownTypeName = _getExceptionTypeName(thrownExpression);
+
+    if (thrownTypeName == null) return;
+
+    // Allow AppException types
+    if (isAppExceptionType(thrownTypeName)) return;
+
+    // Allow Data layer exceptions (they're essentially AppException types)
+    if (isDataLayerException(thrownTypeName)) return;
+
+    // Warn about throwing non-standard exception types
+    // This helps maintain consistency with the AppException pattern
     final code = LintCode(
       name: 'repository_no_throw',
       problemMessage:
-          'Repository should NOT throw exceptions. Convert to Result instead.',
+          'Repository throws non-standard exception type "$thrownTypeName". '
+          'Consider using AppException types for consistent error handling.',
       correctionMessage:
-          'Replace throw with Result.Failure:\n'
-          '  Before: throw NotFoundException("Not found")\n'
-          '  After:  return Failure(TodoFailure.notFound("Not found"))\n\n'
-          'Repository must catch DataSource exceptions and convert to Result. '
-          'See ERROR_HANDLING_GUIDE.md',
-      errorSeverity: ErrorSeverity.WARNING,
+          'Use AppException types:\n'
+          '  throw NotFoundException("message")\n'
+          '  throw InvalidInputException("message")\n'
+          '  throw ServerException("message")\n\n'
+          'Or let DataSource handle error conversion. See UNIFIED_ERROR_GUIDE.md',
+      errorSeverity: ErrorSeverity.INFO,
     );
     reporter.atNode(node, code);
+  }
+
+  /// Extracts the exception type name from a throw expression.
+  String? _getExceptionTypeName(Expression expression) {
+    if (expression is InstanceCreationExpression) {
+      return expression.constructorName.type.name2.lexeme;
+    }
+    if (expression is MethodInvocation) {
+      // e.g., Exception('message') or CustomException.create()
+      final target = expression.target;
+      if (target is SimpleIdentifier) {
+        return target.name;
+      }
+    }
+    if (expression is SimpleIdentifier) {
+      // e.g., throw existingException
+      return expression.name;
+    }
+    return null;
   }
 }
