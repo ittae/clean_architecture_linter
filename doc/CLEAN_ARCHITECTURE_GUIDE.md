@@ -2,6 +2,13 @@
 
 This guide provides best practices for implementing Clean Architecture in Flutter/Dart projects.
 
+> **Error Handling**: 에러 처리 패턴은 [UNIFIED_ERROR_GUIDE.md](../UNIFIED_ERROR_GUIDE.md)를 참조하세요.
+> - DataSource: `throw AppException` (from app_exception.dart)
+> - Repository: 패스스루 (에러 처리 없음)
+> - UseCase: 비즈니스 검증 실패 시 `throw AppException`
+> - Presentation: `AsyncValue.guard()`
+> - State에 `error` 필드 사용하지 않음 (AsyncValue가 관리)
+
 ## Table of Contents
 
 - [Layer Overview](#layer-overview)
@@ -59,21 +66,21 @@ This guide provides best practices for implementing Clean Architecture in Flutte
 
 ```dart
 // ✅ GOOD: Presentation imports Domain
-// presentation/widgets/todo_list.dart
-import 'package:app/features/todos/domain/entities/todo.dart';
+// presentation/widgets/ranking_list.dart
+import 'package:app/features/rankings/domain/entities/ranking.dart';
 
 // ❌ BAD: Presentation imports Data
-// presentation/widgets/todo_list.dart
-import 'package:app/features/todos/data/models/todo_model.dart';
+// presentation/widgets/ranking_list.dart
+import 'package:app/features/rankings/data/models/ranking_model.dart';
 
 // ✅ GOOD: Data imports Domain
-// data/repositories/todo_repository_impl.dart
-import 'package:app/features/todos/domain/entities/todo.dart';
-import 'package:app/features/todos/domain/repositories/todo_repository.dart';
+// data/repositories/ranking_repository_impl.dart
+import 'package:app/features/rankings/domain/entities/ranking.dart';
+import 'package:app/features/rankings/domain/repositories/ranking_repository.dart';
 
 // ❌ BAD: Domain imports Data
-// domain/usecases/get_todos.dart
-import 'package:app/features/todos/data/models/todo_model.dart';
+// domain/usecases/get_rankings.dart
+import 'package:app/features/rankings/data/models/ranking_model.dart';
 ```
 
 ## Layer-Specific Patterns
@@ -85,60 +92,51 @@ import 'package:app/features/todos/data/models/todo_model.dart';
 **Key Pattern**: Freezed Model contains Entity + JSON fields + Extension methods
 
 ```dart
-// data/models/todo_model.dart
+// data/models/ranking_model.dart
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '../../domain/entities/todo.dart';
+import '../../domain/entities/ranking.dart';
 
-part 'todo_model.freezed.dart';
-part 'todo_model.g.dart';
+part 'ranking_model.freezed.dart';
+part 'ranking_model.g.dart';
 
 @freezed
-sealed class TodoModel with _$TodoModel {
-  const factory TodoModel({
-    required Todo entity,  // Contains Domain Entity
+sealed class RankingModel with _$RankingModel {
+  const factory RankingModel({
+    required Ranking entity,  // Contains Domain Entity
     // Only add fields here if you need API/DB metadata
     // Examples: etag, version, cachedAt, syncStatus, etc.
-  }) = _TodoModel;
+  }) = _RankingModel;
 
   // Convert JSON to Model (builds Entity inside)
-  factory TodoModel.fromJson(Map<String, dynamic> json) {
-    final entity = Todo(
+  factory RankingModel.fromJson(Map<String, dynamic> json) {
+    final entity = Ranking(
       id: json['id'] as String,
-      title: json['title'] as String,
-      description: json['description'] as String?,
-      isCompleted: json['is_completed'] as bool,
-      dueDate: json['due_date'] != null
-        ? DateTime.parse(json['due_date'] as String)
-        : null,
-      priority: TodoPriority.values.firstWhere(
-        (p) => p.name == json['priority'],
-        orElse: () => TodoPriority.medium,
-      ),
+      startTime: DateTime.parse(json['start_time'] as String),
+      endTime: DateTime.parse(json['end_time'] as String),
+      attendeeCount: json['attendee_count'] as int,
     );
 
-    return TodoModel(entity: entity);
+    return RankingModel(entity: entity);
   }
 
   // Convert Model to JSON (uses Entity data)
   Map<String, dynamic> toJson() => {
     'id': entity.id,
-    'title': entity.title,
-    'description': entity.description,
-    'is_completed': entity.isCompleted,
-    'due_date': entity.dueDate?.toIso8601String(),
-    'priority': entity.priority.name,
+    'start_time': entity.startTime.toIso8601String(),
+    'end_time': entity.endTime.toIso8601String(),
+    'attendee_count': entity.attendeeCount,
   };
 }
 
 // Conversion extensions in the same file
-extension TodoModelX on TodoModel {
+extension RankingModelX on RankingModel {
   // Extract Domain Entity from Model
-  Todo toEntity() => entity;
+  Ranking toEntity() => entity;
 }
 
-extension TodoToModelX on Todo {
+extension RankingToModelX on Ranking {
   // Convert Domain Entity to Model
-  TodoModel toModel() => TodoModel(entity: this);
+  RankingModel toModel() => RankingModel(entity: this);
 }
 ```
 
@@ -182,39 +180,39 @@ sealed class UserModel with _$UserModel {
 **Data Source Example:**
 
 ```dart
-// data/datasources/todo_remote_datasource.dart
-abstract class TodoRemoteDataSource {
-  Future<List<TodoModel>> getTodos();
-  Future<TodoModel> createTodo(TodoModel model);
+// data/datasources/ranking_remote_datasource.dart
+abstract class RankingRemoteDataSource {
+  Future<List<RankingModel>> getRankings();
+  Future<RankingModel> createRanking(RankingModel model);
 }
 
-class TodoRemoteDataSourceImpl implements TodoRemoteDataSource {
+class RankingRemoteDataSourceImpl implements RankingRemoteDataSource {
   final http.Client client;
 
-  TodoRemoteDataSourceImpl({required this.client});
+  RankingRemoteDataSourceImpl({required this.client});
 
   @override
-  Future<List<TodoModel>> getTodos() async {
-    final response = await client.get(Uri.parse('$baseUrl/todos'));
+  Future<List<RankingModel>> getRankings() async {
+    final response = await client.get(Uri.parse('$baseUrl/rankings'));
 
     if (response.statusCode == 200) {
       final List<dynamic> jsonList = json.decode(response.body);
-      return jsonList.map((json) => TodoModel.fromJson(json)).toList();
+      return jsonList.map((json) => RankingModel.fromJson(json)).toList();
     } else {
       throw ServerException();
     }
   }
 
   @override
-  Future<TodoModel> createTodo(TodoModel model) async {
+  Future<RankingModel> createRanking(RankingModel model) async {
     final response = await client.post(
-      Uri.parse('$baseUrl/todos'),
+      Uri.parse('$baseUrl/rankings'),
       body: json.encode(model.toJson()),
       headers: {'Content-Type': 'application/json'},
     );
 
     if (response.statusCode == 201) {
-      return TodoModel.fromJson(json.decode(response.body));
+      return RankingModel.fromJson(json.decode(response.body));
     } else {
       throw ServerException();
     }
@@ -225,33 +223,33 @@ class TodoRemoteDataSourceImpl implements TodoRemoteDataSource {
 **Repository Implementation:**
 
 ```dart
-// data/repositories/todo_repository_impl.dart
-import '../../domain/entities/todo.dart';
-import '../../domain/repositories/todo_repository.dart';
-import '../datasources/todo_remote_datasource.dart';
-import '../models/todo_model.dart';
+// data/repositories/ranking_repository_impl.dart
+import '../../domain/entities/ranking.dart';
+import '../../domain/repositories/ranking_repository.dart';
+import '../datasources/ranking_remote_datasource.dart';
+import '../models/ranking_model.dart';
 
-class TodoRepositoryImpl implements TodoRepository {
-  final TodoRemoteDataSource remoteDataSource;
+class RankingRepositoryImpl implements RankingRepository {
+  final RankingRemoteDataSource remoteDataSource;
 
-  TodoRepositoryImpl({required this.remoteDataSource});
+  RankingRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<List<Todo>> getTodos() async {
+  Future<List<Ranking>> getRankings() async {
     // Get Models from data source
-    final models = await remoteDataSource.getTodos();
+    final models = await remoteDataSource.getRankings();
 
     // Convert Models to Entities using extension
     return models.map((model) => model.toEntity()).toList();
   }
 
   @override
-  Future<Todo> createTodo(Todo todo) async {
+  Future<Ranking> createRanking(Ranking ranking) async {
     // Convert Entity to Model using extension
-    final model = todo.toModel();
+    final model = ranking.toModel();
 
     // Send Model to data source
-    final resultModel = await remoteDataSource.createTodo(model);
+    final resultModel = await remoteDataSource.createRanking(model);
 
     // Convert back to Entity
     return resultModel.toEntity();
@@ -266,107 +264,79 @@ class TodoRepositoryImpl implements TodoRepository {
 **Key Pattern**: Freezed Entity + Extension methods for business logic
 
 ```dart
-// domain/entities/todo.dart
+// domain/entities/ranking.dart
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-part 'todo.freezed.dart';
-part 'todo.g.dart';
-
-enum TodoPriority { low, medium, high }
+part 'ranking.freezed.dart';
+part 'ranking.g.dart';
 
 @freezed
-sealed class Todo with _$Todo {
-  const factory Todo({
+sealed class Ranking with _$Ranking {
+  const factory Ranking({
     required String id,
-    required String title,
-    String? description,
-    required bool isCompleted,
-    DateTime? dueDate,
-    @Default(TodoPriority.medium) TodoPriority priority,
-  }) = _Todo;
+    required DateTime startTime,
+    required DateTime endTime,
+    required int attendeeCount,
+  }) = _Ranking;
 
-  factory Todo.fromJson(Map<String, dynamic> json) =>
-      _$TodoFromJson(json);
+  factory Ranking.fromJson(Map<String, dynamic> json) =>
+      _$RankingFromJson(json);
 }
 
 // Business logic extensions in the same file
-extension TodoX on Todo {
+extension RankingX on Ranking {
   // Business calculations
-  bool get isOverdue {
-    if (dueDate == null || isCompleted) return false;
-    return dueDate!.isBefore(DateTime.now());
-  }
+  Duration get duration => endTime.difference(startTime);
 
-  bool get isPriority => priority == TodoPriority.high;
+  bool get isHighAttendance => attendeeCount > 5;
 
-  int? get daysUntilDue {
-    if (dueDate == null) return null;
-    return dueDate!.difference(DateTime.now()).inDays;
+  bool isOverlapping(Ranking other) {
+    return startTime.isBefore(other.endTime) &&
+           endTime.isAfter(other.startTime);
   }
 
   // Business validations
-  bool get hasValidDueDate {
-    if (dueDate == null) return true;
-    return dueDate!.isAfter(DateTime.now());
-  }
+  bool get isValidTimeRange => endTime.isAfter(startTime);
 
-  bool get isUrgent => isPriority && !isCompleted && (daysUntilDue ?? 0) <= 3;
-
-  // Business operations
-  Todo markAsCompleted() => copyWith(isCompleted: true);
-
-  Todo markAsIncomplete() => copyWith(isCompleted: false);
-
-  Todo updatePriority(TodoPriority newPriority) =>
-      copyWith(priority: newPriority);
+  double get attendanceRate => attendeeCount / 10.0;
 }
 ```
 
 **Repository Interface:**
 
 ```dart
-// domain/repositories/todo_repository.dart
-import '../entities/todo.dart';
+// domain/repositories/ranking_repository.dart
+import '../entities/ranking.dart';
 
-abstract class TodoRepository {
-  Future<List<Todo>> getTodos();
-  Future<Todo> getTodoById(String id);
-  Future<Todo> createTodo(Todo todo);
-  Future<Todo> updateTodo(Todo todo);
-  Future<void> deleteTodo(String id);
+abstract class RankingRepository {
+  Future<List<Ranking>> getRankings();
+  Future<Ranking> getRankingById(String id);
+  Future<Ranking> createRanking(Ranking ranking);
+  Future<void> deleteRanking(String id);
 }
 ```
 
 **Use Case:**
 
 ```dart
-// domain/usecases/get_todos_usecase.dart
-import '../entities/todo.dart';
-import '../repositories/todo_repository.dart';
+// domain/usecases/get_rankings_usecase.dart
+import '../entities/ranking.dart';
+import '../repositories/ranking_repository.dart';
 
-class GetTodosUseCase {
-  final TodoRepository repository;
+class GetRankingsUseCase {
+  final RankingRepository repository;
 
-  GetTodosUseCase(this.repository);
+  GetRankingsUseCase(this.repository);
 
-  Future<List<Todo>> call({
-    bool onlyIncomplete = false,
-    bool onlyOverdue = false,
-  }) async {
-    final todos = await repository.getTodos();
+  Future<List<Ranking>> call({bool onlyHighAttendance = false}) async {
+    final rankings = await repository.getRankings();
 
-    var result = todos;
-
-    if (onlyIncomplete) {
-      result = result.where((t) => !t.isCompleted).toList();
-    }
-
-    if (onlyOverdue) {
+    if (onlyHighAttendance) {
       // Use business logic from extension
-      result = result.where((t) => t.isOverdue).toList();
+      return rankings.where((r) => r.isHighAttendance).toList();
     }
 
-    return result;
+    return rankings;
   }
 }
 ```
@@ -391,409 +361,167 @@ class GetTodosUseCase {
 
 ```dart
 // ❌ OLD: ViewModel Pattern (Don't use)
-class TodoViewModel extends ChangeNotifier {
-  List<Todo> todos = [];  // Mutable
+class RankingViewModel extends ChangeNotifier {
+  List<Ranking> rankings = [];  // Mutable
   bool isLoading = false;
 
-  void loadTodos() {
+  void loadRankings() {
     isLoading = true;
     notifyListeners();  // Manual notification
   }
 }
 
-// ✅ NEW: AsyncNotifier Pattern (Use this)
-@riverpod
-class TodoList extends _$TodoList {
-  @override
-  Future<List<Todo>> build() async {
-    // ✅ AsyncValue automatically manages loading/error/data
-    final result = await ref.read(getTodosUseCaseProvider)();
-    return result.when(
-      success: (todos) => todos,
-      failure: (failure) => throw failure,
-    );
-  }
-
-  Future<void> refresh() async {
-    ref.invalidateSelf();
-  }
-}
-
-// Widget uses AsyncValue.when()
-final todosAsync = ref.watch(todoListProvider);
-todosAsync.when(
-  loading: () => CircularProgressIndicator(),
-  error: (e, s) => ErrorWidget(e),
-  data: (todos) => TodoList(todos),
-);
-```
-
-#### Riverpod State Management with 3-Tier Architecture
-
-This package enforces a **3-tier provider architecture** for proper separation of concerns:
-
-1. **Tier 1: Entity Providers** - AsyncNotifier for domain data (loading/error/data auto-managed)
-2. **Tier 2: UI State Providers** - Notifier for UI-only state (depends on Entity Providers)
-3. **Tier 3: Computed Logic Providers** - Functions combining Entity + UI state
-
-**Tier 1: Entity Provider (AsyncNotifier)**
-
-```dart
-// presentation/providers/todo_list_provider.dart
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../domain/entities/todo.dart';
-import '../../domain/usecases/get_todos_usecase.dart';
-
-part 'todo_list_provider.g.dart';
-
-/// Entity Provider: Manages Todo list data
-@riverpod
-class TodoList extends _$TodoList {
-  @override
-  Future<List<Todo>> build() async {
-    // ✅ AsyncNotifier automatically manages loading/error/data states
-    final result = await ref.read(getTodosUseCaseProvider)();
-
-    return result.when(
-      success: (todos) => todos,
-      failure: (failure) => throw failure,  // ✅ Auto converted to AsyncValue.error
-    );
-  }
-
-  Future<void> toggleTodoComplete(String todoId) async {
-    final currentTodos = state.value;
-    if (currentTodos == null) return;
-
-    final todo = currentTodos.firstWhere((t) => t.id == todoId);
-    final updated = todo.isCompleted
-        ? todo.markAsIncomplete()
-        : todo.markAsCompleted();
-
-    state = const AsyncValue.loading();
-
-    state = await AsyncValue.guard(() async {
-      await ref.read(updateTodoUseCaseProvider)(updated);
-      final result = await ref.read(getTodosUseCaseProvider)();
-
-      return result.when(
-        success: (todos) => todos,
-        failure: (failure) => throw failure,
-      );
-    });
-  }
-
-  Future<void> refresh() async {
-    ref.invalidateSelf();
-  }
-}
-
-/// Entity UI Extensions (formatting only)
-extension TodoUIX on Todo {
-  String get formattedDueDate => dueDate != null
-      ? DateFormat('MMM dd').format(dueDate!)
-      : 'No due date';
-
-  Color get statusColor {
-    if (isCompleted) return Colors.green;
-    if (isOverdue) return Colors.red;
-    return Colors.grey;
-  }
-
-  IconData get statusIcon {
-    if (isCompleted) return Icons.check_circle;
-    if (isOverdue) return Icons.warning;
-    return Icons.circle_outlined;
-  }
-
-  List<Todo> filterCompleted(List<Todo> todos) =>
-      todos.where((t) => t.isCompleted).toList();
-
-  List<Todo> filterIncomplete(List<Todo> todos) =>
-      todos.where((t) => !t.isCompleted).toList();
-
-  List<Todo> filterOverdue(List<Todo> todos) =>
-      todos.where((t) => t.isOverdue).toList();
-}
-```
-
-**Tier 2: UI State Provider (depends on Entity Provider)**
-
-```dart
-// presentation/providers/todo_ui_provider.dart
-import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'todo_list_provider.dart';
-
-part 'todo_ui_provider.freezed.dart';
-part 'todo_ui_provider.g.dart';
-
-/// UI State (Freezed) - UI-only state
+// ✅ NEW: State Pattern (Use this)
 @freezed
-sealed class TodoUIState with _$TodoUIState {
-  const factory TodoUIState({
-    @Default(null) String? selectedTodoId,
-    @Default(false) bool isEditDialogOpen,
-    @Default(TodoFilter.all) TodoFilter activeFilter,
-  }) = _TodoUIState;
+sealed class RankingState with _$RankingState {
+  const factory RankingState({
+    @Default([]) List<Ranking> rankings,  // Immutable
+    @Default(false) bool isLoading,
+  }) = _RankingState;
 }
 
-extension TodoUIStateX on TodoUIState {
-  bool isSelected(String id) => selectedTodoId == id;
-}
-
-enum TodoFilter { all, completed, incomplete, overdue }
-
-/// UI State Provider (depends on Entity Provider)
 @riverpod
-class TodoUI extends _$TodoUI {
+class RankingNotifier extends _$RankingNotifier {
   @override
-  TodoUIState build() {
-    // ✅ Listen to entity changes
-    ref.listen(
-      todoListProvider,
-      (previous, next) {
-        // Clear selection when todos change
-        next.whenData((_) {
-          state = state.copyWith(selectedTodoId: null);
-        });
-      },
-    );
+  RankingState build() => const RankingState();
 
-    return const TodoUIState();
+  Future<void> loadRankings() async {
+    state = state.copyWith(isLoading: true);  // Immutable update
+  }
+}
+```
+
+#### Riverpod with riverpod_generator
+
+**Entity Provider (AsyncNotifier):**
+
+```dart
+// presentation/providers/ranking_provider.dart
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../domain/entities/ranking.dart';
+import '../../domain/usecases/get_rankings_usecase.dart';
+
+part 'ranking_provider.g.dart';
+
+/// Entity Provider: 데이터 + 로딩/에러 자동 관리
+@riverpod
+class RankingList extends _$RankingList {
+  @override
+  FutureOr<List<Ranking>> build() async {
+    // UseCase 직접 호출, 에러는 AsyncValue가 자동 관리
+    return ref.read(getRankingsUseCaseProvider)();
   }
 
-  void selectTodo(String todoId) {
-    state = state.copyWith(selectedTodoId: todoId);
+  Future<void> refresh() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => ref.read(getRankingsUseCaseProvider)(),
+    );
+  }
+}
+```
+
+**UI State Class (선택 사항):**
+
+```dart
+// presentation/states/ranking_ui_state.dart
+import 'package:freezed_annotation/freezed_annotation.dart';
+import '../../domain/entities/ranking.dart';
+
+part 'ranking_ui_state.freezed.dart';
+
+/// UI State: UI 전용 상태 (선택, 필터 등)
+/// ❌ errorMessage, isLoading 없음 - AsyncValue가 관리
+@freezed
+sealed class RankingUIState with _$RankingUIState {
+  const factory RankingUIState({
+    @Default(null) String? selectedRankingId,
+  }) = _RankingUIState;
+}
+
+extension RankingUIStateX on RankingUIState {
+  bool isSelected(String id) => selectedRankingId == id;
+}
+```
+
+**UI State Provider:**
+
+```dart
+// presentation/providers/ranking_ui_provider.dart
+@riverpod
+class RankingUI extends _$RankingUI {
+  @override
+  RankingUIState build() {
+    // Entity 변경 감지하여 UI 상태 리셋
+    ref.listen(rankingListProvider, (prev, next) {
+      next.whenData((_) {
+        if (prev?.value != next.value) {
+          state = state.copyWith(selectedRankingId: null);
+        }
+      });
+    });
+    return const RankingUIState();
+  }
+
+  void selectRanking(String rankingId) {
+    state = state.copyWith(selectedRankingId: rankingId);
   }
 
   void clearSelection() {
-    state = state.copyWith(selectedTodoId: null);
-  }
-
-  void setFilter(TodoFilter filter) {
-    state = state.copyWith(activeFilter: filter);
-  }
-
-  void openEditDialog() {
-    state = state.copyWith(isEditDialogOpen: true);
-  }
-
-  void closeEditDialog() {
-    state = state.copyWith(isEditDialogOpen: false);
+    state = state.copyWith(selectedRankingId: null);
   }
 }
 ```
 
-**Tier 3: Computed Logic Providers (Entity + UI combination)**
+**Widget (AsyncValue.when 패턴):**
 
 ```dart
-// presentation/providers/todo_computed_providers.dart
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../domain/entities/todo.dart';
-import 'todo_list_provider.dart';
-import 'todo_ui_provider.dart';
-
-part 'todo_computed_providers.g.dart';
-
-/// Filtered todos based on active filter
-@riverpod
-List<Todo> filteredTodos(FilteredTodosRef ref) {
-  final todosAsync = ref.watch(todoListProvider);
-  final uiState = ref.watch(todoUIProvider);
-
-  return todosAsync.when(
-    data: (todos) {
-      switch (uiState.activeFilter) {
-        case TodoFilter.completed:
-          return todos.where((t) => t.isCompleted).toList();
-        case TodoFilter.incomplete:
-          return todos.where((t) => !t.isCompleted).toList();
-        case TodoFilter.overdue:
-          return todos.where((t) => t.isOverdue).toList();
-        case TodoFilter.all:
-        default:
-          return todos;
-      }
-    },
-    loading: () => [],
-    error: (_, __) => [],
-  );
-}
-
-/// Selected todo (combines entity + UI state)
-@riverpod
-Todo? selectedTodo(SelectedTodoRef ref) {
-  final todosAsync = ref.watch(todoListProvider);
-  final uiState = ref.watch(todoUIProvider);
-
-  if (uiState.selectedTodoId == null) return null;
-
-  return todosAsync.when(
-    data: (todos) => todos.cast<Todo?>().firstWhere(
-      (t) => t?.id == uiState.selectedTodoId,
-      orElse: () => null,
-    ),
-    loading: () => null,
-    error: (_, __) => null,
-  );
-}
-
-/// Completion statistics
-@riverpod
-TodoStats todoStats(TodoStatsRef ref) {
-  final todosAsync = ref.watch(todoListProvider);
-
-  return todosAsync.when(
-    data: (todos) {
-      final completed = todos.where((t) => t.isCompleted).length;
-      final total = todos.length;
-      final rate = total == 0 ? 0.0 : completed / total;
-
-      return TodoStats(
-        total: total,
-        completed: completed,
-        incomplete: total - completed,
-        completionRate: rate,
-      );
-    },
-    loading: () => const TodoStats(),
-    error: (_, __) => const TodoStats(),
-  );
-}
-
-class TodoStats {
-  final int total;
-  final int completed;
-  final int incomplete;
-  final double completionRate;
-
-  const TodoStats({
-    this.total = 0,
-    this.completed = 0,
-    this.incomplete = 0,
-    this.completionRate = 0.0,
-  });
-}
-```
-
-**Widget (using AsyncValue.when pattern):**
-
-```dart
-// presentation/widgets/todo_list.dart
+// presentation/widgets/ranking_list.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/todo_list_provider.dart';
-import '../providers/todo_ui_provider.dart';
-import '../providers/todo_computed_providers.dart';
+import '../providers/ranking_provider.dart';
+import '../providers/ranking_ui_provider.dart';
 
-class TodoList extends ConsumerWidget {
-  const TodoList({super.key});
+class RankingList extends ConsumerWidget {
+  const RankingList({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // ✅ Watch Entity Provider (AsyncValue)
-    final todosAsync = ref.watch(todoListProvider);
+    // Entity Provider (AsyncValue)
+    final rankingsAsync = ref.watch(rankingListProvider);
+    // UI State Provider
+    final uiState = ref.watch(rankingUIProvider);
 
-    // ✅ Watch UI State Provider
-    final uiState = ref.watch(todoUIProvider);
-    final uiNotifier = ref.read(todoUIProvider.notifier);
-
-    // ✅ Watch Computed Providers
-    final filteredTodos = ref.watch(filteredTodosProvider);
-    final stats = ref.watch(todoStatsProvider);
-    final selectedTodo = ref.watch(selectedTodoProvider);
-
-    // ✅ AsyncValue.when() pattern for loading/error/data
-    return todosAsync.when(
+    // ✅ AsyncValue.when()으로 로딩/에러/데이터 처리
+    return rankingsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-
-      error: (error, stack) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error, color: Colors.red, size: 48),
-            const SizedBox(height: 16),
-            Text('Error: $error'),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => ref.invalidate(todoListProvider),
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
+      error: (error, _) => AppErrorWidget(
+        error: error,
+        onRetry: () => ref.invalidate(rankingListProvider),
       ),
+      data: (rankings) => Column(
+        children: [
+          Text('Total: ${rankings.length} rankings'),
+          Expanded(
+            child: ListView.builder(
+              itemCount: rankings.length,
+              itemBuilder: (context, index) {
+                final ranking = rankings[index];
+                final isSelected = uiState.isSelected(ranking.id);
 
-      data: (todos) {  // ✅ todos is non-nullable here
-        return Column(
-          children: [
-            // ✅ Statistics from computed provider
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Text('Completion: ${(stats.completionRate * 100).toStringAsFixed(1)}%'),
-                    Text('${stats.completed} / ${stats.total} completed'),
-                  ],
-                ),
-              ),
-            ),
-
-            // ✅ Filter buttons
-            SegmentedButton<TodoFilter>(
-              selected: {uiState.activeFilter},
-              onSelectionChanged: (filters) {
-                uiNotifier.setFilter(filters.first);
+                return RankingItem(
+                  ranking: ranking,
+                  isSelected: isSelected,
+                  onTap: () {
+                    ref.read(rankingUIProvider.notifier)
+                        .selectRanking(ranking.id);
+                  },
+                );
               },
-              segments: const [
-                ButtonSegment(value: TodoFilter.all, label: Text('All')),
-                ButtonSegment(value: TodoFilter.completed, label: Text('Completed')),
-                ButtonSegment(value: TodoFilter.incomplete, label: Text('Active')),
-                ButtonSegment(value: TodoFilter.overdue, label: Text('Overdue')),
-              ],
             ),
-
-            // ✅ Todo list (filtered)
-            Expanded(
-              child: ListView.builder(
-                itemCount: filteredTodos.length,
-                itemBuilder: (context, index) {
-                  final todo = filteredTodos[index];
-                  final isSelected = uiState.isSelected(todo.id);
-
-                  return ListTile(
-                    // ✅ Entity UI Extensions
-                    leading: Icon(todo.statusIcon, color: todo.statusColor),
-                    title: Text(todo.title),
-                    subtitle: Text(todo.formattedDueDate),
-                    selected: isSelected,
-                    onTap: () => uiNotifier.selectTodo(todo.id),
-                    trailing: Checkbox(
-                      value: todo.isCompleted,
-                      onChanged: (_) {
-                        ref.read(todoListProvider.notifier)
-                            .toggleTodoComplete(todo.id);
-                      },
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            // ✅ Selected todo detail
-            if (selectedTodo != null)
-              Card(
-                child: ListTile(
-                  title: Text('Selected: ${selectedTodo.title}'),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: uiNotifier.clearSelection,
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
+          ),
+        ],
+      ),
     );
   }
 }
@@ -836,133 +564,286 @@ User sees updated UI
 ElevatedButton(
   onPressed: () {
     // 2. Call Notifier method
-    ref.read(todoNotifierProvider.notifier).loadTodos();
+    ref.read(rankingNotifierProvider.notifier).loadRankings();
   },
 )
 
 // 3. Notifier calls UseCase
-Future<void> loadTodos(...) async {
-  final todos = await getTodosUseCase();  // Domain Entity
-  state = state.copyWith(todos: todos);   // Update Freezed State
+Future<void> loadRankings(...) async {
+  final rankings = await getRankingsUseCase();  // Domain Entity
+  state = state.copyWith(rankings: rankings);   // Update Freezed State
 }
 
 // 4. UseCase calls Repository
-Future<List<Todo>> call() async {
-  return await repository.getTodos();  // Domain Entity
+Future<List<Ranking>> call() async {
+  return await repository.getRankings();  // Domain Entity
 }
 
 // 5. Repository calls DataSource
-Future<List<Todo>> getTodos() async {
-  final models = await remoteDataSource.getTodos();     // Freezed Model
-  return models.map((m) => m.toEntity()).toList();      // Extension conversion
+Future<List<Ranking>> getRankings() async {
+  final models = await remoteDataSource.getRankings();     // Freezed Model
+  return models.map((m) => m.toEntity()).toList();         // Extension conversion
 }
 
 // 6. DataSource fetches from API
-Future<List<TodoModel>> getTodos() async {
+Future<List<RankingModel>> getRankings() async {
   final response = await client.get(...);
   final json = jsonDecode(response.body);
-  return json.map((j) => TodoModel.fromJson(j)).toList();  // Freezed fromJson
+  return json.map((j) => RankingModel.fromJson(j)).toList();  // Freezed fromJson
 }
 
 // 7. Widget rebuilds with new state
-final state = ref.watch(todoNotifierProvider);  // Freezed State
-return Text('Count: ${state.todos.length}');    // Use Entity
+final state = ref.watch(rankingNotifierProvider);  // Freezed State
+return Text('Count: ${state.rankings.length}');     // Use Entity
 ```
 
 ## Common Patterns
 
-> 📖 **See above** for comprehensive Riverpod State Management patterns with 3-tier architecture (Entity Providers → UI State Providers → Computed Logic Providers).
+### Pattern 1: UI-Specific Extensions on Entities
 
-### Quick Reference: Entity UI Extensions
+When you need UI formatting or calculations, add extensions in the **State file** or **Widget file**:
 
-When you need UI formatting or display logic, add extensions to entities:
-
+**Option A: In State file (recommended for shared UI logic)**
 ```dart
-// presentation/providers/todo_providers.dart (or in State file)
+// presentation/states/ranking_state.dart
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../../domain/entities/ranking.dart';
 
-/// Entity UI Extensions (formatting only - no business logic)
-extension TodoUIX on Todo {
-  String get formattedDueDate => dueDate != null
-      ? DateFormat('MMM dd').format(dueDate!)
-      : 'No due date';
+part 'ranking_state.freezed.dart';
 
-  Color get statusColor {
-    if (isCompleted) return Colors.green;
-    if (isOverdue) return Colors.red;
-    if (isPriority) return Colors.orange;
-    return Colors.grey;
-  }
-
-  IconData get statusIcon {
-    if (isCompleted) return Icons.check_circle;
-    if (isOverdue) return Icons.warning;
-    return Icons.circle_outlined;
-  }
-
-  String get statusLabel {
-    if (isCompleted) return 'Completed';
-    if (isOverdue) return 'Overdue';
-    if (daysUntilDue != null && daysUntilDue! <= 3) return 'Due soon';
-    return 'Active';
-  }
+@freezed
+sealed class RankingState with _$RankingState {
+  const factory RankingState({
+    @Default([]) List<Ranking> rankings,
+    @Default(false) bool isLoading,
+  }) = _RankingState;
 }
 
-// Widget-specific extensions (private, widget-only)
-extension _TodoCardX on Todo {
-  EdgeInsets get cardPadding => isPriority
-      ? EdgeInsets.all(16.0)
-      : EdgeInsets.all(8.0);
+// State extensions
+extension RankingStateX on RankingState {
+  int get totalAttendees => rankings.fold(0, (sum, r) => sum + r.attendeeCount);
+}
 
-  double get cardElevation => isOverdue ? 4.0 : 1.0;
+// Entity UI extensions in the same file (shared across widgets)
+extension RankingUIX on Ranking {
+  String get formattedTimeRange {
+    final start = DateFormat('HH:mm').format(startTime);
+    final end = DateFormat('HH:mm').format(endTime);
+    return '$start - $end';
+  }
+
+  Color get attendanceColor {
+    if (attendeeCount > 10) return Colors.green;
+    if (attendeeCount > 5) return Colors.orange;
+    return Colors.red;
+  }
+
+  IconData get attendanceIcon {
+    if (isHighAttendance) return Icons.group;  // Uses domain extension
+    return Icons.person;
+  }
+
+  String get attendanceLabel {
+    if (attendeeCount == 0) return 'No attendees';
+    if (attendeeCount == 1) return '1 attendee';
+    return '$attendeeCount attendees';
+  }
 }
 ```
 
-### Key Principles
+**Option B: In Widget file (for widget-specific logic only)**
+```dart
+// presentation/widgets/ranking_card.dart
+import 'package:flutter/material.dart';
+import '../../domain/entities/ranking.dart';
+import '../states/ranking_state.dart';  // Imports shared UI extensions
 
-1. **NO** manual `isLoading` or `errorMessage` fields - Use AsyncValue
-2. **NO** Presentation Models - Use Entity Providers + UI State Providers
-3. **NO** ViewModels - Use AsyncNotifier + Notifier
-4. **Entity Extensions**: UI formatting/display only, no business logic
-5. **State Extensions**: Computed properties combining UI state
-6. **Computed Providers**: Derived values from Entity + UI State
+// Widget-specific extensions (only used in this widget)
+extension _RankingCardX on Ranking {
+  EdgeInsets get cardPadding {
+    return isHighAttendance
+      ? EdgeInsets.all(16.0)
+      : EdgeInsets.all(8.0);
+  }
+}
+
+class RankingCard extends StatelessWidget {
+  final Ranking ranking;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: ranking.cardPadding,  // Widget-specific extension
+        child: Column(
+          children: [
+            Text(ranking.formattedTimeRange),  // Shared UI extension from state file
+            Icon(ranking.attendanceIcon, color: ranking.attendanceColor),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+### Pattern 2: Complex UI State (Freezed State + Extensions)
+
+When you need to combine multiple entities or track complex UI state:
+
+```dart
+// presentation/states/ranking_ui_state.dart
+import 'package:freezed_annotation/freezed_annotation.dart';
+import '../../domain/entities/ranking.dart';
+
+part 'ranking_ui_state.freezed.dart';
+
+enum RankingFilter { all, highAttendance, selected }
+enum RankingSortOrder { byTime, byAttendance }
+
+@freezed
+sealed class RankingUIState with _$RankingUIState {
+  const factory RankingUIState({
+    @Default([]) List<Ranking> rankings,
+    @Default({}) Set<String> selectedIds,
+    @Default({}) Map<String, bool> expandedStates,
+    @Default(RankingFilter.all) RankingFilter filter,
+    @Default(RankingSortOrder.byTime) RankingSortOrder sortOrder,
+  }) = _RankingUIState;
+}
+
+// Computed properties in extension
+extension RankingUIStateX on RankingUIState {
+  List<Ranking> get filteredRankings {
+    var result = rankings;
+
+    switch (filter) {
+      case RankingFilter.highAttendance:
+        result = result.where((r) => r.isHighAttendance).toList();
+        break;
+      case RankingFilter.selected:
+        result = result.where((r) => selectedIds.contains(r.id)).toList();
+        break;
+      default:
+        break;
+    }
+
+    return _sortRankings(result);
+  }
+
+  List<Ranking> get selectedRankings =>
+      rankings.where((r) => selectedIds.contains(r.id)).toList();
+
+  int get totalSelectedAttendees =>
+      selectedRankings.fold(0, (sum, r) => sum + r.attendeeCount);
+
+  bool isSelected(String id) => selectedIds.contains(id);
+
+  bool isExpanded(String id) => expandedStates[id] ?? false;
+
+  List<Ranking> _sortRankings(List<Ranking> rankings) {
+    final sorted = List<Ranking>.from(rankings);
+    switch (sortOrder) {
+      case RankingSortOrder.byTime:
+        sorted.sort((a, b) => a.startTime.compareTo(b.startTime));
+        break;
+      case RankingSortOrder.byAttendance:
+        sorted.sort((a, b) => b.attendeeCount.compareTo(a.attendeeCount));
+        break;
+    }
+    return sorted;
+  }
+}
+```
+
+### Pattern 3: UI-Specific State (Use State, Not Presentation Models)
+
+When you need UI-specific data like selection or validation, use State classes that contain Entities:
+
+```dart
+// presentation/states/ranking_state.dart
+import 'package:freezed_annotation/freezed_annotation.dart';
+import '../../domain/entities/ranking.dart';
+
+part 'ranking_state.freezed.dart';
+
+@freezed
+sealed class RankingState with _$RankingState {
+  const factory RankingState({
+    @Default([]) List<Ranking> rankings,  // Domain Entities
+    @Default({}) Set<String> selectedIds,  // UI state
+    @Default({}) Map<String, String> validationErrors,  // UI validation
+  }) = _RankingState;
+}
+
+// UI logic via extensions
+extension RankingStateX on RankingState {
+  List<Ranking> get selectedRankings =>
+      rankings.where((r) => selectedIds.contains(r.id)).toList();
+
+  bool isSelected(String id) => selectedIds.contains(id);
+
+  String? validationError(String id) => validationErrors[id];
+
+  bool canSelect(String id) => validationErrors[id] == null;
+
+  // Computed UI properties using Entity extensions
+  Color getStatusColor(Ranking ranking) {
+    if (validationErrors[ranking.id] != null) return Colors.red;
+    if (isSelected(ranking.id)) return Colors.blue;
+    if (ranking.isHighAttendance) return Colors.green;  // From Entity extension
+    return Colors.grey;
+  }
+}
+
+// Usage in Widget
+final state = ref.watch(rankingNotifierProvider);
+final ranking = state.rankings[0];
+final color = state.getStatusColor(ranking);  // Use State extension
+final label = ranking.formattedTimeRange;  // Use Entity extension
+```
+
+**Key Principle**: NO separate Presentation Models. State contains Entities + UI-specific fields.
 
 ## Examples
 
 ### Complete Feature Structure
 
 ```
-lib/features/todos/
+lib/features/rankings/
 ├── data/
 │   ├── datasources/
-│   │   ├── todo_local_datasource.dart
-│   │   └── todo_remote_datasource.dart
+│   │   ├── ranking_local_datasource.dart
+│   │   └── ranking_remote_datasource.dart
 │   ├── models/
-│   │   └── todo_model.dart              # Freezed Model + conversion extensions (in same file)
+│   │   └── ranking_model.dart              # Freezed Model + conversion extensions (in same file)
 │   └── repositories/
-│       └── todo_repository_impl.dart
+│       └── ranking_repository_impl.dart
 ├── domain/
 │   ├── entities/
-│   │   └── todo.dart                    # Freezed Entity + business logic extensions (in same file)
+│   │   └── ranking.dart                    # Freezed Entity + business logic extensions (in same file)
 │   ├── repositories/
-│   │   └── todo_repository.dart
+│   │   └── ranking_repository.dart
 │   └── usecases/
-│       ├── get_todos_usecase.dart
-│       ├── create_todo_usecase.dart
-│       └── delete_todo_usecase.dart
+│       ├── get_rankings_usecase.dart
+│       ├── create_ranking_usecase.dart
+│       └── delete_ranking_usecase.dart
 └── presentation/
     ├── providers/
-    │   └── todo_provider.dart           # riverpod_generator (Notifier)
+    │   └── ranking_provider.dart           # riverpod_generator (Notifier)
     ├── states/
-    │   └── todo_state.dart              # Freezed State + UI extensions (State & Entity UI extensions)
+    │   └── ranking_state.dart              # Freezed State + UI extensions (State & Entity UI extensions)
     ├── pages/
-    │   └── todo_page.dart
+    │   └── ranking_page.dart
     └── widgets/
-        ├── todo_list.dart
-        └── todo_card.dart               # Can include widget-specific extensions in same file
+        ├── ranking_list.dart
+        └── ranking_card.dart               # Can include widget-specific extensions in same file
     # NOTE: No models/ directory - State uses Domain Entities directly
     # NOTE: No viewmodels/ directory - we use State pattern, not ViewModel pattern
     # NOTE: No ui/ or extensions/ directory - put UI extensions in state file or widget files
-    # NOTE: Entity UI extensions go in todo_state.dart along with State extensions
+    # NOTE: Entity UI extensions go in ranking_state.dart along with State extensions
 ```
 
 ### Decision Tree: Which Pattern to Use?
@@ -999,7 +880,7 @@ Need UI-specific data?
 - **Write Extensions in the same file** - Model extensions in model file, Entity extensions in entity file
 - **Use riverpod_generator** for state management providers
 - **Use Freezed State in Presentation** for UI state management
-- **Models contain Entities** - `TodoModel` has `entity` field
+- **Models contain Entities** - `RankingModel` has `entity` field
 - **Extract Entities from Models** using `model.toEntity()` (returns `model.entity`)
 - **Keep business logic** in Domain entity extensions (in entity file)
 - **Keep shared UI logic** in Presentation State file (Entity UI extensions with State extensions)
@@ -1034,9 +915,9 @@ Need UI-specific data?
 
 | Layer | What to Use | Purpose | Example |
 |-------|-------------|---------|---------|
-| **Data** | Freezed Models (contains Entity) + Extensions | JSON/DB serialization | `TodoModel.fromJson()`, `model.toEntity()` (returns `model.entity`) |
-| **Domain** | Freezed Entities + Extensions | Business logic | `Todo`, `todo.isOverdue` |
-| **Presentation** | Freezed State + riverpod_generator + Extensions | UI state & interactions | `TodoState`, `TodoNotifier` |
+| **Data** | Freezed Models (contains Entity) + Extensions | JSON/DB serialization | `RankingModel.fromJson()`, `model.toEntity()` (returns `model.entity`) |
+| **Domain** | Freezed Entities + Extensions | Business logic | `Ranking`, `ranking.isHighAttendance` |
+| **Presentation** | Freezed State + riverpod_generator + Extensions | UI state & interactions | `RankingState`, `RankingNotifier` |
 
 **Tech Stack:**
 - **State Management**: Riverpod with `riverpod_generator`
@@ -1050,16 +931,15 @@ Need UI-specific data?
 ```dart
 // 1. Data Model (minimal - just Entity)
 @freezed
-sealed class TodoModel with _$TodoModel {
-  const factory TodoModel({
-    required Todo entity,  // Domain Entity inside
+sealed class RankingModel with _$RankingModel {
+  const factory RankingModel({
+    required Ranking entity,  // Domain Entity inside
     // No duplicate fields - use entity data in toJson()
-  }) = _TodoModel;
+  }) = _RankingModel;
 
   Map<String, dynamic> toJson() => {
     'id': entity.id,  // Access entity fields directly
-    'title': entity.title,
-    'is_completed': entity.isCompleted,
+    'start_time': entity.startTime.toIso8601String(),
   };
 }
 
@@ -1074,8 +954,8 @@ sealed class UserModel with _$UserModel {
 }
 
 // 3. Extensions in same file
-extension TodoModelX on TodoModel {
-  Todo toEntity() => entity;
+extension RankingModelX on RankingModel {
+  Ranking toEntity() => entity;
 }
 ```
 

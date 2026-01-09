@@ -31,6 +31,10 @@ This linter enforces the following Clean Architecture principles:
 
 For detailed examples and implementation patterns, see [CLEAN_ARCHITECTURE_GUIDE.md](doc/CLEAN_ARCHITECTURE_GUIDE.md).
 
+For error handling patterns, see [UNIFIED_ERROR_GUIDE.md](doc/UNIFIED_ERROR_GUIDE.md).
+
+For state management patterns (Riverpod + Freezed), see [STATE_MANAGEMENT_GUIDE.md](doc/STATE_MANAGEMENT_GUIDE.md).
+
 ## Common Lint Violations & Solutions
 
 ### ❌ Violation: Presentation imports Data Model
@@ -55,7 +59,7 @@ import 'package:app/features/todos/domain/entities/todo.dart';  // ✅ CORRECT
 import 'dart:io';  // ✅ CORRECT - Used only for File type in method signature
 
 abstract interface class ProfileImageRepository {
-  Future<Result<ProfileImage, Failure>> saveProfileImage({
+  Future<ProfileImage> saveProfileImage({
     required File imageFile,  // ✅ Type reference is allowed
     required String userId,
   });
@@ -98,11 +102,8 @@ Entity providers manage domain data using `AsyncNotifier` with `AsyncValue`.
 class ScheduleDetail extends _$ScheduleDetail {
   @override
   Future<Schedule> build(String scheduleId) async {  // ✅ ID parameter, not entity
-    final result = await ref.read(getScheduleDetailUseCaseProvider)(scheduleId);
-    return result.when(
-      success: (schedule) => schedule,
-      failure: (failure) => throw failure,  // ✅ AsyncValue.error conversion
-    );
+    // UseCase throws AppException on error, AsyncValue catches automatically
+    return ref.read(getScheduleDetailUseCaseProvider)(scheduleId);
   }
 }
 
@@ -205,11 +206,8 @@ class ScheduleNotifier extends _$ScheduleNotifier {
 class Schedule extends _$Schedule {
   @override
   Future<entities.Schedule> build(String scheduleId) async {
-    final result = await ref.read(getScheduleUseCaseProvider)(scheduleId);
-    return result.when(
-      success: (schedule) => schedule,
-      failure: (failure) => throw failure,  // ✅ Auto AsyncValue.error
-    );
+    // UseCase throws AppException on error, AsyncValue catches automatically
+    return ref.read(getScheduleUseCaseProvider)(scheduleId);
   }
 }
 
@@ -331,11 +329,8 @@ class TodoList extends _$TodoList {
 class ScheduleList extends _$ScheduleList {
   @override
   Future<List<Schedule>> build() async {
-    final result = await ref.read(getScheduleListUseCaseProvider)();  // ✅ One-time UseCase call
-    return result.when(
-      success: (schedules) => schedules,
-      failure: (failure) => throw failure,
-    );
+    // ✅ One-time UseCase call - throws AppException on error
+    return ref.read(getScheduleListUseCaseProvider)();
   }
 }
 
@@ -449,45 +444,62 @@ EventDataSource eventDataSource(Ref ref) {
 6. **Computed Logic**: Create separate providers for derived values
 7. **Entity UI Extensions**: Keep formatting/display logic in extensions, not business logic
 
-See [CLEAN_ARCHITECTURE_GUIDE.md](doc/CLEAN_ARCHITECTURE_GUIDE.md) for more comprehensive examples.
+See [CLEAN_ARCHITECTURE_GUIDE.md](doc/CLEAN_ARCHITECTURE_GUIDE.md) and [STATE_MANAGEMENT_GUIDE.md](doc/STATE_MANAGEMENT_GUIDE.md) for more comprehensive examples.
 
-## Repository Pattern Violations
+## Repository Pattern
 
-### Common Issues
+### Error Handling Strategy
 
-**❌ Domain Repository Concrete**: Use `abstract interface class`
-**❌ RepositoryImpl No Interface**: Must `implements` domain interface
-**❌ Returns Model**: Must return `Result<Entity, Failure>`
-**❌ No Result Type**: Wrap return in `Result<T, Failure>`
-**❌ Throws Exceptions**: Return `Failure` instead
-**❌ Direct `.entity` Access**: Use `.toEntity()` method
+> **Note**: For detailed error handling patterns, see [UNIFIED_ERROR_GUIDE.md](doc/UNIFIED_ERROR_GUIDE.md).
+
+The linter supports a **simplified pass-through pattern** for Repository error handling:
+- DataSource throws `AppException` (defined in `app_exception.dart`)
+- Repository returns `Future<Entity>` directly (no Result pattern, pass-through errors)
+- UseCase calls Repository, may add business validation (throws `AppException`)
+- Presentation uses `AsyncValue.guard()` to catch all exceptions
 
 ### Correct Pattern
 
 ```dart
 // domain/repositories/user_repository.dart
 abstract interface class UserRepository {
-  Future<Result<User, Failure>> getUser(String id);
+  Future<User> getUser(String id);  // ✅ Returns Entity directly
 }
 
 // data/repositories/user_repository_impl.dart
 class UserRepositoryImpl implements UserRepository {
-  @override
-  Future<Result<User, Failure>> getUser(String id) async {
-    if (id.isEmpty) return Failure(UserFailure.invalidInput());
+  final UserRemoteDataSource dataSource;
 
+  @override
+  Future<User> getUser(String id) async {
+    // ✅ Pass-through: Let DataSource exceptions bubble up
+    final model = await dataSource.getUser(id);
+    return model.toEntity();
+  }
+}
+
+// data/datasources/user_remote_datasource.dart
+class UserRemoteDataSource {
+  Future<UserModel> getUser(String id) async {
     try {
-      final model = await dataSource.getUser(id);
-      return Success(model.toEntity());  // ✅ Use method, not .entity
-    } on DataException catch (e) {
-      return Failure(UserFailure.fromException(e));
+      final response = await client.get('/users/$id');
+      return UserModel.fromJson(response.data);
+    } on DioException catch (e) {
+      throw e.toAppException();  // ✅ Convert to AppException
     }
   }
 }
 
-// Model with factory
-factory TodoModel.fromEntity(Todo entity, {String? etag}) {
-  return TodoModel(entity: entity, etag: etag);
+// domain/usecases/get_user_usecase.dart
+class GetUserUseCase {
+  final UserRepository repository;
+
+  Future<User> call(String id) async {
+    if (id.isEmpty) {
+      throw const InvalidInputException.withCode('errorValidationIdRequired');
+    }
+    return repository.getUser(id);  // ✅ Pass-through
+  }
 }
 ```
 
@@ -495,7 +507,7 @@ factory TodoModel.fromEntity(Todo entity, {String? etag}) {
 
 **Domain Layer (Interfaces)**:
 - ✅ Abstract classes or abstract interface classes
-- ✅ Return `Result<Entity, Failure>` types
+- ✅ Return `Future<Entity>` directly (no Result pattern)
 - ✅ Named `*Repository` (e.g., `UserRepository`, `TodoRepository`)
 - ❌ No implementations or method bodies
 - ❌ No Model types in signatures
@@ -504,9 +516,8 @@ factory TodoModel.fromEntity(Todo entity, {String? etag}) {
 - ✅ Concrete classes implementing domain interfaces
 - ✅ Named `*RepositoryImpl` (e.g., `UserRepositoryImpl`)
 - ✅ Must use `implements` keyword
-- ✅ Catch DataSource exceptions and convert to `Result`
+- ✅ Pass-through pattern: Let DataSource exceptions bubble up
 - ✅ Use `.toEntity()` method instead of direct `.entity` access
-- ❌ Never throw exceptions directly
 - ❌ No Model types in return signatures (convert to Entity)
 - ❌ Never access `.entity` property directly (use `.toEntity()` method)
 
@@ -598,8 +609,8 @@ class TodoRepositoryImpl implements TodoRepository {
   final TodoRemoteDataSource remoteDataSource;
   Todo? _cachedTodo;  // ❌ Mutable state variable
 
-  Future<Result<Todo, Failure>> getTodo(String id) async {
-    if (_cachedTodo?.id == id) return Success(_cachedTodo!);
+  Future<Todo> getTodo(String id) async {
+    if (_cachedTodo?.id == id) return _cachedTodo!;
     // ...
   }
 }
@@ -620,7 +631,7 @@ class GetTodoUseCase {
 class TodoRepositoryImpl implements TodoRepository {
   final GetTodoUseCase useCase;  // ❌ Wrong dependency direction
 
-  Future<Result<Todo, Failure>> getTodo(String id) {
+  Future<Todo> getTodo(String id) {
     return useCase.call(id);
   }
 }
@@ -661,37 +672,94 @@ class TodoRemoteDataSource {
 
 ## Exception Naming & Layer Patterns
 
-### Common Issues
+> **Note**: For the complete exception system, see [UNIFIED_ERROR_GUIDE.md](doc/UNIFIED_ERROR_GUIDE.md).
 
-**❌ Domain Exceptions No Prefix**: Use feature prefix (e.g., `TodoNotFoundException`)
-**❌ DataSource Generic Exceptions**: Use defined exceptions (NetworkException, etc.)
-**❌ Presentation Uses Data Exceptions**: Only handle domain Failure types
+### AppException Pattern
+
+The linter enforces a **unified exception pattern** using `AppException` with `code` + `debugMessage`:
+
+```dart
+// core/error/app_exception.dart
+sealed class AppException implements Exception {
+  const AppException(this.code, [this.debugMessage]);
+  final String code;        // i18n key (e.g., 'errorNetwork')
+  final String? debugMessage;  // Developer logging only
+}
+
+// Common exceptions (covers 90% of cases)
+final class NetworkException extends AppException {
+  const NetworkException([String? debug]) : super('errorNetwork', debug);
+}
+
+final class ServerException extends AppException {
+  const ServerException([String? debug, this.statusCode]) : super('errorServer', debug);
+  final int? statusCode;
+}
+
+final class NotFoundException extends AppException {
+  const NotFoundException([String? debug]) : super('errorNotFound', debug);
+}
+
+final class InvalidInputException extends AppException {
+  const InvalidInputException([String? debug, this.fieldErrors])
+      : super('errorInvalidInput', debug);
+
+  // For specific validation codes
+  const InvalidInputException.withCode(String code, [String? debug, this.fieldErrors])
+      : super(code, debug);
+
+  final Map<String, String>? fieldErrors;
+}
+```
 
 ### Correct Pattern
 
 ```dart
-// domain/exceptions/todo_exceptions.dart
-class TodoNotFoundException implements Exception { }  // ✅ Feature prefix
-class TodoValidationException implements Exception { }
-
 // data/datasources/todo_remote_datasource.dart
 class TodoRemoteDataSource {
-  Future<Todo> getTodo(String id) async {
-    if (response.statusCode == 404) throw NotFoundException();  // ✅
-    if (response.statusCode >= 500) throw ServerException();  // ✅
-    return Todo.fromJson(response.data);
+  Future<TodoModel> getTodo(String id) async {
+    try {
+      final response = await client.get('/todos/$id');
+      return TodoModel.fromJson(response.data);
+    } on DioException catch (e) {
+      throw e.toAppException();  // ✅ Convert to AppException
+    }
   }
 }
 
-// presentation/widgets/todo_list.dart
-result.when(
-  success: (todos) => _showTodos(todos),
-  failure: (failure) => _handleFailure(failure),  // ✅ Domain Failure
+// domain/usecases/create_todo_usecase.dart
+class CreateTodoUseCase {
+  Future<Todo> call(String title) async {
+    if (title.isEmpty) {
+      throw const InvalidInputException.withCode('errorValidationTitleRequired');
+    }
+    return repository.createTodo(title);
+  }
+}
+
+// presentation/widgets/todo_list.dart (UI converts code to message)
+asyncValue.when(
+  error: (error, _) => AppErrorWidget(
+    error: error,
+    onRetry: () => ref.invalidate(todoListProvider),
+  ),
+  // ...
 );
+
+// AppErrorWidget uses toMessage(context) for i18n
+class AppErrorWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final message = error is AppException
+        ? error.toMessage(context)  // ✅ i18n via code
+        : AppLocalizations.of(context)?.errorUnknown ?? 'Unknown error';
+    return Text(message);
+  }
+}
 ```
 
 ### Allowed Data Layer Exceptions
-- `NotFoundException`, `UnauthorizedException`, `NetworkException`, `ServerException`, `CacheException`, `DatabaseException`, `DataSourceException`
+- `NetworkException`, `TimeoutException`, `ServerException`, `UnauthorizedException`, `ForbiddenException`, `NotFoundException`, `InvalidInputException`, `ConflictException`, `CacheException`, `UnknownException`
 
 ## Error Message Guidelines
 
