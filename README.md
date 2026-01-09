@@ -20,7 +20,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 - 🔧 **Zero Configuration** - Works out of the box with sensible defaults
 - 🧪 **Test-Aware** - Smart exceptions for test files and development contexts
 
-## 📋 Rules Overview (32 Rules)
+## 📋 Rules Overview (31 Rules)
 
 ### 🌐 Core Clean Architecture Principles (6 rules)
 1. **Layer Dependency** - Enforces dependency direction (inward only)
@@ -30,39 +30,38 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 5. **Circular Dependency** - Prevents circular dependencies between layers
 6. **Boundary Crossing** - Validates proper layer boundary crossing
 
-### 🎯 Domain Layer Rules (3 rules)
+### 🎯 Domain Layer Rules (2 rules)
 7. **UseCase No Result Return** - UseCases should unwrap Result types
 8. **Exception Naming Convention** - Feature prefix for domain exceptions
-9. **Exception Message Localization** - Consistent exception messages
 
 ### 💾 Data Layer Rules (10 rules)
-10. **Model Structure** - Freezed models with entity composition
-11. **Model Field Duplication** - No duplicate entity fields in models
-12. **Model Conversion Methods** - Required `toEntity()` method in extensions
-13. **Model Naming Convention** - Models must end with `Model` suffix
-14. **DataSource Abstraction** - Abstract interfaces for data sources
-15. **DataSource No Result Return** - DataSources throw exceptions
-16. **Repository Implementation** - RepositoryImpl must implement domain interface
-17. **Repository Pass Through** - Repositories return `Future<Entity>` (warns on Result pattern)
-18. **Repository No Throw** - Repositories use pass-through pattern (AppException types allowed)
-19. **DataSource Exception Types** - Use defined data layer exceptions only
-20. **Model Entity Direct Access** - Use `.toEntity()` instead of direct `.entity` access
+9. **Model Structure** - Freezed models with entity composition
+10. **Model Field Duplication** - No duplicate entity fields in models
+11. **Model Conversion Methods** - Required `toEntity()` method in extensions
+12. **Model Naming Convention** - Models must end with `Model` suffix
+13. **DataSource Abstraction** - Abstract interfaces for data sources
+14. **DataSource No Result Return** - DataSources throw exceptions
+15. **Repository Implementation** - RepositoryImpl must implement domain interface
+16. **Repository Pass Through** - Repositories return `Future<Entity>` (warns on Result pattern)
+17. **Repository No Throw** - Repositories use pass-through pattern (AppException types allowed)
+18. **DataSource Exception Types** - Use defined data layer exceptions only
+19. **Model Entity Direct Access** - Use `.toEntity()` instead of direct `.entity` access
 
 ### 🎨 Presentation Layer Rules (11 rules)
-21. **No Presentation Models** - Use Freezed State instead of ViewModels
-22. **Extension Location** - Extensions in same file as the class
-23. **Freezed Usage** - Use Freezed instead of Equatable
-24. **Riverpod Generator** - Use `@riverpod` annotation
-25. **Presentation No Data Exceptions** - Use domain exceptions only
-26. **Presentation Use AsyncValue** - Use AsyncValue for error handling (3-tier architecture)
-27. **Presentation No Throw** - No exception throwing in Presentation layer
-28. **Widget No UseCase Call** - Widgets should not call UseCases directly (use Providers)
-29. **Widget Ref Read Then When** - Avoid using .when() after ref.read() (anti-pattern)
-30. **Riverpod Ref Usage** - Use ref.watch() in build(), ref.read() in methods (with UseCase detection)
-31. **Riverpod Provider Naming** - Provider functions must include type suffix (repository/usecase/datasource)
+20. **No Presentation Models** - Use Freezed State instead of ViewModels
+21. **Extension Location** - Extensions in same file as the class
+22. **Freezed Usage** - Use Freezed instead of Equatable
+23. **Riverpod Generator** - Use `@riverpod` annotation
+24. **Presentation No Data Exceptions** - Use domain exceptions only
+25. **Presentation Use AsyncValue** - Use AsyncValue for error handling (3-tier architecture)
+26. **Presentation No Throw** - No exception throwing in Presentation layer
+27. **Widget No UseCase Call** - Widgets should not call UseCases directly (use Providers)
+28. **Widget Ref Read Then When** - Avoid using .when() after ref.read() (anti-pattern)
+29. **Riverpod Ref Usage** - Use ref.watch() in build(), ref.read() in methods (with UseCase detection)
+30. **Riverpod Provider Naming** - Provider functions must include type suffix (repository/usecase/datasource)
 
 ### 🔧 Cross-Layer Rules (1 rule)
-32. **Allowed Instance Variables** - Enforces stateless architecture (UseCase/Repository/DataSource)
+31. **Allowed Instance Variables** - Enforces stateless architecture (UseCase/Repository/DataSource)
 
 ### 🧪 Optional: Test Coverage Rule
 **Test Coverage** - Enforces test files for UseCases, Repositories, DataSources, and Notifiers (disabled by default)
