@@ -1,23 +1,41 @@
-import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
 
-/// Suggests using localized (Korean) messages in Domain Exceptions.
+/// @deprecated This rule is obsolete for pass-through error handling pattern.
 ///
-/// Domain exceptions shown to users should use Korean messages for better UX.
+/// In the pass-through pattern, exception constructor arguments are `debugMessage`
+/// for developer logging, NOT user-facing messages. User-facing messages are
+/// generated via `error.toLocalizedMessage(context)` using ARB files.
 ///
-/// ✅ Good: TodoNotFoundException('할 일을 찾을 수 없습니다')
-/// ⚠️ Consider: TodoNotFoundException('Todo not found')
+/// ## Pass-through Pattern (Current):
+/// ```dart
+/// // debugMessage is for developers (English is fine)
+/// throw InvalidInputException('availableTimes is empty');
+///
+/// // User sees localized message via:
+/// // error.toLocalizedMessage(context) → uses ARB files
+/// ```
+///
+/// See UNIFIED_ERROR_GUIDE.md for complete error handling patterns.
+///
+/// This rule is kept for backward compatibility but does nothing.
+@Deprecated(
+  'Exception messages are now debugMessage for developers. '
+  'User messages come from toLocalizedMessage(context). See UNIFIED_ERROR_GUIDE.md',
+)
 class ExceptionMessageLocalizationRule extends CleanArchitectureLintRule {
   const ExceptionMessageLocalizationRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'exception_message_localization',
-    problemMessage: 'Consider using Korean message for user-facing exceptions',
+    problemMessage:
+        'DEPRECATED: This rule is obsolete for pass-through pattern.',
     correctionMessage:
-        'Use Korean message for better UX, e.g., "할 일을 찾을 수 없습니다" instead of "Not found".',
+        'Exception messages are now debugMessage for developers. '
+        'User-facing messages come from error.toLocalizedMessage(context) using ARB files. '
+        'See UNIFIED_ERROR_GUIDE.md',
   );
 
   @override
@@ -26,41 +44,9 @@ class ExceptionMessageLocalizationRule extends CleanArchitectureLintRule {
     ErrorReporter reporter,
     CustomLintContext context,
   ) {
-    context.registry.addInstanceCreationExpression((node) {
-      final typeName = node.constructorName.type.name2.lexeme;
-
-      // Check if it's a Domain Exception (has feature prefix)
-      if (_isDomainException(typeName)) {
-        final args = node.argumentList.arguments;
-        if (args.isNotEmpty) {
-          final firstArg = args.first;
-          if (firstArg is SimpleStringLiteral) {
-            final message = firstArg.value;
-            if (_isEnglishMessage(message)) {
-              reporter.atNode(firstArg, _code);
-            }
-          }
-        }
-      }
-    });
-  }
-
-  bool _isDomainException(String typeName) {
-    return typeName.endsWith('Exception') &&
-        typeName.length > 15 && // Has feature prefix
-        !typeName.contains('Data') &&
-        !typeName.contains('Cache') &&
-        !typeName.contains('Database');
-  }
-
-  bool _isEnglishMessage(String message) {
-    // Simple heuristic: if contains English words
-    final englishPattern = RegExp(r'[a-zA-Z]{3,}');
-    return englishPattern.hasMatch(message) && !_hasKorean(message);
-  }
-
-  bool _hasKorean(String message) {
-    // Check for Korean characters
-    return RegExp(r'[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]').hasMatch(message);
+    // NO-OP: This rule is deprecated for pass-through pattern.
+    // In pass-through pattern:
+    // - Exception constructor args are debugMessage (for developers)
+    // - User messages come from toLocalizedMessage(context) using ARB files
   }
 }

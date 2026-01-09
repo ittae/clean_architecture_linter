@@ -22,8 +22,14 @@ void main() {
         expect(testRule.isGenericExceptionName('NotFoundException'), isFalse);
         expect(testRule.isGenericExceptionName('NetworkException'), isFalse);
         expect(testRule.isGenericExceptionName('ServerException'), isFalse);
-        expect(testRule.isGenericExceptionName('InvalidInputException'), isFalse);
-        expect(testRule.isGenericExceptionName('UnauthorizedException'), isFalse);
+        expect(
+          testRule.isGenericExceptionName('InvalidInputException'),
+          isFalse,
+        );
+        expect(
+          testRule.isGenericExceptionName('UnauthorizedException'),
+          isFalse,
+        );
         expect(testRule.isGenericExceptionName('ForbiddenException'), isFalse);
         expect(testRule.isGenericExceptionName('TimeoutException'), isFalse);
         expect(testRule.isGenericExceptionName('ConflictException'), isFalse);
@@ -83,8 +89,14 @@ void main() {
         expect(testRule.isAllowedWithoutPrefix('NotFoundException'), isTrue);
         expect(testRule.isAllowedWithoutPrefix('NetworkException'), isTrue);
         expect(testRule.isAllowedWithoutPrefix('ServerException'), isTrue);
-        expect(testRule.isAllowedWithoutPrefix('InvalidInputException'), isTrue);
-        expect(testRule.isAllowedWithoutPrefix('UnauthorizedException'), isTrue);
+        expect(
+          testRule.isAllowedWithoutPrefix('InvalidInputException'),
+          isTrue,
+        );
+        expect(
+          testRule.isAllowedWithoutPrefix('UnauthorizedException'),
+          isTrue,
+        );
         expect(testRule.isAllowedWithoutPrefix('ForbiddenException'), isTrue);
         expect(testRule.isAllowedWithoutPrefix('UnknownException'), isTrue);
       });

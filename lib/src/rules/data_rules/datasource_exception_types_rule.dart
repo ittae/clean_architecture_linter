@@ -67,8 +67,7 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule
 
   static const _code = LintCode(
     name: 'datasource_exception_types',
-    problemMessage:
-        'DataSource should only use defined AppException types.',
+    problemMessage: 'DataSource should only use defined AppException types.',
     correctionMessage:
         'Use one of the defined AppException types:\n'
         '  - NotFoundException (for 404 errors)\n'

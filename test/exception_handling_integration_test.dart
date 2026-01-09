@@ -63,29 +63,26 @@ void main() {
         );
       });
 
-      test(
-        'detects violation: Repository throws non-AppException',
-        () {
-          // Violation Flow:
-          // Repository throws ArgumentError (should use AppException or pass through)
+      test('detects violation: Repository throws non-AppException', () {
+        // Violation Flow:
+        // Repository throws ArgumentError (should use AppException or pass through)
 
-          final flow = ExceptionFlow(
-            dataSourceException: 'NotFoundException',
-            repositoryPassesThrough: false, // ❌ Repository throws non-standard
-            repositoryThrowsType: 'ArgumentError',
-            useCaseThrows: 'InvalidInputException',
-            presentationUsesAsyncValue: true,
-          );
+        final flow = ExceptionFlow(
+          dataSourceException: 'NotFoundException',
+          repositoryPassesThrough: false, // ❌ Repository throws non-standard
+          repositoryThrowsType: 'ArgumentError',
+          useCaseThrows: 'InvalidInputException',
+          presentationUsesAsyncValue: true,
+        );
 
-          final violations = _detectViolations(flow);
+        final violations = _detectViolations(flow);
 
-          expect(
-            violations,
-            contains(RuleViolation.repositoryNonStandardThrow),
-            reason: 'Should detect Repository throwing non-AppException',
-          );
-        },
-      );
+        expect(
+          violations,
+          contains(RuleViolation.repositoryNonStandardThrow),
+          reason: 'Should detect Repository throwing non-AppException',
+        );
+      });
 
       test('detects violation: DataSource uses generic Exception', () {
         // Violation Flow:
@@ -114,7 +111,8 @@ void main() {
         final flow = ExceptionFlow(
           dataSourceException: 'NotFoundException',
           repositoryPassesThrough: true,
-          useCaseThrows: 'ValidationException', // ❌ Generic, needs feature prefix
+          useCaseThrows:
+              'ValidationException', // ❌ Generic, needs feature prefix
           presentationUsesAsyncValue: true,
         );
 
@@ -520,8 +518,12 @@ enum Layer { domain, data, presentation }
 bool _validateExceptionFlow(ExceptionFlow flow) {
   // Check each step of the flow
   if (!_isAllowedInDataSource(flow.dataSourceException)) return false;
-  if (!flow.repositoryPassesThrough && !_isAppExceptionType(flow.repositoryThrowsType ?? '')) return false;
-  if (!_isAppExceptionType(flow.useCaseThrows) && _needsFeaturePrefix(flow.useCaseThrows)) return false;
+  if (!flow.repositoryPassesThrough &&
+      !_isAppExceptionType(flow.repositoryThrowsType ?? ''))
+    return false;
+  if (!_isAppExceptionType(flow.useCaseThrows) &&
+      _needsFeaturePrefix(flow.useCaseThrows))
+    return false;
   if (!flow.presentationUsesAsyncValue) return false;
   return true;
 }

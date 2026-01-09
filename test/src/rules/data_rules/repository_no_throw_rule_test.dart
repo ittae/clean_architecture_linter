@@ -374,13 +374,18 @@ void main() {
           expect(
             _hasResultReturnType(returnType),
             isTrue,
-            reason: '$returnType should be detected to warn against Result usage',
+            reason:
+                '$returnType should be detected to warn against Result usage',
           );
         }
       });
 
       test('accepts pass-through return types', () {
-        final returnTypes = ['Future<Todo>', 'Future<List<User>>', 'Stream<Data>'];
+        final returnTypes = [
+          'Future<Todo>',
+          'Future<List<User>>',
+          'Stream<Data>',
+        ];
 
         for (final returnType in returnTypes) {
           expect(
