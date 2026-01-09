@@ -12,7 +12,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 ## ✨ Key Features
 
 - 🛡️ **Automatic Clean Architecture Protection** - Write code freely, linter catches violations
-- 🎯 **34 Specialized Rules** - Comprehensive coverage of all Clean Architecture layers
+- 🎯 **31 Specialized Rules** - Comprehensive coverage of all Clean Architecture layers
 - 🚀 **Flutter-Optimized** - Built specifically for Flutter development patterns
 - 🎨 **Riverpod State Management** - Enforces 3-tier provider architecture (Entity → UI → Computed)
 - 📚 **Educational** - Learn Clean Architecture through guided corrections
@@ -20,49 +20,49 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 - 🔧 **Zero Configuration** - Works out of the box with sensible defaults
 - 🧪 **Test-Aware** - Smart exceptions for test files and development contexts
 
-## 📋 Rules Overview (34 Rules)
+## 📋 Rules Overview (32 Rules)
 
-### 🌐 Core Clean Architecture Principles (7 rules)
+### 🌐 Core Clean Architecture Principles (6 rules)
 1. **Layer Dependency** - Enforces dependency direction (inward only)
 2. **Domain Purity** - Prevents external framework dependencies in domain layer
 3. **Dependency Inversion** - Validates abstraction-based dependencies
 4. **Repository Interface** - Ensures proper repository abstractions
 5. **Circular Dependency** - Prevents circular dependencies between layers
 6. **Boundary Crossing** - Validates proper layer boundary crossing
-7. **Allowed Instance Variables** - Enforces stateless architecture (UseCase/Repository/DataSource)
 
-### 🎯 Domain Layer Rules (4 rules)
-8. **UseCase No Result Return** - UseCases should unwrap Result types
-9. **UseCase Must Convert Failure** - ~~Deprecated~~ (pass-through pattern)
-10. **Exception Naming Convention** - Feature prefix for domain exceptions
-11. **Exception Message Localization** - Consistent exception messages
+### 🎯 Domain Layer Rules (3 rules)
+7. **UseCase No Result Return** - UseCases should unwrap Result types
+8. **Exception Naming Convention** - Feature prefix for domain exceptions
+9. **Exception Message Localization** - Consistent exception messages
 
-### 💾 Data Layer Rules (13 rules)
-12. **Model Structure** - Freezed models with entity composition
-13. **Model Field Duplication** - No duplicate entity fields in models
-14. **Model Conversion Methods** - Required `toEntity()` method in extensions
-15. **Model Entity Direct Access** - Use `.toEntity()` instead of direct `.entity` access
-16. **Model Naming Convention** - Models must end with `Model` suffix
-17. **DataSource Abstraction** - Abstract interfaces for data sources
-18. **DataSource No Result Return** - DataSources throw exceptions
-19. **Repository Implementation** - RepositoryImpl must implement domain interface
-20. **Repository Pass Through** - Repositories return `Future<Entity>` (warns on Result pattern)
-21. **Repository No Throw** - Repositories use pass-through pattern (AppException types allowed)
-22. **DataSource Exception Types** - Use defined data layer exceptions only
-23. **Failure Naming Convention** - ~~Deprecated~~ (warns about Failure class usage)
+### 💾 Data Layer Rules (10 rules)
+10. **Model Structure** - Freezed models with entity composition
+11. **Model Field Duplication** - No duplicate entity fields in models
+12. **Model Conversion Methods** - Required `toEntity()` method in extensions
+13. **Model Naming Convention** - Models must end with `Model` suffix
+14. **DataSource Abstraction** - Abstract interfaces for data sources
+15. **DataSource No Result Return** - DataSources throw exceptions
+16. **Repository Implementation** - RepositoryImpl must implement domain interface
+17. **Repository Pass Through** - Repositories return `Future<Entity>` (warns on Result pattern)
+18. **Repository No Throw** - Repositories use pass-through pattern (AppException types allowed)
+19. **DataSource Exception Types** - Use defined data layer exceptions only
+20. **Model Entity Direct Access** - Use `.toEntity()` instead of direct `.entity` access
 
 ### 🎨 Presentation Layer Rules (11 rules)
-24. **No Presentation Models** - Use Freezed State instead of ViewModels
-25. **Extension Location** - Extensions in same file as the class
-26. **Freezed Usage** - Use Freezed instead of Equatable
-27. **Riverpod Generator** - Use `@riverpod` annotation
-28. **Presentation No Data Exceptions** - Use domain exceptions only
-29. **Presentation Use AsyncValue** - Use AsyncValue for error handling (3-tier architecture)
-30. **Presentation No Throw** - No exception throwing in Presentation layer
-31. **Widget No UseCase Call** - Widgets should not call UseCases directly (use Providers)
-32. **Widget Ref Read Then When** - Avoid using .when() after ref.read() (anti-pattern)
-33. **Riverpod Ref Usage** - Use ref.watch() in build(), ref.read() in methods (with UseCase detection)
-34. **Riverpod Provider Naming** - Provider functions must include type suffix (repository/usecase/datasource)
+21. **No Presentation Models** - Use Freezed State instead of ViewModels
+22. **Extension Location** - Extensions in same file as the class
+23. **Freezed Usage** - Use Freezed instead of Equatable
+24. **Riverpod Generator** - Use `@riverpod` annotation
+25. **Presentation No Data Exceptions** - Use domain exceptions only
+26. **Presentation Use AsyncValue** - Use AsyncValue for error handling (3-tier architecture)
+27. **Presentation No Throw** - No exception throwing in Presentation layer
+28. **Widget No UseCase Call** - Widgets should not call UseCases directly (use Providers)
+29. **Widget Ref Read Then When** - Avoid using .when() after ref.read() (anti-pattern)
+30. **Riverpod Ref Usage** - Use ref.watch() in build(), ref.read() in methods (with UseCase detection)
+31. **Riverpod Provider Naming** - Provider functions must include type suffix (repository/usecase/datasource)
+
+### 🔧 Cross-Layer Rules (1 rule)
+32. **Allowed Instance Variables** - Enforces stateless architecture (UseCase/Repository/DataSource)
 
 ### 🧪 Optional: Test Coverage Rule
 **Test Coverage** - Enforces test files for UseCases, Repositories, DataSources, and Notifiers (disabled by default)
