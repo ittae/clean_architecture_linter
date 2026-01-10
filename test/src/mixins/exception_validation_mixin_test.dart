@@ -122,11 +122,21 @@ void main() {
         expect(testRule.isAppExceptionType('UnknownException'), isTrue);
       });
 
+      test('returns true for custom exceptions ending with AppException type', () {
+        // Custom exceptions inheriting from AppException types are allowed
+        expect(testRule.isAppExceptionType('TodoNotFoundException'), isTrue);
+        expect(
+            testRule.isAppExceptionType(
+                'ScheduleConfirmationUnauthorizedException'),
+            isTrue);
+        expect(testRule.isAppExceptionType('UserInvalidInputException'), isTrue);
+      });
+
       test('returns false for non-AppException types', () {
-        expect(testRule.isAppExceptionType('TodoNotFoundException'), isFalse);
         expect(testRule.isAppExceptionType('ValidationException'), isFalse);
         expect(testRule.isAppExceptionType('CustomException'), isFalse);
         expect(testRule.isAppExceptionType('Exception'), isFalse);
+        expect(testRule.isAppExceptionType('CustomError'), isFalse);
       });
     });
 

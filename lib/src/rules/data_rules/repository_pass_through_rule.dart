@@ -121,8 +121,8 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
 
   /// Checks if a type name looks like an Entity type.
   bool _looksLikeEntityType(String typeName) {
-    // Skip primitive types
-    if (_isPrimitiveType(typeName)) return false;
+    // Skip primitive types and their collections
+    if (_isPrimitiveOrCollection(typeName)) return false;
 
     // Skip common utility types
     if (typeName == 'void' ||
@@ -136,7 +136,12 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
     return typeName.isNotEmpty && typeName[0] == typeName[0].toUpperCase();
   }
 
-  bool _isPrimitiveType(String typeName) {
+  /// Checks if a type is primitive or a collection of primitives.
+  ///
+  /// Allows synchronous returns for local storage patterns (e.g., SharedPreferences):
+  /// - Primitives: String, int, bool, double, num
+  /// - Collections: List<String>, Set<int>, Map<String, String>, etc.
+  bool _isPrimitiveOrCollection(String typeName) {
     const primitives = {
       'int',
       'double',
@@ -148,6 +153,57 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
       'Object',
       'Null',
     };
-    return primitives.contains(typeName);
+
+    // Direct primitive
+    if (primitives.contains(typeName)) return true;
+
+    // Nullable primitive (e.g., String?, int?)
+    if (typeName.endsWith('?')) {
+      final baseType = typeName.substring(0, typeName.length - 1);
+      if (primitives.contains(baseType)) return true;
+    }
+
+    // Collection of primitives (e.g., List<String>, Set<int>, Map<String, String>)
+    if (typeName.startsWith('List<') ||
+        typeName.startsWith('Set<') ||
+        typeName.startsWith('Iterable<')) {
+      final inner = _extractGenericType(typeName);
+      return inner != null && _isPrimitiveOrCollection(inner);
+    }
+
+    // Map with primitive keys and values
+    if (typeName.startsWith('Map<')) {
+      final types = _extractMapTypes(typeName);
+      if (types != null) {
+        return _isPrimitiveOrCollection(types.$1) &&
+            _isPrimitiveOrCollection(types.$2);
+      }
+    }
+
+    return false;
+  }
+
+  /// Extracts generic type from List<T>, Set<T>, etc.
+  String? _extractGenericType(String typeName) {
+    final start = typeName.indexOf('<');
+    final end = typeName.lastIndexOf('>');
+    if (start != -1 && end != -1 && end > start) {
+      return typeName.substring(start + 1, end).trim();
+    }
+    return null;
+  }
+
+  /// Extracts key and value types from Map<K, V>.
+  (String, String)? _extractMapTypes(String typeName) {
+    final inner = _extractGenericType(typeName);
+    if (inner == null) return null;
+
+    // Simple split by comma (doesn't handle nested generics)
+    final commaIndex = inner.indexOf(',');
+    if (commaIndex == -1) return null;
+
+    final keyType = inner.substring(0, commaIndex).trim();
+    final valueType = inner.substring(commaIndex + 1).trim();
+    return (keyType, valueType);
   }
 }

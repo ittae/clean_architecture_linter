@@ -176,19 +176,37 @@ mixin ExceptionValidationMixin {
         appExceptionTypes.contains(className);
   }
 
-  /// Checks if the [className] is a core AppException type.
+  /// Checks if the [className] is a core AppException type or extends one.
   ///
   /// AppException types are the unified exception pattern using `code` + `debugMessage`.
   /// They can be used across all layers (DataSource, Repository, UseCase, Presentation).
+  ///
+  /// Returns `true` if:
+  /// - The name exactly matches a core AppException type (e.g., "NotFoundException")
+  /// - The name ends with a core AppException type (e.g., "ScheduleConfirmationUnauthorizedException")
   ///
   /// Example:
   /// ```dart
   /// isAppExceptionType('AppException') // true
   /// isAppExceptionType('InvalidInputException') // true
-  /// isAppExceptionType('TodoNotFoundException') // false (feature-specific)
+  /// isAppExceptionType('ScheduleConfirmationUnauthorizedException') // true (ends with UnauthorizedException)
+  /// isAppExceptionType('CustomError') // false
   /// ```
   bool isAppExceptionType(String className) {
-    return appExceptionTypes.contains(className);
+    // Exact match
+    if (appExceptionTypes.contains(className)) {
+      return true;
+    }
+
+    // Check if name ends with any AppException type (inheritance pattern)
+    // e.g., ScheduleConfirmationUnauthorizedException ends with UnauthorizedException
+    for (final exceptionType in appExceptionTypes) {
+      if (exceptionType != 'AppException' && className.endsWith(exceptionType)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /// Checks if the [className] is a Data layer exception.
