@@ -69,18 +69,8 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule
     name: 'datasource_exception_types',
     problemMessage: 'DataSource should only use defined AppException types.',
     correctionMessage:
-        'Use one of the defined AppException types:\n'
-        '  - NotFoundException (for 404 errors)\n'
-        '  - UnauthorizedException (for 401 errors)\n'
-        '  - ForbiddenException (for 403 errors)\n'
-        '  - NetworkException (for connection errors)\n'
-        '  - ServerException (for 5xx errors)\n'
-        '  - ConflictException (for 409 errors)\n'
-        '  - TimeoutException (for timeout errors)\n'
-        '  - InvalidInputException (for validation errors)\n'
-        '  - CacheException (for cache errors)\n'
-        '  - UnknownException (for unknown errors)\n\n'
-        'See UNIFIED_ERROR_GUIDE.md',
+        'Use AppException types: NotFoundException, UnauthorizedException, '
+        'ServerException, NetworkException, etc.',
     errorSeverity: ErrorSeverity.WARNING,
   );
 
@@ -133,19 +123,8 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule
         problemMessage:
             'DataSource should NOT use "$exceptionType". Use AppException types instead.',
         correctionMessage:
-            'Replace with AppException type:\n'
-            '  - NotFoundException (for 404 errors)\n'
-            '  - UnauthorizedException (for 401 errors)\n'
-            '  - ForbiddenException (for 403 errors)\n'
-            '  - NetworkException (for connection errors)\n'
-            '  - ServerException (for 5xx errors)\n'
-            '  - ConflictException (for 409 errors)\n'
-            '  - TimeoutException (for timeout errors)\n'
-            '  - InvalidInputException (for validation errors)\n'
-            '  - CacheException (for cache errors)\n'
-            '  - UnknownException (for unknown errors)\n\n'
-            'Current: throw $exceptionType(...)\n'
-            'Example: throw NotFoundException(\'Resource not found\')',
+            'Use AppException types: NotFoundException, UnauthorizedException, '
+            'ServerException, NetworkException, etc.',
         errorSeverity: ErrorSeverity.WARNING,
       );
       reporter.atNode(expression, code);

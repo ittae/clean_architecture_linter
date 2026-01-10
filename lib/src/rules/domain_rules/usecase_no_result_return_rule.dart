@@ -56,12 +56,7 @@ class UseCaseNoResultReturnRule extends CleanArchitectureLintRule
     problemMessage:
         'UseCase should NOT return Result type. UseCase should return Entity directly (pass-through pattern).',
     correctionMessage:
-        'Return Entity directly with pass-through pattern:\n'
-        '  Future<Todo> call(String id) {\n'
-        '    if (id.isEmpty) throw InvalidInputException(...);\n'
-        '    return repository.getTodo(id);  // Errors pass through\n'
-        '  }\n\n'
-        'See UNIFIED_ERROR_GUIDE.md for complete patterns.',
+        'Return Future<Entity> directly. Throw InvalidInputException for validation errors.',
   );
 
   @override
@@ -99,17 +94,9 @@ class UseCaseNoResultReturnRule extends CleanArchitectureLintRule
         name: 'usecase_no_result_return',
         problemMessage:
             'UseCase method "${method.name.lexeme}" should NOT return Result. '
-            'UseCase should return Entity directly (pass-through pattern).',
+            'Return Entity directly (pass-through pattern).',
         correctionMessage:
-            'Use pass-through pattern:\n'
-            '  Before: Future<Result<Todo, TodoFailure>> call()\n'
-            '  After:  Future<Todo> call() // pass-through with validation\n\n'
-            'Pattern:\n'
-            '  Future<Todo> call(String id) {\n'
-            '    if (id.isEmpty) throw InvalidInputException(...);\n'
-            '    return repository.getTodo(id);  // Errors pass through\n'
-            '  }\n\n'
-            'See UNIFIED_ERROR_GUIDE.md',
+            'Return Future<Entity> directly. Throw InvalidInputException for validation errors.',
       );
       reporter.atNode(returnType, code);
     }

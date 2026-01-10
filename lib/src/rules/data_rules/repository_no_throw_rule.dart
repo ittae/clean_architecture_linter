@@ -89,11 +89,8 @@ class RepositoryNoThrowRule extends CleanArchitectureLintRule
           'Repository throws non-standard exception type "$thrownTypeName". '
           'Consider using AppException types for consistent error handling.',
       correctionMessage:
-          'Use AppException types:\n'
-          '  throw NotFoundException("message")\n'
-          '  throw InvalidInputException("message")\n'
-          '  throw ServerException("message")\n\n'
-          'Or let DataSource handle error conversion. See UNIFIED_ERROR_GUIDE.md',
+          'Use AppException types (NotFoundException, ServerException, etc.) '
+          'or let DataSource handle error conversion.',
       errorSeverity: ErrorSeverity.INFO,
     );
     reporter.atNode(node, code);
