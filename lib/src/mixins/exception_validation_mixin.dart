@@ -96,6 +96,7 @@ mixin ExceptionValidationMixin {
     'ConflictException', // Resource conflict (409)
     'CacheException', // Local cache errors
     'UnknownException', // Fallback for unknown errors
+    'LoginCancelledException', // User cancelled login flow
   };
 
   /// Dart built-in exceptions that are allowed without feature prefix.
@@ -201,7 +202,8 @@ mixin ExceptionValidationMixin {
     // Check if name ends with any AppException type (inheritance pattern)
     // e.g., ScheduleConfirmationUnauthorizedException ends with UnauthorizedException
     for (final exceptionType in appExceptionTypes) {
-      if (exceptionType != 'AppException' && className.endsWith(exceptionType)) {
+      if (exceptionType != 'AppException' &&
+          className.endsWith(exceptionType)) {
         return true;
       }
     }
