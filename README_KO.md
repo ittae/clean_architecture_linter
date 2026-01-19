@@ -10,7 +10,7 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 ## ✨ 주요 기능
 
 - 🛡️ **자동 클린 아키텍처 보호** - 자유롭게 코드 작성, 린터가 위반사항 감지
-- 🎯 **31개의 전문화된 규칙** - 모든 클린 아키텍처 계층 포괄
+- 🎯 **33개의 전문화된 규칙** - 모든 클린 아키텍처 계층 포괄
 - 🚀 **Flutter 최적화** - Flutter 개발 패턴에 특화
 - 📚 **교육적** - 수정 가이드를 통해 클린 아키텍처 학습
 - ⚡ **실시간 피드백** - 즉각적인 경고와 실행 가능한 해결책
@@ -18,7 +18,7 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 - 🧪 **테스트 인식** - 테스트 파일과 개발 컨텍스트에 대한 스마트 예외처리
 - 🎨 **Riverpod 상태 관리** - 3-tier provider 아키텍처 강제 (Entity → UI → Computed)
 
-## 📋 규칙 개요 (31개 규칙)
+## 📋 규칙 개요 (33개 규칙)
 
 ### 🌐 핵심 클린 아키텍처 원칙 (6개 규칙)
 1. **Layer Dependency** - 의존성 방향 강제 (안쪽으로만)
@@ -45,7 +45,7 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 18. **DataSource Exception Types** - 정의된 데이터 계층 예외만 사용
 19. **Model Entity Direct Access** - 직접 `.entity` 접근 대신 `.toEntity()` 사용
 
-### 🎨 프레젠테이션 계층 규칙 (11개 규칙)
+### 🎨 프레젠테이션 계층 규칙 (13개 규칙)
 20. **No Presentation Models** - ViewModel 대신 Freezed State 사용
 21. **Extension Location** - 클래스와 동일 파일에 확장 정의
 22. **Freezed Usage** - Equatable 대신 Freezed 사용
@@ -57,9 +57,11 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 28. **Widget Ref Read Then When** - ref.read() 후 .when() 사용 금지 (안티패턴)
 29. **Riverpod Ref Usage** - build()에서 ref.watch(), 메서드에서 ref.read() (UseCase 감지 포함)
 30. **Riverpod Provider Naming** - Provider 함수는 타입 접미사 포함 필수 (repository/usecase/datasource)
+31. **Ref Mounted Usage** - `ref.mounted` 사용 금지 (AsyncValue 또는 네비게이션 전 async 완료 권장)
+32. **Riverpod Keep Alive** - `keepAlive: true`는 전역 상태에만 사용 (auth, settings, cache)
 
 ### 🔧 Cross-Layer 규칙 (1개 규칙)
-31. **Allowed Instance Variables** - 무상태 아키텍처 강제 (UseCase/Repository/DataSource)
+33. **Allowed Instance Variables** - 무상태 아키텍처 강제 (UseCase/Repository/DataSource)
 
 ### 🧪 선택사항: 테스트 커버리지 규칙
 **Test Coverage** - UseCase, Repository, DataSource, Notifier에 대한 테스트 파일 강제 (기본값: 비활성화)

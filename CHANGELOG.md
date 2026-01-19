@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-01-19
+
+### ✨ Added (2 new rules)
+
+- **ref_mounted_usage** - Detects `ref.mounted` usage in Riverpod providers
+  - Using `ref.mounted` to guard async operations masks design problems
+  - Encourages proper patterns: AsyncValue, ref.listen, or completing async work before navigation
+  - Only checks in `/presentation/` and `/providers/` directories
+  - Severity: WARNING
+
+- **riverpod_keep_alive** - Warns against unnecessary `@Riverpod(keepAlive: true)`
+  - `keepAlive: true` should only be used for truly global state (auth, settings, cache)
+  - Warns when used on feature-specific providers (e.g., TodoListNotifier)
+  - Skips infrastructure providers (DataSource, Repository, UseCase, Service, Client, API)
+  - Valid patterns: auth, user, session, settings, preferences, config, theme, locale, cache, analytics, notification, connectivity, permission
+  - Severity: WARNING
+
+### 📊 Statistics
+
+- **Total rules: 33** (was 31 in v1.1.0)
+  - Presentation layer rules: 13 (was 11)
+
 ## [1.1.0] - 2026-01-09
 
 ### 🚀 Breaking Changes
