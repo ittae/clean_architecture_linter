@@ -140,7 +140,7 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
   ///
   /// Allows synchronous returns for local storage patterns (e.g., SharedPreferences):
   /// - Primitives: String, int, bool, double, num
-  /// - Collections: List<String>, Set<int>, Map<String, String>, etc.
+  /// - Collections: `List<String>`, `Set<int>`, `Map<String, String>`, etc.
   bool _isPrimitiveOrCollection(String typeName) {
     const primitives = {
       'int',
@@ -183,7 +183,7 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
     return false;
   }
 
-  /// Extracts generic type from List<T>, Set<T>, etc.
+  /// Extracts generic type from `List<T>`, `Set<T>`, etc.
   String? _extractGenericType(String typeName) {
     final start = typeName.indexOf('<');
     final end = typeName.lastIndexOf('>');
@@ -193,7 +193,7 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
     return null;
   }
 
-  /// Extracts key and value types from Map<K, V>.
+  /// Extracts key and value types from `Map<K, V>`. 
   (String, String)? _extractMapTypes(String typeName) {
     final inner = _extractGenericType(typeName);
     if (inner == null) return null;

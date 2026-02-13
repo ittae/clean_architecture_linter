@@ -32,6 +32,9 @@ node_modules/
 # OS specific
 .DS_Store
 
+# Flutter/Dart build artifacts
+build/
+
 # Task files
 # tasks.json
 # tasks/ 
