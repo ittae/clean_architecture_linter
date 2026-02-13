@@ -64,6 +64,14 @@ class RiverpodKeepAliveRule extends CleanArchitectureLintRule {
     'notification',
     'connectivity',
     'permission',
+    'account',
+  ];
+
+  /// File path patterns that indicate valid keepAlive context
+  static const _validPathPatterns = [
+    '/auth/',
+    '/core/auth/',
+    '/features/auth/',
   ];
 
   /// Class name patterns for infrastructure providers (no keepAlive warning needed)
@@ -143,8 +151,13 @@ class RiverpodKeepAliveRule extends CleanArchitectureLintRule {
       (pattern) => className.contains(pattern),
     );
 
+    // Check if the file path suggests a valid keepAlive context
+    final isValidPath = _validPathPatterns.any(
+      (pattern) => normalized.contains(pattern),
+    );
+
     // If not a clearly valid use case, report a warning
-    if (!isValidUseCase) {
+    if (!isValidUseCase && !isValidPath) {
       reporter.atNode(node, code);
     }
   }

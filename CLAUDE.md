@@ -1070,7 +1070,3 @@ test/
 - `analyzer: ^6.8.0` - Dart static analysis
 - `custom_lint_builder: ^0.6.7` - Framework for creating custom lint rules
 - `custom_lint: ^0.6.7` - Runtime for custom lint rules (dev dependency)
-
-## Task Master AI Instructions
-**Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
-@./.taskmaster/CLAUDE.md
