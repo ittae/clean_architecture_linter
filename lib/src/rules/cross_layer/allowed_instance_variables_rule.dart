@@ -67,7 +67,7 @@ class AllowedInstanceVariablesRule extends CleanArchitectureLintRule {
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -77,7 +77,7 @@ class AllowedInstanceVariablesRule extends CleanArchitectureLintRule {
 
   void _checkClassFields(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -110,7 +110,7 @@ class AllowedInstanceVariablesRule extends CleanArchitectureLintRule {
           final fieldType = member.fields.type;
 
           if (fieldType is NamedType) {
-            final typeName = fieldType.name2.lexeme;
+            final typeName = fieldType.name.lexeme;
 
             // Validate based on class type
             if (isUseCase) {
@@ -167,7 +167,7 @@ class AllowedInstanceVariablesRule extends CleanArchitectureLintRule {
     VariableDeclaration variable,
     String typeName,
     bool isImmutable,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     String className,
   ) {
     // UseCase should only have Repository and Service dependencies
@@ -202,7 +202,7 @@ class AllowedInstanceVariablesRule extends CleanArchitectureLintRule {
     VariableDeclaration variable,
     String typeName,
     bool isImmutable,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     String className,
   ) {
     // Repository should only have DataSource dependencies
@@ -238,7 +238,7 @@ class AllowedInstanceVariablesRule extends CleanArchitectureLintRule {
     VariableDeclaration variable,
     String typeName,
     bool isImmutable,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     String className,
   ) {
     // DataSource should not have domain/business logic dependencies

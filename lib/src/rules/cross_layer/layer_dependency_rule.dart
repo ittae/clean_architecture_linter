@@ -1,5 +1,5 @@
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/error/error.dart' show ErrorSeverity;
+import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
@@ -26,13 +26,13 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
         'Improper dependency between architectural layers detected.',
     correctionMessage:
         'Ensure dependencies flow inward: Presentation → Domain ← Data. Never skip layers or create circular dependencies.',
-    errorSeverity: ErrorSeverity.ERROR,
+    errorSeverity: DiagnosticSeverity.ERROR,
   );
 
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addImportDirective((node) {
@@ -42,7 +42,7 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
 
   void _checkLayerDependency(
     ImportDirective node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -62,7 +62,7 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
               'DI files can import DataSource and Repository implementations, '
               'but Data Models should remain internal to the Data layer. '
               'Use Domain Entities in Presentation layer instead.',
-          errorSeverity: ErrorSeverity.ERROR,
+          errorSeverity: DiagnosticSeverity.ERROR,
         );
         reporter.atNode(node, enhancedCode);
       }
@@ -86,7 +86,7 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
         name: 'layer_dependency',
         problemMessage: violation.message,
         correctionMessage: violation.suggestion,
-        errorSeverity: ErrorSeverity.ERROR,
+        errorSeverity: DiagnosticSeverity.ERROR,
       );
       reporter.atNode(node, enhancedCode);
     }

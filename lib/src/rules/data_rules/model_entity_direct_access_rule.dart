@@ -52,7 +52,7 @@ class ModelEntityDirectAccessRule extends CleanArchitectureLintRule {
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     final filePath = resolver.path;
@@ -67,7 +67,7 @@ class ModelEntityDirectAccessRule extends CleanArchitectureLintRule {
 
   void _checkPropertyAccess(
     PropertyAccess node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     // Check if accessing 'entity' property

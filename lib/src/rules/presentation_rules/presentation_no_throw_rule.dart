@@ -1,5 +1,5 @@
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/error/error.dart' show ErrorSeverity;
+import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
@@ -69,13 +69,13 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
         'Presentation States/Notifiers should NOT throw exceptions. Use state management instead.',
     correctionMessage:
         'Use state management (e.g., AsyncValue.error) instead of throwing.',
-    errorSeverity: ErrorSeverity.WARNING,
+    errorSeverity: DiagnosticSeverity.WARNING,
   );
 
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addThrowExpression((node) {
@@ -85,7 +85,7 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
 
   void _checkThrowInPresentation(
     ThrowExpression node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -130,7 +130,7 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
       problemMessage:
           '"$className.${methodNode.name.lexeme}" should not throw $exceptionType. '
           'Use state management instead (e.g., AsyncValue.error).',
-      errorSeverity: ErrorSeverity.WARNING,
+      errorSeverity: DiagnosticSeverity.WARNING,
     );
 
     reporter.atNode(node, code);
@@ -154,7 +154,7 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
     // Check if extends AsyncNotifier, Notifier, StateNotifier
     final extendsClause = classNode.extendsClause;
     if (extendsClause != null) {
-      final superclass = extendsClause.superclass.name2.lexeme;
+      final superclass = extendsClause.superclass.name.lexeme;
       if (superclass == 'AsyncNotifier' ||
           superclass == 'Notifier' ||
           superclass == 'StateNotifier' ||
@@ -191,7 +191,7 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
     final expression = node.expression;
 
     if (expression is InstanceCreationExpression) {
-      final typeName = expression.constructorName.type.name2.lexeme;
+      final typeName = expression.constructorName.type.name.lexeme;
 
       // Allow programming errors (developer mistakes, not business logic errors)
       const programmingErrors = [
@@ -215,7 +215,7 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
     final expression = node.expression;
 
     if (expression is InstanceCreationExpression) {
-      return expression.constructorName.type.name2.lexeme;
+      return expression.constructorName.type.name.lexeme;
     }
 
     if (expression is SimpleIdentifier) {

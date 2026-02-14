@@ -102,7 +102,7 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -112,7 +112,7 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
 
   void _checkStateClass(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -139,7 +139,7 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
   }
 
   /// Check for error/loading-related fields in the class
-  void _checkForErrorFields(ClassDeclaration node, ErrorReporter reporter) {
+  void _checkForErrorFields(ClassDeclaration node, DiagnosticReporter reporter) {
     for (final member in node.members) {
       if (member is FieldDeclaration) {
         for (final variable in member.fields.variables) {
@@ -184,7 +184,7 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
   /// Check factory constructor parameters for error/loading fields
   void _checkConstructorParameters(
     ConstructorDeclaration constructor,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
   ) {
     for (final param in constructor.parameters.parameters) {
       String? paramName;

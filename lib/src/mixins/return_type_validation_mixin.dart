@@ -15,7 +15,7 @@ import '../clean_architecture_linter_base.dart';
 ///
 /// ```dart
 /// class MyLintRule extends CleanArchitectureLintRule with ReturnTypeValidationMixin {
-///   void _checkMethod(MethodDeclaration method, ErrorReporter reporter) {
+///   void _checkMethod(MethodDeclaration method, DiagnosticReporter reporter) {
 ///     // Skip private and void methods
 ///     if (shouldSkipMethod(method)) return;
 ///
@@ -87,7 +87,7 @@ mixin ReturnTypeValidationMixin {
   ///
   /// Example:
   /// ```dart
-  /// void _checkMethod(MethodDeclaration method, ErrorReporter reporter) {
+  /// void _checkMethod(MethodDeclaration method, DiagnosticReporter reporter) {
   ///   if (shouldSkipMethod(method)) return;
   ///
   ///   // Validate public, non-void methods only

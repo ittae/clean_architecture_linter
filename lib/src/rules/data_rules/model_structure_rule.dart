@@ -49,7 +49,7 @@ class ModelStructureRule extends CleanArchitectureLintRule {
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -59,7 +59,7 @@ class ModelStructureRule extends CleanArchitectureLintRule {
 
   void _checkModelStructure(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;

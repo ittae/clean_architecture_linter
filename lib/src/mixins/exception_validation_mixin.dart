@@ -15,7 +15,7 @@ import '../clean_architecture_linter_base.dart';
 ///
 /// ```dart
 /// class MyExceptionRule extends CleanArchitectureLintRule with ExceptionValidationMixin {
-///   void _checkException(ClassDeclaration node, ErrorReporter reporter) {
+///   void _checkException(ClassDeclaration node, DiagnosticReporter reporter) {
 ///     // Check if class implements Exception
 ///     if (!isExceptionClass(node)) return;
 ///

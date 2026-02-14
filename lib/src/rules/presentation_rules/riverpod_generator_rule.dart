@@ -46,7 +46,7 @@ class RiverpodGeneratorRule extends CleanArchitectureLintRule {
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addVariableDeclaration((node) {
@@ -56,7 +56,7 @@ class RiverpodGeneratorRule extends CleanArchitectureLintRule {
 
   void _checkManualProvider(
     VariableDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;

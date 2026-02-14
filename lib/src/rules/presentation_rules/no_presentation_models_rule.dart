@@ -44,7 +44,7 @@ class NoPresentationModelsRule extends CleanArchitectureLintRule {
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addCompilationUnit((node) {
@@ -59,7 +59,7 @@ class NoPresentationModelsRule extends CleanArchitectureLintRule {
 
   void _checkPresentationModelDirectory(
     CompilationUnit node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -73,7 +73,7 @@ class NoPresentationModelsRule extends CleanArchitectureLintRule {
         correctionMessage:
             'Remove presentation/models/ directory. Use states/ directory with Freezed State containing Entities.',
       );
-      reporter.atOffset(offset: 0, length: 1, errorCode: code);
+      reporter.atOffset(offset: 0, length: 1, diagnosticCode: code);
     }
 
     if (normalized.contains('/presentation/viewmodels/')) {
@@ -83,13 +83,13 @@ class NoPresentationModelsRule extends CleanArchitectureLintRule {
         correctionMessage:
             'Remove presentation/viewmodels/ directory. Use Freezed State with Riverpod instead.',
       );
-      reporter.atOffset(offset: 0, length: 1, errorCode: code);
+      reporter.atOffset(offset: 0, length: 1, diagnosticCode: code);
     }
   }
 
   void _checkViewModelClass(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final className = node.name.lexeme;
@@ -107,7 +107,7 @@ class NoPresentationModelsRule extends CleanArchitectureLintRule {
 
   void _checkChangeNotifier(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final extendsClause = node.extendsClause;

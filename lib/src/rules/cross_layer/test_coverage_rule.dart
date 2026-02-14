@@ -57,7 +57,7 @@ class TestCoverageRule extends CleanArchitectureLintRule {
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     // Check class declarations for testable components
@@ -68,7 +68,7 @@ class TestCoverageRule extends CleanArchitectureLintRule {
 
   void _checkTestCoverage(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -243,7 +243,7 @@ class TestCoverageRule extends CleanArchitectureLintRule {
     ComponentType type,
     String className,
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     String expectedTestPath,
   ) {
     final componentName = _getComponentDisplayName(type);

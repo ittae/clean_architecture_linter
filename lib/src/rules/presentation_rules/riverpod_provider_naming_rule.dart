@@ -1,5 +1,5 @@
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/error/error.dart' show ErrorSeverity;
+import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
@@ -74,13 +74,13 @@ class RiverpodProviderNamingRule extends CleanArchitectureLintRule {
         'Provider function name must include type suffix (repository/usecase/datasource).',
     correctionMessage:
         'Function name must end with matching suffix: repository, usecase, or datasource.',
-    errorSeverity: ErrorSeverity.WARNING,
+    errorSeverity: DiagnosticSeverity.WARNING,
   );
 
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     final filePath = resolver.path;
@@ -107,7 +107,7 @@ class RiverpodProviderNamingRule extends CleanArchitectureLintRule {
   /// Check provider function for naming violations
   void _checkProviderFunction(
     FunctionDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
   ) {
     // Check if this is a @riverpod annotated function
     if (!_hasRiverpodAnnotation(node)) return;
@@ -136,7 +136,7 @@ class RiverpodProviderNamingRule extends CleanArchitectureLintRule {
             'Provider function "$functionName" returning $returnTypeName must end with "$requiredSuffix".',
         correctionMessage:
             'Rename to "$suggestedName" to generate "${suggestedName}Provider".',
-        errorSeverity: ErrorSeverity.WARNING,
+        errorSeverity: DiagnosticSeverity.WARNING,
       );
       reporter.atNode(node, code);
     }
@@ -156,7 +156,7 @@ class RiverpodProviderNamingRule extends CleanArchitectureLintRule {
   /// Get return type name from type annotation
   String? _getReturnTypeName(TypeAnnotation returnType) {
     if (returnType is NamedType) {
-      return returnType.name2.lexeme;
+      return returnType.name.lexeme;
     }
     return null;
   }

@@ -1,7 +1,7 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
-import 'package:analyzer/error/error.dart' show ErrorSeverity;
+import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
 
 import '../../clean_architecture_linter_base.dart';
 import '../../mixins/repository_rule_visitor.dart';
@@ -44,13 +44,13 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
     correctionMessage:
         'Return Future<Entity> directly. Errors pass through to AsyncValue.guard(). '
         'See UNIFIED_ERROR_GUIDE.md.',
-    errorSeverity: ErrorSeverity.WARNING,
+    errorSeverity: DiagnosticSeverity.WARNING,
   );
 
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addMethodDeclaration((node) {
@@ -60,7 +60,7 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
 
   void _checkRepositoryMethod(
     MethodDeclaration method,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     // Check if this method is in a Repository implementation class
@@ -97,7 +97,7 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
           problemMessage:
               'Repository method "${method.name.lexeme}" should return Future<$returnTypeString>.',
           correctionMessage: 'Wrap in Future: Future<$returnTypeString>',
-          errorSeverity: ErrorSeverity.WARNING,
+          errorSeverity: DiagnosticSeverity.WARNING,
         );
         reporter.atNode(returnType, code);
       }
@@ -113,7 +113,7 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
         correctionMessage:
             'Return Future<Entity> directly. '
             'Let errors pass through to AsyncValue.guard() in Presentation layer.',
-        errorSeverity: ErrorSeverity.WARNING,
+        errorSeverity: DiagnosticSeverity.WARNING,
       );
       reporter.atNode(returnType, code);
     }

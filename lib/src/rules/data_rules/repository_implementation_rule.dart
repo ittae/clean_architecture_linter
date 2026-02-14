@@ -1,5 +1,5 @@
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/error/error.dart' show ErrorSeverity;
+import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
@@ -29,13 +29,13 @@ class RepositoryImplementationRule extends CleanArchitectureLintRule
         'Data layer repository implementation must properly implement domain repository interface.',
     correctionMessage:
         'Ensure RepositoryImpl classes use implements keyword with domain repository interface.',
-    errorSeverity: ErrorSeverity.WARNING,
+    errorSeverity: DiagnosticSeverity.WARNING,
   );
 
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -45,7 +45,7 @@ class RepositoryImplementationRule extends CleanArchitectureLintRule
 
   void _checkRepositoryImplementation(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -72,7 +72,7 @@ class RepositoryImplementationRule extends CleanArchitectureLintRule
 
   void _checkDataLayerRepository(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     String className,
   ) {
     // Only check classes that look like repository implementations
@@ -87,7 +87,7 @@ class RepositoryImplementationRule extends CleanArchitectureLintRule
             'Repository implementation must implement a domain repository interface: $className',
         correctionMessage:
             'Add implements clause with domain repository interface. Example: class UserRepositoryImpl implements UserRepository',
-        errorSeverity: ErrorSeverity.WARNING,
+        errorSeverity: DiagnosticSeverity.WARNING,
       );
       reporter.atNode(node, code);
       return;
@@ -95,14 +95,14 @@ class RepositoryImplementationRule extends CleanArchitectureLintRule
 
     // Verify that at least one interface is a repository interface
     final hasRepositoryInterface = implementsClause.interfaces.any((interface) {
-      final interfaceName = interface.name2.lexeme;
+      final interfaceName = interface.name.lexeme;
       return interfaceName.endsWith('Repository') &&
           !interfaceName.endsWith('RepositoryImpl');
     });
 
     if (!hasRepositoryInterface) {
       final implementedInterfaces = implementsClause.interfaces
-          .map((i) => i.name2.lexeme)
+          .map((i) => i.name.lexeme)
           .join(', ');
       final code = LintCode(
         name: 'repository_implementation',
@@ -110,7 +110,7 @@ class RepositoryImplementationRule extends CleanArchitectureLintRule
             'Repository implementation should implement a domain repository interface: $className implements $implementedInterfaces',
         correctionMessage:
             'Implement the corresponding domain repository interface. Example: class UserRepositoryImpl implements UserRepository',
-        errorSeverity: ErrorSeverity.WARNING,
+        errorSeverity: DiagnosticSeverity.WARNING,
       );
       reporter.atNode(node, code);
     }
@@ -118,7 +118,7 @@ class RepositoryImplementationRule extends CleanArchitectureLintRule
 
   void _checkMisplacedInterface(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     String className,
   ) {
     // Abstract classes in data layer that look like repository interfaces
@@ -129,7 +129,7 @@ class RepositoryImplementationRule extends CleanArchitectureLintRule
             'Repository interface should be in domain layer, not data layer: $className',
         correctionMessage:
             'Move abstract repository interface to domain layer. Data layer should only contain RepositoryImpl classes.',
-        errorSeverity: ErrorSeverity.WARNING,
+        errorSeverity: DiagnosticSeverity.WARNING,
       );
       reporter.atNode(node, code);
     }
@@ -137,7 +137,7 @@ class RepositoryImplementationRule extends CleanArchitectureLintRule
 
   void _checkMisplacedImplementation(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     String className,
   ) {
     final code = LintCode(
@@ -146,7 +146,7 @@ class RepositoryImplementationRule extends CleanArchitectureLintRule
           'Repository implementation should be in data layer, not domain layer: $className',
       correctionMessage:
           'Move $className to data layer. Domain layer should only contain abstract repository interfaces.',
-      errorSeverity: ErrorSeverity.WARNING,
+      errorSeverity: DiagnosticSeverity.WARNING,
     );
     reporter.atNode(node, code);
   }

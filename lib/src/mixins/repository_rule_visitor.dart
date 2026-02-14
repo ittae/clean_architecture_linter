@@ -16,7 +16,7 @@ import '../clean_architecture_linter_base.dart';
 ///
 /// ```dart
 /// class MyRepositoryRule extends CleanArchitectureLintRule with RepositoryRuleVisitor {
-///   void _checkRepository(ClassDeclaration node, ErrorReporter reporter) {
+///   void _checkRepository(ClassDeclaration node, DiagnosticReporter reporter) {
 ///     if (!isRepositoryImplementation(node)) return;
 ///
 ///     // Validate Repository implementation patterns
@@ -121,7 +121,7 @@ mixin RepositoryRuleVisitor {
     if (implementsClause == null) return false;
 
     for (final interface in implementsClause.interfaces) {
-      final interfaceName = interface.name2.lexeme;
+      final interfaceName = interface.name.lexeme;
       if (interfaceName.contains('Repository')) {
         return true;
       }
@@ -205,7 +205,7 @@ mixin RepositoryRuleVisitor {
     if (implementsClause == null) return null;
 
     for (final interface in implementsClause.interfaces) {
-      final interfaceName = interface.name2.lexeme;
+      final interfaceName = interface.name.lexeme;
       if (interfaceName.contains('Repository')) {
         return interfaceName;
       }

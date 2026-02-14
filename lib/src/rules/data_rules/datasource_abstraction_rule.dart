@@ -57,7 +57,7 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     // Check class declarations for DataSource patterns
@@ -78,7 +78,7 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
 
   void _checkDataSourceAbstraction(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -117,7 +117,7 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
 
   void _checkDataSourceLocation(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -140,7 +140,7 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
 
   void _checkDataSourceMethods(
     MethodDeclaration method,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -178,7 +178,7 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
     if (node.implementsClause != null) {
       final interfaces = node.implementsClause!.interfaces;
       for (final interface in interfaces) {
-        final interfaceName = interface.name2.toString();
+        final interfaceName = interface.name.toString();
         if (CleanArchitectureUtils.isDataSourceClass(interfaceName)) {
           // Implements a DataSource interface - this is correct pattern
           return false;

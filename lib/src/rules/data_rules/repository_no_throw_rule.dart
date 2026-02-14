@@ -1,5 +1,5 @@
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/error/error.dart' show ErrorSeverity;
+import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
@@ -47,7 +47,7 @@ class RepositoryNoThrowRule extends CleanArchitectureLintRule
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addThrowExpression((node) {
@@ -57,7 +57,7 @@ class RepositoryNoThrowRule extends CleanArchitectureLintRule
 
   void _checkThrowInRepository(
     ThrowExpression node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     // Check if this throw is in a Repository implementation class
@@ -91,7 +91,7 @@ class RepositoryNoThrowRule extends CleanArchitectureLintRule
       correctionMessage:
           'Use AppException types (NotFoundException, ServerException, etc.) '
           'or let DataSource handle error conversion.',
-      errorSeverity: ErrorSeverity.INFO,
+      errorSeverity: DiagnosticSeverity.INFO,
     );
     reporter.atNode(node, code);
   }
@@ -99,7 +99,7 @@ class RepositoryNoThrowRule extends CleanArchitectureLintRule
   /// Extracts the exception type name from a throw expression.
   String? _getExceptionTypeName(Expression expression) {
     if (expression is InstanceCreationExpression) {
-      return expression.constructorName.type.name2.lexeme;
+      return expression.constructorName.type.name.lexeme;
     }
     if (expression is MethodInvocation) {
       // e.g., Exception('message') or CustomException.create()

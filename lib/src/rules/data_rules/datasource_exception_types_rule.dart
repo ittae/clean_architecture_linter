@@ -1,7 +1,7 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
-import 'package:analyzer/error/error.dart' show ErrorSeverity;
+import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
 
 import '../../clean_architecture_linter_base.dart';
 import '../../mixins/exception_validation_mixin.dart';
@@ -71,13 +71,13 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule
     correctionMessage:
         'Use AppException types: NotFoundException, UnauthorizedException, '
         'ServerException, NetworkException, etc.',
-    errorSeverity: ErrorSeverity.WARNING,
+    errorSeverity: DiagnosticSeverity.WARNING,
   );
 
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addThrowExpression((node) {
@@ -87,7 +87,7 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule
 
   void _checkThrowException(
     ThrowExpression node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -106,7 +106,7 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule
     if (expression is InstanceCreationExpression) {
       // throw NotFoundException(...)
       final constructorName = expression.constructorName;
-      exceptionType = constructorName.type.name2.lexeme;
+      exceptionType = constructorName.type.name.lexeme;
     } else if (expression is SimpleIdentifier) {
       // throw error (variable)
       // Skip variable throws - we can't determine type at compile time
@@ -125,7 +125,7 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule
         correctionMessage:
             'Use AppException types: NotFoundException, UnauthorizedException, '
             'ServerException, NetworkException, etc.',
-        errorSeverity: ErrorSeverity.WARNING,
+        errorSeverity: DiagnosticSeverity.WARNING,
       );
       reporter.atNode(expression, code);
     }

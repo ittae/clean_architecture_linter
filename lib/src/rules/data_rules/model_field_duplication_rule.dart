@@ -62,7 +62,7 @@ class ModelFieldDuplicationRule extends CleanArchitectureLintRule {
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -72,7 +72,7 @@ class ModelFieldDuplicationRule extends CleanArchitectureLintRule {
 
   void _checkFieldDuplication(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -111,7 +111,7 @@ class ModelFieldDuplicationRule extends CleanArchitectureLintRule {
       reporter.atOffset(
         offset: duplicate.offset,
         length: duplicate.name.length,
-        errorCode: code,
+        diagnosticCode: code,
       );
     }
   }

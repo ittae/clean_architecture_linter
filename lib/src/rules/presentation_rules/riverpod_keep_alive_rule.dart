@@ -87,7 +87,7 @@ class RiverpodKeepAliveRule extends CleanArchitectureLintRule {
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addAnnotation((node) {
@@ -97,7 +97,7 @@ class RiverpodKeepAliveRule extends CleanArchitectureLintRule {
 
   void _checkKeepAliveAnnotation(
     Annotation node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;

@@ -638,7 +638,7 @@ class CleanArchitectureUtils {
 
     // Check with NamedType for more precise detection
     if (returnType is NamedType) {
-      final name = returnType.name2.lexeme;
+      final name = returnType.name.lexeme;
       if (name == 'Result' ||
           name == 'Either' ||
           name == 'Task' ||
@@ -1092,7 +1092,7 @@ abstract class CleanArchitectureLintRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     final filePath = resolver.path;
@@ -1110,7 +1110,7 @@ abstract class CleanArchitectureLintRule extends DartLintRule {
   /// Test files are automatically excluded.
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   );
 }

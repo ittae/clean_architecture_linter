@@ -25,7 +25,7 @@ class BoundaryCrossingRule extends CleanArchitectureLintRule {
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     // Simplified to only check import dependencies - most reliable indicator
@@ -36,7 +36,7 @@ class BoundaryCrossingRule extends CleanArchitectureLintRule {
 
   void _checkBoundaryViolation(
     ImportDirective node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;

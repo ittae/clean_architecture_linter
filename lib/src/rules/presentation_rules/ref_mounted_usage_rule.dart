@@ -50,7 +50,7 @@ class RefMountedUsageRule extends CleanArchitectureLintRule {
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     // Check for ref.mounted property access
@@ -66,7 +66,7 @@ class RefMountedUsageRule extends CleanArchitectureLintRule {
 
   void _checkRefMounted(
     PrefixedIdentifier node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -89,7 +89,7 @@ class RefMountedUsageRule extends CleanArchitectureLintRule {
 
   void _checkNegatedRefMounted(
     PrefixExpression node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;

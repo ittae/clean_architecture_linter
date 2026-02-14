@@ -1,7 +1,7 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
-import 'package:analyzer/error/error.dart' show ErrorSeverity;
+import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
 
 import '../../clean_architecture_linter_base.dart';
 import '../../mixins/exception_validation_mixin.dart';
@@ -70,13 +70,13 @@ class PresentationNoDataExceptionsRule extends CleanArchitectureLintRule
         'Presentation layer should NOT handle Data layer exceptions. Use Domain exceptions instead.',
     correctionMessage:
         'Replace with feature-prefixed Domain exception, e.g., "TodoNotFoundException".',
-    errorSeverity: ErrorSeverity.WARNING,
+    errorSeverity: DiagnosticSeverity.WARNING,
   );
 
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addIsExpression((node) {
@@ -86,7 +86,7 @@ class PresentationNoDataExceptionsRule extends CleanArchitectureLintRule
 
   void _checkExceptionTypeCheck(
     IsExpression node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -98,7 +98,7 @@ class PresentationNoDataExceptionsRule extends CleanArchitectureLintRule
     final type = node.type;
     if (type is! NamedType) return;
 
-    final typeName = type.name2.lexeme;
+    final typeName = type.name.lexeme;
 
     // Check if it's a Data layer exception
     if (isDataLayerException(typeName)) {
@@ -111,7 +111,7 @@ class PresentationNoDataExceptionsRule extends CleanArchitectureLintRule
             'Use Domain exception instead.',
         correctionMessage:
             'Replace with Domain exception "$domainException". UseCase should convert Data exceptions.',
-        errorSeverity: ErrorSeverity.WARNING,
+        errorSeverity: DiagnosticSeverity.WARNING,
       );
       reporter.atNode(type, code);
     }

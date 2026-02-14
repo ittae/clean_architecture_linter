@@ -1,5 +1,5 @@
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/error/error.dart' show ErrorSeverity;
+import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
@@ -64,13 +64,13 @@ class WidgetNoUseCaseCallRule extends CleanArchitectureLintRule {
     problemMessage:
         'Widgets/Pages should NOT directly call or import UseCases. Use Providers instead.',
     correctionMessage: 'Use Provider instead: Widget → Provider → UseCase.',
-    errorSeverity: ErrorSeverity.WARNING,
+    errorSeverity: DiagnosticSeverity.WARNING,
   );
 
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     final filePath = resolver.path;
@@ -110,7 +110,7 @@ class WidgetNoUseCaseCallRule extends CleanArchitectureLintRule {
   /// Check for UseCase imports in Widget files
   void _checkUseCaseImport(
     ImportDirective node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final importUri = node.uri.stringValue;
@@ -123,7 +123,7 @@ class WidgetNoUseCaseCallRule extends CleanArchitectureLintRule {
         problemMessage: 'Widget/Page should NOT import UseCase: $importUri',
         correctionMessage:
             'Remove UseCase import. Create a Provider that calls the UseCase instead.',
-        errorSeverity: ErrorSeverity.WARNING,
+        errorSeverity: DiagnosticSeverity.WARNING,
       );
       reporter.atNode(node, code);
     }
@@ -144,7 +144,7 @@ class WidgetNoUseCaseCallRule extends CleanArchitectureLintRule {
   /// Check for UseCase provider calls in Widget methods
   void _checkUseCaseProviderCall(
     MethodInvocation node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     // Check if it's a ref.read() or ref.watch() call
@@ -164,7 +164,7 @@ class WidgetNoUseCaseCallRule extends CleanArchitectureLintRule {
             'Widget/Page should NOT call UseCase provider "$providerName" directly via $methodName()',
         correctionMessage:
             'Create an Entity Provider that calls the UseCase, then ref.watch() that provider.',
-        errorSeverity: ErrorSeverity.WARNING,
+        errorSeverity: DiagnosticSeverity.WARNING,
       );
       reporter.atNode(node, code);
     }

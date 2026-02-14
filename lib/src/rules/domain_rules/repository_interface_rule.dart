@@ -33,7 +33,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     // Check import statements for data layer repository implementations
@@ -59,7 +59,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
 
   void _checkRepositoryImports(
     ImportDirective node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -84,7 +84,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
 
   void _checkRepositoryInterface(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -116,7 +116,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
 
   void _checkRepositoryDependencies(
     ConstructorDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -128,7 +128,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
       if (param is SimpleFormalParameter) {
         final type = param.type;
         if (type is NamedType) {
-          final typeName = type.name2.lexeme;
+          final typeName = type.name.lexeme;
           if (CleanArchitectureUtils.isRepositoryImplClass(typeName)) {
             final code = LintCode(
               name: 'repository_interface',
@@ -146,7 +146,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
 
   void _checkRepositoryFields(
     FieldDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -154,7 +154,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
 
     final type = node.fields.type;
     if (type is NamedType) {
-      final typeName = type.name2.lexeme;
+      final typeName = type.name.lexeme;
       if (CleanArchitectureUtils.isRepositoryImplClass(typeName)) {
         final code = LintCode(
           name: 'repository_interface',
@@ -170,7 +170,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
 
   void _checkRepositoryMethod(
     MethodDeclaration method,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     String className,
   ) {
     final returnType = method.returnType;
@@ -185,12 +185,12 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
   /// Checks if return type contains data layer models (including nested generics)
   void _checkReturnTypeForModels(
     TypeAnnotation? returnType,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
   ) {
     if (returnType == null) return;
 
     if (returnType is NamedType) {
-      final returnTypeName = returnType.name2.lexeme;
+      final returnTypeName = returnType.name.lexeme;
 
       // Check the main type
       if (_isDataLayerModel(returnTypeName)) {
@@ -210,7 +210,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
       if (typeArguments != null) {
         for (final typeArg in typeArguments) {
           if (typeArg is NamedType) {
-            final typeArgName = typeArg.name2.lexeme;
+            final typeArgName = typeArg.name.lexeme;
             if (_isDataLayerModel(typeArgName)) {
               final code = LintCode(
                 name: 'repository_interface',
@@ -230,7 +230,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
   /// Checks if method parameters contain data layer models
   void _checkMethodParametersForModels(
     MethodDeclaration method,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
   ) {
     final parameters = method.parameters;
     if (parameters == null) return;
@@ -248,7 +248,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
       }
 
       if (paramType is NamedType) {
-        final paramTypeName = paramType.name2.lexeme;
+        final paramTypeName = paramType.name.lexeme;
         if (_isDataLayerModel(paramTypeName)) {
           final code = LintCode(
             name: 'repository_interface',
@@ -265,7 +265,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
         if (typeArguments != null) {
           for (final typeArg in typeArguments) {
             if (typeArg is NamedType) {
-              final typeArgName = typeArg.name2.lexeme;
+              final typeArgName = typeArg.name.lexeme;
               if (_isDataLayerModel(typeArgName)) {
                 final code = LintCode(
                   name: 'repository_interface',

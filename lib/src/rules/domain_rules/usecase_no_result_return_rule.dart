@@ -62,7 +62,7 @@ class UseCaseNoResultReturnRule extends CleanArchitectureLintRule
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addMethodDeclaration((node) {
@@ -72,7 +72,7 @@ class UseCaseNoResultReturnRule extends CleanArchitectureLintRule
 
   void _checkUseCaseMethod(
     MethodDeclaration method,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     // Check if this method is in a UseCase class

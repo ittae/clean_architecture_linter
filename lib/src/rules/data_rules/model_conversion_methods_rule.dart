@@ -55,7 +55,7 @@ class ModelConversionMethodsRule extends CleanArchitectureLintRule {
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -65,7 +65,7 @@ class ModelConversionMethodsRule extends CleanArchitectureLintRule {
 
   void _checkConversionMethods(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -153,7 +153,7 @@ class ModelConversionMethodsRule extends CleanArchitectureLintRule {
         // Check if extension is on this Model class
         final extendedType = declaration.onClause?.extendedType;
         if (extendedType != null && extendedType is NamedType) {
-          final typeName = extendedType.name2.lexeme;
+          final typeName = extendedType.name.lexeme;
           if (typeName == className) {
             // Check for toEntity() instance method
             if (_hasMethod(declaration, 'toEntity', isStatic: false)) {

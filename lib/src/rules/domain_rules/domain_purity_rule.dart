@@ -30,7 +30,7 @@ class DomainPurityRule extends CleanArchitectureLintRule {
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     // Check import statements for external dependencies
@@ -46,7 +46,7 @@ class DomainPurityRule extends CleanArchitectureLintRule {
 
   void _checkImportPurity(
     ImportDirective node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -168,7 +168,7 @@ class DomainPurityRule extends CleanArchitectureLintRule {
   /// Additional checks for code constructs within domain layer files
   void _checkClassDeclarations(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -177,7 +177,7 @@ class DomainPurityRule extends CleanArchitectureLintRule {
     // Check for inheritance from external framework classes
     final extendsClause = node.extendsClause;
     if (extendsClause != null) {
-      final superTypeName = extendsClause.superclass.name2.lexeme;
+      final superTypeName = extendsClause.superclass.name.lexeme;
       if (_isExternalFrameworkClass(superTypeName)) {
         final code = LintCode(
           name: 'domain_purity',
@@ -194,7 +194,7 @@ class DomainPurityRule extends CleanArchitectureLintRule {
     final implementsClause = node.implementsClause;
     if (implementsClause != null) {
       for (final interface in implementsClause.interfaces) {
-        final interfaceName = interface.name2.lexeme;
+        final interfaceName = interface.name.lexeme;
         if (_isExternalFrameworkClass(interfaceName)) {
           final code = LintCode(
             name: 'domain_purity',

@@ -57,7 +57,7 @@ class ExtensionLocationRule extends CleanArchitectureLintRule {
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addCompilationUnit((node) {
@@ -71,7 +71,7 @@ class ExtensionLocationRule extends CleanArchitectureLintRule {
 
   void _checkExtensionDirectory(
     CompilationUnit node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -94,7 +94,7 @@ class ExtensionLocationRule extends CleanArchitectureLintRule {
           correctionMessage:
               'Move extensions to the $layerName file. Extensions should be in the same file as the class they extend.',
         );
-        reporter.atOffset(offset: 0, length: 1, errorCode: code);
+        reporter.atOffset(offset: 0, length: 1, diagnosticCode: code);
         break;
       }
     }
@@ -113,7 +113,7 @@ class ExtensionLocationRule extends CleanArchitectureLintRule {
 
   void _checkPresentationExtensionLocation(
     ExtensionDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;

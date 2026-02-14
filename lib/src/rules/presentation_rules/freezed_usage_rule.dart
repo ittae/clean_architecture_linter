@@ -45,7 +45,7 @@ class FreezedUsageRule extends CleanArchitectureLintRule {
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addClassDeclaration((node) {
@@ -59,7 +59,7 @@ class FreezedUsageRule extends CleanArchitectureLintRule {
 
   void _checkEquatableUsage(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -104,7 +104,7 @@ class FreezedUsageRule extends CleanArchitectureLintRule {
 
   void _checkEquatableImport(
     ImportDirective node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;

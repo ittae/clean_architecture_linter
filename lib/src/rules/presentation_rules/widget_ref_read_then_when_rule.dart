@@ -1,5 +1,5 @@
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/error/error.dart' show ErrorSeverity;
+import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
@@ -84,13 +84,13 @@ class WidgetRefReadThenWhenRule extends CleanArchitectureLintRule {
         'Do NOT use .when() after ref.read(). Use ref.watch() in build() or ref.listen() for side effects.',
     correctionMessage:
         'Use ref.watch() + .when() in build() for UI, ref.listen() for side effects, or try-catch for one-off operations.',
-    errorSeverity: ErrorSeverity.WARNING,
+    errorSeverity: DiagnosticSeverity.WARNING,
   );
 
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     final filePath = resolver.path;
@@ -112,7 +112,7 @@ class WidgetRefReadThenWhenRule extends CleanArchitectureLintRule {
   /// Check method declaration for anti-pattern
   void _checkMethodForAntiPattern(
     MethodDeclaration methodNode,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
   ) {
     final body = methodNode.body;
     if (body is! BlockFunctionBody) return;
@@ -123,7 +123,7 @@ class WidgetRefReadThenWhenRule extends CleanArchitectureLintRule {
   /// Check function body for ref.read() followed by .when()
   void _checkFunctionForAntiPattern(
     AstNode functionBody,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
   ) {
     final refReadCalls = <MethodInvocation>[];
     final whenCalls = <MethodInvocation>[];
@@ -144,7 +144,7 @@ class WidgetRefReadThenWhenRule extends CleanArchitectureLintRule {
               'Anti-pattern: Using .when() after ref.read() in the same function',
           correctionMessage:
               'Use ref.watch() + .when() in build() for UI, ref.listen() for side effects, or try-catch for one-off operations.',
-          errorSeverity: ErrorSeverity.WARNING,
+          errorSeverity: DiagnosticSeverity.WARNING,
         );
         reporter.atNode(whenCall, code);
       }

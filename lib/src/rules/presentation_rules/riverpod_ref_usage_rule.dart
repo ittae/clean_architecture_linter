@@ -1,5 +1,5 @@
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/error/error.dart' show ErrorSeverity;
+import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
@@ -93,13 +93,13 @@ class RiverpodRefUsageRule extends CleanArchitectureLintRule {
         'Incorrect ref usage: Use ref.watch() in build() and ref.read() in other methods.',
     correctionMessage:
         'Use ref.watch() for reactive dependencies in build(), ref.read() for one-time reads.',
-    errorSeverity: ErrorSeverity.WARNING,
+    errorSeverity: DiagnosticSeverity.WARNING,
   );
 
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     final filePath = resolver.path;
@@ -126,7 +126,7 @@ class RiverpodRefUsageRule extends CleanArchitectureLintRule {
   }
 
   /// Check provider/notifier class for ref usage violations
-  void _checkProviderClass(ClassDeclaration classNode, ErrorReporter reporter) {
+  void _checkProviderClass(ClassDeclaration classNode, DiagnosticReporter reporter) {
     // Check if this is a Riverpod provider/notifier class
     if (!_isRiverpodProviderClass(classNode)) return;
 
@@ -154,7 +154,7 @@ class RiverpodRefUsageRule extends CleanArchitectureLintRule {
     // Check if class extends a Riverpod base class
     final extendsClause = node.extendsClause;
     if (extendsClause != null) {
-      final superclassName = extendsClause.superclass.name2.lexeme;
+      final superclassName = extendsClause.superclass.name.lexeme;
       // Matches generated notifier base classes like _$TodoList, _$TodoNotifier
       if (superclassName.startsWith('_\$')) {
         return true;
@@ -168,7 +168,7 @@ class RiverpodRefUsageRule extends CleanArchitectureLintRule {
   void _checkMethodRefUsage(
     MethodDeclaration methodNode,
     bool isBuildMethod,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
   ) {
     final body = methodNode.body;
     if (body is! BlockFunctionBody && body is! ExpressionFunctionBody) return;
@@ -195,7 +195,7 @@ class RiverpodRefUsageRule extends CleanArchitectureLintRule {
               'Use ref.watch() instead of ref.read() for State providers in build().',
           correctionMessage:
               'Change ref.read() to ref.watch() for reactive State provider dependencies.',
-          errorSeverity: ErrorSeverity.WARNING,
+          errorSeverity: DiagnosticSeverity.WARNING,
         );
         reporter.atNode(refReadCall, code);
       }
@@ -208,7 +208,7 @@ class RiverpodRefUsageRule extends CleanArchitectureLintRule {
               'Use ref.read() instead of ref.watch() in methods for one-time reads.',
           correctionMessage:
               'Change ref.watch() to ref.read() for one-time provider access in methods.',
-          errorSeverity: ErrorSeverity.WARNING,
+          errorSeverity: DiagnosticSeverity.WARNING,
         );
         reporter.atNode(refWatchCall, code);
       }

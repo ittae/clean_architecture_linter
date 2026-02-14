@@ -33,7 +33,7 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
   @override
   void runRule(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     // Check constructor parameters for concrete dependencies
@@ -59,7 +59,7 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
 
   void _checkConstructorDependencies(
     ConstructorDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -79,7 +79,7 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
 
   void _checkFieldDependencies(
     FieldDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -101,7 +101,7 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
 
   void _checkImportDependencies(
     ImportDirective node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -123,7 +123,7 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
 
   void _checkInheritanceDependencies(
     ClassDeclaration node,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
     final filePath = resolver.path;
@@ -201,7 +201,7 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
     NamedType type,
     FormalParameter param,
   ) {
-    final typeName = type.name2.lexeme;
+    final typeName = type.name.lexeme;
 
     // Check for concrete implementation patterns
     if (_isConcreteImplementation(typeName)) {
@@ -240,7 +240,7 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
     NamedType type,
     FieldDeclaration field,
   ) {
-    final typeName = type.name2.lexeme;
+    final typeName = type.name.lexeme;
 
     if (_isConcreteImplementation(typeName)) {
       return DependencyViolation(
@@ -312,7 +312,7 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
     NamedType type,
     String relationship,
   ) {
-    final typeName = type.name2.lexeme;
+    final typeName = type.name.lexeme;
 
     if (_isConcreteImplementation(typeName)) {
       return DependencyViolation(
