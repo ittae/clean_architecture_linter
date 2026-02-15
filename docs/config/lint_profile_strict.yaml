@@ -1,0 +1,19 @@
+# Strict profile: escalates P0 pass-through/AsyncValue policy to error.
+include: package:lints/recommended.yaml
+
+analyzer:
+  plugins:
+    - custom_lint
+  errors:
+    # P0 핵심 규칙은 error로 승격
+    repository_pass_through: error
+    usecase_no_result_return: error
+    presentation_use_async_value: error
+    presentation_no_throw: error
+
+custom_lint:
+  rules:
+    - repository_pass_through: true
+    - usecase_no_result_return: true
+    - presentation_use_async_value: true
+    - presentation_no_throw: true

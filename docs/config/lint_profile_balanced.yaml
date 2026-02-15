@@ -1,0 +1,19 @@
+# Balanced profile: keeps most defaults, but highlights P0 policy violations.
+include: package:lints/recommended.yaml
+
+analyzer:
+  plugins:
+    - custom_lint
+  errors:
+    # P0 pass-through/AsyncValue policy (balanced)
+    repository_pass_through: warning
+    usecase_no_result_return: warning
+    presentation_use_async_value: warning
+    presentation_no_throw: warning
+
+custom_lint:
+  rules:
+    - repository_pass_through: true
+    - usecase_no_result_return: true
+    - presentation_use_async_value: true
+    - presentation_no_throw: true

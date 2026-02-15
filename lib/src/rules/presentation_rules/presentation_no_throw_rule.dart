@@ -5,61 +5,6 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
 
-/// Enforces that Presentation layer (States/Notifiers) should NOT throw exceptions.
-///
-/// In Clean Architecture, Presentation layer should handle errors through state
-/// management (AsyncValue, State objects) rather than throwing exceptions.
-///
-/// Error handling flow:
-/// - DataSource: Throws Data exceptions
-/// - Repository: Catches exceptions → Converts to Result
-/// - UseCase: Unwraps Result → Throws Domain exceptions
-/// - **Presentation State: Catches exceptions → Sets state (AsyncValue.error, etc.)**
-/// - UI Widget: Renders error state
-///
-/// ✅ Correct Pattern:
-/// ```dart
-/// // presentation/states/todo_state.dart
-/// class TodoNotifier extends StateNotifier<AsyncValue<List<Todo>>> {
-///   Future<void> loadTodos() async {
-///     state = const AsyncValue.loading();
-///
-///     try {
-///       final result = await getTodosUseCase();
-///       result.when(
-///         success: (todos) => state = AsyncValue.data(todos),  // ✅ Set state
-///         failure: (failure) => state = AsyncValue.error(failure, StackTrace.current),  // ✅ Set state
-///       );
-///     } catch (e, stack) {
-///       state = AsyncValue.error(e, stack);  // ✅ Set state, don't throw
-///     }
-///   }
-/// }
-/// ```
-///
-/// ❌ Wrong Pattern:
-/// ```dart
-/// // ❌ Throwing in Presentation State
-/// class TodoNotifier extends StateNotifier<AsyncValue<List<Todo>>> {
-///   Future<void> loadTodos() async {
-///     try {
-///       final result = await getTodosUseCase();
-///       if (result.isFailure) {
-///         throw TodoException('Failed');  // ❌ Don't throw!
-///       }
-///     } catch (e) {
-///       throw;  // ❌ Don't rethrow!
-///     }
-///   }
-/// }
-/// ```
-///
-/// **Exceptions to this rule:**
-/// - Programming errors (ArgumentError, AssertionError) are allowed
-/// - Private helper methods (_privateMethod) are allowed to throw
-/// - Constructors are allowed to throw
-///
-/// See ERROR_HANDLING_GUIDE.md for complete error handling patterns.
 class PresentationNoThrowRule extends CleanArchitectureLintRule {
   const PresentationNoThrowRule() : super(code: _code);
 
@@ -68,7 +13,7 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
     problemMessage:
         'Presentation States/Notifiers should NOT throw exceptions. Use state management instead.',
     correctionMessage:
-        'Use state management (e.g., AsyncValue.error) instead of throwing.',
+        'Use AsyncValue.guard()/when(error) or AsyncValue.error instead of throwing.',
     errorSeverity: DiagnosticSeverity.WARNING,
   );
 
@@ -81,6 +26,10 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
     context.registry.addThrowExpression((node) {
       _checkThrowInPresentation(node, reporter, resolver);
     });
+
+    context.registry.addCatchClause((node) {
+      _checkBusinessExceptionBranchingInWidget(node, reporter, resolver);
+    });
   }
 
   void _checkThrowInPresentation(
@@ -90,60 +39,72 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
   ) {
     final filePath = resolver.path;
 
-    // Only check Presentation layer files
     if (!CleanArchitectureUtils.isPresentationFile(filePath)) return;
 
-    // Check /states/, /state/, or /providers/ directories
     if (!filePath.contains('/states/') &&
         !filePath.contains('/state/') &&
         !filePath.contains('/providers/')) {
       return;
     }
 
-    // Check if throw is inside a State/Notifier class
     final classNode = CleanArchitectureUtils.findParentClass(node);
     if (classNode == null) return;
 
     final className = classNode.name.lexeme;
-
-    // Skip if not a State/Notifier/Provider class
     if (!_isStateOrNotifierClass(className, classNode)) return;
 
-    // Find the method containing this throw
     final methodNode = _findParentMethod(node);
     if (methodNode == null) return;
 
-    // Allow throw in private methods
     if (CleanArchitectureUtils.isPrivateMethod(methodNode)) return;
-
-    // Allow throw in constructors
     if (methodNode.parent is ConstructorDeclaration) return;
-
-    // Check if it's throwing a programming error (ArgumentError, AssertionError)
     if (_isThrowingProgrammingError(node)) return;
 
-    // Get the exception type being thrown
     final exceptionType = _getExceptionType(node);
 
     final code = LintCode(
       name: 'presentation_no_throw',
       problemMessage:
-          '"$className.${methodNode.name.lexeme}" should not throw $exceptionType. '
-          'Use state management instead (e.g., AsyncValue.error).',
+          '"$className.${methodNode.name.lexeme}" should not throw $exceptionType.',
+      correctionMessage:
+          'AsyncValue.guard()/when(error) 패턴으로 에러를 UI 상태로 표현하세요.',
       errorSeverity: DiagnosticSeverity.WARNING,
     );
 
     reporter.atNode(node, code);
   }
 
-  /// Checks if class is a State/Notifier/Provider class
-  ///
-  /// Detection methods:
-  /// 1. Has @riverpod annotation (Riverpod Generator pattern)
-  /// 2. Extends AsyncNotifier, Notifier, StateNotifier
-  /// 3. Class name contains State/Notifier/Provider/Bloc keywords
+  void _checkBusinessExceptionBranchingInWidget(
+    CatchClause catchClause,
+    DiagnosticReporter reporter,
+    CustomLintResolver resolver,
+  ) {
+    final filePath = resolver.path;
+    if (!CleanArchitectureUtils.isPresentationFile(filePath)) return;
+
+    final classNode = catchClause.thisOrAncestorOfType<ClassDeclaration>();
+    if (classNode == null || !_isWidgetClass(classNode)) return;
+
+    final exceptionType = catchClause.exceptionType?.toSource();
+    if (exceptionType == null || exceptionType.isEmpty) return;
+
+    if (_isProgrammingErrorType(exceptionType)) return;
+
+    if (!_looksLikeBusinessException(exceptionType)) return;
+
+    final code = LintCode(
+      name: 'presentation_no_throw',
+      problemMessage:
+          'Widget/Presentation에서 비즈니스 예외($exceptionType)를 try-catch로 직접 분기하지 마세요.',
+      correctionMessage:
+          'Provider에서 AsyncValue.guard()로 처리하고 UI에서는 when(error)로 렌더링하세요.',
+      errorSeverity: DiagnosticSeverity.WARNING,
+    );
+
+    reporter.atNode(catchClause, code);
+  }
+
   bool _isStateOrNotifierClass(String className, ClassDeclaration classNode) {
-    // Check for @riverpod annotation (Riverpod Generator)
     for (final metadata in classNode.metadata) {
       final name = metadata.name.name;
       if (name == 'riverpod' || name == 'Riverpod') {
@@ -151,7 +112,6 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
       }
     }
 
-    // Check if extends AsyncNotifier, Notifier, StateNotifier
     final extendsClause = classNode.extendsClause;
     if (extendsClause != null) {
       final superclass = extendsClause.superclass.name.lexeme;
@@ -160,12 +120,10 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
           superclass == 'StateNotifier' ||
           superclass == 'ChangeNotifier' ||
           superclass.startsWith('_\$')) {
-        // _$ prefix indicates generated Riverpod class
         return true;
       }
     }
 
-    // Fallback: Check class name pattern
     return className.contains('Notifier') ||
         className.contains('State') ||
         className.contains('Provider') ||
@@ -175,7 +133,6 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
         className.contains('ViewModel');
   }
 
-  /// Finds the parent method of a throw expression
   MethodDeclaration? _findParentMethod(ThrowExpression node) {
     var current = node.parent;
     while (current != null) {
@@ -186,14 +143,11 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
     return null;
   }
 
-  /// Checks if throwing a programming error (ArgumentError, AssertionError, etc.)
   bool _isThrowingProgrammingError(ThrowExpression node) {
     final expression = node.expression;
 
     if (expression is InstanceCreationExpression) {
       final typeName = expression.constructorName.type.name.lexeme;
-
-      // Allow programming errors (developer mistakes, not business logic errors)
       const programmingErrors = [
         'ArgumentError',
         'AssertionError',
@@ -210,7 +164,6 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
     return false;
   }
 
-  /// Gets the exception type being thrown
   String _getExceptionType(ThrowExpression node) {
     final expression = node.expression;
 
@@ -227,5 +180,44 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
     }
 
     return 'exception';
+  }
+
+  bool _isWidgetClass(ClassDeclaration classNode) {
+    final className = classNode.name.lexeme;
+    if (className.endsWith('Page') ||
+        className.endsWith('Screen') ||
+        className.endsWith('View') ||
+        className.endsWith('Widget')) {
+      return true;
+    }
+
+    final extendsClause = classNode.extendsClause;
+    if (extendsClause == null) return false;
+
+    final superName = extendsClause.superclass.name.lexeme;
+    return superName == 'StatelessWidget' ||
+        superName == 'StatefulWidget' ||
+        superName == 'ConsumerWidget' ||
+        superName == 'HookConsumerWidget' ||
+        superName == 'ConsumerState';
+  }
+
+  bool _isProgrammingErrorType(String typeName) {
+    const programmingErrors = {
+      'ArgumentError',
+      'AssertionError',
+      'StateError',
+      'UnimplementedError',
+      'UnsupportedError',
+      'TypeError',
+      'RangeError',
+    };
+    return programmingErrors.contains(typeName);
+  }
+
+  bool _looksLikeBusinessException(String typeName) {
+    return typeName.endsWith('Exception') ||
+        typeName.endsWith('Failure') ||
+        typeName == 'AppException';
   }
 }

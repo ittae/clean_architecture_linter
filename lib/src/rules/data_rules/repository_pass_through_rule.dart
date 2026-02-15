@@ -1,38 +1,12 @@
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
-import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
 
 import '../../clean_architecture_linter_base.dart';
 import '../../mixins/repository_rule_visitor.dart';
 import '../../mixins/return_type_validation_mixin.dart';
 
-/// Validates Repository implementation uses pass-through pattern.
-///
-/// In Clean Architecture with pass-through error handling, Repository
-/// implementations should NOT use Result pattern. Instead, they return
-/// `Future<Entity>` directly and let exceptions propagate to AsyncValue.guard()
-/// in the Presentation layer.
-///
-/// ```dart
-/// // ✅ CORRECT - Pass-through pattern
-/// class TodoRepositoryImpl implements TodoRepository {
-///   @override
-///   Future<Todo> getTodo(String id) async {
-///     final model = await remoteDataSource.getTodo(id);
-///     return model.toEntity();  // Errors pass through to AsyncValue
-///   }
-/// }
-/// ```
-///
-/// ## What This Rule Checks
-///
-/// - ❌ Repository returning `Result<Entity, Failure>` - Use pass-through instead
-/// - ❌ Repository returning Model types (should return Entity)
-/// - ❌ Repository returning raw types without Future
-/// - ✅ `Future<Entity>` - Allowed (pass-through pattern)
-///
-/// See UNIFIED_ERROR_GUIDE.md for complete error handling patterns.
 class RepositoryPassThroughRule extends CleanArchitectureLintRule
     with RepositoryRuleVisitor, ReturnTypeValidationMixin {
   const RepositoryPassThroughRule() : super(code: _code);
@@ -42,8 +16,7 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
     problemMessage:
         'Repository must return Future<Entity> (pass-through pattern).',
     correctionMessage:
-        'Return Future<Entity> directly. Errors pass through to AsyncValue.guard(). '
-        'See UNIFIED_ERROR_GUIDE.md.',
+        'Return Future<Entity> directly. Errors pass through to AsyncValue.guard().',
     errorSeverity: DiagnosticSeverity.WARNING,
   );
 
@@ -63,13 +36,9 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
     DiagnosticReporter reporter,
     CustomLintResolver resolver,
   ) {
-    // Check if this method is in a Repository implementation class
     final classNode = method.thisOrAncestorOfType<ClassDeclaration>();
-    if (classNode == null) return;
+    if (classNode == null || !isRepositoryImplementation(classNode)) return;
 
-    if (!isRepositoryImplementation(classNode)) return;
-
-    // Skip private methods and void methods
     if (shouldSkipMethod(method)) return;
 
     final returnType = method.returnType;
@@ -77,20 +46,14 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
 
     final returnTypeString = returnType.toString();
 
-    // Allow void returns
     if (returnTypeString == 'void') return;
-
-    // Allow Stream returns
     if (returnTypeString.startsWith('Stream<')) return;
 
-    // Check if return type is Future-wrapped
     final isFuture =
         returnTypeString.startsWith('Future<') ||
         returnTypeString.startsWith('FutureOr<');
 
     if (!isFuture) {
-      // Non-Future, non-void, non-Stream returns are suspicious
-      // But we only warn if it looks like an Entity type
       if (_looksLikeEntityType(returnTypeString)) {
         final code = LintCode(
           name: 'repository_pass_through',
@@ -104,27 +67,134 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
       return;
     }
 
-    // Check for Result pattern usage - warn to use pass-through instead
-    if (isResultReturnType(returnType)) {
+    final unit = method.thisOrAncestorOfType<CompilationUnit>();
+    if (isResultReturnType(returnType, unit: unit)) {
       final code = LintCode(
         name: 'repository_pass_through',
         problemMessage:
             'Repository should NOT use Result pattern. Use pass-through pattern instead.',
         correctionMessage:
-            'Return Future<Entity> directly. '
-            'Let errors pass through to AsyncValue.guard() in Presentation layer.',
+            'Return Future<Entity> directly. Let errors pass through to AsyncValue.guard().',
         errorSeverity: DiagnosticSeverity.WARNING,
       );
       reporter.atNode(returnType, code);
     }
+
+    _checkUnnecessaryTryCatch(method, reporter);
   }
 
-  /// Checks if a type name looks like an Entity type.
+  void _checkUnnecessaryTryCatch(
+    MethodDeclaration method,
+    DiagnosticReporter reporter,
+  ) {
+    final body = method.body;
+    final tryStatements = <TryStatement>[];
+
+    if (body is BlockFunctionBody) {
+      for (final statement in body.block.statements) {
+        _collectTryStatements(statement, tryStatements);
+      }
+    }
+
+    for (final tryStmt in tryStatements) {
+      if (tryStmt.catchClauses.isEmpty) continue;
+
+      var shouldReport = false;
+      for (final catchClause in tryStmt.catchClauses) {
+        if (_isAllowedCatch(catchClause)) {
+          continue;
+        }
+
+        if (_looksLikeRewrappingOrConversion(catchClause)) {
+          shouldReport = true;
+          break;
+        }
+      }
+
+      if (shouldReport) {
+        final code = LintCode(
+          name: 'repository_pass_through',
+          problemMessage: 'Repository는 예외를 처리하지 말고 pass-through 하세요.',
+          correctionMessage:
+              'catch에서 변환/재래핑 후 반환하지 말고, rethrow 또는 AsyncValue.guard()로 위임하세요.',
+          errorSeverity: DiagnosticSeverity.WARNING,
+        );
+        reporter.atNode(tryStmt, code);
+      }
+    }
+  }
+
+  bool _isAllowedCatch(CatchClause catchClause) {
+    // Allowed: logging + rethrow
+    var hasRethrow = false;
+    for (final statement in catchClause.body.statements) {
+      if (_containsRethrow(statement)) {
+        hasRethrow = true;
+      }
+      if (_containsReturn(statement)) {
+        return false;
+      }
+      if (_containsThrowNewException(statement)) {
+        return false;
+      }
+    }
+
+    return hasRethrow;
+  }
+
+  bool _looksLikeRewrappingOrConversion(CatchClause catchClause) {
+    for (final statement in catchClause.body.statements) {
+      if (_containsReturn(statement) || _containsThrowNewException(statement)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void _collectTryStatements(Statement statement, List<TryStatement> output) {
+    if (statement is TryStatement) {
+      output.add(statement);
+      for (final inner in statement.body.statements) {
+        _collectTryStatements(inner, output);
+      }
+      for (final catchClause in statement.catchClauses) {
+        for (final inner in catchClause.body.statements) {
+          _collectTryStatements(inner, output);
+        }
+      }
+      final finallyBlock = statement.finallyBlock;
+      if (finallyBlock != null) {
+        for (final inner in finallyBlock.statements) {
+          _collectTryStatements(inner, output);
+        }
+      }
+      return;
+    }
+
+    if (statement is Block) {
+      for (final inner in statement.statements) {
+        _collectTryStatements(inner, output);
+      }
+    }
+  }
+
+  bool _containsRethrow(Statement statement) {
+    if (statement is ExpressionStatement &&
+        statement.expression is RethrowExpression) {
+      return true;
+    }
+    return statement.toSource().contains('rethrow');
+  }
+
+  bool _containsReturn(Statement statement) => statement is ReturnStatement;
+
+  bool _containsThrowNewException(Statement statement) {
+    return statement.toSource().trimLeft().startsWith('throw ');
+  }
+
   bool _looksLikeEntityType(String typeName) {
-    // Skip primitive types and their collections
     if (_isPrimitiveOrCollection(typeName)) return false;
 
-    // Skip common utility types
     if (typeName == 'void' ||
         typeName == 'dynamic' ||
         typeName == 'Object' ||
@@ -132,15 +202,9 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
       return false;
     }
 
-    // Looks like an Entity if it's a capitalized name
     return typeName.isNotEmpty && typeName[0] == typeName[0].toUpperCase();
   }
 
-  /// Checks if a type is primitive or a collection of primitives.
-  ///
-  /// Allows synchronous returns for local storage patterns (e.g., SharedPreferences):
-  /// - Primitives: String, int, bool, double, num
-  /// - Collections: `List<String>`, `Set<int>`, `Map<String, String>`, etc.
   bool _isPrimitiveOrCollection(String typeName) {
     const primitives = {
       'int',
@@ -154,16 +218,13 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
       'Null',
     };
 
-    // Direct primitive
     if (primitives.contains(typeName)) return true;
 
-    // Nullable primitive (e.g., String?, int?)
     if (typeName.endsWith('?')) {
       final baseType = typeName.substring(0, typeName.length - 1);
       if (primitives.contains(baseType)) return true;
     }
 
-    // Collection of primitives (e.g., List<String>, Set<int>, Map<String, String>)
     if (typeName.startsWith('List<') ||
         typeName.startsWith('Set<') ||
         typeName.startsWith('Iterable<')) {
@@ -171,7 +232,6 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
       return inner != null && _isPrimitiveOrCollection(inner);
     }
 
-    // Map with primitive keys and values
     if (typeName.startsWith('Map<')) {
       final types = _extractMapTypes(typeName);
       if (types != null) {
@@ -183,7 +243,6 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
     return false;
   }
 
-  /// Extracts generic type from `List<T>`, `Set<T>`, etc.
   String? _extractGenericType(String typeName) {
     final start = typeName.indexOf('<');
     final end = typeName.lastIndexOf('>');
@@ -193,12 +252,10 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
     return null;
   }
 
-  /// Extracts key and value types from `Map<K, V>`. 
   (String, String)? _extractMapTypes(String typeName) {
     final inner = _extractGenericType(typeName);
     if (inner == null) return null;
 
-    // Simple split by comma (doesn't handle nested generics)
     final commaIndex = inner.indexOf(',');
     if (commaIndex == -1) return null;
 
