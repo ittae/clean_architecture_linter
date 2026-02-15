@@ -59,7 +59,7 @@ class DataSourceNoResultReturnRule extends CleanArchitectureLintRule
         'DataSource should NOT return Result type. DataSource should throw exceptions.',
     correctionMessage:
         'Change return type to the data type (e.g., TodoModel) and throw exceptions for errors. '
-        'Repository will catch exceptions and convert to Result.',
+        'Repository should pass exceptions through to UseCase/Presentation.',
   );
 
   @override

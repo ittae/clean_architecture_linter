@@ -12,7 +12,7 @@ The Data layer contains:
 
 The Data layer must:
 - ✅ Implement Domain Repository **interfaces**
-- ✅ Catch exceptions from DataSources and convert to `Result` types
+- ✅ Pass exceptions through from DataSources (no Result wrapper)
 - ✅ Use **Models** (not Entities directly)
 - ✅ Throw specific **Data exceptions** in DataSources
 - ❌ Never throw exceptions directly from Repository implementations
@@ -98,8 +98,8 @@ abstract class TodoRemoteDataSource {
 **Error handling flow**:
 ```
 DataSource → throws Exception (NotFoundException, NetworkException, etc.)
-Repository → catches Exception → returns Result<Entity, Failure>
-UseCase → unwraps Result → Entity OR throw Domain Exception
+Repository → passes exception through, converts Model→Entity
+UseCase → validates input and may throw Domain Exception
 ```
 
 **Example**:
@@ -123,12 +123,12 @@ Future<TodoModel> getTodo(String id) async {
 
 ---
 
-### 4. Repository Must Return Result Rule (`repository_must_return_result_rule.dart`)
-**Purpose**: Enforces that Repository implementations return `Result` types.
+### 4. Repository Pass Through Rule (`repository_pass_through_rule.dart`)
+**Purpose**: Enforces that Repository implementations use pass-through (`Future<Entity>`) pattern.
 
 **What it checks**:
-- ✅ Repository methods must return `Result<T, Failure>` or `Either<L, R>`
-- ❌ Non-void methods that don't return Result types trigger violations
+- ✅ Repository methods should return `Future<Entity>` / `Future<List<Entity>>`
+- ❌ Returning Result/Either wrappers triggers violations
 
 **Example**:
 ```dart

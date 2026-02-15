@@ -217,7 +217,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
                 problemMessage:
                     'Repository method uses data layer model in generic type: $typeArgName',
                 correctionMessage:
-                    'Use domain entities in generic types. Example: Result<User, Failure> instead of Result<UserModel, Failure>',
+                    'Use domain entities in generic types. Example: Future<User> or AsyncValue<User> patterns should never expose UserModel.',
               );
               reporter.atNode(typeArg, code);
             }

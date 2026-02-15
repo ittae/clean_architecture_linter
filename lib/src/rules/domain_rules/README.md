@@ -74,9 +74,9 @@ class GetTodoUseCase {
 ```dart
 // ✅ GOOD: Abstract Repository interface
 abstract class TodoRepository {
-  Future<Result<List<Todo>, TodoFailure>> getTodos();
-  Future<Result<Todo, TodoFailure>> getTodo(String id);
-  Future<Result<void, TodoFailure>> createTodo(Todo todo);
+  Future<List<Todo>> getTodos();
+  Future<Todo> getTodo(String id);
+  Future<void> createTodo(Todo todo);
 }
 
 // ❌ BAD: Concrete Repository class
@@ -93,12 +93,12 @@ class TodoRepository {
 **Purpose**: Enforces that UseCases unwrap `Result` types from Repository.
 
 **What it checks**:
-- ❌ UseCase methods should NOT return `Result<T, F>` types
+- ❌ UseCase methods should NOT return `Result<T, F>`/`Either<L, R>` wrappers
 - ✅ UseCases should unwrap Result and either return Entity or throw exception
 
 **Error handling flow**:
 ```
-Repository → Result<Entity, Failure>
+Repository → Entity (exceptions pass-through)
 UseCase → unwrap Result → Entity OR throw Domain Exception
 Presentation → catch Domain Exception → handle UI state
 ```
@@ -126,7 +126,7 @@ Future<Todo> call(String id) async {
 **Purpose**: Ensures UseCases convert `Failure` to Domain exceptions using `.toException()`.
 
 **What it checks**:
-- ✅ When handling `Result.failure`, UseCase must call `.toException()`
+- ✅ UseCase should validate input and throw domain exceptions when needed
 - ❌ Don't throw raw Failure objects
 
 **Example**:

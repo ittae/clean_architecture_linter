@@ -31,7 +31,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 6. **Boundary Crossing** - Validates proper layer boundary crossing
 
 ### 🎯 Domain Layer Rules (2 rules)
-7. **UseCase No Result Return** - UseCases should unwrap Result types
+7. **UseCase No Result Return** - UseCases should return entities directly (pass-through pattern)
 8. **Exception Naming Convention** - Feature prefix for domain exceptions
 
 ### 💾 Data Layer Rules (10 rules)
