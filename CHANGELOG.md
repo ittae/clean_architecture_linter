@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-02-15
+
+### ✨ Added
+
+- **P0 error-handling policy tightening** for pass-through + AsyncValue architecture
+  - `repository_pass_through`: detects unnecessary `try-catch` rewrapping in Repository public methods
+  - `usecase_no_result_return`: stronger Result/Either detection including typedef alias cases
+  - `presentation_use_async_value` / `presentation_no_throw`: stronger detection for swallowed exceptions and direct business exception branching in presentation
+- **Lint profiles**
+  - `docs/config/lint_profile_balanced.yaml`
+  - `docs/config/lint_profile_strict.yaml`
+
+### 🔧 Changed
+
+- Analyzer compatibility updates (DiagnosticReporter/DiagnosticSeverity/name/diagnosticCode)
+- Documentation/messages aligned to **pass-through + AsyncValue** policy (removed stale Result-centric guidance)
+
+### 🧪 Tests
+
+- Added real AST-based tests for typedef alias Result detection in `return_type_validation_mixin_test.dart`
+- `flutter analyze` and `dart test` pass
+
 ## [1.2.0] - 2026-01-19
 
 ### ✨ Added (2 new rules)

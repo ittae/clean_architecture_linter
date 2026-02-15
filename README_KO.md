@@ -83,7 +83,7 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 ```yaml
 # pubspec.yaml
 dev_dependencies:
-  clean_architecture_linter: ^1.1.0
+  clean_architecture_linter: ^1.3.0
   custom_lint: ^0.8.0
 ```
 

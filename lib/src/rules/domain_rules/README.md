@@ -90,40 +90,40 @@ class TodoRepository {
 ---
 
 ### 4. UseCase No Result Return Rule (`usecase_no_result_return_rule.dart`)
-**Purpose**: Enforces that UseCases unwrap `Result` types from Repository.
+**Purpose**: Enforces pass-through style UseCase return types.
 
 **What it checks**:
 - ❌ UseCase methods should NOT return `Result<T, F>`/`Either<L, R>` wrappers
-- ✅ UseCases should unwrap Result and either return Entity or throw exception
+- ✅ UseCases should return `Future<Entity>` directly
+- ✅ UseCases may throw domain exceptions only for business validation
 
 **Error handling flow**:
 ```
 Repository → Entity (exceptions pass-through)
-UseCase → unwrap Result → Entity OR throw Domain Exception
-Presentation → catch Domain Exception → handle UI state
+UseCase → validation + pass-through → Entity OR throw Domain Exception
+Presentation → AsyncValue.guard()/when(error) handles exception state
 ```
 
 **Example**:
 ```dart
-// ❌ BAD: UseCase returns Result
+// ❌ BAD: UseCase returns Result wrapper
 Future<Result<Todo, TodoFailure>> call(String id) async {
   return repository.getTodo(id);
 }
 
-// ✅ GOOD: UseCase unwraps Result
+// ✅ GOOD: UseCase uses pass-through
 Future<Todo> call(String id) async {
-  final result = await repository.getTodo(id);
-  return result.when(
-    success: (todo) => todo,
-    failure: (failure) => throw failure.toException(),
-  );
+  if (id.isEmpty) {
+    throw const InvalidInputException.withCode('errorValidationIdRequired');
+  }
+  return repository.getTodo(id);
 }
 ```
 
 ---
 
 ### 5. UseCase Must Convert Failure Rule (`usecase_must_convert_failure_rule.dart`)
-**Purpose**: Ensures UseCases convert `Failure` to Domain exceptions using `.toException()`.
+**Purpose**: (Legacy/no-op) kept for backward compatibility after pass-through migration.
 
 **What it checks**:
 - ✅ UseCase should validate input and throw domain exceptions when needed

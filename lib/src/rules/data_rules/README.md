@@ -132,24 +132,19 @@ Future<TodoModel> getTodo(String id) async {
 
 **Example**:
 ```dart
-// ✅ GOOD: Repository returns Result
+// ✅ GOOD: Repository pass-through (no Result wrapper)
 class TodoRepositoryImpl implements TodoRepository {
   @override
-  Future<Result<List<Todo>, TodoFailure>> getTodos() async {
-    try {
-      final models = await remoteDataSource.getTodos();
-      final entities = models.map((model) => model.entity).toList();
-      return Result.success(entities);
-    } catch (e) {
-      return Result.failure(TodoFailure.fromException(e));
-    }
+  Future<List<Todo>> getTodos() async {
+    final models = await remoteDataSource.getTodos();
+    return models.map((model) => model.toEntity()).toList();
   }
 }
 
-// ❌ BAD: Repository throws exceptions
+// ❌ BAD: Repository returns Result/Either wrapper
 class TodoRepositoryImpl implements TodoRepository {
-  Future<List<Todo>> getTodos() async {
-    return await remoteDataSource.getTodos(); // ❌ Can throw exceptions
+  Future<Result<List<Todo>, TodoFailure>> getTodos() async {
+    // ...
   }
 }
 ```
@@ -161,34 +156,32 @@ class TodoRepositoryImpl implements TodoRepository {
 
 **What it checks**:
 - ❌ No `throw` statements in public Repository methods
-- ✅ Exceptions should be caught and converted to `Result.failure`
+- ✅ Exceptions should pass through (or log + rethrow)
 - ✅ Rethrows in catch blocks are allowed
 - ✅ Private helper methods can throw
 
 **Example**:
 ```dart
-// ✅ GOOD: Repository catches and converts exceptions
+// ✅ GOOD: Repository pass-through (optionally log + rethrow)
 @override
-Future<Result<Todo, TodoFailure>> getTodo(String id) async {
+Future<Todo> getTodo(String id) async {
   try {
     final model = await remoteDataSource.getTodo(id);
-    return Result.success(model.entity);
-  } on NotFoundException catch (e) {
-    return Result.failure(TodoFailure.notFound(e.message));
-  } on NetworkException catch (e) {
-    return Result.failure(TodoFailure.networkError(e.message));
+    return model.toEntity();
   } catch (e) {
-    return Result.failure(TodoFailure.unknown(e.toString()));
+    logger.e('getTodo failed', error: e);
+    rethrow; // allowed
   }
 }
 
-// ❌ BAD: Repository throws exceptions
+// ❌ BAD: Repository handles and transforms business errors
 @override
-Future<Result<Todo, TodoFailure>> getTodo(String id) async {
-  if (!_isValidId(id)) {
-    throw ValidationException('Invalid ID'); // ❌ Direct throw
+Future<Todo> getTodo(String id) async {
+  try {
+    return (await remoteDataSource.getTodo(id)).toEntity();
+  } catch (e) {
+    throw TodoFailure.fromException(e); // ❌ rewrapping
   }
-  // ...
 }
 ```
 
