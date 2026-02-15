@@ -59,6 +59,8 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
     if (CleanArchitectureUtils.isPrivateMethod(methodNode)) return;
     if (methodNode.parent is ConstructorDeclaration) return;
     if (_isThrowingProgrammingError(node)) return;
+    if (_isRethrow(node)) return;
+    if (_isInsideAsyncValueGuard(node)) return;
 
     final exceptionType = _getExceptionType(node);
 
@@ -161,6 +163,26 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
       return programmingErrors.contains(typeName);
     }
 
+    return false;
+  }
+
+  bool _isRethrow(ThrowExpression node) {
+    return node.expression is RethrowExpression ||
+        node.expression.toSource() == 'rethrow';
+  }
+
+  bool _isInsideAsyncValueGuard(ThrowExpression node) {
+    AstNode? current = node;
+    while (current != null) {
+      if (current is MethodInvocation) {
+        final methodName = current.methodName.name;
+        final targetSource = current.target?.toSource() ?? '';
+        if (methodName == 'guard' && targetSource.contains('AsyncValue')) {
+          return true;
+        }
+      }
+      current = current.parent;
+    }
     return false;
   }
 
