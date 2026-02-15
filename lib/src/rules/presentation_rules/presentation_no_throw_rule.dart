@@ -69,7 +69,7 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
       problemMessage:
           '"$className.${methodNode.name.lexeme}" should not throw $exceptionType.',
       correctionMessage:
-          'AsyncValue.guard()/when(error) 패턴으로 에러를 UI 상태로 표현하세요.',
+          'Represent errors as UI state with AsyncValue.guard()/when(error: ...).',
       errorSeverity: DiagnosticSeverity.WARNING,
     );
 
@@ -97,9 +97,9 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
     final code = LintCode(
       name: 'presentation_no_throw',
       problemMessage:
-          'Widget/Presentation에서 비즈니스 예외($exceptionType)를 try-catch로 직접 분기하지 마세요.',
+          'Do not branch business exceptions ($exceptionType) directly in Widget/Presentation.',
       correctionMessage:
-          'Provider에서 AsyncValue.guard()로 처리하고 UI에서는 when(error)로 렌더링하세요.',
+          'Handle in Provider via AsyncValue.guard(); render in UI with when(error: ...).',
       errorSeverity: DiagnosticSeverity.WARNING,
     );
 

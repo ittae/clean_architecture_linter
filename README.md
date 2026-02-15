@@ -113,6 +113,12 @@ dart run custom_lint
 
 That's it! The linter will now automatically enforce Clean Architecture principles in your codebase.
 
+### Recommended team profile
+- Local: `docs/config/lint_profile_balanced.yaml`
+- CI: `docs/config/lint_profile_strict.yaml`
+
+See `docs/config/RECOMMENDED_SETUP.md` for details.
+
 ## 🎛️ Configuration
 
 ### Optional: Test Coverage

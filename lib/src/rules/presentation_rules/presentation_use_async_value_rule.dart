@@ -84,9 +84,9 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
     if (!_containsAsyncValueErrorHandling(catchClause.body)) {
       final code = LintCode(
         name: 'presentation_use_async_value',
-        problemMessage: 'Notifier/Provider catch에서 예외를 UI 상태로 반영하지 않았습니다.',
+        problemMessage: 'Notifier/Provider catch did not map exception to UI state.',
         correctionMessage:
-            'AsyncValue.guard() 또는 state = AsyncValue.error(...), when(error) 패턴을 사용하세요.',
+            'Use AsyncValue.guard(), state = AsyncValue.error(...), or UI handling via when(error: ...).',
         errorSeverity: DiagnosticSeverity.WARNING,
       );
       reporter.atNode(catchClause, code);

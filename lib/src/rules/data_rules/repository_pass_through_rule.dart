@@ -114,9 +114,9 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
       if (shouldReport) {
         final code = LintCode(
           name: 'repository_pass_through',
-          problemMessage: 'Repository는 예외를 처리하지 말고 pass-through 하세요.',
+          problemMessage: 'Repository should not handle/re-wrap exceptions. Use pass-through.',
           correctionMessage:
-              'catch에서 변환/재래핑 후 반환하지 말고, rethrow 또는 AsyncValue.guard()로 위임하세요.',
+              'Do not convert/wrap exceptions in catch. Prefer logging + rethrow (or let it pass through).',
           errorSeverity: DiagnosticSeverity.WARNING,
         );
         reporter.atNode(tryStmt, code);
@@ -135,6 +135,10 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
         return false;
       }
       if (_containsThrowNewException(statement)) {
+        return false;
+      }
+      if (!_containsRethrow(statement) && !_isLoggingStatement(statement)) {
+        // Non-logging side effects in catch should be reviewed as non pass-through
         return false;
       }
     }
@@ -176,6 +180,21 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
         _collectTryStatements(inner, output);
       }
     }
+  }
+
+  bool _isLoggingStatement(Statement statement) {
+    final src = statement.toSource();
+    const loggingHints = [
+      'logger.',
+      'log(',
+      'debugPrint(',
+      'print(',
+      'Sentry.captureException(',
+      'Sentry.captureMessage(',
+      'captureException(',
+      'captureMessage(',
+    ];
+    return loggingHints.any(src.contains);
   }
 
   bool _containsRethrow(Statement statement) {
