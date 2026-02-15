@@ -9,7 +9,11 @@
 coverage/
 .taskmaster/
 
-# Keep package lightweight - exclude non-essential docs
+# Build/test artifacts
+build/
+
+# Non-essential docs and internal notes
+docs/
 CONTRIBUTING.md
 TASKMASTER_빠른시작.md
 VALIDATION_REPORT.md
