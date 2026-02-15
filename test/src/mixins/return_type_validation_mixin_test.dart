@@ -1,14 +1,26 @@
+import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:custom_lint_builder/custom_lint_builder.dart';
 import 'package:test/test.dart';
 
-import '../../../lib/src/clean_architecture_linter_base.dart';
 import '../../../lib/src/mixins/return_type_validation_mixin.dart';
 
-// Test class that uses the mixin
-class _TestRule with ReturnTypeValidationMixin {
-  // Expose mixin methods for testing
+class _TestRule with ReturnTypeValidationMixin {}
+
+MethodDeclaration _getMethod(String source, String methodName) {
+  final unit = parseString(content: source).unit;
+  for (final declaration in unit.declarations) {
+    if (declaration is ClassDeclaration) {
+      for (final member in declaration.members) {
+        if (member is MethodDeclaration && member.name.lexeme == methodName) {
+          return member;
+        }
+      }
+    }
+  }
+  throw StateError('Method not found: $methodName');
 }
+
+CompilationUnit _getUnit(String source) => parseString(content: source).unit;
 
 void main() {
   group('ReturnTypeValidationMixin', () {
@@ -18,24 +30,60 @@ void main() {
       testRule = _TestRule();
     });
 
-    group('shouldSkipMethod', () {
-      test('returns true for private method', () {
-        // We can't easily create MethodDeclaration nodes without analyzer context
-        // This is a placeholder for integration testing
-        expect(testRule, isNotNull);
-      });
+    test('detects direct Result type', () {
+      const source = '''
+class Result<T, F> {}
+class Todo {}
+class Failure {}
+class GetTodoUseCase {
+  Future<Result<Todo, Failure>> call() async => Result<Todo, Failure>();
+}
+''';
+      final unit = _getUnit(source);
+      final method = _getMethod(source, 'call');
+      expect(testRule.isResultReturnType(method.returnType!, unit: unit), isTrue);
     });
 
-    group('isResultReturnType', () {
-      test('mixin is properly exposed', () {
-        expect(testRule, isNotNull);
-      });
+    test('detects typedef alias to Result', () {
+      const source = '''
+class Result<T, F> {}
+class Todo {}
+class Failure {}
+typedef Outcome<T> = Result<T, Failure>;
+class GetTodoUseCase {
+  Outcome<Todo> call() => Result<Todo, Failure>();
+}
+''';
+      final unit = _getUnit(source);
+      final method = _getMethod(source, 'call');
+      expect(testRule.isResultReturnType(method.returnType!, unit: unit), isTrue);
     });
 
-    group('isVoidReturnType', () {
-      test('mixin is properly exposed', () {
-        expect(testRule, isNotNull);
-      });
+    test('detects typedef alias inside Future wrapper', () {
+      const source = '''
+class Result<T, F> {}
+class Todo {}
+class Failure {}
+typedef Outcome<T> = Result<T, Failure>;
+class GetTodoUseCase {
+  Future<Outcome<Todo>> call() async => Result<Todo, Failure>();
+}
+''';
+      final unit = _getUnit(source);
+      final method = _getMethod(source, 'call');
+      expect(testRule.isResultReturnType(method.returnType!, unit: unit), isTrue);
+    });
+
+    test('does not flag normal Future<Entity>', () {
+      const source = '''
+class Todo {}
+class GetTodoUseCase {
+  Future<Todo> call() async => Todo();
+}
+''';
+      final unit = _getUnit(source);
+      final method = _getMethod(source, 'call');
+      expect(testRule.isResultReturnType(method.returnType!, unit: unit), isFalse);
     });
   });
 }

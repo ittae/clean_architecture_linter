@@ -9,10 +9,24 @@ mixin ReturnTypeValidationMixin {
       return true;
     }
 
-    // Strengthen detection for typedef aliases hiding Result/Either.
-    if (returnType is NamedType && unit != null) {
+    if (unit == null) return false;
+
+    // Typedef alias: direct named type
+    if (returnType is NamedType) {
       final aliasName = returnType.name.lexeme;
-      return _isResultAlias(aliasName, unit);
+      if (_isResultAlias(aliasName, unit)) {
+        return true;
+      }
+
+      // Typedef alias inside generic wrappers (e.g., Future<Outcome<T>>)
+      final typeArgs = returnType.typeArguments?.arguments;
+      if (typeArgs != null) {
+        for (final arg in typeArgs) {
+          if (arg is NamedType && _isResultAlias(arg.name.lexeme, unit)) {
+            return true;
+          }
+        }
+      }
     }
 
     return false;
