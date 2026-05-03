@@ -1,0 +1,21 @@
+name: Claude Mention Responder
+
+# Reusable workflow caller — 본체는 ittae/.github/.github/workflows/claude-mention-light.yml
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  call:
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+    uses: ittae/.github/.github/workflows/claude-mention-light.yml@main
+    secrets: inherit
