@@ -126,7 +126,10 @@ class RiverpodRefUsageRule extends CleanArchitectureLintRule {
   }
 
   /// Check provider/notifier class for ref usage violations
-  void _checkProviderClass(ClassDeclaration classNode, DiagnosticReporter reporter) {
+  void _checkProviderClass(
+    ClassDeclaration classNode,
+    DiagnosticReporter reporter,
+  ) {
     // Check if this is a Riverpod provider/notifier class
     if (!_isRiverpodProviderClass(classNode)) return;
 
