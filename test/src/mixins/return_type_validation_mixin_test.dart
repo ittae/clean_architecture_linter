@@ -41,7 +41,10 @@ class GetTodoUseCase {
 ''';
       final unit = _getUnit(source);
       final method = _getMethod(source, 'call');
-      expect(testRule.isResultReturnType(method.returnType!, unit: unit), isTrue);
+      expect(
+        testRule.isResultReturnType(method.returnType!, unit: unit),
+        isTrue,
+      );
     });
 
     test('detects typedef alias to Result', () {
@@ -56,7 +59,10 @@ class GetTodoUseCase {
 ''';
       final unit = _getUnit(source);
       final method = _getMethod(source, 'call');
-      expect(testRule.isResultReturnType(method.returnType!, unit: unit), isTrue);
+      expect(
+        testRule.isResultReturnType(method.returnType!, unit: unit),
+        isTrue,
+      );
     });
 
     test('detects typedef alias inside Future wrapper', () {
@@ -71,7 +77,10 @@ class GetTodoUseCase {
 ''';
       final unit = _getUnit(source);
       final method = _getMethod(source, 'call');
-      expect(testRule.isResultReturnType(method.returnType!, unit: unit), isTrue);
+      expect(
+        testRule.isResultReturnType(method.returnType!, unit: unit),
+        isTrue,
+      );
     });
 
     test('does not flag normal Future<Entity>', () {
@@ -83,7 +92,10 @@ class GetTodoUseCase {
 ''';
       final unit = _getUnit(source);
       final method = _getMethod(source, 'call');
-      expect(testRule.isResultReturnType(method.returnType!, unit: unit), isFalse);
+      expect(
+        testRule.isResultReturnType(method.returnType!, unit: unit),
+        isFalse,
+      );
     });
   });
 }

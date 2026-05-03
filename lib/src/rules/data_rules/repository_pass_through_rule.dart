@@ -114,7 +114,8 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
       if (shouldReport) {
         final code = LintCode(
           name: 'repository_pass_through',
-          problemMessage: 'Repository should not handle/re-wrap exceptions. Use pass-through.',
+          problemMessage:
+              'Repository should not handle/re-wrap exceptions. Use pass-through.',
           correctionMessage:
               'Do not convert/wrap exceptions in catch. Prefer logging + rethrow (or let it pass through).',
           errorSeverity: DiagnosticSeverity.WARNING,
