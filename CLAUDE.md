@@ -970,6 +970,8 @@ class ExceptionNamingConventionRule extends CleanArchitectureLintRule
 
 ## Development Guidelines
 
+- Follow `karpathy-guidelines` skill: Think Before Coding / Simplicity First / Surgical Changes / Goal-Driven Execution.
+
 ### Adding New Rules
 1. **Identify rule category** - Determine if it's domain, data, presentation, or cross-layer
 2. **Check for reusable logic** - Review existing mixins in `lib/src/mixins/`:
