@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2026-05-05
+
+### 🛠 Maintenance
+
+- D 방향 reusable 워크플로우 적용 (Claude Code Review + mention responder)
+- `karpathy-guidelines` 스킬 준수 줄을 CLAUDE.md에 추가
+- `dart format` 미적용 파일 정리 (CI 통과 위함)
+
+코드 로직 변경 없음 — 의존성/콘텐츠 안정. 1.3.0과 동등하게 사용 가능.
+
 ## [1.3.0] - 2026-02-15
 
 ### ✨ Added
