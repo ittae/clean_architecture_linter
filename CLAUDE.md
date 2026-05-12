@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > **Org Vision:** 사람들의 계획이 현실이 되도록 돕는 것입니다.
 > **Org Mission:** 어제를 소중히 여기고, 내일을 꿈꾸며, 오늘을 살아갈 수 있도록 돕는 것입니다.
 
-**이 프로젝트의 역할 (draft):** Riverpod 기반 Clean Architecture를 *린터로 자동 강제*한다 — 좋은 아키텍처가 PR 리뷰어의 기억력에 의존하지 않고 Vision을 *지속 가능하게* 실현하기 위해.
+**이 프로젝트의 역할:** Riverpod 기반 Clean Architecture를 린터로 자동 강제한다 — 좋은 아키텍처가 PR 리뷰어의 기억력에 의존하지 않고 Vision을 지속 가능하게 실현하기 위해.
 
 > Note: 이 패키지는 외부 사용자에게도 공개됩니다. Org Vision은 *유지보수자(ittae)의 작업 기준*이며, 외부 사용자에게 강제되는 가치는 아닙니다. 외부 사용자에게는 README의 "Clean Architecture 자동 강제"만 노출됩니다.
 
