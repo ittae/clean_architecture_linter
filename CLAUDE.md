@@ -4,30 +4,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Why (Read First)
 
-> **Org Vision:** 사람들의 계획이 현실이 되도록 돕는 것입니다.
-> **Org Mission:** 어제를 소중히 여기고, 내일을 꿈꾸며, 오늘을 살아갈 수 있도록 돕는 것입니다.
+> **Org Vision:** Help people turn their plans into reality. *(원문: 사람들의 계획이 현실이 되도록 돕는 것입니다.)*
+> **Org Mission:** Help people cherish yesterday, dream of tomorrow, and live today. *(원문: 어제를 소중히 여기고, 내일을 꿈꾸며, 오늘을 살아갈 수 있도록 돕는 것입니다.)*
 
-**이 프로젝트의 역할:** Riverpod 기반 Clean Architecture를 린터로 자동 강제한다 — 좋은 아키텍처가 PR 리뷰어의 기억력에 의존하지 않고 Vision을 지속 가능하게 실현하기 위해.
+**This project's role:** Auto-enforces Riverpod-based Clean Architecture via lints — so good architecture does not depend on a PR reviewer's memory, sustaining the Vision.
 
-> Note: 이 패키지는 외부 사용자에게도 공개됩니다. Org Vision은 *유지보수자(ittae)의 작업 기준*이며, 외부 사용자에게 강제되는 가치는 아닙니다. 외부 사용자에게는 README의 "Clean Architecture 자동 강제"만 노출됩니다.
+> Note: This package is also published to external users. The Org Vision is the *internal working standard for the maintainer (ittae)* and is not imposed on external users. External users only see "Automatic Clean Architecture enforcement" in the README.
 
-이 프로젝트의 모든 변경은 위 Vision과 *이 프로젝트의 역할*을 *강화*해야 한다. 희석한다고 판단되는 변경은 시작하지 말고 사람에게 묻는다.
+Every change here must *reinforce* the Vision and this project's role. If a change would dilute them, stop and ask the human first.
 
-### Decision Filter (작업 전 자문)
+### Decision Filter (ask before starting)
 
-1. 이 변경이 Vision과 이 프로젝트의 역할을 *강화*하는가, *희석*하는가?
-2. 이 변경이 이 프로젝트의 How(33개 규칙의 일관성, Riverpod 3-tier 가정, Domain Purity 등)와 충돌하는가?
-3. 충돌한다면 — 원칙을 바꿀 만큼 본질적인가, 아니면 이 변경을 포기해야 하는가?
+1. Does this change *reinforce* or *dilute* the Vision and this project's role?
+2. Does this change conflict with this project's How (consistency across 33 rules, Riverpod 3-tier assumptions, Domain Purity, etc.)?
+3. If it conflicts — is the principle worth changing, or should this change be dropped?
 
-### Mandatory First Step (before any tool call on a new issue)
+### Mandatory First Step (before any code/file changes)
 
-새 이슈를 받으면 **반드시 첫 코멘트**로 다음을 게시한 뒤 작업을 시작한다:
+When a new issue arrives, post the following as your first response (if a comment channel exists, publish it there) before starting work:
 
-1. **Why 재진술 (1문장):** "이 이슈가 우리 Vision('계획을 현실로')과 이 프로젝트의 역할을 어떻게 강화하는가?"
-2. 강화하지 못한다고 판단되면 → 작업을 시작하지 말고 사람에게 묻는다.
-3. 강화한다면 → How(접근 원칙)을 1-3개 항목으로 명시한 뒤 작업을 시작한다.
+1. **Why restatement (1 sentence):** describe how this issue reinforces the Vision (사람들의 계획이 현실이 되도록 돕는 것입니다) and this project's role.
+2. If you conclude it does not reinforce them → stop and ask the human.
+3. If it does → state your How (approach principles) in 1–3 bullets, then begin.
 
-> 이 단계는 잘못 이해한 작업을 빠르게 잡기 위한 게이트다. 30초 이상 쓰지 않는다.
+> This step is a gate to catch misunderstandings early. Keep it brief and to the point.
 
 ---
 
