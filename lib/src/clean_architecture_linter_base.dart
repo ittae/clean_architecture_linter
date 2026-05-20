@@ -5,8 +5,40 @@
 library;
 
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/error/error.dart' as analyzer_error;
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
+
+/// Compatibility helpers for reporting custom_lint [LintCode]s across analyzer
+/// versions where [DiagnosticReporter.atNode] now requires analyzer's
+/// [DiagnosticCode] implementation.
+extension CleanArchitectureDiagnosticReporterX on DiagnosticReporter {
+  analyzer_error.LintCode _toAnalyzerLintCode(dynamic code) {
+    return analyzer_error.LintCode(
+      code.name as String,
+      code.problemMessage as String,
+      correctionMessage: code.correctionMessage as String?,
+      uniqueName: code.uniqueName as String?,
+      severity: code.severity as analyzer_error.DiagnosticSeverity,
+    );
+  }
+
+  void reportAtNode(AstNode node, dynamic code) {
+    atNode(node, _toAnalyzerLintCode(code));
+  }
+
+  void reportAtOffset({
+    required int offset,
+    required int length,
+    required dynamic code,
+  }) {
+    atOffset(
+      offset: offset,
+      length: length,
+      diagnosticCode: _toAnalyzerLintCode(code),
+    );
+  }
+}
 
 /// Utility functions for Clean Architecture layer detection and file filtering.
 ///

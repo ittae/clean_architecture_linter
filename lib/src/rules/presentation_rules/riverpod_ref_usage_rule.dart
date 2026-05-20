@@ -200,7 +200,7 @@ class RiverpodRefUsageRule extends CleanArchitectureLintRule {
               'Change ref.read() to ref.watch() for reactive State provider dependencies.',
           errorSeverity: DiagnosticSeverity.WARNING,
         );
-        reporter.atNode(refReadCall, code);
+        reporter.reportAtNode(refReadCall, code);
       }
     } else {
       // In other methods: flag ref.watch() usage
@@ -213,7 +213,7 @@ class RiverpodRefUsageRule extends CleanArchitectureLintRule {
               'Change ref.watch() to ref.read() for one-time provider access in methods.',
           errorSeverity: DiagnosticSeverity.WARNING,
         );
-        reporter.atNode(refWatchCall, code);
+        reporter.reportAtNode(refWatchCall, code);
       }
     }
   }

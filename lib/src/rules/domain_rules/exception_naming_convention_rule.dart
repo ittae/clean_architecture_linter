@@ -104,7 +104,7 @@ class ExceptionNamingConventionRule extends CleanArchitectureLintRule
             'Domain Exception "$className" should have feature prefix',
         correctionMessage: 'Rename to "$suggestedName" with feature prefix.',
       );
-      reporter.atNode(node, code);
+      reporter.reportAtNode(node, code);
     }
   }
 }

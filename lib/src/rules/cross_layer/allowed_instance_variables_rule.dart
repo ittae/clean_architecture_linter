@@ -156,7 +156,7 @@ class AllowedInstanceVariablesRule extends CleanArchitectureLintRule {
                   'Use final/const. State belongs in Presentation layer.',
             );
 
-            reporter.atNode(variable, code);
+            reporter.reportAtNode(variable, code);
           }
         }
       }
@@ -194,7 +194,7 @@ class AllowedInstanceVariablesRule extends CleanArchitectureLintRule {
             'UseCase should depend on Repository or Service only. Use final/const.',
       );
 
-      reporter.atNode(variable, code);
+      reporter.reportAtNode(variable, code);
     }
   }
 
@@ -230,7 +230,7 @@ class AllowedInstanceVariablesRule extends CleanArchitectureLintRule {
             'Repository should depend on DataSource or infrastructure only. Use final/const.',
       );
 
-      reporter.atNode(variable, code);
+      reporter.reportAtNode(variable, code);
     }
   }
 
@@ -271,7 +271,7 @@ class AllowedInstanceVariablesRule extends CleanArchitectureLintRule {
             'DataSource should depend on infrastructure only. Use final/const.',
       );
 
-      reporter.atNode(variable, code);
+      reporter.reportAtNode(variable, code);
     }
   }
 

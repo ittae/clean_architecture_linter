@@ -91,7 +91,7 @@ class ModelConversionMethodsRule extends CleanArchitectureLintRule {
     final hasToEntity = _hasToEntityMethod(compilationUnit, className);
 
     if (!hasToEntity) {
-      reporter.atNode(node, _code);
+      reporter.reportAtNode(node, _code);
     }
   }
 

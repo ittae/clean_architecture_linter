@@ -73,7 +73,7 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
         problemMessage: violation.message,
         correctionMessage: violation.suggestion,
       );
-      reporter.atNode(violation.node!, enhancedCode);
+      reporter.reportAtNode(violation.node!, enhancedCode);
     }
   }
 
@@ -94,7 +94,7 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
           problemMessage: violation.message,
           correctionMessage: violation.suggestion,
         );
-        reporter.atNode(type, enhancedCode);
+        reporter.reportAtNode(type, enhancedCode);
       }
     }
   }
@@ -117,7 +117,7 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
         problemMessage: violation.message,
         correctionMessage: violation.suggestion,
       );
-      reporter.atNode(node, enhancedCode);
+      reporter.reportAtNode(node, enhancedCode);
     }
   }
 
@@ -139,7 +139,7 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
           problemMessage: violation.message,
           correctionMessage: violation.suggestion,
         );
-        reporter.atNode(superclass, enhancedCode);
+        reporter.reportAtNode(superclass, enhancedCode);
       }
     }
 
@@ -157,7 +157,7 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
             problemMessage: violation.message,
             correctionMessage: violation.suggestion,
           );
-          reporter.atNode(interface, enhancedCode);
+          reporter.reportAtNode(interface, enhancedCode);
         }
       }
     }
@@ -173,7 +173,7 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
             problemMessage: violation.message,
             correctionMessage: violation.suggestion,
           );
-          reporter.atNode(mixin, enhancedCode);
+          reporter.reportAtNode(mixin, enhancedCode);
         }
       }
     }

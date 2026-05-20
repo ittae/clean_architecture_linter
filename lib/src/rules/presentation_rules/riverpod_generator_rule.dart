@@ -94,7 +94,7 @@ class RiverpodGeneratorRule extends CleanArchitectureLintRule {
         correctionMessage:
             'Use riverpod_generator: Create a class with @riverpod annotation instead of manual provider declaration.',
       );
-      reporter.atNode(node, code);
+      reporter.reportAtNode(node, code);
     }
   }
 }

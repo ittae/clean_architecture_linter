@@ -102,7 +102,7 @@ class DataSourceNoResultReturnRule extends CleanArchitectureLintRule
             '  After:  Future<TodoModel> getTodo() // throws AppException\n\n'
             'Exceptions pass through to AsyncValue.guard(). See UNIFIED_ERROR_GUIDE.md',
       );
-      reporter.atNode(returnType, code);
+      reporter.reportAtNode(returnType, code);
     }
   }
 }

@@ -105,7 +105,7 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
         correctionMessage:
             'Create abstract DataSource interface: ${_getAbstractName(className)} or add test file',
       );
-      reporter.atNode(node, code);
+      reporter.reportAtNode(node, code);
     }
 
     // Check if abstract DataSource in Data Layer (correct location)
@@ -134,7 +134,7 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
         correctionMessage:
             'Move DataSource to data/datasources/. Domain should only depend on Repository abstractions.',
       );
-      reporter.atNode(node, code);
+      reporter.reportAtNode(node, code);
     }
   }
 
@@ -169,7 +169,7 @@ class DataSourceAbstractionRule extends CleanArchitectureLintRule {
         correctionMessage:
             'Change return type to Model. DataSource works with Models, Repository converts to Entities.',
       );
-      reporter.atNode(returnType, code);
+      reporter.reportAtNode(returnType, code);
     }
   }
 

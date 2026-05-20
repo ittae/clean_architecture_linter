@@ -127,7 +127,7 @@ class DataSourceExceptionTypesRule extends CleanArchitectureLintRule
             'ServerException, NetworkException, etc.',
         errorSeverity: DiagnosticSeverity.WARNING,
       );
-      reporter.atNode(expression, code);
+      reporter.reportAtNode(expression, code);
     }
   }
 

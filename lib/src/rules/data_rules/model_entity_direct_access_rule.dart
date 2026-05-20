@@ -80,7 +80,7 @@ class ModelEntityDirectAccessRule extends CleanArchitectureLintRule {
     if (_isTestFile(resolver.path)) return;
 
     // Report violation
-    reporter.atNode(node, _code);
+    reporter.reportAtNode(node, _code);
   }
 
   /// Checks if the property access is inside an extension method.

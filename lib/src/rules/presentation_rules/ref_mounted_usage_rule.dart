@@ -83,7 +83,7 @@ class RefMountedUsageRule extends CleanArchitectureLintRule {
     final identifier = node.identifier.name;
 
     if (prefix == 'ref' && identifier == 'mounted') {
-      reporter.atNode(node, code);
+      reporter.reportAtNode(node, code);
     }
   }
 
@@ -108,7 +108,7 @@ class RefMountedUsageRule extends CleanArchitectureLintRule {
       final identifier = operand.identifier.name;
 
       if (prefix == 'ref' && identifier == 'mounted') {
-        reporter.atNode(node, code);
+        reporter.reportAtNode(node, code);
       }
     }
   }

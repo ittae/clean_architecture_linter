@@ -158,7 +158,7 @@ class RiverpodKeepAliveRule extends CleanArchitectureLintRule {
 
     // If not a clearly valid use case, report a warning
     if (!isValidUseCase && !isValidPath) {
-      reporter.atNode(node, code);
+      reporter.reportAtNode(node, code);
     }
   }
 }
