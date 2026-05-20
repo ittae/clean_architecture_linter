@@ -87,7 +87,7 @@ class ModelStructureRule extends CleanArchitectureLintRule {
         correctionMessage:
             'Add @freezed annotation above the class declaration.',
       );
-      reporter.atNode(node, code);
+      reporter.reportAtNode(node, code);
       return;
     }
 
@@ -99,7 +99,7 @@ class ModelStructureRule extends CleanArchitectureLintRule {
         correctionMessage:
             'Add "sealed" modifier before "class" keyword (e.g., "sealed class $className").',
       );
-      reporter.atNode(node, code);
+      reporter.reportAtNode(node, code);
     }
 
     // Check for Entity field in constructor
@@ -111,7 +111,7 @@ class ModelStructureRule extends CleanArchitectureLintRule {
         correctionMessage:
             'Add "required EntityName entity" field to contain the Domain Entity.',
       );
-      reporter.atNode(node, code);
+      reporter.reportAtNode(node, code);
     }
   }
 

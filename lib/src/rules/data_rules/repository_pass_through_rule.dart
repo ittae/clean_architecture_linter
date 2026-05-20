@@ -62,7 +62,7 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
           correctionMessage: 'Wrap in Future: Future<$returnTypeString>',
           errorSeverity: DiagnosticSeverity.WARNING,
         );
-        reporter.atNode(returnType, code);
+        reporter.reportAtNode(returnType, code);
       }
       return;
     }
@@ -77,7 +77,7 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
             'Return Future<Entity> directly. Let errors pass through to AsyncValue.guard().',
         errorSeverity: DiagnosticSeverity.WARNING,
       );
-      reporter.atNode(returnType, code);
+      reporter.reportAtNode(returnType, code);
     }
 
     _checkUnnecessaryTryCatch(method, reporter);
@@ -120,7 +120,7 @@ class RepositoryPassThroughRule extends CleanArchitectureLintRule
               'Do not convert/wrap exceptions in catch. Prefer logging + rethrow (or let it pass through).',
           errorSeverity: DiagnosticSeverity.WARNING,
         );
-        reporter.atNode(tryStmt, code);
+        reporter.reportAtNode(tryStmt, code);
       }
     }
   }

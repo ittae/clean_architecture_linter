@@ -113,7 +113,7 @@ class PresentationNoDataExceptionsRule extends CleanArchitectureLintRule
             'Replace with Domain exception "$domainException". UseCase should convert Data exceptions.',
         errorSeverity: DiagnosticSeverity.WARNING,
       );
-      reporter.atNode(type, code);
+      reporter.reportAtNode(type, code);
     }
   }
 }

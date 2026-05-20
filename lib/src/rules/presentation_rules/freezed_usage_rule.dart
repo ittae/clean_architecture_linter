@@ -80,7 +80,7 @@ class FreezedUsageRule extends CleanArchitectureLintRule {
           correctionMessage:
               'Replace "extends Equatable" with @freezed annotation. Remove props getter and use Freezed factory constructor.',
         );
-        reporter.atNode(extendsClause, code);
+        reporter.reportAtNode(extendsClause, code);
       }
     }
 
@@ -96,7 +96,7 @@ class FreezedUsageRule extends CleanArchitectureLintRule {
             correctionMessage:
                 'Use @freezed annotation for immutable data classes.',
           );
-          reporter.atNode(implementsClause, code);
+          reporter.reportAtNode(implementsClause, code);
         }
       }
     }
@@ -121,7 +121,7 @@ class FreezedUsageRule extends CleanArchitectureLintRule {
         correctionMessage:
             'Remove equatable import and add freezed_annotation. Use @freezed for data classes.',
       );
-      reporter.atNode(node, code);
+      reporter.reportAtNode(node, code);
     }
   }
 

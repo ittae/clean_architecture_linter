@@ -93,7 +93,7 @@ class RepositoryNoThrowRule extends CleanArchitectureLintRule
           'or let DataSource handle error conversion.',
       errorSeverity: DiagnosticSeverity.INFO,
     );
-    reporter.atNode(node, code);
+    reporter.reportAtNode(node, code);
   }
 
   /// Extracts the exception type name from a throw expression.

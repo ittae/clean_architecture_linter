@@ -53,7 +53,7 @@ class UseCaseNoResultReturnRule extends CleanArchitectureLintRule
         correctionMessage:
             'pass-through 기준으로 Future<Entity>를 반환하세요. 오류 처리는 Presentation에서 AsyncValue.guard()/when(error)로 처리합니다.',
       );
-      reporter.atNode(returnType, code);
+      reporter.reportAtNode(returnType, code);
     }
   }
 }

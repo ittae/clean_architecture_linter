@@ -94,7 +94,7 @@ class ExtensionLocationRule extends CleanArchitectureLintRule {
           correctionMessage:
               'Move extensions to the $layerName file. Extensions should be in the same file as the class they extend.',
         );
-        reporter.atOffset(offset: 0, length: 1, diagnosticCode: code);
+        reporter.reportAtOffset(offset: 0, length: 1, code: code);
         break;
       }
     }
@@ -148,7 +148,7 @@ class ExtensionLocationRule extends CleanArchitectureLintRule {
             'Only State files should contain entity UI extensions. '
             'Widget files should use the State and its extensions, not define their own.',
       );
-      reporter.atNode(node, code);
+      reporter.reportAtNode(node, code);
     }
   }
 }

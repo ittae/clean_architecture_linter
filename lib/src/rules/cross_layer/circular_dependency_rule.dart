@@ -114,7 +114,7 @@ class CircularDependencyRule extends CleanArchitectureLintRule {
               correctionMessage: _getSuggestion(cycle),
               errorSeverity: DiagnosticSeverity.ERROR,
             );
-            reporter.atNode(directive, enhancedCode);
+            reporter.reportAtNode(directive, enhancedCode);
           }
         }
       }
@@ -202,7 +202,7 @@ class CircularDependencyRule extends CleanArchitectureLintRule {
                     'Architectural layers should have acyclic dependencies. Consider using dependency inversion.',
                 errorSeverity: DiagnosticSeverity.ERROR,
               );
-              reporter.atNode(directive, enhancedCode);
+              reporter.reportAtNode(directive, enhancedCode);
               break; // Report once per file
             }
           }
