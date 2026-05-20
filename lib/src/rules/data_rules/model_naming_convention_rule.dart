@@ -187,7 +187,7 @@ class ModelNamingConventionRule extends CleanArchitectureLintRule {
               'Rename to "$suggestedName". Models should be independent of DataSource implementation.',
         );
 
-        reporter.atNode(node, code);
+        reporter.reportAtNode(node, code);
         return; // Report only the first violation
       }
     }

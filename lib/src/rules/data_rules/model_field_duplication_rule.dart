@@ -108,10 +108,10 @@ class ModelFieldDuplicationRule extends CleanArchitectureLintRule {
       );
 
       // Report at the field location
-      reporter.atOffset(
+      reporter.reportAtOffset(
         offset: duplicate.offset,
         length: duplicate.name.length,
-        diagnosticCode: code,
+        code: code,
       );
     }
   }

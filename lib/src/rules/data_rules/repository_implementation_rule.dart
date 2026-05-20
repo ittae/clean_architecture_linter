@@ -89,7 +89,7 @@ class RepositoryImplementationRule extends CleanArchitectureLintRule
             'Add implements clause with domain repository interface. Example: class UserRepositoryImpl implements UserRepository',
         errorSeverity: DiagnosticSeverity.WARNING,
       );
-      reporter.atNode(node, code);
+      reporter.reportAtNode(node, code);
       return;
     }
 
@@ -112,7 +112,7 @@ class RepositoryImplementationRule extends CleanArchitectureLintRule
             'Implement the corresponding domain repository interface. Example: class UserRepositoryImpl implements UserRepository',
         errorSeverity: DiagnosticSeverity.WARNING,
       );
-      reporter.atNode(node, code);
+      reporter.reportAtNode(node, code);
     }
   }
 
@@ -131,7 +131,7 @@ class RepositoryImplementationRule extends CleanArchitectureLintRule
             'Move abstract repository interface to domain layer. Data layer should only contain RepositoryImpl classes.',
         errorSeverity: DiagnosticSeverity.WARNING,
       );
-      reporter.atNode(node, code);
+      reporter.reportAtNode(node, code);
     }
   }
 
@@ -148,6 +148,6 @@ class RepositoryImplementationRule extends CleanArchitectureLintRule
           'Move $className to data layer. Domain layer should only contain abstract repository interfaces.',
       errorSeverity: DiagnosticSeverity.WARNING,
     );
-    reporter.atNode(node, code);
+    reporter.reportAtNode(node, code);
   }
 }

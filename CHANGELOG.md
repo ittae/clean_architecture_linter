@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [Unreleased]
+
+### 🔧 Changed
+
+- Relaxed analyzer dependency to `>=8.4.0 <14.0.0`.
+- Routed lint reports through an analyzer `LintCode` compatibility helper so the rules compile with analyzer 9+ when paired with compatible `custom_lint_core`/`custom_lint_visitor` overrides.
+
+### 📚 Documentation
+
+- Documented the temporary analyzer 9+ `pubspec_overrides.yaml` recipe required while `custom_lint` 0.8.x still pins analyzer 8 transitively, including the `dart_style` pin needed by current `custom_lint`/analyzer 9 combinations.
+
 ## [1.3.1] - 2026-05-05
 
 ### 🛠 Maintenance

@@ -73,7 +73,7 @@ class NoPresentationModelsRule extends CleanArchitectureLintRule {
         correctionMessage:
             'Remove presentation/models/ directory. Use states/ directory with Freezed State containing Entities.',
       );
-      reporter.atOffset(offset: 0, length: 1, diagnosticCode: code);
+      reporter.reportAtOffset(offset: 0, length: 1, code: code);
     }
 
     if (normalized.contains('/presentation/viewmodels/')) {
@@ -83,7 +83,7 @@ class NoPresentationModelsRule extends CleanArchitectureLintRule {
         correctionMessage:
             'Remove presentation/viewmodels/ directory. Use Freezed State with Riverpod instead.',
       );
-      reporter.atOffset(offset: 0, length: 1, diagnosticCode: code);
+      reporter.reportAtOffset(offset: 0, length: 1, code: code);
     }
   }
 
@@ -101,7 +101,7 @@ class NoPresentationModelsRule extends CleanArchitectureLintRule {
         correctionMessage:
             'Use Freezed State with riverpod_generator (@riverpod annotation) instead.',
       );
-      reporter.atNode(node, code);
+      reporter.reportAtNode(node, code);
     }
   }
 
@@ -122,7 +122,7 @@ class NoPresentationModelsRule extends CleanArchitectureLintRule {
         correctionMessage:
             'Use Freezed State with Riverpod instead. Define state with @freezed and notifier with @riverpod.',
       );
-      reporter.atNode(extendsClause, code);
+      reporter.reportAtNode(extendsClause, code);
     }
   }
 }

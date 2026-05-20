@@ -64,7 +64,7 @@ class DomainPurityRule extends CleanArchitectureLintRule {
         problemMessage: 'Domain layer violation: ${violation.category}',
         correctionMessage: violation.suggestion,
       );
-      reporter.atNode(node, enhancedCode);
+      reporter.reportAtNode(node, enhancedCode);
     }
   }
 
@@ -186,7 +186,7 @@ class DomainPurityRule extends CleanArchitectureLintRule {
           correctionMessage:
               'Use composition instead of inheritance from external frameworks.',
         );
-        reporter.atNode(extendsClause, code);
+        reporter.reportAtNode(extendsClause, code);
       }
     }
 
@@ -203,7 +203,7 @@ class DomainPurityRule extends CleanArchitectureLintRule {
             correctionMessage:
                 'Create domain-specific abstractions instead of implementing external interfaces.',
           );
-          reporter.atNode(interface, code);
+          reporter.reportAtNode(interface, code);
         }
       }
     }

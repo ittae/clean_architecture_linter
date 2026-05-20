@@ -146,7 +146,7 @@ class WidgetRefReadThenWhenRule extends CleanArchitectureLintRule {
               'Use ref.watch() + .when() in build() for UI, ref.listen() for side effects, or try-catch for one-off operations.',
           errorSeverity: DiagnosticSeverity.WARNING,
         );
-        reporter.atNode(whenCall, code);
+        reporter.reportAtNode(whenCall, code);
       }
     }
   }
