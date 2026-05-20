@@ -9,31 +9,53 @@ import 'package:analyzer/error/error.dart' as analyzer_error;
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
-/// Bridges custom_lint [LintCode] instances to analyzer's diagnostic code API.
-extension CleanArchitectureDiagnosticReporterX on DiagnosticReporter {
-  analyzer_error.LintCode _toAnalyzerLintCode(dynamic code) {
-    return analyzer_error.LintCode(
-      code.name as String,
-      code.problemMessage as String,
-      correctionMessage: code.correctionMessage as String?,
-      uniqueName: code.uniqueName as String?,
-      severity: code.severity as analyzer_error.DiagnosticSeverity,
-    );
+final Expando<analyzer_error.LintCode> _analyzerLintCodeCache = Expando(
+  'cleanArchitectureAnalyzerLintCode',
+);
+
+analyzer_error.LintCode toAnalyzerLintCode(LintCode code) {
+  final cached = _analyzerLintCodeCache[code];
+  if (cached != null) {
+    return cached;
   }
 
-  void reportAtNode(AstNode node, dynamic code) {
-    atNode(node, _toAnalyzerLintCode(code));
+  final converted = analyzer_error.LintCode(
+    code.name,
+    code.problemMessage,
+    correctionMessage: code.correctionMessage,
+    uniqueName: code.uniqueName,
+    severity: _toAnalyzerDiagnosticSeverity(code.errorSeverity.name),
+  );
+  _analyzerLintCodeCache[code] = converted;
+  return converted;
+}
+
+analyzer_error.DiagnosticSeverity _toAnalyzerDiagnosticSeverity(
+  String severityName,
+) {
+  for (final severity in analyzer_error.DiagnosticSeverity.values) {
+    if (severity.name == severityName) {
+      return severity;
+    }
+  }
+  return analyzer_error.DiagnosticSeverity.INFO;
+}
+
+/// Bridges custom_lint [LintCode] instances to analyzer's diagnostic code API.
+extension CleanArchitectureDiagnosticReporterX on DiagnosticReporter {
+  void reportAtNode(AstNode node, LintCode code) {
+    atNode(node, toAnalyzerLintCode(code));
   }
 
   void reportAtOffset({
     required int offset,
     required int length,
-    required dynamic code,
+    required LintCode code,
   }) {
     atOffset(
       offset: offset,
       length: length,
-      diagnosticCode: _toAnalyzerLintCode(code),
+      diagnosticCode: toAnalyzerLintCode(code),
     );
   }
 }
