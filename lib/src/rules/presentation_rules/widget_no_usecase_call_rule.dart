@@ -125,7 +125,7 @@ class WidgetNoUseCaseCallRule extends CleanArchitectureLintRule {
             'Remove UseCase import. Create a Provider that calls the UseCase instead.',
         errorSeverity: DiagnosticSeverity.WARNING,
       );
-      reporter.atNode(node, code);
+      reporter.reportAtNode(node, code);
     }
   }
 
@@ -166,7 +166,7 @@ class WidgetNoUseCaseCallRule extends CleanArchitectureLintRule {
             'Create an Entity Provider that calls the UseCase, then ref.watch() that provider.',
         errorSeverity: DiagnosticSeverity.WARNING,
       );
-      reporter.atNode(node, code);
+      reporter.reportAtNode(node, code);
     }
   }
 

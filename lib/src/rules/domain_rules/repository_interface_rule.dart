@@ -78,7 +78,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
         problemMessage: violation.message,
         correctionMessage: violation.suggestion,
       );
-      reporter.atNode(node, enhancedCode);
+      reporter.reportAtNode(node, enhancedCode);
     }
   }
 
@@ -103,7 +103,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
         correctionMessage:
             'Make repository abstract or move implementation to data layer.',
       );
-      reporter.atNode(node, code);
+      reporter.reportAtNode(node, code);
     }
 
     // Check repository method signatures
@@ -137,7 +137,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
               correctionMessage:
                   'Use abstract repository interface instead of concrete implementation.',
             );
-            reporter.atNode(type, code);
+            reporter.reportAtNode(type, code);
           }
         }
       }
@@ -163,7 +163,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
           correctionMessage:
               'Use abstract repository interface instead of concrete implementation.',
         );
-        reporter.atNode(type, code);
+        reporter.reportAtNode(type, code);
       }
     }
   }
@@ -201,7 +201,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
           correctionMessage:
               'Repository methods should return domain entities, not data models.',
         );
-        reporter.atNode(returnType, code);
+        reporter.reportAtNode(returnType, code);
         return; // Don't check further if main type is already a model
       }
 
@@ -219,7 +219,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
                 correctionMessage:
                     'Use domain entities in generic types. Example: Future<User> or AsyncValue<User> patterns should never expose UserModel.',
               );
-              reporter.atNode(typeArg, code);
+              reporter.reportAtNode(typeArg, code);
             }
           }
         }
@@ -257,7 +257,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
             correctionMessage:
                 'Repository method parameters should use domain entities, not data models.',
           );
-          reporter.atNode(paramType, code);
+          reporter.reportAtNode(paramType, code);
         }
 
         // Check generic type arguments in parameters (e.g., List<UserModel>)
@@ -274,7 +274,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
                   correctionMessage:
                       'Use domain entities in generic types. Example: List<User> instead of List<UserModel>',
                 );
-                reporter.atNode(typeArg, code);
+                reporter.reportAtNode(typeArg, code);
               }
             }
           }

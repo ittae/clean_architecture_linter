@@ -23,7 +23,7 @@ import '../clean_architecture_linter_base.dart';
 ///
 ///     // Check naming convention
 ///     if (isGenericExceptionName(className)) {
-///       reporter.atNode(node, myLintCode);
+///       reporter.reportAtNode(node, myLintCode);
 ///     }
 ///   }
 /// }

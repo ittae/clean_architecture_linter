@@ -62,7 +62,7 @@ class BoundaryCrossingRule extends CleanArchitectureLintRule {
         correctionMessage:
             'Use interfaces/abstractions instead of concrete implementations for cross-layer dependencies.',
       );
-      reporter.atNode(node, code);
+      reporter.reportAtNode(node, code);
     }
   }
 

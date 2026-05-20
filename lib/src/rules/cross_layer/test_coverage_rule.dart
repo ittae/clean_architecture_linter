@@ -255,7 +255,7 @@ class TestCoverageRule extends CleanArchitectureLintRule {
           'Create test file at: ${path.relative(expectedTestPath)}',
     );
 
-    reporter.atNode(node, code);
+    reporter.reportAtNode(node, code);
   }
 
   String _getComponentDisplayName(ComponentType type) {

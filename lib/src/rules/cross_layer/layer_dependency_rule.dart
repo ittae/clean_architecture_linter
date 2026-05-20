@@ -64,7 +64,7 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
               'Use Domain Entities in Presentation layer instead.',
           errorSeverity: DiagnosticSeverity.ERROR,
         );
-        reporter.atNode(node, enhancedCode);
+        reporter.reportAtNode(node, enhancedCode);
       }
       // Skip other dependency checks for DI files
       return;
@@ -88,7 +88,7 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
         correctionMessage: violation.suggestion,
         errorSeverity: DiagnosticSeverity.ERROR,
       );
-      reporter.atNode(node, enhancedCode);
+      reporter.reportAtNode(node, enhancedCode);
     }
   }
 

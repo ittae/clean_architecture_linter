@@ -73,7 +73,7 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
       errorSeverity: DiagnosticSeverity.WARNING,
     );
 
-    reporter.atNode(node, code);
+    reporter.reportAtNode(node, code);
   }
 
   void _checkBusinessExceptionBranchingInWidget(
@@ -103,7 +103,7 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
       errorSeverity: DiagnosticSeverity.WARNING,
     );
 
-    reporter.atNode(catchClause, code);
+    reporter.reportAtNode(catchClause, code);
   }
 
   bool _isStateOrNotifierClass(String className, ClassDeclaration classNode) {

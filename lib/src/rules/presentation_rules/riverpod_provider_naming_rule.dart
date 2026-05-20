@@ -138,7 +138,7 @@ class RiverpodProviderNamingRule extends CleanArchitectureLintRule {
             'Rename to "$suggestedName" to generate "${suggestedName}Provider".',
         errorSeverity: DiagnosticSeverity.WARNING,
       );
-      reporter.atNode(node, code);
+      reporter.reportAtNode(node, code);
     }
   }
 

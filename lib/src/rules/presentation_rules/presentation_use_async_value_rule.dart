@@ -90,7 +90,7 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
             'Use AsyncValue.guard(), state = AsyncValue.error(...), or UI handling via when(error: ...).',
         errorSeverity: DiagnosticSeverity.WARNING,
       );
-      reporter.atNode(catchClause, code);
+      reporter.reportAtNode(catchClause, code);
     }
   }
 
@@ -158,7 +158,7 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
               correctionMessage:
                   'Remove error field. Use AsyncNotifier with AsyncValue.when() pattern. AsyncValue automatically manages error states.',
             );
-            reporter.atNode(variable, code);
+            reporter.reportAtNode(variable, code);
           }
 
           if (_isLoadingField(fieldNameLower)) {
@@ -169,7 +169,7 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
               correctionMessage:
                   'Remove loading field. Use AsyncNotifier with AsyncValue.when() pattern. AsyncValue automatically manages loading states.',
             );
-            reporter.atNode(variable, code);
+            reporter.reportAtNode(variable, code);
           }
         }
       }
@@ -211,7 +211,7 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
           correctionMessage:
               'Remove error parameter. Use AsyncNotifier with AsyncValue.when() pattern. AsyncValue automatically manages error states.',
         );
-        reporter.atNode(nameNode, code);
+        reporter.reportAtNode(nameNode, code);
       }
 
       if (_isLoadingField(paramNameLower)) {
@@ -222,7 +222,7 @@ class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
           correctionMessage:
               'Remove loading parameter. Use AsyncNotifier with AsyncValue.when() pattern. AsyncValue automatically manages loading states.',
         );
-        reporter.atNode(nameNode, code);
+        reporter.reportAtNode(nameNode, code);
       }
     }
   }
