@@ -2,6 +2,35 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project Why (Read First)
+
+> **Org Vision:** Help people turn their plans into reality. *(원문: 사람들의 계획이 현실이 되도록 돕는 것입니다.)*
+> **Org Mission:** Help people cherish yesterday, dream of tomorrow, and live today. *(원문: 어제를 소중히 여기고, 내일을 꿈꾸며, 오늘을 살아갈 수 있도록 돕는 것입니다.)*
+
+**This project's role:** Auto-enforces Riverpod-based Clean Architecture via lints — so good architecture does not depend on a PR reviewer's memory, sustaining the Vision.
+
+> Note: This package is also published to external users. The Org Vision is the *internal working standard for the maintainer (ittae)* and is not imposed on external users. External users only see "Automatic Clean Architecture enforcement" in the README.
+
+Every change here must *reinforce* the Vision and this project's role. If a change would dilute them, stop and ask the human first.
+
+### Decision Filter (ask before starting)
+
+1. Does this change *reinforce* or *dilute* the Vision and this project's role?
+2. Does this change conflict with this project's How (consistency across 33 rules, Riverpod 3-tier assumptions, Domain Purity, etc.)?
+3. If it conflicts — is the principle worth changing, or should this change be dropped?
+
+### Mandatory First Step (before any code/file changes)
+
+When a new issue arrives, post the following as your first response (if a comment channel exists, publish it there) before starting work:
+
+1. **Why restatement (1 sentence):** describe how this issue reinforces the Vision (사람들의 계획이 현실이 되도록 돕는 것입니다) and this project's role.
+2. If you conclude it does not reinforce them → stop and ask the human.
+3. If it does → state your How (approach principles) in 1–3 bullets, then begin.
+
+> This step is a gate to catch misunderstandings early. Keep it brief and to the point.
+
+---
+
 ## Project Overview
 
 This is a Dart package that provides custom lint rules for enforcing Clean Architecture principles in Flutter projects. It uses the `custom_lint_builder` framework to create static analysis rules that validate proper architectural boundaries and patterns.
