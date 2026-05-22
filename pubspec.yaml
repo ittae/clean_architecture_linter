@@ -22,7 +22,7 @@ platforms:
   windows:
 
 dependencies:
-  analyzer: '>=8.4.0 <14.0.0'
+  analyzer: '>=8.4.0 <10.0.0'
   custom_lint_builder: ^0.8.1
   path: ^1.9.1
 

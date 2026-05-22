@@ -113,33 +113,6 @@ dart run custom_lint
 
 That's it! The linter will now automatically enforce Clean Architecture principles in your codebase.
 
-
-### Optional: analyzer 9+ workaround
-
-`custom_lint`/`custom_lint_builder` 0.8.x still resolve to analyzer 8 by default. If your app needs analyzer 9+ for packages such as `freezed`, `riverpod_generator`, `json_serializable`, or `mockito`, add this override while waiting for an upstream `custom_lint` release with native analyzer 9+ constraints:
-
-```yaml
-# pubspec_overrides.yaml
-dependency_overrides:
-  analyzer: ^9.0.0
-  custom_lint_core: 0.8.2
-  custom_lint_visitor: 1.0.0+9.0.0
-  # Keep dart_style on the analyzer-9-compatible line until dart_style
-  # latest supports the same analyzer API set used by custom_lint 0.8.x.
-  dart_style: 3.1.3
-```
-
-Then verify the combination in your app:
-
-```bash
-dart pub get
-dart run custom_lint
-flutter analyze
-flutter test
-```
-
-This package accepts analyzer `>=8.4.0 <14.0.0`, but the override is still required until the `custom_lint` package line stops pinning analyzer 8 transitively.
-
 ### Recommended team profile
 - Local: `docs/config/lint_profile_balanced.yaml`
 - CI: `docs/config/lint_profile_strict.yaml`

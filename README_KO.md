@@ -111,33 +111,6 @@ dart pub custom_lint
 
 완료되었습니다! 이제 린터가 자동으로 코드베이스에 클린 아키텍처 원칙을 강제합니다.
 
-
-### 선택사항: analyzer 9+ 우회 설정
-
-`custom_lint`/`custom_lint_builder` 0.8.x는 기본적으로 analyzer 8 라인으로 resolve됩니다. 앱에서 `freezed`, `riverpod_generator`, `json_serializable`, `mockito` 등의 최신 버전 때문에 analyzer 9+가 필요하다면, upstream `custom_lint`가 analyzer 9+ 제약을 정식 지원할 때까지 다음 override를 사용하세요:
-
-```yaml
-# pubspec_overrides.yaml
-dependency_overrides:
-  analyzer: ^9.0.0
-  custom_lint_core: 0.8.2
-  custom_lint_visitor: 1.0.0+9.0.0
-  # Keep dart_style on the analyzer-9-compatible line until dart_style
-  # latest supports the same analyzer API set used by custom_lint 0.8.x.
-  dart_style: 3.1.3
-```
-
-이후 앱에서 조합을 검증하세요:
-
-```bash
-dart pub get
-dart run custom_lint
-flutter analyze
-flutter test
-```
-
-이 패키지는 analyzer `>=8.4.0 <14.0.0`을 허용하지만, `custom_lint` 패키지 라인이 transitive로 analyzer 8을 고정하는 동안에는 위 override가 필요합니다.
-
 ## 🎛️ 설정
 
 ### 선택사항: 테스트 커버리지
