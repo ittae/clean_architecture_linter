@@ -7,10 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-05-29
+
 ### 🔧 Changed
 
-- Narrowed the direct `analyzer` constraint to `>=8.4.0 <10.0.0` until analyzer 9 runtime validation lands end-to-end.
+- Widened the direct `analyzer` constraint to `>=8.4.0 <10.0.0` so consumers on the analyzer 9 line (freezed 3.x, riverpod_generator 4.x, riverpod_lint 3.1.x) no longer need to override `clean_architecture_linter` itself in `pubspec_overrides.yaml`.
 - Hardened the `DiagnosticReporter` compatibility layer with a typed `LintCode` bridge, severity-name mapping, and cached analyzer lint codes.
+
+### 📖 Docs
+
+- Added **Compatibility — analyzer 9 / Riverpod 3+** sections to `README.md` and `README_KO.md` covering: the archived `invertase/dart_custom_lint` upstream, a verified `pubspec_overrides.yaml` workaround for `custom_lint*`, a CI gitignore caveat for Flutter projects, and cleanup checkpoints leading up to v2.0 (analysis_server_plugin migration).
 
 ### 🧪 Tests
 
