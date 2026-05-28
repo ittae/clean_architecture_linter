@@ -137,7 +137,9 @@ The pub.dev stable `custom_lint` / `custom_lint_builder` (0.8.1) is pinned to `a
 
 ### Workaround — `pubspec_overrides.yaml`
 
-Add this file alongside your `pubspec.yaml` (it is gitignored by default if listed in `.gitignore`; commit it if you want CI to pick it up):
+Add this file alongside your `pubspec.yaml`.
+
+> **Note for CI:** Flutter's default `.gitignore` usually excludes `pubspec_overrides.yaml`. If you want CI to apply the override, either remove that line from `.gitignore` or stage the file with `git add -f pubspec_overrides.yaml`. Without one of those, the override exists locally but CI will resolve against pub.dev and fail with the same conflict.
 
 ```yaml
 # pubspec_overrides.yaml
@@ -180,7 +182,12 @@ You should see `analyzer 9.0.0`, `custom_lint 0.8.2 (git)`, and your latest `riv
 
 ### When can I remove this?
 
-The upstream repository is **archived** — there will be no `custom_lint 0.8.2` release. The override is therefore not a temporary measure for waiting on a publish, it is a **bridge until `clean_architecture_linter v2.0`** migrates fully to the official [`analysis_server_plugin`](https://pub.dev/packages/analysis_server_plugin). Once v2.0 ships, the entire `custom_lint*` dependency chain disappears and the override can be deleted. Track progress in the repo issues.
+The upstream repository is **archived** — there will be no `custom_lint 0.8.2` release. The override is therefore not a temporary measure for waiting on a publish, it is a **bridge until `clean_architecture_linter v2.0`** migrates fully to the official [`analysis_server_plugin`](https://pub.dev/packages/analysis_server_plugin). Track progress in the repo issues.
+
+Two cleanup checkpoints along the way:
+
+1. **As soon as a `clean_architecture_linter` patch with `analyzer: '>=8.4.0 <10.0.0'` is published to pub.dev (e.g. `1.3.2`)**, you can drop the `clean_architecture_linter` git override and keep only the `custom_lint*` ones. The published `1.3.1` is still pinned to `analyzer: ^8.4.0`, so until that patch lands the git override is required.
+2. **When v2.0 ships**, the entire `custom_lint*` dependency chain disappears and `pubspec_overrides.yaml` can be deleted.
 
 ## 🎛️ Configuration
 
