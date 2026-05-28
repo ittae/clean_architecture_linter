@@ -1,0 +1,5 @@
+name: clean_architecture_linter_poc_v2_example
+publish_to: none
+
+environment:
+  sdk: ^3.10.0
