@@ -111,6 +111,76 @@ dart pub custom_lint
 
 완료되었습니다! 이제 린터가 자동으로 코드베이스에 클린 아키텍처 원칙을 강제합니다.
 
+## 🧩 호환성 — analyzer 9 / Riverpod 3+ (임시 워크어라운드)
+
+> **요약**: `dart pub get` 이 `custom_lint` 와 `riverpod_lint` / `riverpod_generator` / `freezed` 를 언급하며 "version solving failed" 로 실패하면, 아래 `pubspec_overrides.yaml` 을 추가하세요.
+
+### 증상
+
+```
+Because riverpod_lint >=3.1.1 depends on analyzer ^9.0.0
+and custom_lint >=0.8.1 depends on analyzer ^8.0.0,
+custom_lint >=0.8.1 is incompatible with riverpod_lint >=3.1.1.
+```
+
+### 원인
+
+pub.dev 의 stable `custom_lint` / `custom_lint_builder` (0.8.1) 가 `analyzer ^8.0.0` 에 고정되어 있습니다. `main` 브랜치에는 `analyzer ^9.0.0` 기반의 `0.8.2` 코드가 들어가 있지만, **upstream 저장소 [invertase/dart_custom_lint](https://github.com/invertase/dart_custom_lint) 가 2026년 5월에 publish 없이 archive 처리되었습니다** ([archive 공지](https://github.com/invertase/dart_custom_lint#:~:text=no%20longer%20under%20active%20development), [관련 논의 #379](https://github.com/invertase/dart_custom_lint/issues/379)). 원작자는 공식 [`analysis_server_plugin`](https://pub.dev/packages/analysis_server_plugin) 으로의 이주를 권고했습니다. 우리 v2.0 마이그레이션이 완료되기 전까지, `clean_architecture_linter` 와 최신 `riverpod_generator 4.x`, `riverpod_lint 3.1.x`, `freezed 3.x`, `json_serializable 6.13+` 를 결합할 유일한 방법은 아래 override 입니다.
+
+### 워크어라운드 — `pubspec_overrides.yaml`
+
+`pubspec.yaml` 옆에 다음 파일을 추가하세요.
+
+> **CI 관련 주의:** Flutter 기본 `.gitignore` 에는 `pubspec_overrides.yaml` 이 보통 포함되어 있습니다. CI 에서도 override 가 적용되게 하려면 `.gitignore` 에서 해당 라인을 제거하거나 `git add -f pubspec_overrides.yaml` 로 강제 스테이징하세요. 그렇지 않으면 로컬에서는 override 가 적용되지만 CI 는 pub.dev 기준으로 해소해서 동일한 충돌이 다시 납니다.
+
+```yaml
+# pubspec_overrides.yaml
+dependency_overrides:
+  clean_architecture_linter:
+    git:
+      url: https://github.com/ittae/clean_architecture_linter
+      ref: main
+  custom_lint:
+    git:
+      url: https://github.com/invertase/dart_custom_lint
+      ref: main
+      path: packages/custom_lint
+  custom_lint_builder:
+    git:
+      url: https://github.com/invertase/dart_custom_lint
+      ref: main
+      path: packages/custom_lint_builder
+  custom_lint_core:
+    git:
+      url: https://github.com/invertase/dart_custom_lint
+      ref: main
+      path: packages/custom_lint_core
+  custom_lint_visitor:
+    git:
+      url: https://github.com/invertase/dart_custom_lint
+      ref: main
+      path: packages/custom_lint_visitor
+```
+
+### 검증
+
+```bash
+dart pub get
+dart analyze
+dart run custom_lint
+```
+
+`analyzer 9.0.0`, `custom_lint 0.8.2 (git)`, 그리고 최신 `riverpod_generator` / `riverpod_lint` / `freezed` 가 함께 해결되어야 합니다.
+
+### 언제 제거할 수 있나요?
+
+upstream 저장소가 **archive** 되었기 때문에 `custom_lint 0.8.2` release 는 영원히 나오지 않습니다. 따라서 이 override 는 publish 를 기다리는 임시 조치가 아니라, **`clean_architecture_linter v2.0` 이 공식 [`analysis_server_plugin`](https://pub.dev/packages/analysis_server_plugin) 으로 완전 이주할 때까지의 다리** 입니다. 진행 상황은 repo 이슈에서 추적하세요.
+
+가는 동안 두 개의 정리 체크포인트:
+
+1. **`clean_architecture_linter` 의 patch (예: `1.3.2`) 가 `analyzer: '>=8.4.0 <10.0.0'` 으로 pub.dev 에 publish 되는 시점**부터 `clean_architecture_linter` git override 만 먼저 제거 가능하고, `custom_lint*` override 만 남겨두면 됩니다. 현재 pub.dev 의 `1.3.1` 은 여전히 `analyzer: ^8.4.0` 이라 그 patch 가 나오기 전까지는 git override 가 필요합니다.
+2. **v2.0 release 시점**에는 `custom_lint*` 의존성 체인 자체가 사라지고 `pubspec_overrides.yaml` 을 통째로 삭제할 수 있습니다.
+
 ## 🎛️ 설정
 
 ### 선택사항: 테스트 커버리지

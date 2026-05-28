@@ -119,6 +119,76 @@ That's it! The linter will now automatically enforce Clean Architecture principl
 
 See `docs/config/RECOMMENDED_SETUP.md` for details.
 
+## 🧩 Compatibility — analyzer 9 / Riverpod 3+ (Temporary Workaround)
+
+> **TL;DR**: If `dart pub get` fails with "version solving failed" mentioning `custom_lint` and `riverpod_lint` / `riverpod_generator` / `freezed`, add the `pubspec_overrides.yaml` below.
+
+### Symptom
+
+```
+Because riverpod_lint >=3.1.1 depends on analyzer ^9.0.0
+and custom_lint >=0.8.1 depends on analyzer ^8.0.0,
+custom_lint >=0.8.1 is incompatible with riverpod_lint >=3.1.1.
+```
+
+### Cause
+
+The pub.dev stable `custom_lint` / `custom_lint_builder` (0.8.1) is pinned to `analyzer ^8.0.0`. Their `main` branch already has `0.8.2` with `analyzer ^9.0.0`, but **the upstream repository [invertase/dart_custom_lint](https://github.com/invertase/dart_custom_lint) was archived in May 2026 without publishing it** ([archive notice](https://github.com/invertase/dart_custom_lint#:~:text=no%20longer%20under%20active%20development), [discussion #379](https://github.com/invertase/dart_custom_lint/issues/379)). The original author recommends migrating to the official [`analysis_server_plugin`](https://pub.dev/packages/analysis_server_plugin). Until our v2.0 migration lands, the only way to combine `clean_architecture_linter` with the latest `riverpod_generator 4.x`, `riverpod_lint 3.1.x`, `freezed 3.x`, and `json_serializable 6.13+` is the override below.
+
+### Workaround — `pubspec_overrides.yaml`
+
+Add this file alongside your `pubspec.yaml`.
+
+> **Note for CI:** Flutter's default `.gitignore` usually excludes `pubspec_overrides.yaml`. If you want CI to apply the override, either remove that line from `.gitignore` or stage the file with `git add -f pubspec_overrides.yaml`. Without one of those, the override exists locally but CI will resolve against pub.dev and fail with the same conflict.
+
+```yaml
+# pubspec_overrides.yaml
+dependency_overrides:
+  clean_architecture_linter:
+    git:
+      url: https://github.com/ittae/clean_architecture_linter
+      ref: main
+  custom_lint:
+    git:
+      url: https://github.com/invertase/dart_custom_lint
+      ref: main
+      path: packages/custom_lint
+  custom_lint_builder:
+    git:
+      url: https://github.com/invertase/dart_custom_lint
+      ref: main
+      path: packages/custom_lint_builder
+  custom_lint_core:
+    git:
+      url: https://github.com/invertase/dart_custom_lint
+      ref: main
+      path: packages/custom_lint_core
+  custom_lint_visitor:
+    git:
+      url: https://github.com/invertase/dart_custom_lint
+      ref: main
+      path: packages/custom_lint_visitor
+```
+
+### Verify
+
+```bash
+dart pub get
+dart analyze
+dart run custom_lint
+```
+
+You should see `analyzer 9.0.0`, `custom_lint 0.8.2 (git)`, and your latest `riverpod_generator` / `riverpod_lint` / `freezed` versions resolve together.
+
+### When can I remove this?
+
+The upstream repository is **archived** — there will be no `custom_lint 0.8.2` release. The override is therefore not a temporary measure for waiting on a publish, it is a **bridge until `clean_architecture_linter v2.0`** migrates fully to the official [`analysis_server_plugin`](https://pub.dev/packages/analysis_server_plugin). Track progress in the repo issues.
+
+Two cleanup checkpoints along the way:
+
+1. **As soon as a `clean_architecture_linter` patch with `analyzer: '>=8.4.0 <10.0.0'` is published to pub.dev (e.g. `1.3.2`)**, you can drop the `clean_architecture_linter` git override and keep only the `custom_lint*` ones. The published `1.3.1` is still pinned to `analyzer: ^8.4.0`, so until that patch lands the git override is required.
+2. **When v2.0 ships**, the entire `custom_lint*` dependency chain disappears and `pubspec_overrides.yaml` can be deleted.
+
 ## 🎛️ Configuration
 
 ### Optional: Test Coverage
