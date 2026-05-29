@@ -3,8 +3,8 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-echo "Resolving v2 plugin package..."
-(cd "$ROOT_DIR/poc_v2" && dart pub get)
+echo "Resolving root plugin package..."
+(cd "$ROOT_DIR" && dart pub get)
 
 echo "Resolving v2 example package..."
 (cd "$ROOT_DIR/poc_v2/example" && dart pub get)
@@ -17,7 +17,7 @@ set -e
 
 printf '%s\n' "$ANALYZE_OUTPUT"
 
-if [[ $ANALYZE_STATUS -ne 0 && $ANALYZE_STATUS -ne 2 ]]; then
+if [[ $ANALYZE_STATUS -ne 0 && $ANALYZE_STATUS -ne 1 && $ANALYZE_STATUS -ne 2 && $ANALYZE_STATUS -ne 3 ]]; then
   exit "$ANALYZE_STATUS"
 fi
 

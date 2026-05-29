@@ -14,30 +14,31 @@ Dart의 새 analyzer plugin 시스템은 `analysis_options.yaml`의 top-level `p
 - [analysis_server_plugin package](https://pub.dev/packages/analysis_server_plugin)
 - [Dart pub workspaces](https://dart.dev/tools/pub/workspaces)
 
-## 현재 PoC 구조
+## 현재 v2 구조
 
 ```text
-poc_v2/
+lib/main.dart
+lib/src/rules/presentation_rules/presentation_no_throw_rule.dart
+poc_v2/example/
   pubspec.yaml
-  lib/main.dart
-  lib/src/presentation_no_throw_rule.dart
-  example/
-    pubspec.yaml
-    analysis_options.yaml
-    lib/features/todo/presentation/
-      bad_notifier.dart
-      good_notifier.dart
+  analysis_options.yaml
+  lib/features/todo/presentation/
+    bad_notifier.dart
+    good_notifier.dart
+test/v2_harness/
 tools/dev_setup.sh
 ```
 
-`poc_v2`는 작은 standalone v2 plugin package다. analyzer plugin key가 plugin package name과 맞아야 하므로 package name은 의도적으로 `clean_architecture_linter`를 사용한다.
+`poc_v2`는 Phase 0의 standalone reference로 남겨둔다. 정식 v2 plugin
+entrypoint와 `presentation_no_throw` rule은 root package의 `lib/main.dart`
+및 `lib/src/rules/presentation_rules/` 아래에 둔다.
 
 `poc_v2/example/analysis_options.yaml`은 로컬 plugin을 다음처럼 켠다.
 
 ```yaml
 plugins:
   clean_architecture_linter:
-    path: ..
+    path: ../..
 ```
 
 ## Setup
@@ -51,8 +52,8 @@ repository root에서 실행한다.
 script는 아래 순서로 실행한다.
 
 ```bash
-cd poc_v2 && dart pub get
-cd example && dart pub get
+dart pub get
+cd poc_v2/example && dart pub get
 dart analyze
 ```
 
@@ -61,10 +62,9 @@ dart analyze
 ## 수동 검증
 
 ```bash
-cd poc_v2
 dart pub get
 
-cd example
+cd poc_v2/example
 dart pub get
 dart analyze
 ```
@@ -73,11 +73,11 @@ dart analyze
 
 ## Rule 개발 루프
 
-1. `poc_v2/lib/src/`에서 rule을 구현하거나 수정한다.
-2. `poc_v2/lib/main.dart`에 rule을 등록한다.
-3. `poc_v2/example/lib/` 아래에 bad/good fixture를 추가한다.
+1. `lib/src/rules/` 아래에서 analyzer `AnalysisRule`을 구현하거나 수정한다.
+2. `lib/main.dart`에 rule을 등록한다.
+3. `test/v2_harness/` 기반 단위 테스트를 추가한다.
 4. `./tools/dev_setup.sh`를 실행한다.
-5. rule 동작이 안정되면 대응하는 v1 `custom_lint_builder` test를 v2 analyzer test harness로 옮긴다.
+5. 필요하면 `poc_v2/example/lib/` 아래에 smoke fixture를 추가한다.
 
 ## Notes
 

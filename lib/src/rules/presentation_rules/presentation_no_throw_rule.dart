@@ -1,112 +1,126 @@
+import 'package:analyzer/analysis_rule/analysis_rule.dart';
+import 'package:analyzer/analysis_rule/rule_context.dart';
+import 'package:analyzer/analysis_rule/rule_visitor_registry.dart';
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
-import 'package:analyzer/error/listener.dart';
-import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:analyzer/error/error.dart';
 
-import '../../clean_architecture_linter_base.dart';
-
-class PresentationNoThrowRule extends CleanArchitectureLintRule {
-  const PresentationNoThrowRule() : super(code: _code);
-
-  static const _code = LintCode(
-    name: 'presentation_no_throw',
-    problemMessage:
-        'Presentation States/Notifiers should NOT throw exceptions. Use state management instead.',
+/// Prevents business exception throws from presentation state management code.
+///
+/// The throw-expression check intentionally mirrors the v1 custom-lint rule:
+/// it only runs in `lib` state/provider presentation files, including both
+/// `presentation/{states,state,providers}` and feature-level `{states,state,
+/// providers}` layouts, and skips programming errors, rethrows, constructors,
+/// private helper methods, and `AsyncValue.guard` bodies. Widget
+/// catch-branching remains scoped to presentation widgets.
+class PresentationNoThrowRule extends AnalysisRule {
+  static const LintCode code = LintCode(
+    'presentation_no_throw',
+    'Presentation layer should not throw exceptions directly.',
     correctionMessage:
-        'Use AsyncValue.guard()/when(error) or AsyncValue.error instead of throwing.',
-    errorSeverity: DiagnosticSeverity.WARNING,
+        'Return AsyncValue.error or wrap the body with AsyncValue.guard instead.',
+    severity: DiagnosticSeverity.WARNING,
+    uniqueName: 'LintCode.presentation_no_throw',
   );
 
+  PresentationNoThrowRule()
+    : super(
+        name: 'presentation_no_throw',
+        description: 'Prevents direct throw expressions in presentation code.',
+      );
+
   @override
-  void runRule(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
-  ) {
-    context.registry.addThrowExpression((node) {
-      _checkThrowInPresentation(node, reporter, resolver);
-    });
+  bool get canUseParsedResult => true;
 
-    context.registry.addCatchClause((node) {
-      _checkBusinessExceptionBranchingInWidget(node, reporter, resolver);
-    });
+  @override
+  DiagnosticCode get diagnosticCode => code;
+
+  @override
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
+  ) {
+    final visitor = _PresentationNoThrowVisitor(this, context);
+    registry.addThrowExpression(this, visitor);
+    registry.addCatchClause(this, visitor);
   }
+}
 
-  void _checkThrowInPresentation(
-    ThrowExpression node,
-    DiagnosticReporter reporter,
-    CustomLintResolver resolver,
-  ) {
-    final filePath = resolver.path;
+class _PresentationNoThrowVisitor extends SimpleAstVisitor<void> {
+  final AnalysisRule rule;
+  final RuleContext context;
 
-    if (!CleanArchitectureUtils.isPresentationFile(filePath)) return;
+  _PresentationNoThrowVisitor(this.rule, this.context);
 
-    if (!filePath.contains('/states/') &&
-        !filePath.contains('/state/') &&
-        !filePath.contains('/providers/')) {
+  @override
+  void visitThrowExpression(ThrowExpression node) {
+    if (!_isCurrentPresentationStateUnit()) {
       return;
     }
 
-    final classNode = CleanArchitectureUtils.findParentClass(node);
-    if (classNode == null) return;
-
-    final className = classNode.name.lexeme;
-    if (!_isStateOrNotifierClass(className, classNode)) return;
+    final classNode = node.thisOrAncestorOfType<ClassDeclaration>();
+    if (classNode == null || !_isStateOrNotifierClass(classNode)) {
+      return;
+    }
 
     final methodNode = _findParentMethod(node);
-    if (methodNode == null) return;
+    if (methodNode == null || _isPrivateMethod(methodNode)) {
+      return;
+    }
 
-    if (CleanArchitectureUtils.isPrivateMethod(methodNode)) return;
-    if (methodNode.parent is ConstructorDeclaration) return;
-    if (_isThrowingProgrammingError(node)) return;
-    if (_isRethrow(node)) return;
-    if (_isInsideAsyncValueGuard(node)) return;
+    if (_isThrowingProgrammingError(node) || _isRethrow(node)) {
+      return;
+    }
 
-    final exceptionType = _getExceptionType(node);
+    if (_isInsideAsyncValueGuard(node)) {
+      return;
+    }
 
-    final code = LintCode(
-      name: 'presentation_no_throw',
-      problemMessage:
-          '"$className.${methodNode.name.lexeme}" should not throw $exceptionType.',
-      correctionMessage:
-          'Represent errors as UI state with AsyncValue.guard()/when(error: ...).',
-      errorSeverity: DiagnosticSeverity.WARNING,
-    );
-
-    reporter.reportAtNode(node, code);
+    rule.reportAtNode(node);
   }
 
-  void _checkBusinessExceptionBranchingInWidget(
-    CatchClause catchClause,
-    DiagnosticReporter reporter,
-    CustomLintResolver resolver,
-  ) {
-    final filePath = resolver.path;
-    if (!CleanArchitectureUtils.isPresentationFile(filePath)) return;
+  @override
+  void visitCatchClause(CatchClause node) {
+    if (!_isCurrentPresentationUnit()) {
+      return;
+    }
 
-    final classNode = catchClause.thisOrAncestorOfType<ClassDeclaration>();
-    if (classNode == null || !_isWidgetClass(classNode)) return;
+    final classNode = node.thisOrAncestorOfType<ClassDeclaration>();
+    if (classNode == null || !_isWidgetClass(classNode)) {
+      return;
+    }
 
-    final exceptionType = catchClause.exceptionType?.toSource();
-    if (exceptionType == null || exceptionType.isEmpty) return;
+    final exceptionType = node.exceptionType?.toSource();
+    if (exceptionType == null || exceptionType.isEmpty) {
+      return;
+    }
 
-    if (_isProgrammingErrorType(exceptionType)) return;
+    if (_isProgrammingErrorType(exceptionType)) {
+      return;
+    }
 
-    if (!_looksLikeBusinessException(exceptionType)) return;
+    if (!_looksLikeBusinessException(exceptionType)) {
+      return;
+    }
 
-    final code = LintCode(
-      name: 'presentation_no_throw',
-      problemMessage:
-          'Do not branch business exceptions ($exceptionType) directly in Widget/Presentation.',
-      correctionMessage:
-          'Handle in Provider via AsyncValue.guard(); render in UI with when(error: ...).',
-      errorSeverity: DiagnosticSeverity.WARNING,
-    );
-
-    reporter.reportAtNode(catchClause, code);
+    rule.reportAtNode(node);
   }
 
-  bool _isStateOrNotifierClass(String className, ClassDeclaration classNode) {
+  bool _isCurrentPresentationUnit() {
+    final path =
+        context.currentUnit?.file.path ?? context.definingUnit.file.path;
+    return isPresentationLibPath(path);
+  }
+
+  bool _isCurrentPresentationStateUnit() {
+    final path =
+        context.currentUnit?.file.path ?? context.definingUnit.file.path;
+    return isPresentationStateManagementPath(path);
+  }
+
+  bool _isStateOrNotifierClass(ClassDeclaration classNode) {
+    final className = classNode.name.lexeme;
+
     for (final metadata in classNode.metadata) {
       final name = metadata.name.name;
       if (name == 'riverpod' || name == 'Riverpod') {
@@ -136,34 +150,31 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
   }
 
   MethodDeclaration? _findParentMethod(ThrowExpression node) {
-    var current = node.parent;
+    AstNode? current = node.parent;
     while (current != null) {
-      if (current is MethodDeclaration) return current;
-      if (current is ConstructorDeclaration) return null;
+      if (current is MethodDeclaration) {
+        return current;
+      }
+      if (current is ConstructorDeclaration) {
+        return null;
+      }
       current = current.parent;
     }
     return null;
   }
 
+  bool _isPrivateMethod(MethodDeclaration method) {
+    return method.name.lexeme.startsWith('_');
+  }
+
   bool _isThrowingProgrammingError(ThrowExpression node) {
     final expression = node.expression;
-
-    if (expression is InstanceCreationExpression) {
-      final typeName = expression.constructorName.type.name.lexeme;
-      const programmingErrors = [
-        'ArgumentError',
-        'AssertionError',
-        'StateError',
-        'UnimplementedError',
-        'UnsupportedError',
-        'TypeError',
-        'RangeError',
-      ];
-
-      return programmingErrors.contains(typeName);
+    if (expression is! InstanceCreationExpression) {
+      return false;
     }
 
-    return false;
+    final typeName = expression.constructorName.type.name.lexeme;
+    return _isProgrammingErrorType(typeName);
   }
 
   bool _isRethrow(ThrowExpression node) {
@@ -171,37 +182,29 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
         node.expression.toSource() == 'rethrow';
   }
 
-  bool _isInsideAsyncValueGuard(ThrowExpression node) {
-    AstNode? current = node;
+  bool _isInsideAsyncValueGuard(AstNode node) {
+    AstNode? current = node.parent;
     while (current != null) {
-      if (current is MethodInvocation) {
-        final methodName = current.methodName.name;
-        final targetSource = current.target?.toSource() ?? '';
-        if (methodName == 'guard' && targetSource.contains('AsyncValue')) {
-          return true;
-        }
+      if (current is MethodInvocation &&
+          current.methodName.name == 'guard' &&
+          _isAsyncValueTarget(current.target)) {
+        return true;
       }
       current = current.parent;
     }
     return false;
   }
 
-  String _getExceptionType(ThrowExpression node) {
-    final expression = node.expression;
-
-    if (expression is InstanceCreationExpression) {
-      return expression.constructorName.type.name.lexeme;
+  bool _isAsyncValueTarget(Expression? target) {
+    if (target is SimpleIdentifier) {
+      return target.name == 'AsyncValue';
     }
 
-    if (expression is SimpleIdentifier) {
-      return 'exception (variable)';
+    if (target is PrefixedIdentifier) {
+      return target.identifier.name == 'AsyncValue';
     }
 
-    if (expression is RethrowExpression || expression.toString() == 'rethrow') {
-      return 'rethrow';
-    }
-
-    return 'exception';
+    return target?.toSource().split('.').contains('AsyncValue') ?? false;
   }
 
   bool _isWidgetClass(ClassDeclaration classNode) {
@@ -214,7 +217,9 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
     }
 
     final extendsClause = classNode.extendsClause;
-    if (extendsClause == null) return false;
+    if (extendsClause == null) {
+      return false;
+    }
 
     final superName = extendsClause.superclass.name.lexeme;
     return superName == 'StatelessWidget' ||
@@ -242,4 +247,41 @@ class PresentationNoThrowRule extends CleanArchitectureLintRule {
         typeName.endsWith('Failure') ||
         typeName == 'AppException';
   }
+}
+
+bool isPresentationLibPath(String path) {
+  final segments = path
+      .replaceAll('\\', '/')
+      .split('/')
+      .where((segment) => segment.isNotEmpty)
+      .toList(growable: false);
+
+  final libIndex = segments.lastIndexOf('lib');
+  if (libIndex == -1 || libIndex == segments.length - 1) {
+    return false;
+  }
+
+  return segments.skip(libIndex + 1).contains('presentation');
+}
+
+bool isPresentationStateManagementPath(String path) {
+  final segments = path
+      .replaceAll('\\', '/')
+      .split('/')
+      .where((segment) => segment.isNotEmpty)
+      .toList(growable: false);
+
+  final libIndex = segments.lastIndexOf('lib');
+  if (libIndex == -1 || libIndex == segments.length - 1) {
+    return false;
+  }
+
+  final libSegments = segments.skip(libIndex + 1).toList(growable: false);
+  if (libSegments.contains('domain') || libSegments.contains('data')) {
+    return false;
+  }
+
+  return libSegments.contains('states') ||
+      libSegments.contains('state') ||
+      libSegments.contains('providers');
 }
