@@ -170,12 +170,16 @@ class V2RuleResult {
 
   void expectDiagnostics(List<ExpectedV2Diagnostic> expected) {
     final compareLine = expected.any((diagnostic) => diagnostic.line != null);
-    final actual = diagnostics.map((diagnostic) {
-      return _describe(diagnostic, includeLine: compareLine);
-    }).toList()..sort();
-    final expectedDescriptions = expected.map((diagnostic) {
-      return _describeExpected(diagnostic, includeLine: compareLine);
-    }).toList()..sort();
+    final actual =
+        diagnostics.map((diagnostic) {
+            return _describe(diagnostic, includeLine: compareLine);
+          }).toList()
+          ..sort();
+    final expectedDescriptions =
+        expected.map((diagnostic) {
+            return _describeExpected(diagnostic, includeLine: compareLine);
+          }).toList()
+          ..sort();
 
     expect(actual, expectedDescriptions);
   }
