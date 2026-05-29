@@ -14,6 +14,8 @@ Thank you for your interest in contributing! This guide will help you add new li
 
 ## Development Setup
 
+> v2.0 `analysis_server_plugin` 마이그레이션 작업은 [v2 analyzer plugin 개발 흐름](docs/v2-dev-workflow.md)을 먼저 따라 주세요.
+
 ### Prerequisites
 - Dart SDK 3.0.0 or higher
 - Flutter 3.10.0 or higher (for testing with Flutter projects)

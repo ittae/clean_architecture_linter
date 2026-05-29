@@ -74,6 +74,8 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 
 ## 🚀 Quick Start
 
+> v2.0 개발자는 공식 analyzer plugin 기반 로컬 흐름을 [v2 analyzer plugin 개발 흐름](docs/v2-dev-workflow.md)에서 확인하세요.
+
 ### 📋 Requirements
 
 - **Dart SDK**: 3.6.0+
