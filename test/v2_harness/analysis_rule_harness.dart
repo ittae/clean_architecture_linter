@@ -24,6 +24,7 @@ class V2RuleHarness {
   Future<V2RuleResult> analyze({
     required Map<String, String> files,
     String definingFile = 'lib/main.dart',
+    List<String> additionalDefiningFiles = const [],
   }) async {
     final root = await Directory.systemTemp.createTemp('cal_v2_harness_');
     final rootPath = p.normalize(root.absolute.path);
@@ -40,82 +41,83 @@ environment:
         _writeFile(p.join(rootPath, entry.key), entry.value);
       }
 
-      final definingPath = p.normalize(p.join(rootPath, definingFile));
       collection = AnalysisContextCollection(
         includedPaths: [rootPath],
         resourceProvider: PhysicalResourceProvider.INSTANCE,
       );
 
-      final context = collection.contextFor(definingPath);
-      final result = await context.currentSession.getResolvedLibraryContaining(
-        definingPath,
-      );
+      final diagnostics = <V2RuleDiagnostic>[];
+      for (final file in [definingFile, ...additionalDefiningFiles]) {
+        final definingPath = p.normalize(p.join(rootPath, file));
+        final context = collection.contextFor(definingPath);
+        final result = await context.currentSession
+            .getResolvedLibraryContaining(definingPath);
 
-      if (result is! ResolvedLibraryResult) {
-        throw StateError('Failed to resolve $definingFile: $result');
-      }
-
-      final listeners = <String, RecordingDiagnosticListener>{};
-      final unitContents = <String, String>{};
-      final units = <RuleContextUnit>[];
-      RuleContextUnit? definingUnit;
-
-      for (final unitResult in result.units) {
-        final unitPath = p.normalize(unitResult.path);
-        final listener = RecordingDiagnosticListener();
-        listeners[unitPath] = listener;
-        unitContents[unitPath] = unitResult.content;
-
-        final contextUnit = RuleContextUnit(
-          file: unitResult.file,
-          content: unitResult.content,
-          diagnosticReporter: DiagnosticReporter(
-            listener,
-            unitResult.unit.declaredFragment!.source,
-          ),
-          unit: unitResult.unit,
-        );
-
-        units.add(contextUnit);
-        if (p.equals(
-          unitPath,
-          p.normalize(result.element.firstFragment.source.fullName),
-        )) {
-          definingUnit = contextUnit;
+        if (result is! ResolvedLibraryResult) {
+          throw StateError('Failed to resolve $file: $result');
         }
-      }
 
-      definingUnit ??= units.first;
+        final listeners = <String, RecordingDiagnosticListener>{};
+        final unitContents = <String, String>{};
+        final units = <RuleContextUnit>[];
+        RuleContextUnit? definingUnit;
 
-      final registry = RuleVisitorRegistryImpl(enableTiming: false);
-      final ruleContext = RuleContextWithResolvedResults(
-        units,
-        definingUnit,
-        result.typeProvider,
-        result.element.typeSystem,
-        null,
-      );
+        for (final unitResult in result.units) {
+          final unitPath = p.normalize(unitResult.path);
+          final listener = RecordingDiagnosticListener();
+          listeners[unitPath] = listener;
+          unitContents[unitPath] = unitResult.content;
 
-      rule.registerNodeProcessors(registry, ruleContext);
+          final contextUnit = RuleContextUnit(
+            file: unitResult.file,
+            content: unitResult.content,
+            diagnosticReporter: DiagnosticReporter(
+              listener,
+              unitResult.unit.declaredFragment!.source,
+            ),
+            unit: unitResult.unit,
+          );
 
-      for (final unit in units) {
-        rule.reporter = unit.diagnosticReporter;
-        ruleContext.currentUnit = unit;
-        unit.unit.accept(
-          AnalysisRuleVisitor(registry, shouldPropagateExceptions: true),
+          units.add(contextUnit);
+          if (p.equals(
+            unitPath,
+            p.normalize(result.element.firstFragment.source.fullName),
+          )) {
+            definingUnit = contextUnit;
+          }
+        }
+
+        definingUnit ??= units.first;
+
+        final registry = RuleVisitorRegistryImpl(enableTiming: false);
+        final ruleContext = RuleContextWithResolvedResults(
+          units,
+          definingUnit,
+          result.typeProvider,
+          result.element.typeSystem,
+          null,
         );
+
+        rule.registerNodeProcessors(registry, ruleContext);
+
+        for (final unit in units) {
+          rule.reporter = unit.diagnosticReporter;
+          ruleContext.currentUnit = unit;
+          unit.unit.accept(
+            AnalysisRuleVisitor(registry, shouldPropagateExceptions: true),
+          );
+          ruleContext.currentUnit = null;
+        }
+
         ruleContext.currentUnit = null;
-      }
+        AnalysisRuleVisitor(
+          registry,
+          shouldPropagateExceptions: true,
+        ).afterLibrary();
+        ruleContext.currentUnit = null;
 
-      ruleContext.currentUnit = null;
-      AnalysisRuleVisitor(
-        registry,
-        shouldPropagateExceptions: true,
-      ).afterLibrary();
-      ruleContext.currentUnit = null;
-
-      final diagnostics = listeners.entries
-          .expand(
+        diagnostics.addAll(
+          listeners.entries.expand(
             (entry) => entry.value.diagnostics.map(
               (diagnostic) => V2RuleDiagnostic(
                 path: entry.key,
@@ -129,8 +131,9 @@ environment:
                 diagnostic: diagnostic,
               ),
             ),
-          )
-          .toList(growable: false);
+          ),
+        );
+      }
 
       return V2RuleResult(rootPath: rootPath, diagnostics: diagnostics);
     } finally {
