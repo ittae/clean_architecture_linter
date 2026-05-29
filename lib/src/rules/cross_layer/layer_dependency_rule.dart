@@ -15,7 +15,7 @@ class LayerDependencyRule extends AnalysisRule {
     'Improper dependency between architectural layers detected.',
     correctionMessage:
         'Ensure dependencies flow inward: Presentation -> Domain <- Data.',
-    severity: DiagnosticSeverity.ERROR,
+    severity: DiagnosticSeverity.WARNING,
     uniqueName: 'LintCode.layer_dependency',
   );
 
@@ -64,13 +64,13 @@ class _LayerDependencyVisitor extends SimpleAstVisitor<void> {
 
     if (sourceLayer == null || targetLayer == null) return;
 
-    final violation = _checkDependencyViolation(
+    final hasViolation = _hasDependencyViolation(
       sourceLayer,
       targetLayer,
       importUri,
     );
 
-    if (violation != null) {
+    if (hasViolation) {
       rule.reportAtNode(node);
     }
   }
@@ -86,51 +86,51 @@ class _LayerDependencyVisitor extends SimpleAstVisitor<void> {
             normalizedPath.contains('/data/');
   }
 
-  LayerViolation? _checkDependencyViolation(
+  bool _hasDependencyViolation(
     ArchitectureLayer source,
     ArchitectureLayer target,
     String importPath,
   ) {
     if (_isCrossCuttingConcern(importPath)) {
-      return null;
+      return false;
     }
 
     switch (source) {
       case ArchitectureLayer.domain:
         if (target == ArchitectureLayer.data) {
-          return const LayerViolation();
+          return true;
         }
         if (target == ArchitectureLayer.presentation) {
-          return const LayerViolation();
+          return true;
         }
         if (target == ArchitectureLayer.infrastructure) {
-          return const LayerViolation();
+          return true;
         }
         break;
 
       case ArchitectureLayer.data:
         if (target == ArchitectureLayer.presentation) {
-          return const LayerViolation();
+          return true;
         }
         if (target == ArchitectureLayer.infrastructure &&
             !_isAllowedInfrastructureImport(importPath)) {
-          return const LayerViolation();
+          return true;
         }
         break;
 
       case ArchitectureLayer.presentation:
         if (target == ArchitectureLayer.data) {
-          return const LayerViolation();
+          return true;
         }
         if (target == ArchitectureLayer.infrastructure &&
             !_isAllowedPresentationInfrastructure(importPath)) {
-          return const LayerViolation();
+          return true;
         }
         break;
 
       case ArchitectureLayer.infrastructure:
         if (target == ArchitectureLayer.presentation) {
-          return const LayerViolation();
+          return true;
         }
         break;
 
@@ -138,12 +138,12 @@ class _LayerDependencyVisitor extends SimpleAstVisitor<void> {
         if (target == ArchitectureLayer.data ||
             target == ArchitectureLayer.presentation ||
             target == ArchitectureLayer.infrastructure) {
-          return const LayerViolation();
+          return true;
         }
         break;
     }
 
-    return null;
+    return false;
   }
 
   ArchitectureLayer? _identifyLayer(String path) {
@@ -285,8 +285,4 @@ enum ArchitectureLayer {
   data,
   presentation,
   infrastructure,
-}
-
-class LayerViolation {
-  const LayerViolation();
 }
