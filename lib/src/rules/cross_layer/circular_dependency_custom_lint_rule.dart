@@ -17,8 +17,8 @@ import '../../clean_architecture_linter_base.dart';
 /// - Making testing difficult
 /// - Preventing clear separation of concerns
 /// - Making the codebase harder to understand and maintain
-class CircularDependencyRule extends CleanArchitectureLintRule {
-  const CircularDependencyRule() : super(code: _code);
+class CustomLintCircularDependencyRule extends CleanArchitectureLintRule {
+  const CustomLintCircularDependencyRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'circular_dependency',

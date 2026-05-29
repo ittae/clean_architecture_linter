@@ -1,72 +1,61 @@
+import 'package:analyzer/analysis_rule/analysis_rule.dart';
+import 'package:analyzer/analysis_rule/rule_context.dart';
+import 'package:analyzer/analysis_rule/rule_visitor_registry.dart';
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
-import 'package:analyzer/error/listener.dart';
-import 'package:custom_lint_builder/custom_lint_builder.dart';
-
-import '../../clean_architecture_linter_base.dart';
+import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:analyzer/error/error.dart';
 
 /// Enforces proper dependency direction between architectural layers.
 ///
-/// This rule ensures that dependencies only flow inward according to Clean Architecture:
-/// - Presentation layer can depend on: Domain layer (not Data layer directly)
-/// - Data layer can depend on: Domain layer
-/// - Domain layer can depend on: Nothing (must remain pure)
-///
-/// The rule prevents:
-/// - Presentation layer from directly accessing Data layer (must go through Domain)
-/// - Data layer from accessing Presentation layer
-/// - Domain layer from accessing Data or Presentation layers
-/// - Circular dependencies between layers
-class LayerDependencyRule extends CleanArchitectureLintRule {
-  const LayerDependencyRule() : super(code: _code);
-
-  static const _code = LintCode(
-    name: 'layer_dependency',
-    problemMessage:
-        'Improper dependency between architectural layers detected.',
+/// The path filters and DI exceptions intentionally mirror the v1 custom-lint
+/// rule so the v2 warning rule does not become noisier during migration.
+class LayerDependencyRule extends AnalysisRule {
+  static const LintCode code = LintCode(
+    'layer_dependency',
+    'Improper dependency between architectural layers detected.',
     correctionMessage:
-        'Ensure dependencies flow inward: Presentation → Domain ← Data. Never skip layers or create circular dependencies.',
-    errorSeverity: DiagnosticSeverity.ERROR,
+        'Ensure dependencies flow inward: Presentation -> Domain <- Data.',
+    severity: DiagnosticSeverity.WARNING,
+    uniqueName: 'LintCode.layer_dependency',
   );
 
-  @override
-  void runRule(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
-  ) {
-    context.registry.addImportDirective((node) {
-      _checkLayerDependency(node, reporter, resolver);
-    });
-  }
+  LayerDependencyRule()
+    : super(
+        name: 'layer_dependency',
+        description: 'Enforces Clean Architecture dependency direction.',
+      );
 
-  void _checkLayerDependency(
-    ImportDirective node,
-    DiagnosticReporter reporter,
-    CustomLintResolver resolver,
+  @override
+  bool get canUseParsedResult => true;
+
+  @override
+  DiagnosticCode get diagnosticCode => code;
+
+  @override
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
   ) {
-    final filePath = resolver.path;
+    registry.addImportDirective(this, _LayerDependencyVisitor(this, context));
+  }
+}
+
+class _LayerDependencyVisitor extends SimpleAstVisitor<void> {
+  _LayerDependencyVisitor(this.rule, this.context);
+
+  final AnalysisRule rule;
+  final RuleContext context;
+
+  @override
+  void visitImportDirective(ImportDirective node) {
+    final filePath = _currentPath();
     final importUri = node.uri.stringValue;
     if (importUri == null) return;
 
-    // DI/provider files can import DataSource and Repository implementations,
-    // but Data Models import is still forbidden
     if (_isDependencyInjectionFile(filePath)) {
-      // Even in DI files, Data Models should NOT be imported
       if (_isDataModelImport(importUri)) {
-        final enhancedCode = LintCode(
-          name: 'layer_dependency',
-          problemMessage:
-              'Data Models should not be imported even in DI/Provider files. Found import: $importUri',
-          correctionMessage:
-              'DI files can import DataSource and Repository implementations, '
-              'but Data Models should remain internal to the Data layer. '
-              'Use Domain Entities in Presentation layer instead.',
-          errorSeverity: DiagnosticSeverity.ERROR,
-        );
-        reporter.reportAtNode(node, enhancedCode);
+        rule.reportAtNode(node);
       }
-      // Skip other dependency checks for DI files
       return;
     }
 
@@ -75,27 +64,21 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
 
     if (sourceLayer == null || targetLayer == null) return;
 
-    final violation = _checkDependencyViolation(
+    final hasViolation = _hasDependencyViolation(
       sourceLayer,
       targetLayer,
       importUri,
     );
 
-    if (violation != null) {
-      final enhancedCode = LintCode(
-        name: 'layer_dependency',
-        problemMessage: violation.message,
-        correctionMessage: violation.suggestion,
-        errorSeverity: DiagnosticSeverity.ERROR,
-      );
-      reporter.reportAtNode(node, enhancedCode);
+    if (hasViolation) {
+      rule.reportAtNode(node);
     }
   }
 
-  /// Checks if the import path refers to a Data Model.
-  ///
-  /// Data Models are files in /data/models/ directory.
-  /// These should NOT be imported in DI/Provider files or Presentation layer.
+  String _currentPath() {
+    return context.currentUnit?.file.path ?? context.definingUnit.file.path;
+  }
+
   bool _isDataModelImport(String importUri) {
     final normalizedPath = importUri.replaceAll('\\', '/').toLowerCase();
     return normalizedPath.contains('/data/models/') ||
@@ -103,118 +86,69 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
             normalizedPath.contains('/data/');
   }
 
-  LayerViolation? _checkDependencyViolation(
+  bool _hasDependencyViolation(
     ArchitectureLayer source,
     ArchitectureLayer target,
     String importPath,
   ) {
-    // Allow cross-cutting concerns in all layers
     if (_isCrossCuttingConcern(importPath)) {
-      return null;
+      return false;
     }
 
     switch (source) {
       case ArchitectureLayer.domain:
         if (target == ArchitectureLayer.data) {
-          return LayerViolation(
-            message:
-                'Domain layer cannot depend on Data layer. Found import: $importPath',
-            suggestion:
-                'Domain layer must remain pure. Use dependency inversion - create abstractions in Domain that Data layer implements.',
-          );
+          return true;
         }
         if (target == ArchitectureLayer.presentation) {
-          return LayerViolation(
-            message:
-                'Domain layer cannot depend on Presentation layer. Found import: $importPath',
-            suggestion:
-                'Domain layer must remain independent of UI concerns. Move UI-specific logic to Presentation layer.',
-          );
+          return true;
         }
         if (target == ArchitectureLayer.infrastructure) {
-          return LayerViolation(
-            message:
-                'Domain layer cannot depend on Infrastructure. Found import: $importPath',
-            suggestion:
-                'Create domain abstractions (interfaces) and implement them in Infrastructure/Data layer.',
-          );
+          return true;
         }
         break;
 
       case ArchitectureLayer.data:
         if (target == ArchitectureLayer.presentation) {
-          return LayerViolation(
-            message:
-                'Data layer cannot depend on Presentation layer. Found import: $importPath',
-            suggestion:
-                'Data layer should only depend on Domain layer. Remove presentation dependencies.',
-          );
+          return true;
         }
         if (target == ArchitectureLayer.infrastructure &&
             !_isAllowedInfrastructureImport(importPath)) {
-          return LayerViolation(
-            message:
-                'Data layer has suspicious Infrastructure dependency: $importPath',
-            suggestion:
-                'Ensure this infrastructure dependency is appropriate for data layer responsibilities.',
-          );
+          return true;
         }
         break;
 
       case ArchitectureLayer.presentation:
         if (target == ArchitectureLayer.data) {
-          return LayerViolation(
-            message:
-                'Presentation layer should not directly depend on Data layer. Found import: $importPath',
-            suggestion:
-                'Presentation should interact with Domain layer (Use Cases) instead of Data layer directly. Apply Dependency Rule.',
-          );
+          return true;
         }
         if (target == ArchitectureLayer.infrastructure &&
             !_isAllowedPresentationInfrastructure(importPath)) {
-          return LayerViolation(
-            message:
-                'Presentation layer has improper Infrastructure dependency: $importPath',
-            suggestion:
-                'Use Domain abstractions instead of direct infrastructure dependencies in Presentation.',
-          );
+          return true;
         }
         break;
 
       case ArchitectureLayer.infrastructure:
         if (target == ArchitectureLayer.presentation) {
-          return LayerViolation(
-            message:
-                'Infrastructure cannot depend on Presentation layer. Found import: $importPath',
-            suggestion:
-                'Infrastructure should only provide services, not depend on UI.',
-          );
+          return true;
         }
         break;
 
       case ArchitectureLayer.application:
-        // Application/Use Case layer (part of Domain) follows same rules as Domain
         if (target == ArchitectureLayer.data ||
             target == ArchitectureLayer.presentation ||
             target == ArchitectureLayer.infrastructure) {
-          return LayerViolation(
-            message:
-                'Application layer cannot depend on outer layers. Found import: $importPath',
-            suggestion:
-                'Application layer should only depend on Domain entities and abstractions.',
-          );
+          return true;
         }
         break;
     }
 
-    return null;
+    return false;
   }
 
   ArchitectureLayer? _identifyLayer(String path) {
-    // Normalize path separators
     final normalizedPath = path.replaceAll('\\', '/').toLowerCase();
 
-    // Check for domain layer and its sub-layers
     if (normalizedPath.contains('/domain/')) {
       if (normalizedPath.contains('/domain/usecases/') ||
           normalizedPath.contains('/domain/use_cases/')) {
@@ -223,12 +157,10 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
       return ArchitectureLayer.domain;
     }
 
-    // Check for data layer
     if (normalizedPath.contains('/data/')) {
       return ArchitectureLayer.data;
     }
 
-    // Check for presentation layer
     if (normalizedPath.contains('/presentation/') ||
         normalizedPath.contains('/ui/') ||
         normalizedPath.contains('/widgets/') ||
@@ -238,14 +170,12 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
       return ArchitectureLayer.presentation;
     }
 
-    // Check for infrastructure layer
     if (normalizedPath.contains('/infrastructure/') ||
         normalizedPath.contains('/services/') ||
         normalizedPath.contains('/external/')) {
       return ArchitectureLayer.infrastructure;
     }
 
-    // Check for common infrastructure packages
     if (_isInfrastructurePackage(normalizedPath)) {
       return ArchitectureLayer.infrastructure;
     }
@@ -254,7 +184,7 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
   }
 
   bool _isInfrastructurePackage(String path) {
-    final infraPackages = [
+    const infraPackages = [
       'package:http/',
       'package:dio/',
       'package:sqflite/',
@@ -268,34 +198,32 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
       'package:realm/',
     ];
 
-    return infraPackages.any((pkg) => path.startsWith(pkg));
+    return infraPackages.any(path.startsWith);
   }
 
   bool _isAllowedInfrastructureImport(String path) {
-    // Data layer can use certain infrastructure for implementation
-    final allowedForData = [
+    const allowedForData = [
       'package:http/',
       'package:dio/',
       'package:sqflite/',
       'package:hive/',
       'package:shared_preferences/',
       'package:drift/',
-      'package:firebase_', // Firebase packages
-      'package:cloud_', // Cloud services
-      'package:supabase_', // Supabase
-      'package:isar/', // Database packages
-      'package:objectbox/', // ObjectBox database
-      'package:realm/', // Realm database
+      'package:firebase_',
+      'package:cloud_',
+      'package:supabase_',
+      'package:isar/',
+      'package:objectbox/',
+      'package:realm/',
       'dart:convert',
       'dart:async',
     ];
 
-    return allowedForData.any((allowed) => path.startsWith(allowed));
+    return allowedForData.any(path.startsWith);
   }
 
   bool _isAllowedPresentationInfrastructure(String path) {
-    // Presentation can use certain UI-related infrastructure
-    final allowedForPresentation = [
+    const allowedForPresentation = [
       'package:flutter/',
       'package:provider/',
       'package:riverpod/',
@@ -305,15 +233,13 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
       'dart:async',
     ];
 
-    return allowedForPresentation.any((allowed) => path.startsWith(allowed));
+    return allowedForPresentation.any(path.startsWith);
   }
 
   bool _isDependencyInjectionFile(String filePath) {
-    // Normalize path separators
     final normalizedPath = filePath.replaceAll('\\', '/').toLowerCase();
 
-    // Check for common DI/provider file patterns
-    final diPatterns = [
+    const diPatterns = [
       '/providers.dart',
       '/provider.dart',
       '/providers/',
@@ -325,7 +251,7 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
       '/get_it.dart',
       '/locator.dart',
       '/service_locator.dart',
-      'main.dart', // main.dart often contains DI setup
+      'main.dart',
     ];
 
     return diPatterns.any(
@@ -335,41 +261,28 @@ class LayerDependencyRule extends CleanArchitectureLintRule {
   }
 
   bool _isCrossCuttingConcern(String importUri) {
-    // Cross-cutting concerns that can be used across all layers
-    final crossCuttingPatterns = [
-      // Utility packages
+    const crossCuttingPatterns = [
       '/core/utils/',
       '/shared/utils/',
       '/common/utils/',
       '/utils/',
-      // Logging
       'package:logger/',
       'package:logging/',
-      // Configuration
       '/core/config/',
       '/shared/config/',
-      // Constants
       '/core/constants/',
       '/shared/constants/',
-      // Dart core libraries
       'dart:',
     ];
 
-    return crossCuttingPatterns.any((pattern) => importUri.contains(pattern));
+    return crossCuttingPatterns.any(importUri.contains);
   }
 }
 
 enum ArchitectureLayer {
   domain,
-  application, // Use cases - part of domain but separated for clarity
+  application,
   data,
   presentation,
   infrastructure,
-}
-
-class LayerViolation {
-  final String message;
-  final String suggestion;
-
-  const LayerViolation({required this.message, required this.suggestion});
 }
