@@ -26,6 +26,59 @@ class TodoRepositoryImpl {}
               'lib/features/todo/domain/usecases/get_todo_usecase.dart',
           codeName: 'boundary_crossing',
           line: 1,
+          problemMessage:
+              'Boundary crossing violation: domain layer depends on concrete data implementation: ../../data/repositories/todo_repository_impl.dart',
+        ),
+      ]);
+    });
+
+    test('reports implementation suffix imports', () async {
+      final result = await V2RuleHarness(rule: BoundaryCrossingRule()).analyze(
+        files: {
+          'lib/features/todo/domain/usecases/get_todo_usecase.dart': '''
+import '../../data/repositories/todo_repository_implementation.dart';
+
+class GetTodoUseCase {}
+''',
+          'lib/features/todo/data/repositories/todo_repository_implementation.dart':
+              '''
+class TodoRepositoryImplementation {}
+''',
+        },
+        definingFile: 'lib/features/todo/domain/usecases/get_todo_usecase.dart',
+      );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/domain/usecases/get_todo_usecase.dart',
+          codeName: 'boundary_crossing',
+          line: 1,
+        ),
+      ]);
+    });
+
+    test('reports impl directory imports', () async {
+      final result = await V2RuleHarness(rule: BoundaryCrossingRule()).analyze(
+        files: {
+          'lib/features/todo/domain/usecases/get_todo_usecase.dart': '''
+import '../../data/impl/todo_repository.dart';
+
+class GetTodoUseCase {}
+''',
+          'lib/features/todo/data/impl/todo_repository.dart': '''
+class TodoRepository {}
+''',
+        },
+        definingFile: 'lib/features/todo/domain/usecases/get_todo_usecase.dart',
+      );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/domain/usecases/get_todo_usecase.dart',
+          codeName: 'boundary_crossing',
+          line: 1,
         ),
       ]);
     });

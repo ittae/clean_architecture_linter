@@ -95,7 +95,7 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
       CircularDependencyRule(),
 
       // 6. Boundary Crossing Validation - 레이어 경계 검증
-      BoundaryCrossingRule(),
+      CustomLintBoundaryCrossingRule(),
 
       // Domain Layer Rules (2 rules)
 

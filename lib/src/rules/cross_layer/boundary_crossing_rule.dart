@@ -12,7 +12,7 @@ import 'package:analyzer/error/error.dart';
 class BoundaryCrossingRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'boundary_crossing',
-    'Boundary crossing violation.',
+    'Boundary crossing violation: {0}',
     correctionMessage:
         'Use Dependency Inversion Principle to cross architectural boundaries properly.',
     severity: DiagnosticSeverity.WARNING,
@@ -64,7 +64,13 @@ class _BoundaryCrossingVisitor extends SimpleAstVisitor<void> {
     if (sourceLayer == null || targetLayer == null) return;
 
     if (_isConcreteDependency(importUri, sourceLayer, targetLayer)) {
-      rule.reportAtNode(node);
+      rule.reportAtNode(
+        node,
+        arguments: [
+          '${sourceLayer.name} layer depends on concrete '
+              '${targetLayer.name} implementation: $importUri',
+        ],
+      );
     }
   }
 
@@ -75,7 +81,7 @@ class _BoundaryCrossingVisitor extends SimpleAstVisitor<void> {
   ) {
     if (importUri.contains('_impl.dart') ||
         importUri.contains('_implementation.dart') ||
-        importUri.endsWith('Impl')) {
+        importUri.contains('/impl/')) {
       return true;
     }
 

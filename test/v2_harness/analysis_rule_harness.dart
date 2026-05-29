@@ -170,11 +170,22 @@ class V2RuleResult {
 
   void expectDiagnostics(List<ExpectedV2Diagnostic> expected) {
     final compareLine = expected.any((diagnostic) => diagnostic.line != null);
+    final compareMessage = expected.any(
+      (diagnostic) => diagnostic.problemMessage != null,
+    );
     final actual = diagnostics.map((diagnostic) {
-      return _describe(diagnostic, includeLine: compareLine);
+      return _describe(
+        diagnostic,
+        includeLine: compareLine,
+        includeMessage: compareMessage,
+      );
     }).toList()..sort();
     final expectedDescriptions = expected.map((diagnostic) {
-      return _describeExpected(diagnostic, includeLine: compareLine);
+      return _describeExpected(
+        diagnostic,
+        includeLine: compareLine,
+        includeMessage: compareMessage,
+      );
     }).toList()..sort();
 
     expect(actual, expectedDescriptions);
@@ -184,20 +195,27 @@ class V2RuleResult {
     expect(diagnostics.map((diagnostic) => _describe(diagnostic)), isEmpty);
   }
 
-  String _describe(V2RuleDiagnostic diagnostic, {bool includeLine = false}) {
+  String _describe(
+    V2RuleDiagnostic diagnostic, {
+    bool includeLine = false,
+    bool includeMessage = false,
+  }) {
     final line = includeLine ? '|${diagnostic.line}' : '';
-    return '${diagnostic.relativePath}|${diagnostic.codeName}$line';
+    final message = includeMessage ? '|${diagnostic.problemMessage}' : '';
+    return '${diagnostic.relativePath}|${diagnostic.codeName}$line$message';
   }
 
   String _describeExpected(
     ExpectedV2Diagnostic diagnostic, {
     required bool includeLine,
+    required bool includeMessage,
   }) {
     final line = includeLine ? '|${diagnostic.line}' : '';
+    final message = includeMessage ? '|${diagnostic.problemMessage}' : '';
     final relativePath = p.url.normalize(
       diagnostic.relativePath.replaceAll('\\', '/'),
     );
-    return '$relativePath|${diagnostic.codeName}$line';
+    return '$relativePath|${diagnostic.codeName}$line$message';
   }
 }
 
@@ -215,6 +233,8 @@ class V2RuleDiagnostic {
   final Diagnostic diagnostic;
 
   String get codeName => diagnostic.diagnosticCode.name;
+  String get problemMessage =>
+      diagnostic.problemMessage.messageText(includeUrl: false);
 }
 
 class ExpectedV2Diagnostic {
@@ -222,9 +242,11 @@ class ExpectedV2Diagnostic {
     required this.relativePath,
     required this.codeName,
     this.line,
+    this.problemMessage,
   });
 
   final String relativePath;
   final String codeName;
   final int? line;
+  final String? problemMessage;
 }

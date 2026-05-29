@@ -12,8 +12,8 @@ import '../../clean_architecture_linter_base.dart';
 /// - No direct instantiation of classes from outer layers
 ///
 /// Simplified to focus on essential violations with minimal false positives.
-class BoundaryCrossingRule extends CleanArchitectureLintRule {
-  const BoundaryCrossingRule() : super(code: _code);
+class CustomLintBoundaryCrossingRule extends CleanArchitectureLintRule {
+  const CustomLintBoundaryCrossingRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'boundary_crossing',
