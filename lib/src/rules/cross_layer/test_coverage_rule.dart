@@ -8,6 +8,8 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 import 'package:path/path.dart' as path;
 
+import '../../clean_architecture_linter_base.dart';
+
 /// Enforces test coverage for critical Clean Architecture components.
 ///
 /// The optional constructor flags preserve the v1 configuration surface. v2
@@ -39,6 +41,10 @@ class TestCoverageRule extends AnalysisRule {
   final bool checkDatasources;
   final bool checkNotifiers;
 
+  static String expectedTestFilePathForTesting(String libFilePath) {
+    return _expectedTestFilePath(libFilePath);
+  }
+
   @override
   bool get canUseParsedResult => true;
 
@@ -64,6 +70,8 @@ class _TestCoverageVisitor extends SimpleAstVisitor<void> {
   void visitClassDeclaration(ClassDeclaration node) {
     final filePath =
         context.currentUnit?.file.path ?? context.definingUnit.file.path;
+    if (CleanArchitectureUtils.shouldExcludeFile(filePath)) return;
+
     final className = node.name.lexeme;
 
     final componentType = _identifyComponentType(filePath, className, node);
@@ -166,25 +174,29 @@ class _TestCoverageVisitor extends SimpleAstVisitor<void> {
   }
 
   String _getExpectedTestFilePath(String libFilePath) {
-    final normalized = libFilePath.replaceAll('\\', '/');
-    if (normalized.startsWith('lib/')) {
-      return path.join(
-        'test',
-        normalized.substring('lib/'.length).replaceFirst('.dart', '_test.dart'),
-      );
-    }
-
-    final libIndex = normalized.indexOf('/lib/');
-    if (libIndex == -1) {
-      return normalized.replaceFirst('.dart', '_test.dart');
-    }
-
-    final projectRoot = normalized.substring(0, libIndex);
-    final relativePath = normalized.substring(libIndex + 5);
-    final testRelativePath = relativePath.replaceFirst('.dart', '_test.dart');
-
-    return path.join(projectRoot, 'test', testRelativePath);
+    return _expectedTestFilePath(libFilePath);
   }
 }
 
 enum ComponentType { useCase, repositoryImpl, dataSource, notifier }
+
+String _expectedTestFilePath(String libFilePath) {
+  final normalized = libFilePath.replaceAll('\\', '/');
+  if (normalized.startsWith('lib/')) {
+    return path.join(
+      'test',
+      normalized.substring('lib/'.length).replaceFirst('.dart', '_test.dart'),
+    );
+  }
+
+  final libIndex = normalized.indexOf('/lib/');
+  if (libIndex == -1) {
+    return normalized.replaceFirst('.dart', '_test.dart');
+  }
+
+  final projectRoot = normalized.substring(0, libIndex);
+  final relativePath = normalized.substring(libIndex + 5);
+  final testRelativePath = relativePath.replaceFirst('.dart', '_test.dart');
+
+  return path.join(projectRoot, 'test', testRelativePath);
+}

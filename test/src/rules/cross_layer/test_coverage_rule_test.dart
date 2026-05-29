@@ -63,5 +63,94 @@ class GetTodoUseCase {
 
       result.expectNoDiagnostics();
     });
+
+    test('converts relative lib paths to test paths', () {
+      expect(
+        TestCoverageRule.expectedTestFilePathForTesting(
+          'lib/features/todo/domain/usecases/get_todo_usecase.dart',
+        ),
+        'test/features/todo/domain/usecases/get_todo_usecase_test.dart',
+      );
+    });
+
+    test('excludes generated files', () async {
+      final result = await V2RuleHarness(rule: TestCoverageRule()).analyze(
+        files: {
+          'lib/features/todo/presentation/providers/schedule_notifier.g.dart':
+              '''
+class ScheduleNotifier {
+  void build() {}
+}
+''',
+        },
+        definingFile:
+            'lib/features/todo/presentation/providers/schedule_notifier.g.dart',
+      );
+
+      result.expectNoDiagnostics();
+    });
+
+    test('reports missing tests for repository implementations', () async {
+      final result = await V2RuleHarness(rule: TestCoverageRule()).analyze(
+        files: {
+          'lib/features/todo/data/repositories/todo_repository_impl.dart': '''
+class TodoRepositoryImpl {}
+''',
+        },
+        definingFile:
+            'lib/features/todo/data/repositories/todo_repository_impl.dart',
+      );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/data/repositories/todo_repository_impl.dart',
+          codeName: 'clean_architecture_linter_require_test',
+          line: 1,
+        ),
+      ]);
+    });
+
+    test('reports missing tests for data sources', () async {
+      final result = await V2RuleHarness(rule: TestCoverageRule()).analyze(
+        files: {
+          'lib/features/todo/data/datasources/todo_remote_datasource.dart': '''
+class TodoRemoteDataSource {}
+''',
+        },
+        definingFile:
+            'lib/features/todo/data/datasources/todo_remote_datasource.dart',
+      );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/data/datasources/todo_remote_datasource.dart',
+          codeName: 'clean_architecture_linter_require_test',
+          line: 1,
+        ),
+      ]);
+    });
+
+    test('reports missing tests for notifiers', () async {
+      final result = await V2RuleHarness(rule: TestCoverageRule()).analyze(
+        files: {
+          'lib/features/todo/presentation/providers/todo_notifier.dart': '''
+class TodoNotifier {}
+''',
+        },
+        definingFile:
+            'lib/features/todo/presentation/providers/todo_notifier.dart',
+      );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/presentation/providers/todo_notifier.dart',
+          codeName: 'clean_architecture_linter_require_test',
+          line: 1,
+        ),
+      ]);
+    });
   });
 }

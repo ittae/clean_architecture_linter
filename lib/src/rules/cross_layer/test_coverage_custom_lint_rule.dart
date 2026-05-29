@@ -220,6 +220,12 @@ class TestCoverageRule extends CleanArchitectureLintRule {
     // To:      test/features/user/domain/usecases/get_user_usecase_test.dart
 
     final normalized = libFilePath.replaceAll('\\', '/');
+    if (normalized.startsWith('lib/')) {
+      return path.join(
+        'test',
+        normalized.substring('lib/'.length).replaceFirst('.dart', '_test.dart'),
+      );
+    }
 
     // Find the lib/ part
     final libIndex = normalized.indexOf('/lib/');
