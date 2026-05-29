@@ -5,6 +5,13 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
+/// Prevents business exception throws from presentation state management code.
+///
+/// The throw-expression check intentionally mirrors the v1 custom-lint rule:
+/// it only runs in presentation state/provider files and skips programming
+/// errors, rethrows, constructors, private helper methods, and
+/// `AsyncValue.guard` bodies. Widget catch-branching remains scoped to
+/// presentation widgets.
 class PresentationNoThrowRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'presentation_no_throw',
@@ -46,7 +53,21 @@ class _PresentationNoThrowVisitor extends SimpleAstVisitor<void> {
 
   @override
   void visitThrowExpression(ThrowExpression node) {
-    if (!_isCurrentPresentationUnit()) {
+    if (!_isCurrentPresentationStateUnit()) {
+      return;
+    }
+
+    final classNode = node.thisOrAncestorOfType<ClassDeclaration>();
+    if (classNode == null || !_isStateOrNotifierClass(classNode)) {
+      return;
+    }
+
+    final methodNode = _findParentMethod(node);
+    if (methodNode == null || _isPrivateMethod(methodNode)) {
+      return;
+    }
+
+    if (_isThrowingProgrammingError(node) || _isRethrow(node)) {
       return;
     }
 
@@ -88,6 +109,76 @@ class _PresentationNoThrowVisitor extends SimpleAstVisitor<void> {
     final path =
         context.currentUnit?.file.path ?? context.definingUnit.file.path;
     return isPresentationLibPath(path);
+  }
+
+  bool _isCurrentPresentationStateUnit() {
+    final path =
+        context.currentUnit?.file.path ?? context.definingUnit.file.path;
+    return isPresentationStateManagementPath(path);
+  }
+
+  bool _isStateOrNotifierClass(ClassDeclaration classNode) {
+    final className = classNode.name.lexeme;
+
+    for (final metadata in classNode.metadata) {
+      final name = metadata.name.name;
+      if (name == 'riverpod' || name == 'Riverpod') {
+        return true;
+      }
+    }
+
+    final extendsClause = classNode.extendsClause;
+    if (extendsClause != null) {
+      final superclass = extendsClause.superclass.name.lexeme;
+      if (superclass == 'AsyncNotifier' ||
+          superclass == 'Notifier' ||
+          superclass == 'StateNotifier' ||
+          superclass == 'ChangeNotifier' ||
+          superclass.startsWith('_\$')) {
+        return true;
+      }
+    }
+
+    return className.contains('Notifier') ||
+        className.contains('State') ||
+        className.contains('Provider') ||
+        className.contains('Bloc') ||
+        className.contains('Cubit') ||
+        className.contains('Controller') ||
+        className.contains('ViewModel');
+  }
+
+  MethodDeclaration? _findParentMethod(ThrowExpression node) {
+    AstNode? current = node.parent;
+    while (current != null) {
+      if (current is MethodDeclaration) {
+        return current;
+      }
+      if (current is ConstructorDeclaration) {
+        return null;
+      }
+      current = current.parent;
+    }
+    return null;
+  }
+
+  bool _isPrivateMethod(MethodDeclaration method) {
+    return method.name.lexeme.startsWith('_');
+  }
+
+  bool _isThrowingProgrammingError(ThrowExpression node) {
+    final expression = node.expression;
+    if (expression is! InstanceCreationExpression) {
+      return false;
+    }
+
+    final typeName = expression.constructorName.type.name.lexeme;
+    return _isProgrammingErrorType(typeName);
+  }
+
+  bool _isRethrow(ThrowExpression node) {
+    return node.expression is RethrowExpression ||
+        node.expression.toSource() == 'rethrow';
   }
 
   bool _isInsideAsyncValueGuard(AstNode node) {
@@ -170,4 +261,15 @@ bool isPresentationLibPath(String path) {
   }
 
   return segments.skip(libIndex + 1).contains('presentation');
+}
+
+bool isPresentationStateManagementPath(String path) {
+  if (!isPresentationLibPath(path)) {
+    return false;
+  }
+
+  final normalized = path.replaceAll('\\', '/');
+  return normalized.contains('/states/') ||
+      normalized.contains('/state/') ||
+      normalized.contains('/providers/');
 }

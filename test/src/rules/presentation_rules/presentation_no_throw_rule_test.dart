@@ -5,34 +5,43 @@ import '../../../v2_harness/analysis_rule_harness.dart';
 
 void main() {
   group('PresentationNoThrowRule', () {
-    test('reports throw expressions in presentation lib files', () async {
-      final result = await V2RuleHarness(rule: PresentationNoThrowRule())
-          .analyze(
-            files: {
-              'lib/features/todo/presentation/bad_notifier.dart': '''
+    test(
+      'reports throw expressions in presentation state/provider files',
+      () async {
+        final result = await V2RuleHarness(rule: PresentationNoThrowRule())
+            .analyze(
+              files: {
+                'lib/features/todo/presentation/providers/bad_notifier.dart':
+                    '''
+class TodoException implements Exception {}
+
 class BadNotifier {
   Future<void> build() async {
-    throw StateError('Do not throw directly from presentation code.');
+    throw TodoException();
   }
 }
 ''',
-            },
-            definingFile: 'lib/features/todo/presentation/bad_notifier.dart',
-          );
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/bad_notifier.dart',
+            );
 
-      result.expectDiagnostics([
-        const ExpectedV2Diagnostic(
-          relativePath: 'lib/features/todo/presentation/bad_notifier.dart',
-          codeName: 'presentation_no_throw',
-        ),
-      ]);
-    });
+        result.expectDiagnostics([
+          const ExpectedV2Diagnostic(
+            relativePath:
+                'lib/features/todo/presentation/providers/bad_notifier.dart',
+            codeName: 'presentation_no_throw',
+            line: 5,
+          ),
+        ]);
+      },
+    );
 
     test('ignores throw expressions owned by AsyncValue.guard', () async {
       final result = await V2RuleHarness(rule: PresentationNoThrowRule())
           .analyze(
             files: {
-              'lib/features/todo/presentation/good_notifier.dart': '''
+              'lib/features/todo/presentation/providers/good_notifier.dart': '''
 class AsyncValue<T> {
   const AsyncValue.data(this.value);
 
@@ -52,7 +61,8 @@ class GoodNotifier {
 }
 ''',
             },
-            definingFile: 'lib/features/todo/presentation/good_notifier.dart',
+            definingFile:
+                'lib/features/todo/presentation/providers/good_notifier.dart',
           );
 
       result.expectNoDiagnostics();
@@ -75,8 +85,9 @@ class AsyncValue<T> {
   }
 }
 ''',
-                'lib/features/todo/presentation/good_notifier.dart': '''
-import '../../../riverpod.dart' as rp;
+                'lib/features/todo/presentation/providers/good_notifier.dart':
+                    '''
+import 'package:cal_v2_harness_app/riverpod.dart' as rp;
 
 class GoodNotifier {
   Future<rp.AsyncValue<String>> build() {
@@ -87,7 +98,8 @@ class GoodNotifier {
 }
 ''',
               },
-              definingFile: 'lib/features/todo/presentation/good_notifier.dart',
+              definingFile:
+                  'lib/features/todo/presentation/providers/good_notifier.dart',
             );
 
         result.expectNoDiagnostics();
@@ -122,8 +134,83 @@ class TodoPage {
         const ExpectedV2Diagnostic(
           relativePath: 'lib/features/todo/presentation/todo_page.dart',
           codeName: 'presentation_no_throw',
+          line: 7,
         ),
       ]);
+    });
+
+    test(
+      'ignores programming errors, private helpers, and constructors',
+      () async {
+        final result = await V2RuleHarness(rule: PresentationNoThrowRule())
+            .analyze(
+              files: {
+                'lib/features/todo/presentation/providers/todo_notifier.dart':
+                    '''
+class TodoException implements Exception {}
+
+class TodoNotifier {
+  TodoNotifier() {
+    throw TodoException();
+  }
+
+  void _helper() {
+    throw TodoException();
+  }
+
+  void validate() {
+    throw StateError('Programming errors are allowed.');
+  }
+}
+''',
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/todo_notifier.dart',
+            );
+
+        result.expectNoDiagnostics();
+      },
+    );
+
+    test('ignores throws outside state/provider presentation paths', () async {
+      final result = await V2RuleHarness(rule: PresentationNoThrowRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/pages/todo_page.dart': '''
+class TodoException implements Exception {}
+
+class TodoPage {
+  void build() {
+    throw TodoException();
+  }
+}
+''',
+            },
+            definingFile: 'lib/features/todo/presentation/pages/todo_page.dart',
+          );
+
+      result.expectNoDiagnostics();
+    });
+
+    test('ignores throws outside state or notifier classes', () async {
+      final result = await V2RuleHarness(rule: PresentationNoThrowRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/providers/todo_helper.dart': '''
+class TodoException implements Exception {}
+
+class TodoHelper {
+  void build() {
+    throw TodoException();
+  }
+}
+''',
+            },
+            definingFile:
+                'lib/features/todo/presentation/providers/todo_helper.dart',
+          );
+
+      result.expectNoDiagnostics();
     });
 
     test('requires presentation segment under lib', () async {
@@ -153,14 +240,16 @@ class DomainNotifier {
           .analyze(
             files: {
               'lib/features/todo/todo.dart': '''
-part 'presentation/todo_notifier.dart';
+part 'presentation/providers/todo_notifier.dart';
 ''',
-              'lib/features/todo/presentation/todo_notifier.dart': '''
-part of '../todo.dart';
+              'lib/features/todo/presentation/providers/todo_notifier.dart': '''
+part of '../../todo.dart';
+
+class TodoException implements Exception {}
 
 class TodoNotifier {
   void build() {
-    throw StateError('Part file path should be checked.');
+    throw TodoException();
   }
 }
 ''',
@@ -170,10 +259,39 @@ class TodoNotifier {
 
       result.expectDiagnostics([
         const ExpectedV2Diagnostic(
-          relativePath: 'lib/features/todo/presentation/todo_notifier.dart',
+          relativePath:
+              'lib/features/todo/presentation/providers/todo_notifier.dart',
           codeName: 'presentation_no_throw',
+          line: 7,
         ),
       ]);
+    });
+
+    test('requires state/provider presentation path under lib', () {
+      expect(
+        isPresentationStateManagementPath(
+          '/project/lib/features/todo/presentation/providers/todo_provider.dart',
+        ),
+        isTrue,
+      );
+      expect(
+        isPresentationStateManagementPath(
+          '/project/lib/features/todo/presentation/states/todo_state.dart',
+        ),
+        isTrue,
+      );
+      expect(
+        isPresentationStateManagementPath(
+          '/project/lib/features/todo/presentation/pages/todo_page.dart',
+        ),
+        isFalse,
+      );
+      expect(
+        isPresentationStateManagementPath(
+          '/Users/me/presentation/app/lib/domain/providers/foo.dart',
+        ),
+        isFalse,
+      );
     });
   });
 }
