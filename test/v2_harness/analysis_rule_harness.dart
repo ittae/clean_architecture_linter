@@ -7,6 +7,9 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
+// analyzer does not yet expose a public test harness for v2 AnalysisRule
+// visitors, so these tests use private visitor/context APIs. Keep this file in
+// sync with analyzer upgrades.
 import 'package:analyzer/src/analysis_rule/rule_context.dart'
     show RuleContextWithResolvedResults;
 import 'package:analyzer/src/lint/linter_visitor.dart';
@@ -116,7 +119,7 @@ environment:
             (entry) => entry.value.diagnostics.map(
               (diagnostic) => V2RuleDiagnostic(
                 path: entry.key,
-                relativePath: p.normalize(
+                relativePath: _fixturePath(
                   p.relative(entry.key, from: rootPath),
                 ),
                 line: _lineNumberFor(
@@ -153,6 +156,10 @@ environment:
     }
     return line;
   }
+
+  String _fixturePath(String path) {
+    return p.url.normalize(path.replaceAll('\\', '/'));
+  }
 }
 
 class V2RuleResult {
@@ -187,7 +194,10 @@ class V2RuleResult {
     required bool includeLine,
   }) {
     final line = includeLine ? '|${diagnostic.line}' : '';
-    return '${p.normalize(diagnostic.relativePath)}|${diagnostic.codeName}$line';
+    final relativePath = p.url.normalize(
+      diagnostic.relativePath.replaceAll('\\', '/'),
+    );
+    return '$relativePath|${diagnostic.codeName}$line';
   }
 }
 

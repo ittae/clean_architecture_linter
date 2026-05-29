@@ -32,6 +32,21 @@ class Example {
         ),
       ]);
     });
+
+    test('asserts no diagnostics', () async {
+      final result = await V2RuleHarness(rule: _HarnessSmokeRule()).analyze(
+        files: {
+          'lib/src/example.dart': '''
+class Example {
+  void allowed() {}
+}
+''',
+        },
+        definingFile: 'lib/src/example.dart',
+      );
+
+      result.expectNoDiagnostics();
+    });
   });
 }
 
