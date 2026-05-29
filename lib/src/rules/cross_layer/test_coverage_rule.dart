@@ -111,10 +111,6 @@ class _TestCoverageVisitor extends SimpleAstVisitor<void> {
     if (className.endsWith('UseCase')) {
       return ComponentType.useCase;
     }
-    if (filePath.endsWith('_usecase.dart') &&
-        normalized.contains('/usecases/')) {
-      return null;
-    }
 
     if (className.endsWith('RepositoryImpl') ||
         className.endsWith('RepositoryImplementation')) {

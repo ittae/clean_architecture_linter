@@ -188,7 +188,7 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
     // Conditionally add test coverage rule if enabled
     if (testEnabled) {
       rules.add(
-        TestCoverageRule(
+        CustomLintTestCoverageRule(
           checkUsecases: checkUsecases,
           checkRepositories: checkRepositories,
           checkDatasources: checkDatasources,

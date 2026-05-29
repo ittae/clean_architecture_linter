@@ -34,8 +34,8 @@ import '../../clean_architecture_linter_base.dart';
 /// - Catches integration issues early
 /// - Documents expected behavior through tests
 /// - Enables safe refactoring
-class TestCoverageRule extends CleanArchitectureLintRule {
-  const TestCoverageRule({
+class CustomLintTestCoverageRule extends CleanArchitectureLintRule {
+  const CustomLintTestCoverageRule({
     this.checkUsecases = true,
     this.checkRepositories = true,
     this.checkDatasources = true,
