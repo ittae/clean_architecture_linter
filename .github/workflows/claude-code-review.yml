@@ -22,4 +22,9 @@ jobs:
     uses: ittae/.github/.github/workflows/claude-review-light.yml@main
     with:
       stack: 'Dart package (custom_lint rules / analyzer plugin)'
+      # v2.0 마이그레이션 기간 한정 상향 — rule rename + test 하네스가 함께 들어가는
+      # mechanical migration PR 이 500 줄 임계를 자주 넘어 false alarm 발생.
+      # 정교한 size 측정 (rename 제외 / test 가중치) 은 ittae/.github 의
+      # reusable workflow 개선으로 추적 (별도 epic).
+      pr_size_limit: 800
     secrets: inherit
