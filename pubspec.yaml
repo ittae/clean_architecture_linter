@@ -14,7 +14,7 @@ topics:
   - static-analysis
 
 environment:
-  sdk: '^3.7.0'
+  sdk: '^3.10.0'
 
 platforms:
   linux:
@@ -23,6 +23,7 @@ platforms:
 
 dependencies:
   analyzer: '>=8.4.0 <10.0.0'
+  analysis_server_plugin: ^0.3.3
   custom_lint_builder: ^0.8.1
   path: ^1.9.1
 
