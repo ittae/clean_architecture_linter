@@ -53,8 +53,8 @@ import '../../clean_architecture_linter_base.dart';
 ///   final String baseUrl;   // ✅ Configuration value
 /// }
 /// ```
-class AllowedInstanceVariablesRule extends CleanArchitectureLintRule {
-  const AllowedInstanceVariablesRule() : super(code: _defaultCode);
+class CustomLintAllowedInstanceVariablesRule extends CleanArchitectureLintRule {
+  const CustomLintAllowedInstanceVariablesRule() : super(code: _defaultCode);
 
   // Default code, will be replaced with specific messages
   static const _defaultCode = LintCode(

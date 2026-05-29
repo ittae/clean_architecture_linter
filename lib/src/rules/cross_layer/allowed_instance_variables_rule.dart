@@ -14,7 +14,7 @@ import '../../clean_architecture_linter_base.dart';
 class AllowedInstanceVariablesRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'allowed_instance_variables',
-    'Invalid instance variable detected.',
+    '{0} "{1}" has invalid instance variable "{2}" of type "{3}".',
     correctionMessage:
         'Use correct dependencies per layer and ensure fields are final/const.',
     severity: DiagnosticSeverity.WARNING,
@@ -82,9 +82,14 @@ class _AllowedInstanceVariablesVisitor extends SimpleAstVisitor<void> {
           final typeName = fieldType.name.lexeme;
 
           if (isUseCase) {
-            _validateUseCaseField(variable, typeName, isImmutable);
+            _validateUseCaseField(variable, typeName, isImmutable, className);
           } else if (isRepository) {
-            _validateRepositoryField(variable, typeName, isImmutable);
+            _validateRepositoryField(
+              variable,
+              typeName,
+              isImmutable,
+              className,
+            );
           } else if (isDataSource) {
             _validateDataSourceField(
               variable,
@@ -94,7 +99,15 @@ class _AllowedInstanceVariablesVisitor extends SimpleAstVisitor<void> {
             );
           }
         } else if (!isImmutable) {
-          rule.reportAtNode(variable);
+          final classType = isUseCase
+              ? 'UseCase'
+              : isRepository
+              ? 'Repository'
+              : 'DataSource';
+          rule.reportAtNode(
+            variable,
+            arguments: [classType, className, variable.name.lexeme, 'dynamic'],
+          );
         }
       }
     }
@@ -104,6 +117,7 @@ class _AllowedInstanceVariablesVisitor extends SimpleAstVisitor<void> {
     VariableDeclaration variable,
     String typeName,
     bool isImmutable,
+    String className,
   ) {
     final hasDataSourceDependency =
         typeName.endsWith('DataSource') || typeName.endsWith('Datasource');
@@ -113,7 +127,10 @@ class _AllowedInstanceVariablesVisitor extends SimpleAstVisitor<void> {
     if (!isImmutable ||
         (!hasRepositoryDependency && !hasServiceDependency) ||
         hasDataSourceDependency) {
-      rule.reportAtNode(variable);
+      rule.reportAtNode(
+        variable,
+        arguments: ['UseCase', className, variable.name.lexeme, typeName],
+      );
     }
   }
 
@@ -121,6 +138,7 @@ class _AllowedInstanceVariablesVisitor extends SimpleAstVisitor<void> {
     VariableDeclaration variable,
     String typeName,
     bool isImmutable,
+    String className,
   ) {
     final hasUseCaseDependency =
         typeName.endsWith('UseCase') || typeName.endsWith('Usecase');
@@ -131,7 +149,10 @@ class _AllowedInstanceVariablesVisitor extends SimpleAstVisitor<void> {
     if (!isImmutable ||
         (!hasDataSourceDependency && !isPrimitiveOrInfra) ||
         hasUseCaseDependency) {
-      rule.reportAtNode(variable);
+      rule.reportAtNode(
+        variable,
+        arguments: ['Repository', className, variable.name.lexeme, typeName],
+      );
     }
   }
 
@@ -148,7 +169,10 @@ class _AllowedInstanceVariablesVisitor extends SimpleAstVisitor<void> {
 
     if ((!isImmutable && !isMockOrFake && !isInfrastructureType) ||
         (isImmutable && isDisallowed)) {
-      rule.reportAtNode(variable);
+      rule.reportAtNode(
+        variable,
+        arguments: ['DataSource', className, variable.name.lexeme, typeName],
+      );
     }
   }
 

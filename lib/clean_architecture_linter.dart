@@ -176,7 +176,7 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
       RiverpodProviderNamingRule(),
 
       // 31. Allowed Instance Variables - Validate dependencies in UseCase/Repository/DataSource
-      AllowedInstanceVariablesRule(),
+      CustomLintAllowedInstanceVariablesRule(),
 
       // 32. Ref Mounted Usage - Avoid ref.mounted as it masks design problems
       RefMountedUsageRule(),
