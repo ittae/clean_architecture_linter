@@ -1,10 +1,6 @@
-import '../data/todo_repository_impl.dart';
-
 class TodoException implements Exception {}
 
 class BadNotifier {
-  final TodoRepositoryImpl repository = TodoRepositoryImpl();
-
   Future<void> build() async {
     throw TodoException();
   }
