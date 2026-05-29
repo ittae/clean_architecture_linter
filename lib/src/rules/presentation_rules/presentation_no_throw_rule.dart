@@ -8,10 +8,11 @@ import 'package:analyzer/error/error.dart';
 /// Prevents business exception throws from presentation state management code.
 ///
 /// The throw-expression check intentionally mirrors the v1 custom-lint rule:
-/// it only runs in presentation state/provider files and skips programming
-/// errors, rethrows, constructors, private helper methods, and
-/// `AsyncValue.guard` bodies. Widget catch-branching remains scoped to
-/// presentation widgets.
+/// it only runs in `lib` state/provider presentation files, including both
+/// `presentation/{states,state,providers}` and feature-level `{states,state,
+/// providers}` layouts, and skips programming errors, rethrows, constructors,
+/// private helper methods, and `AsyncValue.guard` bodies. Widget
+/// catch-branching remains scoped to presentation widgets.
 class PresentationNoThrowRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'presentation_no_throw',
@@ -264,12 +265,23 @@ bool isPresentationLibPath(String path) {
 }
 
 bool isPresentationStateManagementPath(String path) {
-  if (!isPresentationLibPath(path)) {
+  final segments = path
+      .replaceAll('\\', '/')
+      .split('/')
+      .where((segment) => segment.isNotEmpty)
+      .toList(growable: false);
+
+  final libIndex = segments.lastIndexOf('lib');
+  if (libIndex == -1 || libIndex == segments.length - 1) {
     return false;
   }
 
-  final normalized = path.replaceAll('\\', '/');
-  return normalized.contains('/states/') ||
-      normalized.contains('/state/') ||
-      normalized.contains('/providers/');
+  final libSegments = segments.skip(libIndex + 1).toList(growable: false);
+  if (libSegments.contains('domain') || libSegments.contains('data')) {
+    return false;
+  }
+
+  return libSegments.contains('states') ||
+      libSegments.contains('state') ||
+      libSegments.contains('providers');
 }

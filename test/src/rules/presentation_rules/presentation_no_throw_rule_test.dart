@@ -288,7 +288,19 @@ class TodoNotifier {
       );
       expect(
         isPresentationStateManagementPath(
-          '/Users/me/presentation/app/lib/domain/providers/foo.dart',
+          '/project/lib/features/todo/providers/todo_provider.dart',
+        ),
+        isTrue,
+      );
+      expect(
+        isPresentationStateManagementPath(
+          '/project/lib/features/todo/states/todo_state.dart',
+        ),
+        isTrue,
+      );
+      expect(
+        isPresentationStateManagementPath(
+          '/project/lib/features/todo/domain/providers/foo.dart',
         ),
         isFalse,
       );
