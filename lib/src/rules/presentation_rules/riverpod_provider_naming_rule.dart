@@ -223,10 +223,9 @@ class RiverpodProviderNamingRule extends CleanArchitectureLintRule {
     final firstChar = requiredSuffix[0];
     final isAlreadyCapitalized = firstChar == firstChar.toUpperCase();
 
-    final capitalizedSuffix =
-        isAlreadyCapitalized
-            ? requiredSuffix
-            : firstChar.toUpperCase() + requiredSuffix.substring(1);
+    final capitalizedSuffix = isAlreadyCapitalized
+        ? requiredSuffix
+        : firstChar.toUpperCase() + requiredSuffix.substring(1);
 
     return '$currentName$capitalizedSuffix';
   }
