@@ -315,12 +315,11 @@ void main() {
         };
 
         for (final entry in testCases.entries) {
-          final suffix =
-              entry.value.contains('Usecase')
-                  ? 'usecase'
-                  : entry.value.contains('Repository')
-                  ? 'repository'
-                  : 'datasource';
+          final suffix = entry.value.contains('Usecase')
+              ? 'usecase'
+              : entry.value.contains('Repository')
+              ? 'repository'
+              : 'datasource';
 
           expect(
             _suggestFunctionName(entry.key, suffix),
