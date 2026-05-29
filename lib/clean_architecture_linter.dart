@@ -14,7 +14,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 import 'src/rules/cross_layer/layer_dependency_rule.dart';
 import 'src/rules/cross_layer/circular_dependency_rule.dart';
 import 'src/rules/cross_layer/boundary_crossing_rule.dart';
-import 'src/rules/cross_layer/test_coverage_rule.dart';
+import 'src/rules/cross_layer/test_coverage_custom_lint_rule.dart';
 import 'src/rules/cross_layer/allowed_instance_variables_rule.dart';
 
 // Domain Layer Rules
