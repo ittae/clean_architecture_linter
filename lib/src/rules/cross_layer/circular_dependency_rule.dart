@@ -111,6 +111,7 @@ class _CircularDependencyVisitor extends SimpleAstVisitor<void> {
           rule.reportAtNode(directive);
         }
       }
+      return;
     }
 
     _checkLayerCircularDependency(currentFile, node);
