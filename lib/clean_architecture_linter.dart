@@ -44,7 +44,7 @@ import 'src/rules/presentation_rules/freezed_usage_rule.dart';
 import 'src/rules/presentation_rules/riverpod_generator_rule.dart';
 import 'src/rules/presentation_rules/presentation_no_data_exceptions_rule.dart';
 import 'src/rules/presentation_rules/presentation_use_async_value_rule.dart';
-import 'src/rules/presentation_rules/presentation_no_throw_rule.dart';
+import 'src/rules/presentation_rules/presentation_no_throw_custom_lint_rule.dart';
 import 'src/rules/presentation_rules/widget_no_usecase_call_rule.dart';
 import 'src/rules/presentation_rules/widget_ref_read_then_when_rule.dart';
 import 'src/rules/presentation_rules/riverpod_ref_usage_rule.dart';
@@ -161,7 +161,7 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
       PresentationUseAsyncValueRule(),
 
       // 26. Presentation No Throw - States should not throw exceptions
-      PresentationNoThrowRule(),
+      CustomLintPresentationNoThrowRule(),
 
       // 27. Widget No UseCase Call - Widgets should not call UseCases directly
       WidgetNoUseCaseCallRule(),
