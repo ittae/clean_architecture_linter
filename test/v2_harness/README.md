@@ -2,7 +2,12 @@
 
 `V2RuleHarness` runs analyzer `AnalysisRule` implementations through an
 `AnalysisContextCollection` and the analyzer rule visitor registry. Tests pass a
-small package-shaped file map and compare diagnostics by relative path and code.
+small package-shaped file map and compare diagnostics by relative path, code,
+and optional one-based line number.
+
+The harness imports analyzer private APIs to access the current v2 rule visitor
+registry. This is intentionally scoped to tests while `analyzer` remains pinned
+by `pubspec.lock`; update the harness alongside any analyzer major upgrade.
 
 ```dart
 final result = await V2RuleHarness(rule: PresentationNoThrowRule()).analyze(
@@ -22,6 +27,7 @@ result.expectDiagnostics([
   ExpectedV2Diagnostic(
     relativePath: 'lib/features/todo/presentation/bad_notifier.dart',
     codeName: 'presentation_no_throw',
+    line: 3,
   ),
 ]);
 ```

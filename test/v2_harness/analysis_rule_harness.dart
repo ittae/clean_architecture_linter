@@ -23,105 +23,135 @@ class V2RuleHarness {
     String definingFile = 'lib/main.dart',
   }) async {
     final root = await Directory.systemTemp.createTemp('cal_v2_harness_');
-    final rootPath = root.absolute.path;
+    final rootPath = p.normalize(root.absolute.path);
+    AnalysisContextCollection? collection;
 
-    _writeFile(p.join(rootPath, 'pubspec.yaml'), '''
+    try {
+      _writeFile(p.join(rootPath, 'pubspec.yaml'), '''
 name: cal_v2_harness_app
 environment:
   sdk: ^3.7.0
 ''');
 
-    for (final entry in files.entries) {
-      _writeFile(p.join(rootPath, entry.key), entry.value);
-    }
+      for (final entry in files.entries) {
+        _writeFile(p.join(rootPath, entry.key), entry.value);
+      }
 
-    final definingPath = p.normalize(p.join(rootPath, definingFile));
-    final collection = AnalysisContextCollection(
-      includedPaths: [rootPath],
-      resourceProvider: PhysicalResourceProvider.INSTANCE,
-    );
-
-    final context = collection.contextFor(definingPath);
-    final result = await context.currentSession.getResolvedLibraryContaining(
-      definingPath,
-    );
-
-    if (result is! ResolvedLibraryResult) {
-      throw StateError('Failed to resolve $definingFile: $result');
-    }
-
-    final listeners = <String, RecordingDiagnosticListener>{};
-    final units = <RuleContextUnit>[];
-    RuleContextUnit? definingUnit;
-
-    for (final unitResult in result.units) {
-      final listener = RecordingDiagnosticListener();
-      listeners[unitResult.path] = listener;
-
-      final contextUnit = RuleContextUnit(
-        file: unitResult.file,
-        content: unitResult.content,
-        diagnosticReporter: DiagnosticReporter(
-          listener,
-          unitResult.unit.declaredFragment!.source,
-        ),
-        unit: unitResult.unit,
+      final definingPath = p.normalize(p.join(rootPath, definingFile));
+      collection = AnalysisContextCollection(
+        includedPaths: [rootPath],
+        resourceProvider: PhysicalResourceProvider.INSTANCE,
       );
 
-      units.add(contextUnit);
-      if (p.equals(
-        unitResult.path,
-        result.element.firstFragment.source.fullName,
-      )) {
-        definingUnit = contextUnit;
+      final context = collection.contextFor(definingPath);
+      final result = await context.currentSession.getResolvedLibraryContaining(
+        definingPath,
+      );
+
+      if (result is! ResolvedLibraryResult) {
+        throw StateError('Failed to resolve $definingFile: $result');
+      }
+
+      final listeners = <String, RecordingDiagnosticListener>{};
+      final unitContents = <String, String>{};
+      final units = <RuleContextUnit>[];
+      RuleContextUnit? definingUnit;
+
+      for (final unitResult in result.units) {
+        final unitPath = p.normalize(unitResult.path);
+        final listener = RecordingDiagnosticListener();
+        listeners[unitPath] = listener;
+        unitContents[unitPath] = unitResult.content;
+
+        final contextUnit = RuleContextUnit(
+          file: unitResult.file,
+          content: unitResult.content,
+          diagnosticReporter: DiagnosticReporter(
+            listener,
+            unitResult.unit.declaredFragment!.source,
+          ),
+          unit: unitResult.unit,
+        );
+
+        units.add(contextUnit);
+        if (p.equals(
+          unitPath,
+          p.normalize(result.element.firstFragment.source.fullName),
+        )) {
+          definingUnit = contextUnit;
+        }
+      }
+
+      definingUnit ??= units.first;
+
+      final registry = RuleVisitorRegistryImpl(enableTiming: false);
+      final ruleContext = RuleContextWithResolvedResults(
+        units,
+        definingUnit,
+        result.typeProvider,
+        result.element.typeSystem,
+        null,
+      );
+
+      rule.registerNodeProcessors(registry, ruleContext);
+
+      for (final unit in units) {
+        rule.reporter = unit.diagnosticReporter;
+        ruleContext.currentUnit = unit;
+        unit.unit.accept(
+          AnalysisRuleVisitor(registry, shouldPropagateExceptions: true),
+        );
+        ruleContext.currentUnit = null;
+      }
+
+      ruleContext.currentUnit = null;
+      AnalysisRuleVisitor(
+        registry,
+        shouldPropagateExceptions: true,
+      ).afterLibrary();
+      ruleContext.currentUnit = null;
+
+      final diagnostics = listeners.entries
+          .expand(
+            (entry) => entry.value.diagnostics.map(
+              (diagnostic) => V2RuleDiagnostic(
+                path: entry.key,
+                relativePath: p.normalize(
+                  p.relative(entry.key, from: rootPath),
+                ),
+                line: _lineNumberFor(
+                  unitContents[entry.key]!,
+                  diagnostic.offset,
+                ),
+                diagnostic: diagnostic,
+              ),
+            ),
+          )
+          .toList(growable: false);
+
+      return V2RuleResult(rootPath: rootPath, diagnostics: diagnostics);
+    } finally {
+      await collection?.dispose();
+      if (root.existsSync()) {
+        root.deleteSync(recursive: true);
       }
     }
-
-    definingUnit ??= units.first;
-
-    final registry = RuleVisitorRegistryImpl(enableTiming: false);
-    final ruleContext = RuleContextWithResolvedResults(
-      units,
-      definingUnit,
-      result.typeProvider,
-      result.element.typeSystem,
-      null,
-    );
-
-    rule.registerNodeProcessors(registry, ruleContext);
-
-    for (final unit in units) {
-      rule.reporter = unit.diagnosticReporter;
-      ruleContext.currentUnit = unit;
-      unit.unit.accept(
-        AnalysisRuleVisitor(registry, shouldPropagateExceptions: true),
-      );
-    }
-
-    AnalysisRuleVisitor(
-      registry,
-      shouldPropagateExceptions: true,
-    ).afterLibrary();
-
-    final diagnostics = listeners.entries
-        .expand(
-          (entry) => entry.value.diagnostics.map(
-            (diagnostic) => V2RuleDiagnostic(
-              path: entry.key,
-              relativePath: p.relative(entry.key, from: rootPath),
-              diagnostic: diagnostic,
-            ),
-          ),
-        )
-        .toList(growable: false);
-
-    return V2RuleResult(rootPath: rootPath, diagnostics: diagnostics);
   }
 
   void _writeFile(String path, String content) {
     final file = File(path);
     file.parent.createSync(recursive: true);
     file.writeAsStringSync(content);
+  }
+
+  int _lineNumberFor(String content, int offset) {
+    var line = 1;
+    for (var index = 0; index < offset && index < content.length; index++) {
+      if (content.codeUnitAt(index) == 0x0A) {
+        line++;
+      }
+    }
+    return line;
   }
 }
 
@@ -132,22 +162,32 @@ class V2RuleResult {
   final List<V2RuleDiagnostic> diagnostics;
 
   void expectDiagnostics(List<ExpectedV2Diagnostic> expected) {
-    final actual = diagnostics.map(_describe).toList()..sort();
-    final expectedDescriptions =
-        expected.map((diagnostic) {
-            return '${diagnostic.relativePath}|${diagnostic.codeName}';
-          }).toList()
-          ..sort();
+    final compareLine = expected.any((diagnostic) => diagnostic.line != null);
+    final actual = diagnostics.map((diagnostic) {
+      return _describe(diagnostic, includeLine: compareLine);
+    }).toList()..sort();
+    final expectedDescriptions = expected.map((diagnostic) {
+      return _describeExpected(diagnostic, includeLine: compareLine);
+    }).toList()..sort();
 
     expect(actual, expectedDescriptions);
   }
 
   void expectNoDiagnostics() {
-    expect(diagnostics.map(_describe), isEmpty);
+    expect(diagnostics.map((diagnostic) => _describe(diagnostic)), isEmpty);
   }
 
-  String _describe(V2RuleDiagnostic diagnostic) {
-    return '${diagnostic.relativePath}|${diagnostic.codeName}';
+  String _describe(V2RuleDiagnostic diagnostic, {bool includeLine = false}) {
+    final line = includeLine ? '|${diagnostic.line}' : '';
+    return '${diagnostic.relativePath}|${diagnostic.codeName}$line';
+  }
+
+  String _describeExpected(
+    ExpectedV2Diagnostic diagnostic, {
+    required bool includeLine,
+  }) {
+    final line = includeLine ? '|${diagnostic.line}' : '';
+    return '${p.normalize(diagnostic.relativePath)}|${diagnostic.codeName}$line';
   }
 }
 
@@ -155,11 +195,13 @@ class V2RuleDiagnostic {
   V2RuleDiagnostic({
     required this.path,
     required this.relativePath,
+    required this.line,
     required this.diagnostic,
   });
 
   final String path;
   final String relativePath;
+  final int line;
   final Diagnostic diagnostic;
 
   String get codeName => diagnostic.diagnosticCode.name;
@@ -169,8 +211,10 @@ class ExpectedV2Diagnostic {
   const ExpectedV2Diagnostic({
     required this.relativePath,
     required this.codeName,
+    this.line,
   });
 
   final String relativePath;
   final String codeName;
+  final int? line;
 }
