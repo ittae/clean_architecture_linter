@@ -7,8 +7,8 @@ import 'package:analyzer/error/error.dart';
 
 /// Detects circular dependencies between files and architectural layers.
 ///
-/// This preserves the v1 graph-based behavior, including the static dependency
-/// graph that accumulates across analyzed files in a server session.
+/// This preserves the v1 graph-based behavior while keeping graph state scoped
+/// to the rule instance registered by the analysis server.
 class CircularDependencyRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'circular_dependency',
@@ -25,8 +25,8 @@ class CircularDependencyRule extends AnalysisRule {
         description: 'Detects circular dependencies between files and layers.',
       );
 
-  static final Map<String, Set<String>> _dependencyGraph = {};
-  static final Map<String, String> _fileToLayer = {};
+  final Map<String, Set<String>> _dependencyGraph = {};
+  final Map<String, String> _fileToLayer = {};
 
   @override
   bool get canUseParsedResult => true;
@@ -63,11 +63,11 @@ class _CircularDependencyVisitor extends SimpleAstVisitor<void> {
   }
 
   void _buildDependencyGraph(CompilationUnit node, String currentFile) {
-    CircularDependencyRule._dependencyGraph[currentFile] = {};
+    rule._dependencyGraph[currentFile] = {};
 
     final layer = _identifyLayer(currentFile);
     if (layer != null) {
-      CircularDependencyRule._fileToLayer[currentFile] = layer;
+      rule._fileToLayer[currentFile] = layer;
     }
 
     for (final directive in node.directives) {
@@ -77,12 +77,12 @@ class _CircularDependencyVisitor extends SimpleAstVisitor<void> {
       if (importUri == null) continue;
 
       final resolvedPath = _resolveImportPath(importUri, currentFile);
-      if (resolvedPath != null && !_isExternalPackage(resolvedPath)) {
-        CircularDependencyRule._dependencyGraph[currentFile]!.add(resolvedPath);
+      if (resolvedPath != null) {
+        rule._dependencyGraph[currentFile]!.add(resolvedPath);
 
         final importedLayer = _identifyLayer(resolvedPath);
         if (importedLayer != null) {
-          CircularDependencyRule._fileToLayer[resolvedPath] = importedLayer;
+          rule._fileToLayer[resolvedPath] = importedLayer;
         }
       }
     }
@@ -96,7 +96,7 @@ class _CircularDependencyVisitor extends SimpleAstVisitor<void> {
       currentFile,
       visited,
       recursionStack,
-      CircularDependencyRule._dependencyGraph,
+      rule._dependencyGraph,
     );
 
     if (cycle != null) {
@@ -142,17 +142,17 @@ class _CircularDependencyVisitor extends SimpleAstVisitor<void> {
   }
 
   void _checkLayerCircularDependency(String currentFile, CompilationUnit node) {
-    final currentLayer = CircularDependencyRule._fileToLayer[currentFile];
+    final currentLayer = rule._fileToLayer[currentFile];
     if (currentLayer == null) return;
 
     final layerGraph = <String, Set<String>>{};
-    for (final entry in CircularDependencyRule._dependencyGraph.entries) {
-      final sourceLayer = CircularDependencyRule._fileToLayer[entry.key];
+    for (final entry in rule._dependencyGraph.entries) {
+      final sourceLayer = rule._fileToLayer[entry.key];
       if (sourceLayer == null) continue;
 
       layerGraph[sourceLayer] ??= {};
       for (final dependency in entry.value) {
-        final targetLayer = CircularDependencyRule._fileToLayer[dependency];
+        final targetLayer = rule._fileToLayer[dependency];
         if (targetLayer != null && targetLayer != sourceLayer) {
           layerGraph[sourceLayer]!.add(targetLayer);
         }
@@ -177,7 +177,7 @@ class _CircularDependencyVisitor extends SimpleAstVisitor<void> {
 
         final resolvedPath = _resolveImportPath(importUri, currentFile);
         if (resolvedPath != null) {
-          final targetLayer = CircularDependencyRule._fileToLayer[resolvedPath];
+          final targetLayer = rule._fileToLayer[resolvedPath];
           if (targetLayer != null && layerCycle.contains(targetLayer)) {
             rule.reportAtNode(directive);
             break;
@@ -188,21 +188,28 @@ class _CircularDependencyVisitor extends SimpleAstVisitor<void> {
   }
 
   String? _resolveImportPath(String importUri, String currentFile) {
-    if (importUri.startsWith('../') || importUri.startsWith('./')) {
-      final currentDir = currentFile.substring(0, currentFile.lastIndexOf('/'));
+    if (importUri.startsWith('dart:')) {
+      return null;
+    }
+
+    if (importUri.startsWith('../') ||
+        importUri.startsWith('./') ||
+        !importUri.contains(':')) {
+      final separatorIndex = currentFile.lastIndexOf('/');
+      if (separatorIndex == -1) return null;
+
+      final currentDir = currentFile.substring(0, separatorIndex);
       return _normalizeRelativePath(currentDir, importUri);
     }
 
     if (importUri.startsWith('package:')) {
       final packagePath = importUri.substring('package:'.length);
       final parts = packagePath.split('/');
-      if (parts.isNotEmpty) {
-        if (currentFile.contains('/${parts[0]}/')) {
-          final libIndex = currentFile.indexOf('/lib/');
-          if (libIndex != -1) {
-            final projectRoot = currentFile.substring(0, libIndex);
-            return '$projectRoot/lib/${parts.sublist(1).join('/')}';
-          }
+      if (parts.length > 1) {
+        final libIndex = currentFile.indexOf('/lib/');
+        if (libIndex != -1) {
+          final projectRoot = currentFile.substring(0, libIndex);
+          return '$projectRoot/lib/${parts.sublist(1).join('/')}';
         }
       }
     }
@@ -226,12 +233,6 @@ class _CircularDependencyVisitor extends SimpleAstVisitor<void> {
 
     final path = normalized.join('/');
     return basePath.startsWith('/') ? '/$path' : path;
-  }
-
-  bool _isExternalPackage(String path) {
-    return path.startsWith('dart:') ||
-        path.startsWith('package:flutter/') ||
-        (!path.contains('/lib/') && path.startsWith('package:'));
   }
 
   String? _identifyLayer(String path) {
