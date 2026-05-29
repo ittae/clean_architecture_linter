@@ -1,49 +1,59 @@
+import 'package:analyzer/analysis_rule/analysis_rule.dart';
+import 'package:analyzer/analysis_rule/rule_context.dart';
+import 'package:analyzer/analysis_rule/rule_visitor_registry.dart';
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/error/listener.dart';
-import 'package:custom_lint_builder/custom_lint_builder.dart';
-
-import '../../clean_architecture_linter_base.dart';
+import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:analyzer/error/error.dart';
 
 /// Enforces simplified boundary crossing patterns in Clean Architecture.
 ///
-/// This rule validates core boundary crossing principles:
-/// - Dependencies flow inward only (Presentation → Domain ← Data)
-/// - Use interfaces for cross-layer dependencies when appropriate
-/// - No direct instantiation of classes from outer layers
-///
-/// Simplified to focus on essential violations with minimal false positives.
-class BoundaryCrossingRule extends CleanArchitectureLintRule {
-  const BoundaryCrossingRule() : super(code: _code);
-
-  static const _code = LintCode(
-    name: 'boundary_crossing',
-    problemMessage: 'Boundary crossing violation: {0}',
+/// This v2 rule keeps the v1 scope intentionally narrow: import-only checks,
+/// DI files excluded, and only concrete implementation dependencies reported.
+class BoundaryCrossingRule extends AnalysisRule {
+  static const LintCode code = LintCode(
+    'boundary_crossing',
+    'Boundary crossing violation.',
     correctionMessage:
         'Use Dependency Inversion Principle to cross architectural boundaries properly.',
+    severity: DiagnosticSeverity.WARNING,
+    uniqueName: 'LintCode.boundary_crossing',
   );
 
-  @override
-  void runRule(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
-  ) {
-    // Simplified to only check import dependencies - most reliable indicator
-    context.registry.addImportDirective((node) {
-      _checkBoundaryViolation(node, reporter, resolver);
-    });
-  }
+  BoundaryCrossingRule()
+    : super(
+        name: 'boundary_crossing',
+        description:
+            'Flags concrete implementation dependencies across layers.',
+      );
 
-  void _checkBoundaryViolation(
-    ImportDirective node,
-    DiagnosticReporter reporter,
-    CustomLintResolver resolver,
+  @override
+  bool get canUseParsedResult => true;
+
+  @override
+  DiagnosticCode get diagnosticCode => code;
+
+  @override
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
   ) {
-    final filePath = resolver.path;
+    registry.addImportDirective(this, _BoundaryCrossingVisitor(this, context));
+  }
+}
+
+class _BoundaryCrossingVisitor extends SimpleAstVisitor<void> {
+  _BoundaryCrossingVisitor(this.rule, this.context);
+
+  final AnalysisRule rule;
+  final RuleContext context;
+
+  @override
+  void visitImportDirective(ImportDirective node) {
+    final filePath =
+        context.currentUnit?.file.path ?? context.definingUnit.file.path;
     final importUri = node.uri.stringValue;
     if (importUri == null) return;
 
-    // Skip DI files - they can import from all layers
     if (_isDependencyInjectionFile(filePath)) {
       return;
     }
@@ -53,16 +63,8 @@ class BoundaryCrossingRule extends CleanArchitectureLintRule {
 
     if (sourceLayer == null || targetLayer == null) return;
 
-    // Only report concrete implementation dependencies (biggest violations)
     if (_isConcreteDependency(importUri, sourceLayer, targetLayer)) {
-      final code = LintCode(
-        name: 'boundary_crossing',
-        problemMessage:
-            '${sourceLayer.name} layer depends on concrete ${targetLayer.name} implementation: $importUri',
-        correctionMessage:
-            'Use interfaces/abstractions instead of concrete implementations for cross-layer dependencies.',
-      );
-      reporter.reportAtNode(node, code);
+      rule.reportAtNode(node);
     }
   }
 
@@ -71,14 +73,12 @@ class BoundaryCrossingRule extends CleanArchitectureLintRule {
     ArchitecturalLayer source,
     ArchitecturalLayer target,
   ) {
-    // Check for obvious concrete implementation patterns
     if (importUri.contains('_impl.dart') ||
         importUri.contains('_implementation.dart') ||
         importUri.endsWith('Impl')) {
       return true;
     }
 
-    // Domain should not import from Data or Presentation (except for DI files)
     if (source.name == 'domain' &&
         (target.name == 'data' || target.name == 'presentation')) {
       return true;
@@ -88,38 +88,32 @@ class BoundaryCrossingRule extends CleanArchitectureLintRule {
   }
 
   ArchitecturalLayer? _identifyLayer(String path) {
-    // Normalize path separators
     final normalizedPath = path.replaceAll('\\', '/').toLowerCase();
 
-    // Check for domain layer and its sub-layers
     if (normalizedPath.contains('/domain/')) {
-      return ArchitecturalLayer('domain', 4);
+      return const ArchitecturalLayer('domain', 4);
     }
 
-    // Check for data layer
     if (normalizedPath.contains('/data/')) {
-      return ArchitecturalLayer('data', 2);
+      return const ArchitecturalLayer('data', 2);
     }
 
-    // Check for presentation layer
     if (normalizedPath.contains('/presentation/') ||
         normalizedPath.contains('/ui/') ||
         normalizedPath.contains('/widgets/') ||
         normalizedPath.contains('/screens/') ||
         normalizedPath.contains('/pages/') ||
         normalizedPath.contains('/views/')) {
-      return ArchitecturalLayer('presentation', 1);
+      return const ArchitecturalLayer('presentation', 1);
     }
 
     return null;
   }
 
   bool _isDependencyInjectionFile(String filePath) {
-    // Normalize path separators
     final normalizedPath = filePath.replaceAll('\\', '/').toLowerCase();
 
-    // Check for common DI/provider file patterns
-    final diPatterns = [
+    const diPatterns = [
       '/providers.dart',
       '/provider.dart',
       '/providers/',
@@ -131,7 +125,7 @@ class BoundaryCrossingRule extends CleanArchitectureLintRule {
       '/get_it.dart',
       '/locator.dart',
       '/service_locator.dart',
-      'main.dart', // main.dart often contains DI setup
+      'main.dart',
     ];
 
     return diPatterns.any(
@@ -145,5 +139,5 @@ class ArchitecturalLayer {
   final String name;
   final int level;
 
-  ArchitecturalLayer(this.name, this.level);
+  const ArchitecturalLayer(this.name, this.level);
 }
