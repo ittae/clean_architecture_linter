@@ -20,7 +20,7 @@ import 'src/rules/cross_layer/allowed_instance_variables_custom_lint_rule.dart';
 // Domain Layer Rules
 import 'src/rules/domain_rules/domain_purity_custom_lint_rule.dart';
 import 'src/rules/domain_rules/dependency_inversion_custom_lint_rule.dart';
-import 'src/rules/domain_rules/repository_interface_rule.dart';
+import 'src/rules/domain_rules/repository_interface_custom_lint_rule.dart';
 import 'src/rules/domain_rules/usecase_no_result_return_custom_lint_rule.dart';
 import 'src/rules/domain_rules/exception_naming_convention_rule.dart';
 
@@ -89,7 +89,7 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
       CustomLintDependencyInversionRule(),
 
       // 4. Repository Pattern - Repository 인터페이스 정의
-      RepositoryInterfaceRule(),
+      CustomLintRepositoryInterfaceRule(),
 
       // 5. Circular Dependency Prevention - 순환 의존성 방지
       CustomLintCircularDependencyRule(),

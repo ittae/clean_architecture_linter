@@ -1,225 +1,182 @@
+import 'package:analyzer/analysis_rule/analysis_rule.dart';
+import 'package:analyzer/analysis_rule/rule_context.dart';
+import 'package:analyzer/analysis_rule/rule_visitor_registry.dart';
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/error/listener.dart';
-import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:analyzer/error/error.dart';
 
 import '../../clean_architecture_linter_base.dart';
 import '../../mixins/repository_rule_visitor.dart';
 
 /// Enforces proper repository abstraction patterns in domain layer.
-///
-/// This rule ensures that the domain layer follows the Repository pattern correctly:
-/// - Domain should only depend on abstract repository interfaces
-/// - No direct dependencies on data layer implementations
-/// - Repository interfaces should follow proper naming conventions
-/// - Repository methods should return domain entities, not data models
-///
-/// Benefits of proper repository abstraction:
-/// - Testability through mock implementations
-/// - Independence from data layer changes
-/// - Clear contract definition
-/// - Supports multiple data source strategies
-class RepositoryInterfaceRule extends CleanArchitectureLintRule
-    with RepositoryRuleVisitor {
-  const RepositoryInterfaceRule() : super(code: _code);
-
-  static const _code = LintCode(
-    name: 'repository_interface',
-    problemMessage:
-        'Domain layer must depend only on repository abstractions, not concrete implementations.',
-    correctionMessage:
-        'Use abstract repository interfaces and ensure proper separation between domain and data layers.',
+class RepositoryInterfaceRule extends AnalysisRule {
+  static const LintCode code = LintCode(
+    'repository_interface',
+    '{0}',
+    correctionMessage: '{1}',
+    severity: DiagnosticSeverity.WARNING,
+    uniqueName: 'LintCode.repository_interface',
   );
 
+  RepositoryInterfaceRule()
+    : super(
+        name: 'repository_interface',
+        description:
+            'Requires domain layer repository abstractions and entity-only signatures.',
+      );
+
   @override
-  void runRule(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
+  bool get canUseParsedResult => true;
+
+  @override
+  DiagnosticCode get diagnosticCode => code;
+
+  @override
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
   ) {
-    // Check import statements for data layer repository implementations
-    context.registry.addImportDirective((node) {
-      _checkRepositoryImports(node, reporter, resolver);
-    });
-
-    // Check class declarations for proper repository interface patterns
-    context.registry.addClassDeclaration((node) {
-      _checkRepositoryInterface(node, reporter, resolver);
-    });
-
-    // Check constructor parameters for repository dependencies
-    context.registry.addConstructorDeclaration((node) {
-      _checkRepositoryDependencies(node, reporter, resolver);
-    });
-
-    // Check field declarations for repository field types
-    context.registry.addFieldDeclaration((node) {
-      _checkRepositoryFields(node, reporter, resolver);
-    });
+    final visitor = _RepositoryInterfaceVisitor(this, context);
+    registry.addImportDirective(this, visitor);
+    registry.addClassDeclaration(this, visitor);
+    registry.addConstructorDeclaration(this, visitor);
+    registry.addFieldDeclaration(this, visitor);
   }
+}
 
-  void _checkRepositoryImports(
-    ImportDirective node,
-    DiagnosticReporter reporter,
-    CustomLintResolver resolver,
-  ) {
-    final filePath = resolver.path;
+class _RepositoryInterfaceVisitor extends SimpleAstVisitor<void>
+    with RepositoryRuleVisitor {
+  _RepositoryInterfaceVisitor(this.rule, this.context);
 
-    // Only check files in domain layer
-    if (!CleanArchitectureUtils.isDomainFile(filePath)) return;
+  final AnalysisRule rule;
+  final RuleContext context;
+
+  String get _filePath =>
+      context.currentUnit?.file.path ?? context.definingUnit.file.path;
+
+  @override
+  void visitImportDirective(ImportDirective node) {
+    if (_shouldSkipFile) return;
 
     final importUri = node.uri.stringValue;
     if (importUri == null) return;
 
-    // Check if importing from data layer repository implementations
     final violation = _analyzeRepositoryImport(importUri);
     if (violation != null) {
-      final enhancedCode = LintCode(
-        name: 'repository_interface',
-        problemMessage: violation.message,
-        correctionMessage: violation.suggestion,
+      rule.reportAtNode(
+        node,
+        arguments: [violation.message, violation.suggestion],
       );
-      reporter.reportAtNode(node, enhancedCode);
     }
   }
 
-  void _checkRepositoryInterface(
-    ClassDeclaration node,
-    DiagnosticReporter reporter,
-    CustomLintResolver resolver,
-  ) {
-    final filePath = resolver.path;
-    if (!CleanArchitectureUtils.isDomainFile(filePath)) return;
+  @override
+  void visitClassDeclaration(ClassDeclaration node) {
+    if (_shouldSkipFile) return;
 
     final className = node.name.lexeme;
     if (!className.contains('Repository')) return;
 
-    // Check if repository interface is properly abstract
     if (!isRepositoryInterface(node)) {
-      // This is a concrete repository in domain layer - should be abstract
-      final code = LintCode(
-        name: 'repository_interface',
-        problemMessage:
-            'Repository in domain layer should be abstract: $className',
-        correctionMessage:
-            'Make repository abstract or move implementation to data layer.',
+      rule.reportAtNode(
+        node,
+        arguments: [
+          'Repository in domain layer should be abstract: $className',
+          'Make repository abstract or move implementation to data layer.',
+        ],
       );
-      reporter.reportAtNode(node, code);
     }
 
-    // Check repository method signatures
     for (final member in node.members) {
       if (member is MethodDeclaration) {
-        _checkRepositoryMethod(member, reporter, className);
+        _checkRepositoryMethod(member);
       }
     }
   }
 
-  void _checkRepositoryDependencies(
-    ConstructorDeclaration node,
-    DiagnosticReporter reporter,
-    CustomLintResolver resolver,
-  ) {
-    final filePath = resolver.path;
-    if (!CleanArchitectureUtils.isDomainFile(filePath)) return;
+  @override
+  void visitConstructorDeclaration(ConstructorDeclaration node) {
+    if (_shouldSkipFile) return;
 
-    // Check constructor parameters for repository types
-    final parameters = node.parameters.parameters;
-    for (final param in parameters) {
+    for (final param in node.parameters.parameters) {
       if (param is SimpleFormalParameter) {
         final type = param.type;
         if (type is NamedType) {
           final typeName = type.name.lexeme;
           if (CleanArchitectureUtils.isRepositoryImplClass(typeName)) {
-            final code = LintCode(
-              name: 'repository_interface',
-              problemMessage:
-                  'Constructor depends on concrete repository implementation: $typeName',
-              correctionMessage:
-                  'Use abstract repository interface instead of concrete implementation.',
+            rule.reportAtNode(
+              type,
+              arguments: [
+                'Constructor depends on concrete repository implementation: $typeName',
+                'Use abstract repository interface instead of concrete implementation.',
+              ],
             );
-            reporter.reportAtNode(type, code);
           }
         }
       }
     }
   }
 
-  void _checkRepositoryFields(
-    FieldDeclaration node,
-    DiagnosticReporter reporter,
-    CustomLintResolver resolver,
-  ) {
-    final filePath = resolver.path;
-    if (!CleanArchitectureUtils.isDomainFile(filePath)) return;
+  @override
+  void visitFieldDeclaration(FieldDeclaration node) {
+    if (_shouldSkipFile) return;
 
     final type = node.fields.type;
     if (type is NamedType) {
       final typeName = type.name.lexeme;
       if (CleanArchitectureUtils.isRepositoryImplClass(typeName)) {
-        final code = LintCode(
-          name: 'repository_interface',
-          problemMessage:
-              'Field depends on concrete repository implementation: $typeName',
-          correctionMessage:
-              'Use abstract repository interface instead of concrete implementation.',
+        rule.reportAtNode(
+          type,
+          arguments: [
+            'Field depends on concrete repository implementation: $typeName',
+            'Use abstract repository interface instead of concrete implementation.',
+          ],
         );
-        reporter.reportAtNode(type, code);
       }
     }
   }
 
-  void _checkRepositoryMethod(
-    MethodDeclaration method,
-    DiagnosticReporter reporter,
-    String className,
-  ) {
-    final returnType = method.returnType;
-
-    // Check if repository method returns domain entities (not data models)
-    _checkReturnTypeForModels(returnType, reporter);
-
-    // Check method parameters for data layer models
-    _checkMethodParametersForModels(method, reporter);
+  bool get _shouldSkipFile {
+    final filePath = _filePath;
+    return CleanArchitectureUtils.shouldExcludeFile(filePath) ||
+        !CleanArchitectureUtils.isDomainFile(filePath);
   }
 
-  /// Checks if return type contains data layer models (including nested generics)
-  void _checkReturnTypeForModels(
-    TypeAnnotation? returnType,
-    DiagnosticReporter reporter,
-  ) {
+  void _checkRepositoryMethod(MethodDeclaration method) {
+    _checkReturnTypeForModels(method.returnType);
+    _checkMethodParametersForModels(method);
+  }
+
+  void _checkReturnTypeForModels(TypeAnnotation? returnType) {
     if (returnType == null) return;
 
     if (returnType is NamedType) {
       final returnTypeName = returnType.name.lexeme;
 
-      // Check the main type
       if (_isDataLayerModel(returnTypeName)) {
-        final code = LintCode(
-          name: 'repository_interface',
-          problemMessage:
-              'Repository method returns data layer model: $returnTypeName',
-          correctionMessage:
-              'Repository methods should return domain entities, not data models.',
+        rule.reportAtNode(
+          returnType,
+          arguments: [
+            'Repository method returns data layer model: $returnTypeName',
+            'Repository methods should return domain entities, not data models.',
+          ],
         );
-        reporter.reportAtNode(returnType, code);
-        return; // Don't check further if main type is already a model
+        return;
       }
 
-      // Check generic type arguments (e.g., Result<UserModel, Failure>)
       final typeArguments = returnType.typeArguments?.arguments;
       if (typeArguments != null) {
         for (final typeArg in typeArguments) {
           if (typeArg is NamedType) {
             final typeArgName = typeArg.name.lexeme;
             if (_isDataLayerModel(typeArgName)) {
-              final code = LintCode(
-                name: 'repository_interface',
-                problemMessage:
-                    'Repository method uses data layer model in generic type: $typeArgName',
-                correctionMessage:
-                    'Use domain entities in generic types. Example: Future<User> or AsyncValue<User> patterns should never expose UserModel.',
+              rule.reportAtNode(
+                typeArg,
+                arguments: [
+                  'Repository method uses data layer model in generic type: $typeArgName',
+                  'Use domain entities in generic types. Example: Future<User> or AsyncValue<User> patterns should never expose UserModel.',
+                ],
               );
-              reporter.reportAtNode(typeArg, code);
             }
           }
         }
@@ -227,11 +184,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
     }
   }
 
-  /// Checks if method parameters contain data layer models
-  void _checkMethodParametersForModels(
-    MethodDeclaration method,
-    DiagnosticReporter reporter,
-  ) {
+  void _checkMethodParametersForModels(MethodDeclaration method) {
     final parameters = method.parameters;
     if (parameters == null) return;
 
@@ -250,31 +203,28 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
       if (paramType is NamedType) {
         final paramTypeName = paramType.name.lexeme;
         if (_isDataLayerModel(paramTypeName)) {
-          final code = LintCode(
-            name: 'repository_interface',
-            problemMessage:
-                'Repository method parameter uses data layer model: $paramTypeName',
-            correctionMessage:
-                'Repository method parameters should use domain entities, not data models.',
+          rule.reportAtNode(
+            paramType,
+            arguments: [
+              'Repository method parameter uses data layer model: $paramTypeName',
+              'Repository method parameters should use domain entities, not data models.',
+            ],
           );
-          reporter.reportAtNode(paramType, code);
         }
 
-        // Check generic type arguments in parameters (e.g., List<UserModel>)
         final typeArguments = paramType.typeArguments?.arguments;
         if (typeArguments != null) {
           for (final typeArg in typeArguments) {
             if (typeArg is NamedType) {
               final typeArgName = typeArg.name.lexeme;
               if (_isDataLayerModel(typeArgName)) {
-                final code = LintCode(
-                  name: 'repository_interface',
-                  problemMessage:
-                      'Repository parameter uses data layer model in generic type: $typeArgName',
-                  correctionMessage:
-                      'Use domain entities in generic types. Example: List<User> instead of List<UserModel>',
+                rule.reportAtNode(
+                  typeArg,
+                  arguments: [
+                    'Repository parameter uses data layer model in generic type: $typeArgName',
+                    'Use domain entities in generic types. Example: List<User> instead of List<UserModel>',
+                  ],
                 );
-                reporter.reportAtNode(typeArg, code);
               }
             }
           }
@@ -284,12 +234,11 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
   }
 
   RepositoryViolation? _analyzeRepositoryImport(String importUri) {
-    // Check for data layer repository implementations
     if ((importUri.contains('/data/') || importUri.contains('\\data\\')) &&
         (importUri.contains('repository') ||
             importUri.contains('Repository'))) {
       if (importUri.contains('impl') || importUri.contains('Impl')) {
-        return RepositoryViolation(
+        return const RepositoryViolation(
           message:
               'Importing concrete repository implementation from data layer',
           suggestion:
@@ -298,8 +247,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
       }
     }
 
-    // Check for infrastructure repository imports
-    final infraPatterns = [
+    const infraPatterns = [
       'package:sqflite',
       'package:hive',
       'package:shared_preferences',
@@ -308,7 +256,7 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
 
     for (final pattern in infraPatterns) {
       if (importUri.startsWith(pattern)) {
-        return RepositoryViolation(
+        return const RepositoryViolation(
           message:
               'Direct infrastructure dependency detected in domain repository',
           suggestion:
@@ -328,10 +276,9 @@ class RepositoryInterfaceRule extends CleanArchitectureLintRule
   }
 }
 
-/// Represents a repository interface violation
 class RepositoryViolation {
+  const RepositoryViolation({required this.message, required this.suggestion});
+
   final String message;
   final String suggestion;
-
-  const RepositoryViolation({required this.message, required this.suggestion});
 }
