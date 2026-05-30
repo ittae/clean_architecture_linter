@@ -43,8 +43,8 @@ import '../../clean_architecture_linter_base.dart';
 ///   Future<List<RankingModel>> getRankings();  // ❌ Domain can't know Model
 /// }
 /// ```
-class DataSourceAbstractionRule extends CleanArchitectureLintRule {
-  const DataSourceAbstractionRule() : super(code: _code);
+class CustomLintDataSourceAbstractionRule extends CleanArchitectureLintRule {
+  const CustomLintDataSourceAbstractionRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'datasource_abstraction',

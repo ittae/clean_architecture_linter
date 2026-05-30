@@ -36,8 +36,8 @@ import '../../clean_architecture_linter_base.dart';
 /// **Exceptions:**
 /// - ✅ Inside extension methods (where conversion logic is implemented)
 /// - ✅ Test files (for verification purposes)
-class ModelEntityDirectAccessRule extends CleanArchitectureLintRule {
-  const ModelEntityDirectAccessRule() : super(code: _code);
+class CustomLintModelEntityDirectAccessRule extends CleanArchitectureLintRule {
+  const CustomLintModelEntityDirectAccessRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'model_entity_direct_access',

@@ -34,8 +34,8 @@ import '../../clean_architecture_linter_base.dart';
 ///   }) = _TodoModel;
 /// }
 /// ```
-class ModelFieldDuplicationRule extends CleanArchitectureLintRule {
-  const ModelFieldDuplicationRule() : super(code: _code);
+class CustomLintModelFieldDuplicationRule extends CleanArchitectureLintRule {
+  const CustomLintModelFieldDuplicationRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'model_field_duplication',
@@ -92,7 +92,7 @@ class ModelFieldDuplicationRule extends CleanArchitectureLintRule {
     final fields = _extractFields(node);
     final entityField = _findEntityField(fields);
 
-    // If no entity field, ModelStructureRule will catch this
+    // If no entity field, CustomLintModelStructureRule will catch this
     if (entityField == null) return;
 
     // Check for duplicate fields

@@ -7,9 +7,9 @@ import '../../clean_architecture_linter_base.dart';
 import '../../mixins/repository_rule_visitor.dart';
 import '../../mixins/return_type_validation_mixin.dart';
 
-class RepositoryPassThroughRule extends CleanArchitectureLintRule
+class CustomLintRepositoryPassThroughRule extends CleanArchitectureLintRule
     with RepositoryRuleVisitor, ReturnTypeValidationMixin {
-  const RepositoryPassThroughRule() : super(code: _code);
+  const CustomLintRepositoryPassThroughRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'repository_pass_through',

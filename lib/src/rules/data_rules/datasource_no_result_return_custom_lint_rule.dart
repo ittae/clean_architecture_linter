@@ -49,9 +49,9 @@ import '../../mixins/return_type_validation_mixin.dart';
 /// ```
 ///
 /// See UNIFIED_ERROR_GUIDE.md for complete error handling patterns.
-class DataSourceNoResultReturnRule extends CleanArchitectureLintRule
+class CustomLintDataSourceNoResultReturnRule extends CleanArchitectureLintRule
     with ReturnTypeValidationMixin {
-  const DataSourceNoResultReturnRule() : super(code: _code);
+  const CustomLintDataSourceNoResultReturnRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'datasource_no_result_return',

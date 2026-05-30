@@ -42,8 +42,8 @@ import '../../clean_architecture_linter_base.dart';
 /// }
 /// // ❌ Missing toEntity() extension method
 /// ```
-class ModelConversionMethodsRule extends CleanArchitectureLintRule {
-  const ModelConversionMethodsRule() : super(code: _code);
+class CustomLintModelConversionMethodsRule extends CleanArchitectureLintRule {
+  const CustomLintModelConversionMethodsRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'model_conversion_methods',

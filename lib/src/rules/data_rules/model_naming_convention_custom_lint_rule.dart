@@ -71,8 +71,8 @@ import '../../clean_architecture_linter_base.dart';
 /// - And more...
 ///
 /// See CLEAN_ARCHITECTURE_GUIDE.md for complete Model patterns.
-class ModelNamingConventionRule extends CleanArchitectureLintRule {
-  const ModelNamingConventionRule() : super(code: _code);
+class CustomLintModelNamingConventionRule extends CleanArchitectureLintRule {
+  const CustomLintModelNamingConventionRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'model_naming_convention',
