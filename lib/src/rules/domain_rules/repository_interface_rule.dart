@@ -13,8 +13,7 @@ class RepositoryInterfaceRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'repository_interface',
     '{0}',
-    correctionMessage:
-        'Use abstract repository interfaces and keep domain independent from data implementations.',
+    correctionMessage: '{1}',
     severity: DiagnosticSeverity.WARNING,
     uniqueName: 'LintCode.repository_interface',
   );
@@ -64,7 +63,10 @@ class _RepositoryInterfaceVisitor extends SimpleAstVisitor<void>
 
     final violation = _analyzeRepositoryImport(importUri);
     if (violation != null) {
-      rule.reportAtNode(node, arguments: [violation.message]);
+      rule.reportAtNode(
+        node,
+        arguments: [violation.message, violation.suggestion],
+      );
     }
   }
 
@@ -80,6 +82,7 @@ class _RepositoryInterfaceVisitor extends SimpleAstVisitor<void>
         node,
         arguments: [
           'Repository in domain layer should be abstract: $className',
+          'Make repository abstract or move implementation to data layer.',
         ],
       );
     }
@@ -105,6 +108,7 @@ class _RepositoryInterfaceVisitor extends SimpleAstVisitor<void>
               type,
               arguments: [
                 'Constructor depends on concrete repository implementation: $typeName',
+                'Use abstract repository interface instead of concrete implementation.',
               ],
             );
           }
@@ -125,6 +129,7 @@ class _RepositoryInterfaceVisitor extends SimpleAstVisitor<void>
           type,
           arguments: [
             'Field depends on concrete repository implementation: $typeName',
+            'Use abstract repository interface instead of concrete implementation.',
           ],
         );
       }
@@ -153,6 +158,7 @@ class _RepositoryInterfaceVisitor extends SimpleAstVisitor<void>
           returnType,
           arguments: [
             'Repository method returns data layer model: $returnTypeName',
+            'Repository methods should return domain entities, not data models.',
           ],
         );
         return;
@@ -168,6 +174,7 @@ class _RepositoryInterfaceVisitor extends SimpleAstVisitor<void>
                 typeArg,
                 arguments: [
                   'Repository method uses data layer model in generic type: $typeArgName',
+                  'Use domain entities in generic types. Example: Future<User> or AsyncValue<User> patterns should never expose UserModel.',
                 ],
               );
             }
@@ -200,6 +207,7 @@ class _RepositoryInterfaceVisitor extends SimpleAstVisitor<void>
             paramType,
             arguments: [
               'Repository method parameter uses data layer model: $paramTypeName',
+              'Repository method parameters should use domain entities, not data models.',
             ],
           );
         }
@@ -214,6 +222,7 @@ class _RepositoryInterfaceVisitor extends SimpleAstVisitor<void>
                   typeArg,
                   arguments: [
                     'Repository parameter uses data layer model in generic type: $typeArgName',
+                    'Use domain entities in generic types. Example: List<User> instead of List<UserModel>',
                   ],
                 );
               }
@@ -232,6 +241,8 @@ class _RepositoryInterfaceVisitor extends SimpleAstVisitor<void>
         return const RepositoryViolation(
           message:
               'Importing concrete repository implementation from data layer',
+          suggestion:
+              'Import only abstract repository interfaces. Move concrete implementations to data layer.',
         );
       }
     }
@@ -248,6 +259,8 @@ class _RepositoryInterfaceVisitor extends SimpleAstVisitor<void>
         return const RepositoryViolation(
           message:
               'Direct infrastructure dependency detected in domain repository',
+          suggestion:
+              'Use repository abstractions instead of direct infrastructure dependencies.',
         );
       }
     }
@@ -264,7 +277,8 @@ class _RepositoryInterfaceVisitor extends SimpleAstVisitor<void>
 }
 
 class RepositoryViolation {
-  const RepositoryViolation({required this.message});
+  const RepositoryViolation({required this.message, required this.suggestion});
 
   final String message;
+  final String suggestion;
 }
