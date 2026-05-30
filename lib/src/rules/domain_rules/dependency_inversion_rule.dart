@@ -1,149 +1,105 @@
+import 'package:analyzer/analysis_rule/analysis_rule.dart';
+import 'package:analyzer/analysis_rule/rule_context.dart';
+import 'package:analyzer/analysis_rule/rule_visitor_registry.dart';
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/error/listener.dart';
-import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:analyzer/error/error.dart';
 
 import '../../clean_architecture_linter_base.dart';
 
 /// Enforces Dependency Inversion Principle in the domain layer.
-///
-/// This rule ensures that domain layer classes depend only on abstractions:
-/// - Domain classes should depend on interfaces/abstractions, not concrete implementations
-/// - No direct dependencies on infrastructure or framework classes
-/// - Proper abstraction layer between domain and external concerns
-/// - Constructor injection should use abstract types
-/// - Field declarations should reference abstractions
-///
-/// Benefits of proper dependency inversion:
-/// - Testability through dependency injection
-/// - Flexibility to change implementations
-/// - Reduced coupling between layers
-/// - Better adherence to SOLID principles
-/// - Easier mocking and unit testing
-class DependencyInversionRule extends CleanArchitectureLintRule {
-  const DependencyInversionRule() : super(code: _code);
-
-  static const _code = LintCode(
-    name: 'dependency_inversion',
-    problemMessage:
-        'Domain layer must depend on abstractions, not concrete implementations.',
+class DependencyInversionRule extends AnalysisRule {
+  static const LintCode code = LintCode(
+    'dependency_inversion',
+    '{0}',
     correctionMessage:
         'Use abstract interfaces or base classes instead of concrete implementations to follow DIP.',
+    severity: DiagnosticSeverity.WARNING,
+    uniqueName: 'LintCode.dependency_inversion',
   );
 
+  DependencyInversionRule()
+    : super(
+        name: 'dependency_inversion',
+        description: 'Requires domain layer classes to depend on abstractions.',
+      );
+
   @override
-  void runRule(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
+  bool get canUseParsedResult => true;
+
+  @override
+  DiagnosticCode get diagnosticCode => code;
+
+  @override
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
   ) {
-    // Check constructor parameters for concrete dependencies
-    context.registry.addConstructorDeclaration((node) {
-      _checkConstructorDependencies(node, reporter, resolver);
-    });
-
-    // Check field declarations for concrete types
-    context.registry.addFieldDeclaration((node) {
-      _checkFieldDependencies(node, reporter, resolver);
-    });
-
-    // Check import statements for inappropriate direct dependencies
-    context.registry.addImportDirective((node) {
-      _checkImportDependencies(node, reporter, resolver);
-    });
-
-    // Check class inheritance for concrete base classes
-    context.registry.addClassDeclaration((node) {
-      _checkInheritanceDependencies(node, reporter, resolver);
-    });
+    final visitor = _DependencyInversionVisitor(this, context);
+    registry.addConstructorDeclaration(this, visitor);
+    registry.addFieldDeclaration(this, visitor);
+    registry.addImportDirective(this, visitor);
+    registry.addClassDeclaration(this, visitor);
   }
+}
 
-  void _checkConstructorDependencies(
-    ConstructorDeclaration node,
-    DiagnosticReporter reporter,
-    CustomLintResolver resolver,
-  ) {
-    final filePath = resolver.path;
-    if (!CleanArchitectureUtils.isDomainFile(filePath)) return;
+class _DependencyInversionVisitor extends SimpleAstVisitor<void> {
+  _DependencyInversionVisitor(this.rule, this.context);
+
+  final AnalysisRule rule;
+  final RuleContext context;
+
+  String get _filePath =>
+      context.currentUnit?.file.path ?? context.definingUnit.file.path;
+
+  @override
+  void visitConstructorDeclaration(ConstructorDeclaration node) {
+    if (_shouldSkipFile) return;
 
     final analysis = _analyzeDependencyTypes(node.parameters.parameters);
-
     for (final violation in analysis.violations) {
-      final enhancedCode = LintCode(
-        name: 'dependency_inversion',
-        problemMessage: violation.message,
-        correctionMessage: violation.suggestion,
-      );
-      reporter.reportAtNode(violation.node!, enhancedCode);
+      rule.reportAtNode(violation.node!, arguments: [violation.message]);
     }
   }
 
-  void _checkFieldDependencies(
-    FieldDeclaration node,
-    DiagnosticReporter reporter,
-    CustomLintResolver resolver,
-  ) {
-    final filePath = resolver.path;
-    if (!CleanArchitectureUtils.isDomainFile(filePath)) return;
+  @override
+  void visitFieldDeclaration(FieldDeclaration node) {
+    if (_shouldSkipFile) return;
 
     final type = node.fields.type;
     if (type is NamedType) {
-      final violation = _analyzeFieldDependency(type, node);
+      final violation = _analyzeFieldDependency(type);
       if (violation != null) {
-        final enhancedCode = LintCode(
-          name: 'dependency_inversion',
-          problemMessage: violation.message,
-          correctionMessage: violation.suggestion,
-        );
-        reporter.reportAtNode(type, enhancedCode);
+        rule.reportAtNode(type, arguments: [violation.message]);
       }
     }
   }
 
-  void _checkImportDependencies(
-    ImportDirective node,
-    DiagnosticReporter reporter,
-    CustomLintResolver resolver,
-  ) {
-    final filePath = resolver.path;
-    if (!CleanArchitectureUtils.isDomainFile(filePath)) return;
+  @override
+  void visitImportDirective(ImportDirective node) {
+    if (_shouldSkipFile) return;
 
     final importUri = node.uri.stringValue;
     if (importUri == null) return;
 
     final violation = _analyzeImportDependency(importUri);
     if (violation != null) {
-      final enhancedCode = LintCode(
-        name: 'dependency_inversion',
-        problemMessage: violation.message,
-        correctionMessage: violation.suggestion,
-      );
-      reporter.reportAtNode(node, enhancedCode);
+      rule.reportAtNode(node, arguments: [violation.message]);
     }
   }
 
-  void _checkInheritanceDependencies(
-    ClassDeclaration node,
-    DiagnosticReporter reporter,
-    CustomLintResolver resolver,
-  ) {
-    final filePath = resolver.path;
-    if (!CleanArchitectureUtils.isDomainFile(filePath)) return;
+  @override
+  void visitClassDeclaration(ClassDeclaration node) {
+    if (_shouldSkipFile) return;
 
-    // Check superclass
     final superclass = node.extendsClause?.superclass;
-    if (superclass is NamedType) {
+    if (superclass != null) {
       final violation = _analyzeInheritanceDependency(superclass, 'extends');
       if (violation != null) {
-        final enhancedCode = LintCode(
-          name: 'dependency_inversion',
-          problemMessage: violation.message,
-          correctionMessage: violation.suggestion,
-        );
-        reporter.reportAtNode(superclass, enhancedCode);
+        rule.reportAtNode(superclass, arguments: [violation.message]);
       }
     }
 
-    // Check implemented interfaces
     final interfaces = node.implementsClause?.interfaces;
     if (interfaces != null) {
       for (final interface in interfaces) {
@@ -152,31 +108,26 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
           'implements',
         );
         if (violation != null) {
-          final enhancedCode = LintCode(
-            name: 'dependency_inversion',
-            problemMessage: violation.message,
-            correctionMessage: violation.suggestion,
-          );
-          reporter.reportAtNode(interface, enhancedCode);
+          rule.reportAtNode(interface, arguments: [violation.message]);
         }
       }
     }
 
-    // Check mixins
     final mixins = node.withClause?.mixinTypes;
     if (mixins != null) {
       for (final mixin in mixins) {
         final violation = _analyzeInheritanceDependency(mixin, 'mixes');
         if (violation != null) {
-          final enhancedCode = LintCode(
-            name: 'dependency_inversion',
-            problemMessage: violation.message,
-            correctionMessage: violation.suggestion,
-          );
-          reporter.reportAtNode(mixin, enhancedCode);
+          rule.reportAtNode(mixin, arguments: [violation.message]);
         }
       }
     }
+  }
+
+  bool get _shouldSkipFile {
+    final filePath = _filePath;
+    return CleanArchitectureUtils.shouldExcludeFile(filePath) ||
+        !CleanArchitectureUtils.isDomainFile(filePath);
   }
 
   DependencyAnalysis _analyzeDependencyTypes(List<FormalParameter> parameters) {
@@ -203,58 +154,45 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
   ) {
     final typeName = type.name.lexeme;
 
-    // Check for concrete implementation patterns
     if (_isConcreteImplementation(typeName)) {
       return DependencyViolation(
         node: param,
         message:
             'Constructor parameter depends on concrete implementation: $typeName',
-        suggestion:
-            'Use abstract interface or base class instead of concrete implementation.',
       );
     }
 
-    // Check for infrastructure dependencies
     if (_isInfrastructureDependency(typeName)) {
       return DependencyViolation(
         node: param,
         message: 'Domain layer directly depends on infrastructure: $typeName',
-        suggestion:
-            'Create domain interface and inject through dependency inversion.',
       );
     }
 
-    // Check for framework dependencies
     if (_isFrameworkDependency(typeName)) {
       return DependencyViolation(
         node: param,
         message: 'Domain layer depends on external framework: $typeName',
-        suggestion: 'Abstract framework dependency behind domain interface.',
       );
     }
 
     return null;
   }
 
-  DependencyViolation? _analyzeFieldDependency(
-    NamedType type,
-    FieldDeclaration field,
-  ) {
+  DependencyViolation? _analyzeFieldDependency(NamedType type) {
     final typeName = type.name.lexeme;
 
     if (_isConcreteImplementation(typeName)) {
       return DependencyViolation(
-        node: field,
+        node: type,
         message: 'Field depends on concrete implementation: $typeName',
-        suggestion: 'Use abstract type for field declaration.',
       );
     }
 
     if (_isInfrastructureDependency(typeName)) {
       return DependencyViolation(
-        node: field,
+        node: type,
         message: 'Domain field directly references infrastructure: $typeName',
-        suggestion: 'Create domain abstraction for infrastructure dependency.',
       );
     }
 
@@ -262,8 +200,7 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
   }
 
   DependencyViolation? _analyzeImportDependency(String importUri) {
-    // Check for direct infrastructure imports
-    final infraPatterns = [
+    const infraPatterns = [
       'package:sqflite',
       'package:shared_preferences',
       'package:cloud_firestore',
@@ -275,33 +212,26 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
     for (final pattern in infraPatterns) {
       if (importUri.startsWith(pattern)) {
         return DependencyViolation(
-          node: null, // Will be set by caller
+          node: null,
           message: 'Direct infrastructure import in domain layer: $importUri',
-          suggestion:
-              'Create domain abstraction and move infrastructure to data layer.',
         );
       }
     }
 
-    // Check for data layer imports
     if ((importUri.contains('/data/') || importUri.contains('\\data\\')) &&
         !importUri.contains('/domain/') &&
         !importUri.contains('\\domain\\')) {
       return DependencyViolation(
         node: null,
         message: 'Domain layer importing from data layer: $importUri',
-        suggestion:
-            'Domain should not depend on data layer. Use dependency inversion.',
       );
     }
 
-    // Check for presentation layer imports
     if (importUri.contains('/presentation/') ||
         importUri.contains('\\presentation\\')) {
       return DependencyViolation(
         node: null,
         message: 'Domain layer importing from presentation layer: $importUri',
-        suggestion: 'Domain should not depend on presentation layer.',
       );
     }
 
@@ -319,7 +249,6 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
         node: type,
         message:
             'Domain class $relationship concrete implementation: $typeName',
-        suggestion: 'Use abstract base class or interface for inheritance.',
       );
     }
 
@@ -327,8 +256,6 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
       return DependencyViolation(
         node: type,
         message: 'Domain class $relationship framework type: $typeName',
-        suggestion:
-            'Create domain abstraction instead of depending on framework.',
       );
     }
 
@@ -336,37 +263,18 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
   }
 
   bool _isConcreteImplementation(String typeName) {
-    // Only flag obviously concrete implementations, not legitimate domain classes
-    final concretePatterns = [
-      'Impl', // UserRepositoryImpl
-      'Implementation', // UserRepositoryImplementation
-      'Concrete', // ConcreteUserService
-    ];
+    const concretePatterns = ['Impl', 'Implementation', 'Concrete'];
+    const infrastructurePatterns = ['Client', 'Adapter', 'Gateway'];
 
-    // Infrastructure-specific suffixes (these should be abstractions in domain)
-    final infrastructurePatterns = [
-      'Client', // HttpClient, DatabaseClient
-      'Adapter', // DatabaseAdapter
-      'Gateway', // PaymentGateway
-    ];
-
-    // Check for obvious concrete implementations
     if (concretePatterns.any((pattern) => typeName.endsWith(pattern))) {
       return true;
     }
 
-    // Check for infrastructure patterns only if they seem like concrete implementations
-    if (infrastructurePatterns.any((pattern) => typeName.endsWith(pattern))) {
-      return true;
-    }
-
-    // Domain Services, Managers, Handlers, Providers are legitimate domain classes
-    // They should NOT be considered concrete implementations requiring abstraction
-    return false;
+    return infrastructurePatterns.any((pattern) => typeName.endsWith(pattern));
   }
 
   bool _isInfrastructureDependency(String typeName) {
-    final infraTypes = [
+    const infraTypes = [
       'Database',
       'SqlDatabase',
       'NoSqlDatabase',
@@ -384,7 +292,7 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
   }
 
   bool _isFrameworkDependency(String typeName) {
-    final frameworkTypes = [
+    const frameworkTypes = [
       'HttpClient',
       'Client',
       'RestClient',
@@ -400,22 +308,15 @@ class DependencyInversionRule extends CleanArchitectureLintRule {
   }
 }
 
-/// Analysis result for dependency inversion violations
 class DependencyAnalysis {
-  final List<DependencyViolation> violations;
-
   const DependencyAnalysis({required this.violations});
+
+  final List<DependencyViolation> violations;
 }
 
-/// Represents a dependency inversion violation
 class DependencyViolation {
+  const DependencyViolation({required this.node, required this.message});
+
   final AstNode? node;
   final String message;
-  final String suggestion;
-
-  const DependencyViolation({
-    required this.node,
-    required this.message,
-    required this.suggestion,
-  });
 }
