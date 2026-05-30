@@ -35,8 +35,8 @@ import '../../clean_architecture_linter_base.dart';
 ///   final int attendeeCount;  // ❌ Duplicate from entity
 /// }
 /// ```
-class ModelStructureRule extends CleanArchitectureLintRule {
-  const ModelStructureRule() : super(code: _code);
+class CustomLintModelStructureRule extends CleanArchitectureLintRule {
+  const CustomLintModelStructureRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'model_structure',

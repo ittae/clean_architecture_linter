@@ -25,17 +25,17 @@ import 'src/rules/domain_rules/usecase_no_result_return_custom_lint_rule.dart';
 import 'src/rules/domain_rules/exception_naming_convention_custom_lint_rule.dart';
 
 // Data Layer Rules
-import 'src/rules/data_rules/model_structure_rule.dart';
-import 'src/rules/data_rules/model_field_duplication_rule.dart';
-import 'src/rules/data_rules/model_conversion_methods_rule.dart';
-import 'src/rules/data_rules/model_naming_convention_rule.dart';
-import 'src/rules/data_rules/datasource_abstraction_rule.dart';
-import 'src/rules/data_rules/datasource_no_result_return_rule.dart';
-import 'src/rules/data_rules/repository_implementation_rule.dart';
-import 'src/rules/data_rules/repository_pass_through_rule.dart';
-import 'src/rules/data_rules/repository_no_throw_rule.dart';
-import 'src/rules/data_rules/datasource_exception_types_rule.dart';
-import 'src/rules/data_rules/model_entity_direct_access_rule.dart';
+import 'src/rules/data_rules/model_structure_custom_lint_rule.dart';
+import 'src/rules/data_rules/model_field_duplication_custom_lint_rule.dart';
+import 'src/rules/data_rules/model_conversion_methods_custom_lint_rule.dart';
+import 'src/rules/data_rules/model_naming_convention_custom_lint_rule.dart';
+import 'src/rules/data_rules/datasource_abstraction_custom_lint_rule.dart';
+import 'src/rules/data_rules/datasource_no_result_return_custom_lint_rule.dart';
+import 'src/rules/data_rules/repository_implementation_custom_lint_rule.dart';
+import 'src/rules/data_rules/repository_pass_through_custom_lint_rule.dart';
+import 'src/rules/data_rules/repository_no_throw_custom_lint_rule.dart';
+import 'src/rules/data_rules/datasource_exception_types_custom_lint_rule.dart';
+import 'src/rules/data_rules/model_entity_direct_access_custom_lint_rule.dart';
 
 // Presentation Layer Rules
 import 'src/rules/presentation_rules/no_presentation_models_rule.dart';
@@ -105,40 +105,40 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
       // 8. Exception Naming Convention - Feature prefix for Domain exceptions
       CustomLintExceptionNamingConventionRule(),
 
-      // Data Layer Rules (10 rules)
+      // Data Layer Rules (11 rules)
 
       // 9. Model Structure - Freezed Model with Entity
-      ModelStructureRule(),
+      CustomLintModelStructureRule(),
 
       // 10. Model Field Duplication - No duplicate Entity fields
-      ModelFieldDuplicationRule(),
+      CustomLintModelFieldDuplicationRule(),
 
       // 11. Model Conversion Methods - toEntity() and fromEntity()
-      ModelConversionMethodsRule(),
+      CustomLintModelConversionMethodsRule(),
 
       // 12. Model Naming Convention - No DataSource implementation in name
-      ModelNamingConventionRule(),
+      CustomLintModelNamingConventionRule(),
 
       // 13. DataSource Abstraction - Abstract DataSource with Implementation
-      DataSourceAbstractionRule(),
+      CustomLintDataSourceAbstractionRule(),
 
       // 14. DataSource No Result Return - DataSource should throw exceptions
-      DataSourceNoResultReturnRule(),
+      CustomLintDataSourceNoResultReturnRule(),
 
       // 15. Repository Implementation - RepositoryImpl must implement domain interface
-      RepositoryImplementationRule(),
+      CustomLintRepositoryImplementationRule(),
 
       // 16. Repository Pass Through - Repository uses pass-through pattern (no Result)
-      RepositoryPassThroughRule(),
+      CustomLintRepositoryPassThroughRule(),
 
       // 17. Repository No Throw - Repository should not throw exceptions directly
-      RepositoryNoThrowRule(),
+      CustomLintRepositoryNoThrowRule(),
 
       // 18. DataSource Exception Types - Use defined Data exceptions only
-      DataSourceExceptionTypesRule(),
+      CustomLintDataSourceExceptionTypesRule(),
 
       // 19. Model Entity Direct Access - Use toEntity() instead of .entity
-      ModelEntityDirectAccessRule(),
+      CustomLintModelEntityDirectAccessRule(),
 
       // Presentation Layer Rules (11 rules)
 

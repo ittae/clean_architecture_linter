@@ -31,9 +31,9 @@ import '../../mixins/exception_validation_mixin.dart';
 /// - ⚠️ Throwing non-AppException types - Warning (inconsistent with pattern)
 ///
 /// See UNIFIED_ERROR_GUIDE.md for complete error handling patterns.
-class RepositoryNoThrowRule extends CleanArchitectureLintRule
+class CustomLintRepositoryNoThrowRule extends CleanArchitectureLintRule
     with RepositoryRuleVisitor, ExceptionValidationMixin {
-  const RepositoryNoThrowRule() : super(code: _code);
+  const CustomLintRepositoryNoThrowRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'repository_no_throw',

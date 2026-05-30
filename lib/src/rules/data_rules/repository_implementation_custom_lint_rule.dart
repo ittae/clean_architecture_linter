@@ -19,9 +19,9 @@ import '../../mixins/repository_rule_visitor.dart';
 /// - Testability through interface-based mocking
 /// - Dependency Inversion Principle compliance
 /// - Supports multiple data source strategies
-class RepositoryImplementationRule extends CleanArchitectureLintRule
+class CustomLintRepositoryImplementationRule extends CleanArchitectureLintRule
     with RepositoryRuleVisitor {
-  const RepositoryImplementationRule() : super(code: _code);
+  const CustomLintRepositoryImplementationRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'repository_implementation',

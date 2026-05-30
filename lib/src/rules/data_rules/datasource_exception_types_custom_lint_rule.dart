@@ -61,9 +61,9 @@ import '../../mixins/exception_validation_mixin.dart';
 /// ```
 ///
 /// See UNIFIED_ERROR_GUIDE.md for complete error handling patterns.
-class DataSourceExceptionTypesRule extends CleanArchitectureLintRule
+class CustomLintDataSourceExceptionTypesRule extends CleanArchitectureLintRule
     with ExceptionValidationMixin {
-  const DataSourceExceptionTypesRule() : super(code: _code);
+  const CustomLintDataSourceExceptionTypesRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'datasource_exception_types',
