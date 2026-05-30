@@ -79,6 +79,35 @@ dart analyze
 4. `./tools/dev_setup.sh`를 실행한다.
 5. 필요하면 `poc_v2/example/lib/` 아래에 smoke fixture를 추가한다.
 
+## v2 rule 마이그레이션 패리티 체크리스트
+
+v1 `custom_lint_builder` rule을 v2 `AnalysisRule`로 옮길 때는 rule logic을
+단순히 컴파일되게 바꾸는 것으로 끝내지 않는다. v1이 보고하던 조건, 건너뛰던
+조건, 메시지의 context를 모두 보존해야 한다.
+
+1. Visitor 진입부에 `CleanArchitectureUtils.shouldExcludeFile(filePath)`
+   guard를 둔다. `allowed_instance_variables_rule.dart`와
+   `test_coverage_rule.dart`의 패턴을 기준으로 삼는다.
+2. v1 diagnostic message가 import URI, layer, class, field, cycle path 같은
+   context를 포함했다면 v2도 `LintCode('... {0}')`와
+   `reportAtNode(node, arguments: [...])`로 같은 context를 전달한다.
+   `boundary_crossing_rule.dart`와 `allowed_instance_variables_rule.dart`의
+   패턴을 기준으로 삼고, context가 필요한 rule에서 bare `reportAtNode(node)`
+   정적 메시지로 축소하지 않는다.
+3. v1의 모든 skip/exclusion 조건을 이식한다. 예: programming error 허용,
+   private method 허용, constructor 허용, path narrowing, DI/provider 예외,
+   generated/test/build file 제외.
+4. v2 harness test는 `codeName`과 line만 보지 말고 diagnostic message 내용도
+   assert한다. 특히 import URI, cycle path, class/field/type 이름처럼 regression
+   때 사라지기 쉬운 context를 검증한다.
+5. excluded-file scenario를 테스트에 포함한다. `.g.dart` 또는 `.freezed.dart`가
+   rule 위반 import/AST를 포함해도 diagnostic이 보고되지 않아야 한다.
+6. v1 reference file은 보존한다. `*_custom_lint_rule.dart`와
+   `CustomLintXxxRule` class 이름을 유지해서 v1/v2 parity review가 가능하게
+   한다.
+7. 새 v2 rule은 `lib/main.dart`에 등록하고, 등록 여부를 plugin creation 또는
+   smoke test로 확인한다.
+
 ## Notes
 
 - `analysis_server_plugin`은 Dart 3.10부터 지원된다.

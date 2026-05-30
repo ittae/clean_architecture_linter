@@ -5,6 +5,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
+import '../../clean_architecture_linter_base.dart';
+
 /// Enforces simplified boundary crossing patterns in Clean Architecture.
 ///
 /// This v2 rule keeps the v1 scope intentionally narrow: import-only checks,
@@ -51,6 +53,8 @@ class _BoundaryCrossingVisitor extends SimpleAstVisitor<void> {
   void visitImportDirective(ImportDirective node) {
     final filePath =
         context.currentUnit?.file.path ?? context.definingUnit.file.path;
+    if (CleanArchitectureUtils.shouldExcludeFile(filePath)) return;
+
     final importUri = node.uri.stringValue;
     if (importUri == null) return;
 

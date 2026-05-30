@@ -101,5 +101,23 @@ class TodoRepositoryImpl {}
 
       result.expectNoDiagnostics();
     });
+
+    test('skips generated files', () async {
+      final result = await V2RuleHarness(rule: BoundaryCrossingRule()).analyze(
+        files: {
+          'lib/features/todo/domain/entities/todo.freezed.dart': '''
+import '../../data/repositories/todo_repository_impl.dart';
+
+class Todo {}
+''',
+          'lib/features/todo/data/repositories/todo_repository_impl.dart': '''
+class TodoRepositoryImpl {}
+''',
+        },
+        definingFile: 'lib/features/todo/domain/entities/todo.freezed.dart',
+      );
+
+      result.expectNoDiagnostics();
+    });
   });
 }

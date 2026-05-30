@@ -23,6 +23,8 @@ class A {}
           relativePath: 'lib/features/todo/domain/a.dart',
           codeName: 'circular_dependency',
           line: 1,
+          problemMessage:
+              'Circular dependency detected: domain/a.dart -> domain/a.dart',
         ),
       ]);
     });
@@ -78,11 +80,54 @@ class C {}
           relativePath: 'lib/features/todo/domain/c.dart',
           codeName: 'circular_dependency',
           line: 1,
+          problemMessage:
+              'Circular dependency detected: domain/c.dart -> domain/a.dart -> domain/b.dart -> domain/c.dart',
         ),
       ]);
     });
 
     test('reports layer-level cycles', () async {
+      final result = await V2RuleHarness(rule: CircularDependencyRule())
+          .analyze(
+            files: {
+              'lib/features/todo/domain/entity.dart': '''
+import '../data/repository.dart';
+
+class Entity {}
+''',
+              'lib/features/todo/data/repository.dart': '''
+import '../presentation/page.dart';
+
+class Repository {}
+''',
+              'lib/features/todo/presentation/page.dart': '''
+import '../domain/view_model.dart';
+
+class Page {}
+''',
+              'lib/features/todo/domain/view_model.dart': '''
+class ViewModel {}
+''',
+            },
+            definingFile: 'lib/features/todo/domain/entity.dart',
+            additionalDefiningFiles: const [
+              'lib/features/todo/data/repository.dart',
+              'lib/features/todo/presentation/page.dart',
+            ],
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath: 'lib/features/todo/presentation/page.dart',
+          codeName: 'circular_dependency',
+          line: 1,
+          problemMessage:
+              'Circular dependency detected: Layer-level cycle: presentation -> domain -> data -> presentation',
+        ),
+      ]);
+    });
+
+    test('reports file cycles before layer-level cycles', () async {
       final result = await V2RuleHarness(rule: CircularDependencyRule())
           .analyze(
             files: {
@@ -114,8 +159,34 @@ class Page {}
           relativePath: 'lib/features/todo/presentation/page.dart',
           codeName: 'circular_dependency',
           line: 1,
+          problemMessage:
+              'Circular dependency detected: presentation/page.dart -> domain/entity.dart -> data/repository.dart -> presentation/page.dart',
         ),
       ]);
+    });
+
+    test('skips generated files when building dependency graph', () async {
+      final result = await V2RuleHarness(rule: CircularDependencyRule())
+          .analyze(
+            files: {
+              'lib/features/todo/domain/a.dart': '''
+import 'a.freezed.dart';
+
+class A {}
+''',
+              'lib/features/todo/domain/a.freezed.dart': '''
+import 'a.dart';
+
+class GeneratedA {}
+''',
+            },
+            definingFile: 'lib/features/todo/domain/a.dart',
+            additionalDefiningFiles: const [
+              'lib/features/todo/domain/a.freezed.dart',
+            ],
+          );
+
+      result.expectNoDiagnostics();
     });
 
     test(

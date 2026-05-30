@@ -5,6 +5,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
+import '../../clean_architecture_linter_base.dart';
+
 /// Enforces proper dependency direction between architectural layers.
 ///
 /// The path filters and DI exceptions intentionally mirror the v1 custom-lint
@@ -12,7 +14,7 @@ import 'package:analyzer/error/error.dart';
 class LayerDependencyRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'layer_dependency',
-    'Improper dependency between architectural layers detected.',
+    'Layer dependency violation: {0}',
     correctionMessage:
         'Ensure dependencies flow inward: Presentation -> Domain <- Data.',
     severity: DiagnosticSeverity.WARNING,
@@ -49,12 +51,20 @@ class _LayerDependencyVisitor extends SimpleAstVisitor<void> {
   @override
   void visitImportDirective(ImportDirective node) {
     final filePath = _currentPath();
+    if (CleanArchitectureUtils.shouldExcludeFile(filePath)) return;
+
     final importUri = node.uri.stringValue;
     if (importUri == null) return;
 
     if (_isDependencyInjectionFile(filePath)) {
       if (_isDataModelImport(importUri)) {
-        rule.reportAtNode(node);
+        rule.reportAtNode(
+          node,
+          arguments: [
+            'Data Models should not be imported even in DI/Provider files. '
+                'Found import: $importUri',
+          ],
+        );
       }
       return;
     }
@@ -64,14 +74,14 @@ class _LayerDependencyVisitor extends SimpleAstVisitor<void> {
 
     if (sourceLayer == null || targetLayer == null) return;
 
-    final hasViolation = _hasDependencyViolation(
+    final violation = _checkDependencyViolation(
       sourceLayer,
       targetLayer,
       importUri,
     );
 
-    if (hasViolation) {
-      rule.reportAtNode(node);
+    if (violation != null) {
+      rule.reportAtNode(node, arguments: [violation.message]);
     }
   }
 
@@ -86,51 +96,67 @@ class _LayerDependencyVisitor extends SimpleAstVisitor<void> {
             normalizedPath.contains('/data/');
   }
 
-  bool _hasDependencyViolation(
+  LayerViolation? _checkDependencyViolation(
     ArchitectureLayer source,
     ArchitectureLayer target,
     String importPath,
   ) {
     if (_isCrossCuttingConcern(importPath)) {
-      return false;
+      return null;
     }
 
     switch (source) {
       case ArchitectureLayer.domain:
         if (target == ArchitectureLayer.data) {
-          return true;
+          return LayerViolation(
+            'Domain layer cannot depend on Data layer. Found import: $importPath',
+          );
         }
         if (target == ArchitectureLayer.presentation) {
-          return true;
+          return LayerViolation(
+            'Domain layer cannot depend on Presentation layer. Found import: $importPath',
+          );
         }
         if (target == ArchitectureLayer.infrastructure) {
-          return true;
+          return LayerViolation(
+            'Domain layer cannot depend on Infrastructure. Found import: $importPath',
+          );
         }
         break;
 
       case ArchitectureLayer.data:
         if (target == ArchitectureLayer.presentation) {
-          return true;
+          return LayerViolation(
+            'Data layer cannot depend on Presentation layer. Found import: $importPath',
+          );
         }
         if (target == ArchitectureLayer.infrastructure &&
             !_isAllowedInfrastructureImport(importPath)) {
-          return true;
+          return LayerViolation(
+            'Data layer has suspicious Infrastructure dependency: $importPath',
+          );
         }
         break;
 
       case ArchitectureLayer.presentation:
         if (target == ArchitectureLayer.data) {
-          return true;
+          return LayerViolation(
+            'Presentation layer should not directly depend on Data layer. Found import: $importPath',
+          );
         }
         if (target == ArchitectureLayer.infrastructure &&
             !_isAllowedPresentationInfrastructure(importPath)) {
-          return true;
+          return LayerViolation(
+            'Presentation layer has improper Infrastructure dependency: $importPath',
+          );
         }
         break;
 
       case ArchitectureLayer.infrastructure:
         if (target == ArchitectureLayer.presentation) {
-          return true;
+          return LayerViolation(
+            'Infrastructure cannot depend on Presentation layer. Found import: $importPath',
+          );
         }
         break;
 
@@ -138,12 +164,14 @@ class _LayerDependencyVisitor extends SimpleAstVisitor<void> {
         if (target == ArchitectureLayer.data ||
             target == ArchitectureLayer.presentation ||
             target == ArchitectureLayer.infrastructure) {
-          return true;
+          return LayerViolation(
+            'Application layer cannot depend on outer layers. Found import: $importPath',
+          );
         }
         break;
     }
 
-    return false;
+    return null;
   }
 
   ArchitectureLayer? _identifyLayer(String path) {
@@ -285,4 +313,10 @@ enum ArchitectureLayer {
   data,
   presentation,
   infrastructure,
+}
+
+class LayerViolation {
+  const LayerViolation(this.message);
+
+  final String message;
 }
