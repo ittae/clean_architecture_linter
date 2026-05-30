@@ -13,8 +13,7 @@ class DomainPurityRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'domain_purity',
     'Domain layer violation: {0}',
-    correctionMessage:
-        'Remove dependencies on UI frameworks, HTTP clients, databases, or platform-specific APIs. Use abstractions instead.',
+    correctionMessage: '{1}',
     severity: DiagnosticSeverity.WARNING,
     uniqueName: 'LintCode.domain_purity',
   );
@@ -63,7 +62,10 @@ class _DomainPurityVisitor extends SimpleAstVisitor<void> {
 
     final violation = _checkForViolation(importUri);
     if (violation != null) {
-      rule.reportAtNode(node, arguments: [violation.category]);
+      rule.reportAtNode(
+        node,
+        arguments: [violation.category, violation.suggestion],
+      );
     }
   }
 
@@ -81,6 +83,7 @@ class _DomainPurityVisitor extends SimpleAstVisitor<void> {
           extendsClause,
           arguments: [
             'Domain entities should not extend external framework classes ($superTypeName)',
+            'Use composition instead of inheritance from external frameworks.',
           ],
         );
       }
@@ -95,6 +98,7 @@ class _DomainPurityVisitor extends SimpleAstVisitor<void> {
             interface,
             arguments: [
               'Domain classes should not implement external framework interfaces ($interfaceName)',
+              'Create domain-specific abstractions instead of implementing external interfaces.',
             ],
           );
         }
@@ -114,6 +118,8 @@ class _DomainPurityVisitor extends SimpleAstVisitor<void> {
       if (importUri.startsWith(framework)) {
         return const DomainViolation(
           category: 'UI Framework dependency detected',
+          suggestion:
+              'Domain layer should not depend on UI frameworks. Use abstractions or move this logic to presentation layer.',
         );
       }
     }
@@ -127,6 +133,8 @@ class _DomainPurityVisitor extends SimpleAstVisitor<void> {
       if (importUri.startsWith(lib)) {
         return const DomainViolation(
           category: 'Networking dependency detected',
+          suggestion:
+              'Use repository abstractions instead of direct HTTP clients in domain layer.',
         );
       }
     }
@@ -141,7 +149,11 @@ class _DomainPurityVisitor extends SimpleAstVisitor<void> {
     ];
     for (final lib in storageLibs) {
       if (importUri.startsWith(lib)) {
-        return const DomainViolation(category: 'Storage dependency detected');
+        return const DomainViolation(
+          category: 'Storage dependency detected',
+          suggestion:
+              'Use repository abstractions instead of direct storage dependencies in domain layer.',
+        );
       }
     }
 
@@ -156,6 +168,8 @@ class _DomainPurityVisitor extends SimpleAstVisitor<void> {
       if (importUri.startsWith(lib)) {
         return const DomainViolation(
           category: 'Platform-specific dependency detected',
+          suggestion:
+              'Use service abstractions instead of direct platform dependencies in domain layer.',
         );
       }
     }
@@ -171,6 +185,8 @@ class _DomainPurityVisitor extends SimpleAstVisitor<void> {
       if (importUri.startsWith(lib)) {
         return const DomainViolation(
           category: 'State management dependency detected',
+          suggestion:
+              'State management should be handled in presentation layer, not domain layer.',
         );
       }
     }
@@ -196,7 +212,8 @@ class _DomainPurityVisitor extends SimpleAstVisitor<void> {
 }
 
 class DomainViolation {
-  const DomainViolation({required this.category});
+  const DomainViolation({required this.category, required this.suggestion});
 
   final String category;
+  final String suggestion;
 }
