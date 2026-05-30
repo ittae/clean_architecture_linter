@@ -33,6 +33,8 @@ class TodoRepositoryImpl {}
           codeName: 'dependency_inversion',
           problemMessage:
               'Domain layer importing from data layer: ../../data/repositories/todo_repository_impl.dart',
+          correctionMessage:
+              'Domain should not depend on data layer. Use dependency inversion.',
         ),
         const ExpectedV2Diagnostic(
           relativePath:
@@ -40,6 +42,7 @@ class TodoRepositoryImpl {}
           codeName: 'dependency_inversion',
           problemMessage:
               'Field depends on concrete implementation: TodoRepositoryImpl',
+          correctionMessage: 'Use abstract type for field declaration.',
         ),
       ]);
     });

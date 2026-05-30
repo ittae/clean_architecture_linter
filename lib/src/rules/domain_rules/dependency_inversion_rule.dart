@@ -12,8 +12,7 @@ class DependencyInversionRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'dependency_inversion',
     '{0}',
-    correctionMessage:
-        'Use abstract interfaces or base classes instead of concrete implementations to follow DIP.',
+    correctionMessage: '{1}',
     severity: DiagnosticSeverity.WARNING,
     uniqueName: 'LintCode.dependency_inversion',
   );
@@ -58,7 +57,10 @@ class _DependencyInversionVisitor extends SimpleAstVisitor<void> {
 
     final analysis = _analyzeDependencyTypes(node.parameters.parameters);
     for (final violation in analysis.violations) {
-      rule.reportAtNode(violation.node!, arguments: [violation.message]);
+      rule.reportAtNode(
+        violation.node!,
+        arguments: [violation.message, violation.suggestion],
+      );
     }
   }
 
@@ -70,7 +72,10 @@ class _DependencyInversionVisitor extends SimpleAstVisitor<void> {
     if (type is NamedType) {
       final violation = _analyzeFieldDependency(type);
       if (violation != null) {
-        rule.reportAtNode(type, arguments: [violation.message]);
+        rule.reportAtNode(
+          type,
+          arguments: [violation.message, violation.suggestion],
+        );
       }
     }
   }
@@ -84,7 +89,10 @@ class _DependencyInversionVisitor extends SimpleAstVisitor<void> {
 
     final violation = _analyzeImportDependency(importUri);
     if (violation != null) {
-      rule.reportAtNode(node, arguments: [violation.message]);
+      rule.reportAtNode(
+        node,
+        arguments: [violation.message, violation.suggestion],
+      );
     }
   }
 
@@ -96,7 +104,10 @@ class _DependencyInversionVisitor extends SimpleAstVisitor<void> {
     if (superclass != null) {
       final violation = _analyzeInheritanceDependency(superclass, 'extends');
       if (violation != null) {
-        rule.reportAtNode(superclass, arguments: [violation.message]);
+        rule.reportAtNode(
+          superclass,
+          arguments: [violation.message, violation.suggestion],
+        );
       }
     }
 
@@ -108,7 +119,10 @@ class _DependencyInversionVisitor extends SimpleAstVisitor<void> {
           'implements',
         );
         if (violation != null) {
-          rule.reportAtNode(interface, arguments: [violation.message]);
+          rule.reportAtNode(
+            interface,
+            arguments: [violation.message, violation.suggestion],
+          );
         }
       }
     }
@@ -118,7 +132,10 @@ class _DependencyInversionVisitor extends SimpleAstVisitor<void> {
       for (final mixin in mixins) {
         final violation = _analyzeInheritanceDependency(mixin, 'mixes');
         if (violation != null) {
-          rule.reportAtNode(mixin, arguments: [violation.message]);
+          rule.reportAtNode(
+            mixin,
+            arguments: [violation.message, violation.suggestion],
+          );
         }
       }
     }
@@ -159,6 +176,8 @@ class _DependencyInversionVisitor extends SimpleAstVisitor<void> {
         node: param,
         message:
             'Constructor parameter depends on concrete implementation: $typeName',
+        suggestion:
+            'Use abstract interface or base class instead of concrete implementation.',
       );
     }
 
@@ -166,6 +185,8 @@ class _DependencyInversionVisitor extends SimpleAstVisitor<void> {
       return DependencyViolation(
         node: param,
         message: 'Domain layer directly depends on infrastructure: $typeName',
+        suggestion:
+            'Create domain interface and inject through dependency inversion.',
       );
     }
 
@@ -173,6 +194,7 @@ class _DependencyInversionVisitor extends SimpleAstVisitor<void> {
       return DependencyViolation(
         node: param,
         message: 'Domain layer depends on external framework: $typeName',
+        suggestion: 'Abstract framework dependency behind domain interface.',
       );
     }
 
@@ -186,6 +208,7 @@ class _DependencyInversionVisitor extends SimpleAstVisitor<void> {
       return DependencyViolation(
         node: type,
         message: 'Field depends on concrete implementation: $typeName',
+        suggestion: 'Use abstract type for field declaration.',
       );
     }
 
@@ -193,6 +216,7 @@ class _DependencyInversionVisitor extends SimpleAstVisitor<void> {
       return DependencyViolation(
         node: type,
         message: 'Domain field directly references infrastructure: $typeName',
+        suggestion: 'Create domain abstraction for infrastructure dependency.',
       );
     }
 
@@ -214,6 +238,8 @@ class _DependencyInversionVisitor extends SimpleAstVisitor<void> {
         return DependencyViolation(
           node: null,
           message: 'Direct infrastructure import in domain layer: $importUri',
+          suggestion:
+              'Create domain abstraction and move infrastructure to data layer.',
         );
       }
     }
@@ -224,6 +250,8 @@ class _DependencyInversionVisitor extends SimpleAstVisitor<void> {
       return DependencyViolation(
         node: null,
         message: 'Domain layer importing from data layer: $importUri',
+        suggestion:
+            'Domain should not depend on data layer. Use dependency inversion.',
       );
     }
 
@@ -232,6 +260,7 @@ class _DependencyInversionVisitor extends SimpleAstVisitor<void> {
       return DependencyViolation(
         node: null,
         message: 'Domain layer importing from presentation layer: $importUri',
+        suggestion: 'Domain should not depend on presentation layer.',
       );
     }
 
@@ -249,6 +278,7 @@ class _DependencyInversionVisitor extends SimpleAstVisitor<void> {
         node: type,
         message:
             'Domain class $relationship concrete implementation: $typeName',
+        suggestion: 'Use abstract base class or interface for inheritance.',
       );
     }
 
@@ -256,6 +286,8 @@ class _DependencyInversionVisitor extends SimpleAstVisitor<void> {
       return DependencyViolation(
         node: type,
         message: 'Domain class $relationship framework type: $typeName',
+        suggestion:
+            'Create domain abstraction instead of depending on framework.',
       );
     }
 
@@ -315,8 +347,13 @@ class DependencyAnalysis {
 }
 
 class DependencyViolation {
-  const DependencyViolation({required this.node, required this.message});
+  const DependencyViolation({
+    required this.node,
+    required this.message,
+    required this.suggestion,
+  });
 
   final AstNode? node;
   final String message;
+  final String suggestion;
 }
