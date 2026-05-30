@@ -25,6 +25,8 @@ class TodoRepositoryImpl {}
           relativePath: 'lib/features/todo/presentation/pages/todo_page.dart',
           codeName: 'layer_dependency',
           line: 1,
+          problemMessage:
+              'Layer dependency violation: Presentation layer should not directly depend on Data layer. Found import: ../../data/repositories/todo_repository_impl.dart',
         ),
       ]);
     });
@@ -55,8 +57,28 @@ class TodoModel {}
               'lib/features/todo/presentation/providers/todo_providers.dart',
           codeName: 'layer_dependency',
           line: 2,
+          problemMessage:
+              'Layer dependency violation: Data Models should not be imported even in DI/Provider files. Found import: ../../data/models/todo_model.dart',
         ),
       ]);
+    });
+
+    test('skips generated files', () async {
+      final result = await V2RuleHarness(rule: LayerDependencyRule()).analyze(
+        files: {
+          'lib/features/todo/domain/entities/todo.freezed.dart': '''
+import '../../data/models/todo_model.dart';
+
+class Todo {}
+''',
+          'lib/features/todo/data/models/todo_model.dart': '''
+class TodoModel {}
+''',
+        },
+        definingFile: 'lib/features/todo/domain/entities/todo.freezed.dart',
+      );
+
+      result.expectNoDiagnostics();
     });
 
     test('ignores cross-cutting dart imports', () async {

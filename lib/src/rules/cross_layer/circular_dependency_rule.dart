@@ -5,6 +5,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
+import '../../clean_architecture_linter_base.dart';
+
 /// Detects circular dependencies between files and architectural layers.
 ///
 /// This preserves the v1 graph-based behavior while keeping graph state scoped
@@ -12,7 +14,7 @@ import 'package:analyzer/error/error.dart';
 class CircularDependencyRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'circular_dependency',
-    'Circular dependency detected between files or layers.',
+    'Circular dependency detected: {0}',
     correctionMessage:
         'Refactor to remove circular dependency using dependency injection, interfaces, or shared modules.',
     severity: DiagnosticSeverity.ERROR,
@@ -57,6 +59,7 @@ class _CircularDependencyVisitor extends SimpleAstVisitor<void> {
     final currentFile =
         (context.currentUnit?.file.path ?? context.definingUnit.file.path)
             .replaceAll('\\', '/');
+    if (CleanArchitectureUtils.shouldExcludeFile(currentFile)) return;
 
     _buildDependencyGraph(node, currentFile);
     _checkForCircularDependencies(currentFile, node);
@@ -108,7 +111,7 @@ class _CircularDependencyVisitor extends SimpleAstVisitor<void> {
 
         final resolvedPath = _resolveImportPath(importUri, currentFile);
         if (resolvedPath != null && cycle.contains(resolvedPath)) {
-          rule.reportAtNode(directive);
+          rule.reportAtNode(directive, arguments: [_describeCycle(cycle)]);
         }
       }
       return;
@@ -180,7 +183,10 @@ class _CircularDependencyVisitor extends SimpleAstVisitor<void> {
         if (resolvedPath != null) {
           final targetLayer = rule._fileToLayer[resolvedPath];
           if (targetLayer != null && layerCycle.contains(targetLayer)) {
-            rule.reportAtNode(directive);
+            rule.reportAtNode(
+              directive,
+              arguments: ['Layer-level cycle: ${layerCycle.join(' -> ')}'],
+            );
             break;
           }
         }
@@ -258,5 +264,16 @@ class _CircularDependencyVisitor extends SimpleAstVisitor<void> {
     }
 
     return null;
+  }
+
+  String _describeCycle(List<String> cycle) {
+    final simplifiedCycle = cycle.map((path) {
+      final parts = path.split('/');
+      return parts.length > 2
+          ? '${parts[parts.length - 2]}/${parts[parts.length - 1]}'
+          : path;
+    }).toList();
+
+    return simplifiedCycle.join(' -> ');
   }
 }
