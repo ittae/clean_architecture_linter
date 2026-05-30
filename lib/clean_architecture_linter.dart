@@ -22,7 +22,7 @@ import 'src/rules/domain_rules/domain_purity_custom_lint_rule.dart';
 import 'src/rules/domain_rules/dependency_inversion_custom_lint_rule.dart';
 import 'src/rules/domain_rules/repository_interface_custom_lint_rule.dart';
 import 'src/rules/domain_rules/usecase_no_result_return_custom_lint_rule.dart';
-import 'src/rules/domain_rules/exception_naming_convention_rule.dart';
+import 'src/rules/domain_rules/exception_naming_convention_custom_lint_rule.dart';
 
 // Data Layer Rules
 import 'src/rules/data_rules/model_structure_rule.dart';
@@ -103,7 +103,7 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
       CustomLintUseCaseNoResultReturnRule(),
 
       // 8. Exception Naming Convention - Feature prefix for Domain exceptions
-      ExceptionNamingConventionRule(),
+      CustomLintExceptionNamingConventionRule(),
 
       // Data Layer Rules (10 rules)
 
