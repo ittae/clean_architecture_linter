@@ -176,11 +176,15 @@ class V2RuleResult {
     final compareMessage = expected.any(
       (diagnostic) => diagnostic.problemMessage != null,
     );
+    final compareCorrectionMessage = expected.any(
+      (diagnostic) => diagnostic.correctionMessage != null,
+    );
     final actual = diagnostics.map((diagnostic) {
       return _describe(
         diagnostic,
         includeLine: compareLine,
         includeMessage: compareMessage,
+        includeCorrectionMessage: compareCorrectionMessage,
       );
     }).toList()..sort();
     final expectedDescriptions = expected.map((diagnostic) {
@@ -188,6 +192,7 @@ class V2RuleResult {
         diagnostic,
         includeLine: compareLine,
         includeMessage: compareMessage,
+        includeCorrectionMessage: compareCorrectionMessage,
       );
     }).toList()..sort();
 
@@ -202,23 +207,31 @@ class V2RuleResult {
     V2RuleDiagnostic diagnostic, {
     bool includeLine = false,
     bool includeMessage = false,
+    bool includeCorrectionMessage = false,
   }) {
     final line = includeLine ? '|${diagnostic.line}' : '';
     final message = includeMessage ? '|${diagnostic.problemMessage}' : '';
-    return '${diagnostic.relativePath}|${diagnostic.codeName}$line$message';
+    final correctionMessage = includeCorrectionMessage
+        ? '|${diagnostic.correctionMessage}'
+        : '';
+    return '${diagnostic.relativePath}|${diagnostic.codeName}$line$message$correctionMessage';
   }
 
   String _describeExpected(
     ExpectedV2Diagnostic diagnostic, {
     required bool includeLine,
     required bool includeMessage,
+    required bool includeCorrectionMessage,
   }) {
     final line = includeLine ? '|${diagnostic.line}' : '';
     final message = includeMessage ? '|${diagnostic.problemMessage}' : '';
+    final correctionMessage = includeCorrectionMessage
+        ? '|${diagnostic.correctionMessage}'
+        : '';
     final relativePath = p.url.normalize(
       diagnostic.relativePath.replaceAll('\\', '/'),
     );
-    return '$relativePath|${diagnostic.codeName}$line$message';
+    return '$relativePath|${diagnostic.codeName}$line$message$correctionMessage';
   }
 }
 
@@ -238,6 +251,7 @@ class V2RuleDiagnostic {
   String get codeName => diagnostic.diagnosticCode.name;
   String get problemMessage =>
       diagnostic.problemMessage.messageText(includeUrl: false);
+  String get correctionMessage => diagnostic.correctionMessage ?? '';
 }
 
 class ExpectedV2Diagnostic {
@@ -246,10 +260,12 @@ class ExpectedV2Diagnostic {
     required this.codeName,
     this.line,
     this.problemMessage,
+    this.correctionMessage,
   });
 
   final String relativePath;
   final String codeName;
   final int? line;
   final String? problemMessage;
+  final String? correctionMessage;
 }
