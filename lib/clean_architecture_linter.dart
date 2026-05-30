@@ -21,7 +21,7 @@ import 'src/rules/cross_layer/allowed_instance_variables_custom_lint_rule.dart';
 import 'src/rules/domain_rules/domain_purity_rule.dart';
 import 'src/rules/domain_rules/dependency_inversion_custom_lint_rule.dart';
 import 'src/rules/domain_rules/repository_interface_rule.dart';
-import 'src/rules/domain_rules/usecase_no_result_return_rule.dart';
+import 'src/rules/domain_rules/usecase_no_result_return_custom_lint_rule.dart';
 import 'src/rules/domain_rules/exception_naming_convention_rule.dart';
 
 // Data Layer Rules
@@ -100,7 +100,7 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
       // Domain Layer Rules (2 rules)
 
       // 7. UseCase No Result Return - UseCase should unwrap Result
-      UseCaseNoResultReturnRule(),
+      CustomLintUseCaseNoResultReturnRule(),
 
       // 8. Exception Naming Convention - Feature prefix for Domain exceptions
       ExceptionNamingConventionRule(),

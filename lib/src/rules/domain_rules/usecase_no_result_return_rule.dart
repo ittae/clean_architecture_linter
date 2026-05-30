@@ -1,38 +1,61 @@
+import 'package:analyzer/analysis_rule/analysis_rule.dart';
+import 'package:analyzer/analysis_rule/rule_context.dart';
+import 'package:analyzer/analysis_rule/rule_visitor_registry.dart';
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/error/listener.dart';
-import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:analyzer/error/error.dart';
 
 import '../../clean_architecture_linter_base.dart';
 import '../../mixins/return_type_validation_mixin.dart';
 
-class UseCaseNoResultReturnRule extends CleanArchitectureLintRule
-    with ReturnTypeValidationMixin {
-  const UseCaseNoResultReturnRule() : super(code: _code);
-
-  static const _code = LintCode(
-    name: 'usecase_no_result_return',
-    problemMessage:
-        'UseCase should NOT return Result/Either. Use pass-through return type.',
+class UseCaseNoResultReturnRule extends AnalysisRule {
+  static const LintCode code = LintCode(
+    'usecase_no_result_return',
+    'UseCase method "{0}" should NOT return Result/Either (including typedef alias).',
     correctionMessage:
-        'UseCase는 Future<Entity>를 반환하고, 검증 실패만 AppException으로 throw 하세요.',
+        'pass-through 기준으로 Future<Entity>를 반환하세요. 오류 처리는 Presentation에서 AsyncValue.guard()/when(error)로 처리합니다.',
+    severity: DiagnosticSeverity.WARNING,
+    uniqueName: 'LintCode.usecase_no_result_return',
   );
 
-  @override
-  void runRule(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
-  ) {
-    context.registry.addMethodDeclaration((node) {
-      _checkUseCaseMethod(node, reporter, resolver);
-    });
-  }
+  UseCaseNoResultReturnRule()
+    : super(
+        name: 'usecase_no_result_return',
+        description:
+            'Prevents UseCase methods from returning Result/Either wrappers.',
+      );
 
-  void _checkUseCaseMethod(
-    MethodDeclaration method,
-    DiagnosticReporter reporter,
-    CustomLintResolver resolver,
+  @override
+  bool get canUseParsedResult => true;
+
+  @override
+  DiagnosticCode get diagnosticCode => code;
+
+  @override
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
   ) {
+    registry.addMethodDeclaration(
+      this,
+      _UseCaseNoResultReturnVisitor(this, context),
+    );
+  }
+}
+
+class _UseCaseNoResultReturnVisitor extends SimpleAstVisitor<void>
+    with ReturnTypeValidationMixin {
+  _UseCaseNoResultReturnVisitor(this.rule, this.context);
+
+  final AnalysisRule rule;
+  final RuleContext context;
+
+  @override
+  void visitMethodDeclaration(MethodDeclaration method) {
+    final filePath =
+        context.currentUnit?.file.path ?? context.definingUnit.file.path;
+    if (CleanArchitectureUtils.shouldExcludeFile(filePath)) return;
+
     final classNode = method.thisOrAncestorOfType<ClassDeclaration>();
     if (classNode == null) return;
 
@@ -46,14 +69,7 @@ class UseCaseNoResultReturnRule extends CleanArchitectureLintRule
 
     final unit = method.thisOrAncestorOfType<CompilationUnit>();
     if (isResultReturnType(returnType, unit: unit)) {
-      final code = LintCode(
-        name: 'usecase_no_result_return',
-        problemMessage:
-            'UseCase method "${method.name.lexeme}" should NOT return Result/Either (including typedef alias).',
-        correctionMessage:
-            'pass-through 기준으로 Future<Entity>를 반환하세요. 오류 처리는 Presentation에서 AsyncValue.guard()/when(error)로 처리합니다.',
-      );
-      reporter.reportAtNode(returnType, code);
+      rule.reportAtNode(returnType, arguments: [method.name.lexeme]);
     }
   }
 }
