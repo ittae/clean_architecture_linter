@@ -15,7 +15,7 @@ import 'src/rules/cross_layer/layer_dependency_custom_lint_rule.dart';
 import 'src/rules/cross_layer/circular_dependency_custom_lint_rule.dart';
 import 'src/rules/cross_layer/boundary_crossing_custom_lint_rule.dart';
 import 'src/rules/cross_layer/test_coverage_custom_lint_rule.dart';
-import 'src/rules/cross_layer/allowed_instance_variables_rule.dart';
+import 'src/rules/cross_layer/allowed_instance_variables_custom_lint_rule.dart';
 
 // Domain Layer Rules
 import 'src/rules/domain_rules/domain_purity_rule.dart';
@@ -176,7 +176,7 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
       RiverpodProviderNamingRule(),
 
       // 31. Allowed Instance Variables - Validate dependencies in UseCase/Repository/DataSource
-      AllowedInstanceVariablesRule(),
+      CustomLintAllowedInstanceVariablesRule(),
 
       // 32. Ref Mounted Usage - Avoid ref.mounted as it masks design problems
       RefMountedUsageRule(),
