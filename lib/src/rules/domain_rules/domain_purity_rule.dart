@@ -1,57 +1,61 @@
+import 'package:analyzer/analysis_rule/analysis_rule.dart';
+import 'package:analyzer/analysis_rule/rule_context.dart';
+import 'package:analyzer/analysis_rule/rule_visitor_registry.dart';
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/error/listener.dart';
-import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:analyzer/error/error.dart';
 
 import '../../clean_architecture_linter_base.dart';
 
-/// Enforces domain layer purity by preventing dependencies on external frameworks.
-///
-/// This rule ensures that the domain layer remains independent of:
-/// - UI frameworks (Flutter)
-/// - HTTP clients and networking libraries
-/// - Database and storage libraries
-/// - Platform-specific APIs
-///
-/// The domain layer should only depend on:
-/// - Dart core libraries (with restrictions)
-/// - Other domain layer code
-/// - Pure business logic abstractions
-class DomainPurityRule extends CleanArchitectureLintRule {
-  const DomainPurityRule() : super(code: _code);
-
-  static const _code = LintCode(
-    name: 'domain_purity',
-    problemMessage:
-        'Domain layer must remain pure and not depend on external frameworks or infrastructure concerns.',
+/// Enforces domain layer purity by preventing dependencies on external
+/// frameworks and infrastructure concerns.
+class DomainPurityRule extends AnalysisRule {
+  static const LintCode code = LintCode(
+    'domain_purity',
+    'Domain layer violation: {0}',
     correctionMessage:
         'Remove dependencies on UI frameworks, HTTP clients, databases, or platform-specific APIs. Use abstractions instead.',
+    severity: DiagnosticSeverity.WARNING,
+    uniqueName: 'LintCode.domain_purity',
   );
 
+  DomainPurityRule()
+    : super(
+        name: 'domain_purity',
+        description:
+            'Prevents domain layer dependencies on frameworks and infrastructure.',
+      );
+
   @override
-  void runRule(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
-  ) {
-    // Check import statements for external dependencies
-    context.registry.addImportDirective((node) {
-      _checkImportPurity(node, reporter, resolver);
-    });
+  bool get canUseParsedResult => true;
 
-    // Check class declarations for inheritance/implementation violations
-    context.registry.addClassDeclaration((node) {
-      _checkClassDeclarations(node, reporter, resolver);
-    });
+  @override
+  DiagnosticCode get diagnosticCode => code;
+
+  @override
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
+  ) {
+    final visitor = _DomainPurityVisitor(this, context);
+    registry.addImportDirective(this, visitor);
+    registry.addClassDeclaration(this, visitor);
   }
+}
 
-  void _checkImportPurity(
-    ImportDirective node,
-    DiagnosticReporter reporter,
-    CustomLintResolver resolver,
-  ) {
-    final filePath = resolver.path;
+class _DomainPurityVisitor extends SimpleAstVisitor<void> {
+  _DomainPurityVisitor(this.rule, this.context);
 
-    // Only check files in domain layer
+  final AnalysisRule rule;
+  final RuleContext context;
+
+  String get _filePath =>
+      context.currentUnit?.file.path ?? context.definingUnit.file.path;
+
+  @override
+  void visitImportDirective(ImportDirective node) {
+    final filePath = _filePath;
+    if (CleanArchitectureUtils.shouldExcludeFile(filePath)) return;
     if (!CleanArchitectureUtils.isDomainFile(filePath)) return;
 
     final importUri = node.uri.stringValue;
@@ -59,19 +63,47 @@ class DomainPurityRule extends CleanArchitectureLintRule {
 
     final violation = _checkForViolation(importUri);
     if (violation != null) {
-      final enhancedCode = LintCode(
-        name: 'domain_purity',
-        problemMessage: 'Domain layer violation: ${violation.category}',
-        correctionMessage: violation.suggestion,
-      );
-      reporter.reportAtNode(node, enhancedCode);
+      rule.reportAtNode(node, arguments: [violation.category]);
     }
   }
 
-  /// Checks for domain purity violations and returns detailed information
+  @override
+  void visitClassDeclaration(ClassDeclaration node) {
+    final filePath = _filePath;
+    if (CleanArchitectureUtils.shouldExcludeFile(filePath)) return;
+    if (!CleanArchitectureUtils.isDomainFile(filePath)) return;
+
+    final extendsClause = node.extendsClause;
+    if (extendsClause != null) {
+      final superTypeName = extendsClause.superclass.name.lexeme;
+      if (_isExternalFrameworkClass(superTypeName)) {
+        rule.reportAtNode(
+          extendsClause,
+          arguments: [
+            'Domain entities should not extend external framework classes ($superTypeName)',
+          ],
+        );
+      }
+    }
+
+    final implementsClause = node.implementsClause;
+    if (implementsClause != null) {
+      for (final interface in implementsClause.interfaces) {
+        final interfaceName = interface.name.lexeme;
+        if (_isExternalFrameworkClass(interfaceName)) {
+          rule.reportAtNode(
+            interface,
+            arguments: [
+              'Domain classes should not implement external framework interfaces ($interfaceName)',
+            ],
+          );
+        }
+      }
+    }
+  }
+
   DomainViolation? _checkForViolation(String importUri) {
-    // UI Framework violations
-    final uiFrameworks = [
+    const uiFrameworks = [
       'package:flutter/',
       'package:ffi/',
       'dart:ui',
@@ -80,35 +112,26 @@ class DomainPurityRule extends CleanArchitectureLintRule {
     ];
     for (final framework in uiFrameworks) {
       if (importUri.startsWith(framework)) {
-        return DomainViolation(
+        return const DomainViolation(
           category: 'UI Framework dependency detected',
-          suggestion:
-              'Domain layer should not depend on UI frameworks. Use abstractions or move this logic to presentation layer.',
         );
       }
     }
 
-    // Networking violations
-    final networkingLibs = [
+    const networkingLibs = [
       'package:http/',
       'package:dio/',
       'package:connectivity_plus/',
     ];
     for (final lib in networkingLibs) {
       if (importUri.startsWith(lib)) {
-        return DomainViolation(
+        return const DomainViolation(
           category: 'Networking dependency detected',
-          suggestion:
-              'Use repository abstractions instead of direct HTTP clients in domain layer.',
         );
       }
     }
 
-    // Note: dart:io is allowed for type references (File, Directory) in domain layer
-    // The actual I/O operations should be implemented in data layer
-
-    // Storage violations
-    final storageLibs = [
+    const storageLibs = [
       'package:sqflite/',
       'package:hive/',
       'package:shared_preferences/',
@@ -118,16 +141,11 @@ class DomainPurityRule extends CleanArchitectureLintRule {
     ];
     for (final lib in storageLibs) {
       if (importUri.startsWith(lib)) {
-        return DomainViolation(
-          category: 'Storage dependency detected',
-          suggestion:
-              'Use repository abstractions instead of direct storage dependencies in domain layer.',
-        );
+        return const DomainViolation(category: 'Storage dependency detected');
       }
     }
 
-    // Platform-specific violations
-    final platformLibs = [
+    const platformLibs = [
       'package:device_info_plus/',
       'package:permission_handler/',
       'package:camera/',
@@ -136,16 +154,13 @@ class DomainPurityRule extends CleanArchitectureLintRule {
     ];
     for (final lib in platformLibs) {
       if (importUri.startsWith(lib)) {
-        return DomainViolation(
+        return const DomainViolation(
           category: 'Platform-specific dependency detected',
-          suggestion:
-              'Use service abstractions instead of direct platform dependencies in domain layer.',
         );
       }
     }
 
-    // State management violations (should be in presentation layer)
-    final stateManagementLibs = [
+    const stateManagementLibs = [
       'package:provider/',
       'package:riverpod/',
       'package:bloc/',
@@ -154,10 +169,8 @@ class DomainPurityRule extends CleanArchitectureLintRule {
     ];
     for (final lib in stateManagementLibs) {
       if (importUri.startsWith(lib)) {
-        return DomainViolation(
+        return const DomainViolation(
           category: 'State management dependency detected',
-          suggestion:
-              'State management should be handled in presentation layer, not domain layer.',
         );
       }
     }
@@ -165,65 +178,25 @@ class DomainPurityRule extends CleanArchitectureLintRule {
     return null;
   }
 
-  /// Additional checks for code constructs within domain layer files
-  void _checkClassDeclarations(
-    ClassDeclaration node,
-    DiagnosticReporter reporter,
-    CustomLintResolver resolver,
-  ) {
-    final filePath = resolver.path;
-    if (!CleanArchitectureUtils.isDomainFile(filePath)) return;
-
-    // Check for inheritance from external framework classes
-    final extendsClause = node.extendsClause;
-    if (extendsClause != null) {
-      final superTypeName = extendsClause.superclass.name.lexeme;
-      if (_isExternalFrameworkClass(superTypeName)) {
-        final code = LintCode(
-          name: 'domain_purity',
-          problemMessage:
-              'Domain entities should not extend external framework classes ($superTypeName)',
-          correctionMessage:
-              'Use composition instead of inheritance from external frameworks.',
-        );
-        reporter.reportAtNode(extendsClause, code);
-      }
-    }
-
-    // Check for implementation of external interfaces
-    final implementsClause = node.implementsClause;
-    if (implementsClause != null) {
-      for (final interface in implementsClause.interfaces) {
-        final interfaceName = interface.name.lexeme;
-        if (_isExternalFrameworkClass(interfaceName)) {
-          final code = LintCode(
-            name: 'domain_purity',
-            problemMessage:
-                'Domain classes should not implement external framework interfaces ($interfaceName)',
-            correctionMessage:
-                'Create domain-specific abstractions instead of implementing external interfaces.',
-          );
-          reporter.reportAtNode(interface, code);
-        }
-      }
-    }
-  }
-
   bool _isExternalFrameworkClass(String className) {
-    final externalClasses = [
-      'Widget', 'StatelessWidget', 'StatefulWidget',
-      'ChangeNotifier', 'ValueNotifier',
-      'Stream', 'Future', // These might be acceptable in some cases
-      'HttpClient', 'Response', 'Request',
+    const externalClasses = [
+      'Widget',
+      'StatelessWidget',
+      'StatefulWidget',
+      'ChangeNotifier',
+      'ValueNotifier',
+      'Stream',
+      'Future',
+      'HttpClient',
+      'Response',
+      'Request',
     ];
     return externalClasses.contains(className);
   }
 }
 
-/// Represents a domain layer purity violation with detailed information
 class DomainViolation {
-  final String category;
-  final String suggestion;
+  const DomainViolation({required this.category});
 
-  const DomainViolation({required this.category, required this.suggestion});
+  final String category;
 }

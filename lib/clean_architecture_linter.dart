@@ -18,7 +18,7 @@ import 'src/rules/cross_layer/test_coverage_custom_lint_rule.dart';
 import 'src/rules/cross_layer/allowed_instance_variables_custom_lint_rule.dart';
 
 // Domain Layer Rules
-import 'src/rules/domain_rules/domain_purity_rule.dart';
+import 'src/rules/domain_rules/domain_purity_custom_lint_rule.dart';
 import 'src/rules/domain_rules/dependency_inversion_custom_lint_rule.dart';
 import 'src/rules/domain_rules/repository_interface_rule.dart';
 import 'src/rules/domain_rules/usecase_no_result_return_custom_lint_rule.dart';
@@ -83,7 +83,7 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
       LayerDependencyRule(),
 
       // 2. Domain Purity Rule - Domain 레이어 순수성
-      DomainPurityRule(),
+      CustomLintDomainPurityRule(),
 
       // 3. Dependency Inversion Principle - 추상화에 의존
       CustomLintDependencyInversionRule(),
