@@ -90,10 +90,10 @@ class _RiverpodKeepAliveVisitor extends SimpleAstVisitor<void> {
 
     var hasKeepAliveTrue = false;
     for (final arg in arguments.arguments) {
-      if (arg is NamedExpression &&
-          arg.name.label.name == 'keepAlive' &&
-          arg.expression is BooleanLiteral &&
-          (arg.expression as BooleanLiteral).value) {
+      if (arg is NamedArgument &&
+          arg.name.lexeme == 'keepAlive' &&
+          arg.argumentExpression is BooleanLiteral &&
+          (arg.argumentExpression as BooleanLiteral).value) {
         hasKeepAliveTrue = true;
         break;
       }
@@ -103,7 +103,7 @@ class _RiverpodKeepAliveVisitor extends SimpleAstVisitor<void> {
     final parent = node.parent;
     if (parent is! ClassDeclaration) return;
 
-    final className = parent.name.lexeme.toLowerCase();
+    final className = parent.namePart.typeName.lexeme.toLowerCase();
     final isInfrastructure = RiverpodKeepAliveRule._infrastructurePatterns.any(
       className.contains,
     );

@@ -60,7 +60,7 @@ class _ExceptionNamingConventionVisitor extends SimpleAstVisitor<void>
     if (filePath.contains('/core/')) return;
     if (!isExceptionClass(node)) return;
 
-    final className = node.name.lexeme;
+    final className = node.namePart.typeName.lexeme;
     if (ExceptionValidationMixin.dartBuiltInExceptions.contains(className)) {
       return;
     }

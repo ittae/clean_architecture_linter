@@ -81,7 +81,7 @@ class _NoPresentationModelsVisitor extends SimpleAstVisitor<void> {
   void visitClassDeclaration(ClassDeclaration node) {
     if (CleanArchitectureUtils.shouldExcludeFile(_filePath)) return;
 
-    final className = node.name.lexeme;
+    final className = node.namePart.typeName.lexeme;
     if (className.endsWith('ViewModel')) {
       rule.reportAtNode(
         node,

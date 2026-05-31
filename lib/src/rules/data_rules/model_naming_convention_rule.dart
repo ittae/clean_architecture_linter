@@ -105,7 +105,7 @@ class _ModelNamingConventionVisitor extends SimpleAstVisitor<void> {
     final normalizedPath = filePath.replaceAll('\\', '/').toLowerCase();
     if (!normalizedPath.contains('/models/')) return;
 
-    final className = node.name.lexeme;
+    final className = node.namePart.typeName.lexeme;
     if (!className.endsWith('Model')) return;
 
     final lowerClassName = className.toLowerCase();

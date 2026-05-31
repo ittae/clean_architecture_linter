@@ -58,7 +58,7 @@ class _ModelConversionMethodsVisitor extends SimpleAstVisitor<void> {
 
     if (!_isDataModelFile(filePath)) return;
 
-    final className = node.name.lexeme;
+    final className = node.namePart.typeName.lexeme;
     if (!className.endsWith('Model')) return;
 
     if (!_hasFreezedAnnotation(node)) return;
@@ -91,7 +91,7 @@ class _ModelConversionMethodsVisitor extends SimpleAstVisitor<void> {
   }
 
   bool _hasEntityField(ClassDeclaration node) {
-    for (final member in node.members) {
+    for (final member in node.body.members) {
       if (member is! ConstructorDeclaration || member.factoryKeyword == null) {
         continue;
       }
@@ -109,11 +109,8 @@ class _ModelConversionMethodsVisitor extends SimpleAstVisitor<void> {
   }
 
   _FieldInfo? _extractFieldInfo(FormalParameter param) {
-    final normalParam = param is DefaultFormalParameter
-        ? param.parameter
-        : param;
-
-    if (normalParam is! SimpleFormalParameter) return null;
+    if (param is! RegularFormalParameter) return null;
+    final normalParam = param;
 
     final name = normalParam.name?.lexeme;
     final type = normalParam.type?.toSource();
@@ -144,7 +141,7 @@ class _ModelConversionMethodsVisitor extends SimpleAstVisitor<void> {
     String methodName, {
     required bool isStatic,
   }) {
-    for (final member in extension.members) {
+    for (final member in extension.body.members) {
       if (member is MethodDeclaration &&
           member.name.lexeme == methodName &&
           member.isStatic == isStatic) {

@@ -119,7 +119,7 @@ class _PresentationNoThrowVisitor extends SimpleAstVisitor<void> {
   }
 
   bool _isStateOrNotifierClass(ClassDeclaration classNode) {
-    final className = classNode.name.lexeme;
+    final className = classNode.namePart.typeName.lexeme;
 
     for (final metadata in classNode.metadata) {
       final name = metadata.name.name;
@@ -208,7 +208,7 @@ class _PresentationNoThrowVisitor extends SimpleAstVisitor<void> {
   }
 
   bool _isWidgetClass(ClassDeclaration classNode) {
-    final className = classNode.name.lexeme;
+    final className = classNode.namePart.typeName.lexeme;
     if (className.endsWith('Page') ||
         className.endsWith('Screen') ||
         className.endsWith('View') ||

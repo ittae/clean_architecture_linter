@@ -55,7 +55,7 @@ class _ModelStructureVisitor extends SimpleAstVisitor<void> {
 
     if (!_isDataModelFile(filePath)) return;
 
-    final className = node.name.lexeme;
+    final className = node.namePart.typeName.lexeme;
     if (!className.endsWith('Model')) return;
 
     if (_hasDatabaseAnnotation(node)) return;
@@ -123,17 +123,14 @@ class _ModelStructureVisitor extends SimpleAstVisitor<void> {
   }
 
   bool _hasEntityField(ClassDeclaration node) {
-    for (final member in node.members) {
+    for (final member in node.body.members) {
       if (member is! ConstructorDeclaration || member.factoryKeyword == null) {
         continue;
       }
 
       for (final param in member.parameters.parameters) {
-        final normalParam = param is DefaultFormalParameter
-            ? param.parameter
-            : param;
-
-        if (normalParam is! SimpleFormalParameter) continue;
+        if (param is! RegularFormalParameter) continue;
+        final normalParam = param;
 
         final paramName = normalParam.name?.lexeme ?? '';
         final typeName = normalParam.type?.toSource() ?? '';

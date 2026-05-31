@@ -5,26 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.0.0-dev.1] - 2026-05-31
 
-> **Draft — v2.0 (analysis_server_plugin migration).** Version number and release date are finalized at cutover (Phase 7), not here.
+> **v2.0 first dev release (analysis_server_plugin migration).** Pre-release; the stable `2.0.0` follows once the v2 contract is validated against consumer projects.
 
-### 💥 Breaking Changes (v2.0 draft)
+### 💥 Breaking Changes
 
 - **Migrated from `custom_lint` to the official [`analysis_server_plugin`](https://pub.dev/packages/analysis_server_plugin)**, following the archival of upstream [invertase/dart_custom_lint](https://github.com/invertase/dart_custom_lint) and the original author's migration recommendation.
 - **`analysis_options.yaml` format change**: lint activation moves from `analyzer: plugins: - custom_lint` to the top-level `plugins: clean_architecture_linter: <version>` map. The `analyzer: exclude:` block is unchanged.
 - **`custom_lint` dependency removed**: consumers no longer add `custom_lint` as a dev_dependency, and the analyzer 9 / Riverpod 3+ `pubspec_overrides.yaml` workaround is no longer required.
 - **CLI change**: lint runs via `dart analyze` / `flutter analyze` instead of `dart run custom_lint`.
 - **Minimum Dart SDK raised to `^3.10.0`** (`analysis_server_plugin` requires Dart 3.10+).
+- **Dependencies pinned to `analysis_server_plugin: ^0.3.15` + `analyzer: ^13.0.0`** so the plugin loads in-process under the analyzer shipped with current Dart/Flutter SDKs (Dart 3.12 / analyzer 13).
 
 ### 🔧 Changed
 
 - All **33 rules** are registered in the v2 `analysis_server_plugin` plugin entrypoint (`lib/main.dart`) as default-enabled rules; per-rule severity is preserved from v1 (most WARNING, 7 INFO). Rule names and diagnostic messages remain equivalent to v1.
+- Migrated all rule + helper AST traversal to the **analyzer 13 AST API** (`ClassDeclaration.namePart.typeName` / `ClassBody.members`, `RegularFormalParameter`, `NamedArgument`). Detection logic, messages, and severities are unchanged — only the AST accessors were updated.
+
+### 🗑️ Removed
+
+- Removed the v1 `custom_lint` entrypoint (`lib/clean_architecture_linter.dart`), all 34 `*_custom_lint_rule.dart` implementations, the `CleanArchitectureLintRule extends DartLintRule` base class, and the corresponding v1 tests. `CleanArchitectureUtils`, the shared mixins, the v2 rules, and the v2 test harness are retained.
 
 ### 📖 Docs
 
 - Added [MIGRATION.md](MIGRATION.md) — v1 → v2.0 consumer migration guide (change table, step-by-step procedure, known differences).
-- Added v2.0 "upcoming" notes to `README.md` / `README_KO.md` while keeping the current v1 install guide.
+- Flipped `README.md` / `README_KO.md` install guides to the v2 `plugins:` + `dart analyze` workflow and removed the v1 analyzer-9 compatibility workaround section.
 
 ## [1.3.2] - 2026-05-29
 

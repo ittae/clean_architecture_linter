@@ -74,7 +74,7 @@ class _RepositoryInterfaceVisitor extends SimpleAstVisitor<void>
   void visitClassDeclaration(ClassDeclaration node) {
     if (_shouldSkipFile) return;
 
-    final className = node.name.lexeme;
+    final className = node.namePart.typeName.lexeme;
     if (!className.contains('Repository')) return;
 
     if (!isRepositoryInterface(node)) {
@@ -87,7 +87,7 @@ class _RepositoryInterfaceVisitor extends SimpleAstVisitor<void>
       );
     }
 
-    for (final member in node.members) {
+    for (final member in node.body.members) {
       if (member is MethodDeclaration) {
         _checkRepositoryMethod(member);
       }
@@ -99,7 +99,7 @@ class _RepositoryInterfaceVisitor extends SimpleAstVisitor<void>
     if (_shouldSkipFile) return;
 
     for (final param in node.parameters.parameters) {
-      if (param is SimpleFormalParameter) {
+      if (param is RegularFormalParameter) {
         final type = param.type;
         if (type is NamedType) {
           final typeName = type.name.lexeme;
@@ -191,13 +191,8 @@ class _RepositoryInterfaceVisitor extends SimpleAstVisitor<void>
     for (final param in parameters.parameters) {
       TypeAnnotation? paramType;
 
-      if (param is SimpleFormalParameter) {
+      if (param is RegularFormalParameter) {
         paramType = param.type;
-      } else if (param is DefaultFormalParameter) {
-        final innerParam = param.parameter;
-        if (innerParam is SimpleFormalParameter) {
-          paramType = innerParam.type;
-        }
       }
 
       if (paramType is NamedType) {

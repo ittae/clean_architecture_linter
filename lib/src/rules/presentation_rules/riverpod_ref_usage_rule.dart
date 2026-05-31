@@ -52,7 +52,7 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
     if (!_isProviderFile(_filePath)) return;
     if (!_isRiverpodProviderClass(node)) return;
 
-    for (final member in node.members) {
+    for (final member in node.body.members) {
       if (member is MethodDeclaration) {
         _checkMethodRefUsage(member, member.name.lexeme == 'build');
       }

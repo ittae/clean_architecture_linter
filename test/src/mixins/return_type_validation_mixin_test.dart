@@ -10,7 +10,7 @@ MethodDeclaration _getMethod(String source, String methodName) {
   final unit = parseString(content: source).unit;
   for (final declaration in unit.declarations) {
     if (declaration is ClassDeclaration) {
-      for (final member in declaration.members) {
+      for (final member in declaration.body.members) {
         if (member is MethodDeclaration && member.name.lexeme == methodName) {
           return member;
         }

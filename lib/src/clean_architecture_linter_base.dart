@@ -5,60 +5,6 @@
 library;
 
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/error/error.dart' as analyzer_error;
-import 'package:analyzer/error/listener.dart';
-import 'package:custom_lint_builder/custom_lint_builder.dart';
-
-final Expando<analyzer_error.LintCode> _analyzerLintCodeCache = Expando(
-  'cleanArchitectureAnalyzerLintCode',
-);
-
-analyzer_error.LintCode toAnalyzerLintCode(LintCode code) {
-  final cached = _analyzerLintCodeCache[code];
-  if (cached != null) {
-    return cached;
-  }
-
-  final converted = analyzer_error.LintCode(
-    code.name,
-    code.problemMessage,
-    correctionMessage: code.correctionMessage,
-    uniqueName: code.uniqueName,
-    severity: _toAnalyzerDiagnosticSeverity(code.errorSeverity.name),
-  );
-  _analyzerLintCodeCache[code] = converted;
-  return converted;
-}
-
-analyzer_error.DiagnosticSeverity _toAnalyzerDiagnosticSeverity(
-  String severityName,
-) {
-  for (final severity in analyzer_error.DiagnosticSeverity.values) {
-    if (severity.name == severityName) {
-      return severity;
-    }
-  }
-  return analyzer_error.DiagnosticSeverity.INFO;
-}
-
-/// Bridges custom_lint [LintCode] instances to analyzer's diagnostic code API.
-extension CleanArchitectureDiagnosticReporterX on DiagnosticReporter {
-  void reportAtNode(AstNode node, LintCode code) {
-    atNode(node, toAnalyzerLintCode(code));
-  }
-
-  void reportAtOffset({
-    required int offset,
-    required int length,
-    required LintCode code,
-  }) {
-    atOffset(
-      offset: offset,
-      length: length,
-      diagnosticCode: toAnalyzerLintCode(code),
-    );
-  }
-}
 
 /// Utility functions for Clean Architecture layer detection and file filtering.
 ///
@@ -595,7 +541,7 @@ class CleanArchitectureUtils {
   /// - [isRepositoryInterfaceClass] for fast name-based filtering
   /// - [isRepositoryInterfaceMethod] for individual method validation
   static bool isRepositoryInterface(ClassDeclaration classDeclaration) {
-    final className = classDeclaration.name.lexeme;
+    final className = classDeclaration.namePart.typeName.lexeme;
 
     // Step 1: Check naming patterns
     final repositoryPatterns = ['Repository', 'DataSource', 'Gateway', 'Port'];
@@ -609,7 +555,7 @@ class CleanArchitectureUtils {
     final isAbstractClass = classDeclaration.abstractKeyword != null;
 
     // Step 3: Check if all methods are abstract
-    final hasOnlyAbstractMethods = classDeclaration.members
+    final hasOnlyAbstractMethods = classDeclaration.body.members
         .whereType<MethodDeclaration>()
         .every(
           (method) => method.isAbstract || method.isGetter || method.isSetter,
@@ -1135,36 +1081,6 @@ class CleanArchitectureUtils {
   static bool isPresentationLayerFile(String filePath) {
     return isPresentationFile(filePath);
   }
-}
-
-/// Base class for Clean Architecture lint rules that automatically excludes test files.
-abstract class CleanArchitectureLintRule extends DartLintRule {
-  const CleanArchitectureLintRule({required super.code});
-
-  @override
-  void run(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
-  ) {
-    final filePath = resolver.path;
-
-    // Skip analysis for test files and generated files
-    if (CleanArchitectureUtils.shouldExcludeFile(filePath)) {
-      return;
-    }
-
-    // Call the rule-specific implementation
-    runRule(resolver, reporter, context);
-  }
-
-  /// Override this method instead of run() to implement rule-specific logic.
-  /// Test files are automatically excluded.
-  void runRule(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
-  );
 }
 
 /// Configuration options for Clean Architecture Linter rules.
