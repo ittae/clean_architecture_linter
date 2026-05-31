@@ -38,7 +38,22 @@ jobs:
       run: dart test
 
     - name: Check pub publishing
-      run: dart pub publish --dry-run
+      # analysis_server_plugin mandates an entrypoint at lib/main.dart, which
+      # triggers one unavoidable pub warning ("name 'main' should match the
+      # package name"). Allow exactly that warning; fail on anything else.
+      run: |
+        output="$(dart pub publish --dry-run 2>&1 || true)"
+        echo "$output"
+        count="$(printf '%s\n' "$output" | sed -nE 's/.*Package has ([0-9]+) warning.*/\1/p')"
+        count="${count:-0}"
+        if [ "$count" -le 1 ] && ! printf '%s\n' "$output" | grep -qiE "error|missing required"; then
+          if [ "$count" -eq 0 ] || printf '%s\n' "$output" | grep -q "lib/main.dart"; then
+            echo "OK: clean, or only the expected asp lib/main.dart naming warning."
+            exit 0
+          fi
+        fi
+        echo "::error::Unexpected pub publish warnings/errors (see output above)."
+        exit 1
 
   coverage:
     runs-on: ubuntu-latest
