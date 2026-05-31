@@ -56,8 +56,8 @@ import '../../clean_architecture_linter_base.dart';
 /// 4. **Architecture Boundaries**: Maintains clear layer separation
 ///
 /// See CLAUDE.md § Riverpod State Management Patterns for complete guide.
-class WidgetNoUseCaseCallRule extends CleanArchitectureLintRule {
-  const WidgetNoUseCaseCallRule() : super(code: _code);
+class CustomLintWidgetNoUseCaseCallRule extends CleanArchitectureLintRule {
+  const CustomLintWidgetNoUseCaseCallRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'widget_no_usecase_call',

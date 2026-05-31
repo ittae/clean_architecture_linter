@@ -5,8 +5,9 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../clean_architecture_linter_base.dart';
 
-class PresentationUseAsyncValueRule extends CleanArchitectureLintRule {
-  const PresentationUseAsyncValueRule() : super(code: _code);
+class CustomLintPresentationUseAsyncValueRule
+    extends CleanArchitectureLintRule {
+  const CustomLintPresentationUseAsyncValueRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'presentation_use_async_value',

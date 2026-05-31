@@ -36,8 +36,8 @@ import '../../clean_architecture_linter_base.dart';
 /// context.push('/next');  // Then navigate
 /// // New screen's provider loads state in build()
 /// ```
-class RefMountedUsageRule extends CleanArchitectureLintRule {
-  const RefMountedUsageRule() : super(code: _code);
+class CustomLintRefMountedUsageRule extends CleanArchitectureLintRule {
+  const CustomLintRefMountedUsageRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'ref_mounted_usage',

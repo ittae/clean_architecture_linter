@@ -84,8 +84,8 @@ import '../../clean_architecture_linter_base.dart';
 /// ```
 ///
 /// See CLAUDE.md § Riverpod State Management Patterns for detailed guidance.
-class RiverpodRefUsageRule extends CleanArchitectureLintRule {
-  const RiverpodRefUsageRule() : super(code: _code);
+class CustomLintRiverpodRefUsageRule extends CleanArchitectureLintRule {
+  const CustomLintRiverpodRefUsageRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'riverpod_ref_usage',

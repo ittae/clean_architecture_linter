@@ -44,8 +44,8 @@ import '../../clean_architecture_linter_base.dart';
 /// // presentation/widgets/ranking_card.dart
 /// extension RankingUIX on Ranking { }  // ❌ NO: Widget file
 /// ```
-class ExtensionLocationRule extends CleanArchitectureLintRule {
-  const ExtensionLocationRule() : super(code: _code);
+class CustomLintExtensionLocationRule extends CleanArchitectureLintRule {
+  const CustomLintExtensionLocationRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'extension_location',

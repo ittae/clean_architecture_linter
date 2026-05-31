@@ -31,8 +31,8 @@ import '../../clean_architecture_linter_base.dart';
 /// // presentation/viewmodels/ranking_viewmodel.dart  ❌
 /// class RankingViewModel extends ChangeNotifier { }  ❌
 /// ```
-class NoPresentationModelsRule extends CleanArchitectureLintRule {
-  const NoPresentationModelsRule() : super(code: _code);
+class CustomLintNoPresentationModelsRule extends CleanArchitectureLintRule {
+  const CustomLintNoPresentationModelsRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'no_presentation_models',

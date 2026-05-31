@@ -65,8 +65,8 @@ import '../../clean_architecture_linter_base.dart';
 /// ```
 ///
 /// See CLAUDE.md § Riverpod State Management Patterns for detailed guidance.
-class RiverpodProviderNamingRule extends CleanArchitectureLintRule {
-  const RiverpodProviderNamingRule() : super(code: _code);
+class CustomLintRiverpodProviderNamingRule extends CleanArchitectureLintRule {
+  const CustomLintRiverpodProviderNamingRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'riverpod_provider_naming',
