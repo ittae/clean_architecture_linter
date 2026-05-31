@@ -92,6 +92,8 @@ class _DataSourceExceptionTypesVisitor extends SimpleAstVisitor<void>
     final classNode = CleanArchitectureUtils.findParentClass(node);
     if (classNode == null) return false;
 
-    return CleanArchitectureUtils.isDataSourceClass(classNode.namePart.typeName.lexeme);
+    return CleanArchitectureUtils.isDataSourceClass(
+      classNode.namePart.typeName.lexeme,
+    );
   }
 }
