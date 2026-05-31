@@ -21,7 +21,19 @@ import 'src/rules/domain_rules/domain_purity_rule.dart';
 import 'src/rules/domain_rules/exception_naming_convention_rule.dart';
 import 'src/rules/domain_rules/repository_interface_rule.dart';
 import 'src/rules/domain_rules/usecase_no_result_return_rule.dart';
+import 'src/rules/presentation_rules/extension_location_rule.dart';
+import 'src/rules/presentation_rules/freezed_usage_rule.dart';
+import 'src/rules/presentation_rules/no_presentation_models_rule.dart';
+import 'src/rules/presentation_rules/presentation_no_data_exceptions_rule.dart';
 import 'src/rules/presentation_rules/presentation_no_throw_rule.dart';
+import 'src/rules/presentation_rules/presentation_use_async_value_rule.dart';
+import 'src/rules/presentation_rules/ref_mounted_usage_rule.dart';
+import 'src/rules/presentation_rules/riverpod_generator_rule.dart';
+import 'src/rules/presentation_rules/riverpod_keep_alive_rule.dart';
+import 'src/rules/presentation_rules/riverpod_provider_naming_rule.dart';
+import 'src/rules/presentation_rules/riverpod_ref_usage_rule.dart';
+import 'src/rules/presentation_rules/widget_no_usecase_call_rule.dart';
+import 'src/rules/presentation_rules/widget_ref_read_then_when_rule.dart';
 
 final plugin = CleanArchitectureLinterPlugin();
 
@@ -58,6 +70,18 @@ class CleanArchitectureLinterPlugin extends Plugin {
     registry.registerWarningRule(ExceptionNamingConventionRule());
 
     // Presentation layer rules
+    registry.registerWarningRule(ExtensionLocationRule());
+    registry.registerWarningRule(FreezedUsageRule());
+    registry.registerWarningRule(NoPresentationModelsRule());
+    registry.registerWarningRule(PresentationNoDataExceptionsRule());
     registry.registerWarningRule(PresentationNoThrowRule());
+    registry.registerWarningRule(PresentationUseAsyncValueRule());
+    registry.registerWarningRule(RefMountedUsageRule());
+    registry.registerWarningRule(RiverpodGeneratorRule());
+    registry.registerWarningRule(RiverpodKeepAliveRule());
+    registry.registerWarningRule(RiverpodProviderNamingRule());
+    registry.registerWarningRule(RiverpodRefUsageRule());
+    registry.registerWarningRule(WidgetNoUseCaseCallRule());
+    registry.registerWarningRule(WidgetRefReadThenWhenRule());
   }
 }
