@@ -79,7 +79,7 @@ dart analyze        # Flutter 프로젝트는 flutter analyze
 ## 알려진 차이 / 주의
 
 - **실행 명령 변경**: CI/CD 스크립트나 `Makefile`/`derry`/`melos` 태스크에서 `dart run custom_lint`을 호출하던 부분을 `dart analyze`(또는 `flutter analyze`)로 교체한다.
-- **severity**: v2.0의 33개 rule은 모두 analyzer **WARNING**으로 보고된다. CI에서 경고를 실패로 처리하려면 `dart analyze --fatal-warnings`를 사용한다.
+- **severity**: v2.0 rule은 대부분 analyzer **WARNING**으로 보고되지만, 일부(7개: `repository_no_throw`, `extension_location`, `freezed_usage`, `no_presentation_models`, `ref_mounted_usage`, `riverpod_generator`, `riverpod_keep_alive`)는 v1 패리티에 맞춰 **INFO**로 보고된다. CI에서 WARNING을 실패로 처리하려면 `dart analyze --fatal-warnings`를 쓰고, **INFO rule까지** 실패로 처리하려면 `--fatal-infos`도 함께 지정해야 한다(`--fatal-warnings`만으로는 INFO가 잡히지 않는다).
 - **IDE 통합**: 별도 `custom_lint` 플러그인 활성화 없이 Dart/Flutter 확장이 제공하는 기본 analyzer 경로로 진단이 표시된다.
 - **테스트 커버리지 rule**: `clean_architecture_linter_require_test` 같은 옵션 rule의 활성화 형식은 v2.0 release 노트(CHANGELOG)에서 최종 확정된다.
 - **워크어라운드 종료**: v2.0에서는 archive된 `invertase/dart_custom_lint`에 묶이지 않으므로, 최신 `riverpod_generator 4.x` / `riverpod_lint 3.1.x` / `freezed 3.x`와 override 없이 함께 resolve된다.

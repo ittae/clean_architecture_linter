@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🔧 Changed
 
-- All **33 rules** are registered in the v2 `analysis_server_plugin` plugin entrypoint (`lib/main.dart`) as analyzer warnings; rule names and diagnostic messages remain equivalent to v1.
+- All **33 rules** are registered in the v2 `analysis_server_plugin` plugin entrypoint (`lib/main.dart`) as default-enabled rules; per-rule severity is preserved from v1 (most WARNING, 7 INFO). Rule names and diagnostic messages remain equivalent to v1.
 
 ### 📖 Docs
 
