@@ -18,7 +18,10 @@ Dart의 새 analyzer plugin 시스템은 `analysis_options.yaml`의 top-level `p
 
 ```text
 lib/main.dart
-lib/src/rules/presentation_rules/presentation_no_throw_rule.dart
+lib/src/rules/cross_layer/
+lib/src/rules/data_rules/
+lib/src/rules/domain_rules/
+lib/src/rules/presentation_rules/
 poc_v2/example/
   pubspec.yaml
   analysis_options.yaml
@@ -30,8 +33,10 @@ tools/dev_setup.sh
 ```
 
 `poc_v2`는 Phase 0의 standalone reference로 남겨둔다. 정식 v2 plugin
-entrypoint와 `presentation_no_throw` rule은 root package의 `lib/main.dart`
-및 `lib/src/rules/presentation_rules/` 아래에 둔다.
+entrypoint는 root package의 `lib/main.dart`이고, 33개 rule 전부가
+`lib/src/rules/{cross_layer,domain_rules,data_rules,presentation_rules}/`
+아래로 변환되어 `lib/main.dart`의 `register()`에 `registerWarningRule(...)`로
+등록되어 있다.
 
 `poc_v2/example/analysis_options.yaml`은 로컬 plugin을 다음처럼 켠다.
 

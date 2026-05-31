@@ -74,6 +74,8 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 
 ## 🚀 Quick Start
 
+> 🚀 **v2.0 (upcoming)**: The next major release migrates from `custom_lint` to the official [`analysis_server_plugin`](https://pub.dev/packages/analysis_server_plugin) — no `custom_lint` dependency, no `pubspec_overrides.yaml` workaround, lint runs via `dart analyze`. The install steps below target the **current pub.dev release (v1.3.2)**. When v2.0 ships, follow [MIGRATION.md](MIGRATION.md).
+>
 > v2.0 개발자는 공식 analyzer plugin 기반 로컬 흐름을 [v2 analyzer plugin 개발 흐름](docs/v2-dev-workflow.md)에서 확인하세요.
 
 ### 📋 Requirements

@@ -72,6 +72,8 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 
 ## 🚀 빠른 시작
 
+> 🚀 **v2.0 (upcoming)**: 다음 major release는 `custom_lint`에서 공식 [`analysis_server_plugin`](https://pub.dev/packages/analysis_server_plugin) 기반으로 전환됩니다 — `custom_lint` 의존성 불필요, `pubspec_overrides.yaml` 워크어라운드 불필요, lint는 `dart analyze`로 실행. 아래 설치 단계는 **현재 pub.dev release(v1.3.2)** 기준입니다. v2.0 release 후에는 [MIGRATION.md](MIGRATION.md)를 따르세요.
+
 ### 📋 요구사항
 
 - **Dart SDK**: 3.6.0+
