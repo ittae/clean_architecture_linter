@@ -60,9 +60,10 @@ import '../../mixins/exception_validation_mixin.dart';
 /// ```
 ///
 /// See ERROR_HANDLING_GUIDE.md for complete error handling patterns.
-class PresentationNoDataExceptionsRule extends CleanArchitectureLintRule
+class CustomLintPresentationNoDataExceptionsRule
+    extends CleanArchitectureLintRule
     with ExceptionValidationMixin {
-  const PresentationNoDataExceptionsRule() : super(code: _code);
+  const CustomLintPresentationNoDataExceptionsRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'presentation_no_data_exceptions',

@@ -75,8 +75,8 @@ import '../../clean_architecture_linter_base.dart';
 /// ```
 ///
 /// See CLAUDE.md § Riverpod State Management Patterns
-class WidgetRefReadThenWhenRule extends CleanArchitectureLintRule {
-  const WidgetRefReadThenWhenRule() : super(code: _code);
+class CustomLintWidgetRefReadThenWhenRule extends CleanArchitectureLintRule {
+  const CustomLintWidgetRefReadThenWhenRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'widget_ref_read_then_when',

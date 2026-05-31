@@ -32,8 +32,8 @@ import '../../clean_architecture_linter_base.dart';
 ///   List<Object?> get props => [id, attendeeCount];
 /// }
 /// ```
-class FreezedUsageRule extends CleanArchitectureLintRule {
-  const FreezedUsageRule() : super(code: _code);
+class CustomLintFreezedUsageRule extends CleanArchitectureLintRule {
+  const CustomLintFreezedUsageRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'freezed_usage',

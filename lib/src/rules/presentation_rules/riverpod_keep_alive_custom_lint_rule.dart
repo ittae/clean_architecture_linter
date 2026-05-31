@@ -38,8 +38,8 @@ import '../../clean_architecture_linter_base.dart';
 /// @riverpod
 /// class TodoListNotifier extends _$TodoListNotifier { ... }
 /// ```
-class RiverpodKeepAliveRule extends CleanArchitectureLintRule {
-  const RiverpodKeepAliveRule() : super(code: _code);
+class CustomLintRiverpodKeepAliveRule extends CleanArchitectureLintRule {
+  const CustomLintRiverpodKeepAliveRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'riverpod_keep_alive',

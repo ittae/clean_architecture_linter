@@ -1,13 +1,13 @@
 import 'package:test/test.dart';
 
-import '../../../../lib/src/rules/presentation_rules/widget_no_usecase_call_rule.dart';
+import '../../../../lib/src/rules/presentation_rules/widget_no_usecase_call_custom_lint_rule.dart';
 
 void main() {
-  group('WidgetNoUseCaseCallRule', () {
-    late WidgetNoUseCaseCallRule rule;
+  group('CustomLintWidgetNoUseCaseCallRule', () {
+    late CustomLintWidgetNoUseCaseCallRule rule;
 
     setUp(() {
-      rule = const WidgetNoUseCaseCallRule();
+      rule = const CustomLintWidgetNoUseCaseCallRule();
     });
 
     group('File Path Detection', () {
@@ -135,7 +135,8 @@ void main() {
 }
 
 // Expose private methods for testing
-extension WidgetNoUseCaseCallRuleTestExtension on WidgetNoUseCaseCallRule {
+extension CustomLintWidgetNoUseCaseCallRuleTestExtension
+    on CustomLintWidgetNoUseCaseCallRule {
   bool isWidgetOrPageFile(String path) {
     final normalizedPath = path.replaceAll('\\', '/').toLowerCase();
     if (!normalizedPath.contains('/presentation/')) return false;

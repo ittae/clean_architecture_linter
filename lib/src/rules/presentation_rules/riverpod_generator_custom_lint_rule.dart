@@ -33,8 +33,8 @@ import '../../clean_architecture_linter_base.dart';
 ///   (ref) => RankingViewModel(),
 /// );
 /// ```
-class RiverpodGeneratorRule extends CleanArchitectureLintRule {
-  const RiverpodGeneratorRule() : super(code: _code);
+class CustomLintRiverpodGeneratorRule extends CleanArchitectureLintRule {
+  const CustomLintRiverpodGeneratorRule() : super(code: _code);
 
   static const _code = LintCode(
     name: 'riverpod_generator',

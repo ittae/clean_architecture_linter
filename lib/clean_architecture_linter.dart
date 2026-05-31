@@ -38,19 +38,19 @@ import 'src/rules/data_rules/datasource_exception_types_custom_lint_rule.dart';
 import 'src/rules/data_rules/model_entity_direct_access_custom_lint_rule.dart';
 
 // Presentation Layer Rules
-import 'src/rules/presentation_rules/no_presentation_models_rule.dart';
-import 'src/rules/presentation_rules/extension_location_rule.dart';
-import 'src/rules/presentation_rules/freezed_usage_rule.dart';
-import 'src/rules/presentation_rules/riverpod_generator_rule.dart';
-import 'src/rules/presentation_rules/presentation_no_data_exceptions_rule.dart';
-import 'src/rules/presentation_rules/presentation_use_async_value_rule.dart';
+import 'src/rules/presentation_rules/no_presentation_models_custom_lint_rule.dart';
+import 'src/rules/presentation_rules/extension_location_custom_lint_rule.dart';
+import 'src/rules/presentation_rules/freezed_usage_custom_lint_rule.dart';
+import 'src/rules/presentation_rules/riverpod_generator_custom_lint_rule.dart';
+import 'src/rules/presentation_rules/presentation_no_data_exceptions_custom_lint_rule.dart';
+import 'src/rules/presentation_rules/presentation_use_async_value_custom_lint_rule.dart';
 import 'src/rules/presentation_rules/presentation_no_throw_custom_lint_rule.dart';
-import 'src/rules/presentation_rules/widget_no_usecase_call_rule.dart';
-import 'src/rules/presentation_rules/widget_ref_read_then_when_rule.dart';
-import 'src/rules/presentation_rules/riverpod_ref_usage_rule.dart';
-import 'src/rules/presentation_rules/riverpod_provider_naming_rule.dart';
-import 'src/rules/presentation_rules/ref_mounted_usage_rule.dart';
-import 'src/rules/presentation_rules/riverpod_keep_alive_rule.dart';
+import 'src/rules/presentation_rules/widget_no_usecase_call_custom_lint_rule.dart';
+import 'src/rules/presentation_rules/widget_ref_read_then_when_custom_lint_rule.dart';
+import 'src/rules/presentation_rules/riverpod_ref_usage_custom_lint_rule.dart';
+import 'src/rules/presentation_rules/riverpod_provider_naming_custom_lint_rule.dart';
+import 'src/rules/presentation_rules/ref_mounted_usage_custom_lint_rule.dart';
+import 'src/rules/presentation_rules/riverpod_keep_alive_custom_lint_rule.dart';
 
 /// Plugin entry point for Clean Architecture Linter.
 PluginBase createPlugin() => _CleanArchitectureLinterPlugin();
@@ -143,46 +143,46 @@ class _CleanArchitectureLinterPlugin extends PluginBase {
       // Presentation Layer Rules (11 rules)
 
       // 20. No Presentation Models - Use Freezed State instead
-      NoPresentationModelsRule(),
+      CustomLintNoPresentationModelsRule(),
 
       // 21. Extension Location - Extensions in same file
-      ExtensionLocationRule(),
+      CustomLintExtensionLocationRule(),
 
       // 22. Freezed Usage - Use Freezed instead of Equatable
-      FreezedUsageRule(),
+      CustomLintFreezedUsageRule(),
 
       // 23. Riverpod Generator - Use @riverpod annotation
-      RiverpodGeneratorRule(),
+      CustomLintRiverpodGeneratorRule(),
 
       // 24. Presentation No Data Exceptions - Use Domain exceptions only
-      PresentationNoDataExceptionsRule(),
+      CustomLintPresentationNoDataExceptionsRule(),
 
       // 25. Presentation Use AsyncValue - Use AsyncValue for error handling
-      PresentationUseAsyncValueRule(),
+      CustomLintPresentationUseAsyncValueRule(),
 
       // 26. Presentation No Throw - States should not throw exceptions
       CustomLintPresentationNoThrowRule(),
 
       // 27. Widget No UseCase Call - Widgets should not call UseCases directly
-      WidgetNoUseCaseCallRule(),
+      CustomLintWidgetNoUseCaseCallRule(),
 
       // 28. Widget Ref Read Then When - Avoid using .when() after ref.read()
-      WidgetRefReadThenWhenRule(),
+      CustomLintWidgetRefReadThenWhenRule(),
 
       // 29. Riverpod Ref Usage - Use ref.watch() in build(), ref.read() in methods
-      RiverpodRefUsageRule(),
+      CustomLintRiverpodRefUsageRule(),
 
       // 30. Riverpod Provider Naming - Provider functions must include type suffix
-      RiverpodProviderNamingRule(),
+      CustomLintRiverpodProviderNamingRule(),
 
       // 31. Allowed Instance Variables - Validate dependencies in UseCase/Repository/DataSource
       CustomLintAllowedInstanceVariablesRule(),
 
       // 32. Ref Mounted Usage - Avoid ref.mounted as it masks design problems
-      RefMountedUsageRule(),
+      CustomLintRefMountedUsageRule(),
 
       // 33. Riverpod Keep Alive - Only use keepAlive for truly global state
-      RiverpodKeepAliveRule(),
+      CustomLintRiverpodKeepAliveRule(),
     ];
 
     // Conditionally add test coverage rule if enabled
