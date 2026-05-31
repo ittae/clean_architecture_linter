@@ -151,7 +151,7 @@ class _DependencyInversionVisitor extends SimpleAstVisitor<void> {
     final violations = <DependencyViolation>[];
 
     for (final param in parameters) {
-      if (param is SimpleFormalParameter) {
+      if (param is RegularFormalParameter) {
         final type = param.type;
         if (type is NamedType) {
           final violation = _checkParameterDependency(type, param);

@@ -76,7 +76,7 @@ class _FreezedUsageVisitor extends SimpleAstVisitor<void> {
         rule.reportAtNode(
           extendsClause,
           arguments: [
-            'Class "${node.name.lexeme}" uses Equatable. Use @freezed instead.',
+            'Class "${node.namePart.typeName.lexeme}" uses Equatable. Use @freezed instead.',
             'Replace "extends Equatable" with @freezed annotation. Remove props getter and use Freezed factory constructor.',
           ],
         );
@@ -90,7 +90,7 @@ class _FreezedUsageVisitor extends SimpleAstVisitor<void> {
           rule.reportAtNode(
             implementsClause,
             arguments: [
-              'Class "${node.name.lexeme}" implements Equatable. Use @freezed instead.',
+              'Class "${node.namePart.typeName.lexeme}" implements Equatable. Use @freezed instead.',
               'Use @freezed annotation for immutable data classes.',
             ],
           );

@@ -73,7 +73,7 @@ class _DataSourceAbstractionVisitor extends SimpleAstVisitor<void> {
   void _checkDataSourceAbstraction(ClassDeclaration node, String filePath) {
     if (!CleanArchitectureUtils.isDataFile(filePath)) return;
 
-    final className = node.name.lexeme;
+    final className = node.namePart.typeName.lexeme;
     if (!CleanArchitectureUtils.isDataSourceClass(className)) return;
 
     if (node.abstractKeyword != null) return;
@@ -90,7 +90,7 @@ class _DataSourceAbstractionVisitor extends SimpleAstVisitor<void> {
   }
 
   void _checkDataSourceLocation(ClassDeclaration node, String filePath) {
-    final className = node.name.lexeme;
+    final className = node.namePart.typeName.lexeme;
     if (!CleanArchitectureUtils.isDataSourceClass(className)) return;
 
     if (CleanArchitectureUtils.isDomainFile(filePath)) {
@@ -113,7 +113,7 @@ class _DataSourceAbstractionVisitor extends SimpleAstVisitor<void> {
     final classNode = method.thisOrAncestorOfType<ClassDeclaration>();
     if (classNode == null) return;
 
-    final className = classNode.name.lexeme;
+    final className = classNode.namePart.typeName.lexeme;
     if (!CleanArchitectureUtils.isDataSourceClass(className)) return;
 
     final returnType = method.returnType;

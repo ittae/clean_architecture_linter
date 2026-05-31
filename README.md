@@ -74,13 +74,11 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 
 ## 🚀 Quick Start
 
-> 🚀 **v2.0 (upcoming)**: The next major release migrates from `custom_lint` to the official [`analysis_server_plugin`](https://pub.dev/packages/analysis_server_plugin) — no `custom_lint` dependency, no `pubspec_overrides.yaml` workaround, lint runs via `dart analyze`. The install steps below target the **current pub.dev release (v1.3.2)**. When v2.0 ships, follow [MIGRATION.md](MIGRATION.md).
->
-> v2.0 개발자는 공식 analyzer plugin 기반 로컬 흐름을 [v2 analyzer plugin 개발 흐름](docs/v2-dev-workflow.md)에서 확인하세요.
+> 🚀 **v2.0**: Starting with `2.0.0-dev.1`, this package runs on the official [`analysis_server_plugin`](https://pub.dev/packages/analysis_server_plugin) — no `custom_lint` dependency, no `pubspec_overrides.yaml` workaround. Lint runs directly via `dart analyze` / `flutter analyze`. Upgrading from a v1 (`custom_lint`) setup? Follow [MIGRATION.md](MIGRATION.md).
 
 ### 📋 Requirements
 
-- **Dart SDK**: 3.6.0+
+- **Dart SDK**: 3.10.0+
 - **Flutter**: 3.0+ (optional, for Flutter projects)
 - **Riverpod**: Required for presentation layer rules (riverpod_generator recommended)
 
@@ -89,19 +87,19 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 ```yaml
 # pubspec.yaml
 dev_dependencies:
-  clean_architecture_linter: ^1.3.0
-  custom_lint: ^0.8.0
+  clean_architecture_linter: ^2.0.0-dev.1
 ```
 
-### 2. Enable custom lint
+### 2. Enable the plugin
 
 ```yaml
 # analysis_options.yaml
+plugins:
+  clean_architecture_linter: ^2.0.0-dev.1
+
 analyzer:
-  plugins:
-    - custom_lint
   exclude:
-    - test/**               
+    - test/**
     - "**/*.test.dart"    # Exclude test files
     - "**/*.g.dart"       # Exclude generated files
     - "**/*.freezed.dart" # Exclude Freezed files
@@ -112,10 +110,10 @@ analyzer:
 
 ```bash
 dart pub get
-dart run custom_lint
+dart analyze        # Flutter projects: flutter analyze
 ```
 
-That's it! The linter will now automatically enforce Clean Architecture principles in your codebase.
+That's it! The 33 rules are reported directly in your `dart analyze` / `flutter analyze` output.
 
 ### Recommended team profile
 - Local: `docs/config/lint_profile_balanced.yaml`
@@ -123,89 +121,27 @@ That's it! The linter will now automatically enforce Clean Architecture principl
 
 See `docs/config/RECOMMENDED_SETUP.md` for details.
 
-## 🧩 Compatibility — analyzer 9 / Riverpod 3+ (Temporary Workaround)
+## 🧩 Compatibility — analyzer 13 / Riverpod 3+
 
-> **TL;DR**: If `dart pub get` fails with "version solving failed" mentioning `custom_lint` and `riverpod_lint` / `riverpod_generator` / `freezed`, add the `pubspec_overrides.yaml` below.
+v2.0 runs on the official `analysis_server_plugin` (`^0.3.15`), which pins `analyzer ^13.0.0`. This matches the analyzer bundled with **Dart 3.10+**, so the plugin loads inside your project's analysis server with no `pubspec_overrides.yaml` workaround. It resolves cleanly alongside the latest `riverpod_generator 4.x`, `riverpod_lint 3.1.x`, `freezed 3.x`, and `json_serializable 6.13+`.
 
-### Symptom
-
-```
-Because riverpod_lint >=3.1.1 depends on analyzer ^9.0.0
-and custom_lint >=0.8.1 depends on analyzer ^8.0.0,
-custom_lint >=0.8.1 is incompatible with riverpod_lint >=3.1.1.
-```
-
-### Cause
-
-The pub.dev stable `custom_lint` / `custom_lint_builder` (0.8.1) is pinned to `analyzer ^8.0.0`. Their `main` branch already has `0.8.2` with `analyzer ^9.0.0`, but **the upstream repository [invertase/dart_custom_lint](https://github.com/invertase/dart_custom_lint) was archived in May 2026 without publishing it** ([archive notice](https://github.com/invertase/dart_custom_lint#:~:text=no%20longer%20under%20active%20development), [discussion #379](https://github.com/invertase/dart_custom_lint/issues/379)). The original author recommends migrating to the official [`analysis_server_plugin`](https://pub.dev/packages/analysis_server_plugin). Until our v2.0 migration lands, the only way to combine `clean_architecture_linter` with the latest `riverpod_generator 4.x`, `riverpod_lint 3.1.x`, `freezed 3.x`, and `json_serializable 6.13+` is the override below.
-
-### Workaround — `pubspec_overrides.yaml`
-
-Add this file alongside your `pubspec.yaml`.
-
-> **Note for CI:** Flutter's default `.gitignore` usually excludes `pubspec_overrides.yaml`. If you want CI to apply the override, either remove that line from `.gitignore` or stage the file with `git add -f pubspec_overrides.yaml`. Without one of those, the override exists locally but CI will resolve against pub.dev and fail with the same conflict.
-
-```yaml
-# pubspec_overrides.yaml
-dependency_overrides:
-  clean_architecture_linter:
-    git:
-      url: https://github.com/ittae/clean_architecture_linter
-      ref: main
-  custom_lint:
-    git:
-      url: https://github.com/invertase/dart_custom_lint
-      ref: main
-      path: packages/custom_lint
-  custom_lint_builder:
-    git:
-      url: https://github.com/invertase/dart_custom_lint
-      ref: main
-      path: packages/custom_lint_builder
-  custom_lint_core:
-    git:
-      url: https://github.com/invertase/dart_custom_lint
-      ref: main
-      path: packages/custom_lint_core
-  custom_lint_visitor:
-    git:
-      url: https://github.com/invertase/dart_custom_lint
-      ref: main
-      path: packages/custom_lint_visitor
-```
-
-### Verify
-
-```bash
-dart pub get
-dart analyze
-dart run custom_lint
-```
-
-You should see `analyzer 9.0.0`, `custom_lint 0.8.2 (git)`, and your latest `riverpod_generator` / `riverpod_lint` / `freezed` versions resolve together.
-
-### When can I remove this?
-
-The upstream repository is **archived** — there will be no `custom_lint 0.8.2` release. The override is therefore not a temporary measure for waiting on a publish, it is a **bridge until `clean_architecture_linter v2.0`** migrates fully to the official [`analysis_server_plugin`](https://pub.dev/packages/analysis_server_plugin). Track progress in the repo issues.
-
-Two cleanup checkpoints along the way:
-
-1. **As soon as a `clean_architecture_linter` patch with `analyzer: '>=8.4.0 <10.0.0'` is published to pub.dev (e.g. `1.3.2`)**, you can drop the `clean_architecture_linter` git override and keep only the `custom_lint*` ones. The published `1.3.1` is still pinned to `analyzer: ^8.4.0`, so until that patch lands the git override is required.
-2. **When v2.0 ships**, the entire `custom_lint*` dependency chain disappears and `pubspec_overrides.yaml` can be deleted.
+> The v1 `custom_lint` upstream ([invertase/dart_custom_lint](https://github.com/invertase/dart_custom_lint)) was archived in May 2026. v2.0 moves fully to the official plugin, so the old `pubspec_overrides.yaml` bridge is no longer needed — delete it when upgrading.
 
 ## 🎛️ Configuration
 
 ### Optional: Test Coverage
 
-The `clean_architecture_linter_require_test` rule is **disabled by default**.  
-Enable it to enforce test files for critical components:
+In v2.0, rule severity is controlled with the standard analyzer `errors:` map, keyed by each rule's diagnostic name. Promote a rule to an error, downgrade it to a hint, or silence it:
 
 ```yaml
 # analysis_options.yaml
-custom_lint:
-  rules:
-    - clean_architecture_linter_require_test: true
+analyzer:
+  errors:
+    repository_interface: error   # treat as build-breaking
+    riverpod_keep_alive: ignore   # silence
 ```
+
+> The opt-in `clean_architecture_linter_require_test` (test coverage) rule is **not bundled** in `2.0.0-dev.1`. It will be re-introduced in a later v2 pre-release; track the CHANGELOG.
 
 ## 🚦 Usage
 
@@ -233,11 +169,8 @@ lib/
 ### Running the Linter
 
 ```bash
-# Activate custom_lint if not already done
-dart pub global activate custom_lint
-
-# Run the linter
-dart run custom_lint
+# Run the linter (rules are included in the analyzer output)
+dart analyze        # Flutter projects: flutter analyze
 ```
 
 ### IDE Integration

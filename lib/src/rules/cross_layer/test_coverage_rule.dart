@@ -72,7 +72,7 @@ class _TestCoverageVisitor extends SimpleAstVisitor<void> {
         context.currentUnit?.file.path ?? context.definingUnit.file.path;
     if (CleanArchitectureUtils.shouldExcludeFile(filePath)) return;
 
-    final className = node.name.lexeme;
+    final className = node.namePart.typeName.lexeme;
 
     final componentType = _identifyComponentType(filePath, className, node);
     if (componentType == null) return;
@@ -147,7 +147,7 @@ class _TestCoverageVisitor extends SimpleAstVisitor<void> {
 
     final normalized = filePath.replaceAll('\\', '/').toLowerCase();
     if (normalized.contains('/providers/')) {
-      final className = node.name.lexeme;
+      final className = node.namePart.typeName.lexeme;
       if (className.endsWith('Notifier')) {
         return true;
       }
@@ -161,7 +161,7 @@ class _TestCoverageVisitor extends SimpleAstVisitor<void> {
       return true;
     }
 
-    final className = node.name.lexeme;
+    final className = node.namePart.typeName.lexeme;
     if (className.endsWith('Impl')) {
       return true;
     }

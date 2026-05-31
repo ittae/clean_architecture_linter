@@ -61,7 +61,7 @@ mixin RepositoryRuleVisitor {
   /// isRepositoryInterface(node) // true
   /// ```
   bool isRepositoryInterface(ClassDeclaration node) {
-    final className = node.name.lexeme;
+    final className = node.namePart.typeName.lexeme;
 
     // Must have "Repository" in name
     if (!className.contains('Repository')) return false;
@@ -70,7 +70,7 @@ mixin RepositoryRuleVisitor {
     if (node.abstractKeyword != null) return true;
 
     // Check if all methods are abstract (no implementation)
-    final methods = node.members.whereType<MethodDeclaration>();
+    final methods = node.body.members.whereType<MethodDeclaration>();
     if (methods.isEmpty) return false;
 
     return methods.every((method) => method.body is EmptyFunctionBody);
@@ -95,7 +95,7 @@ mixin RepositoryRuleVisitor {
   /// isRepositoryImplementation(node) // true
   /// ```
   bool isRepositoryImplementation(ClassDeclaration node) {
-    final className = node.name.lexeme;
+    final className = node.namePart.typeName.lexeme;
 
     // Check class name pattern
     if (CleanArchitectureUtils.isRepositoryImplClass(className)) {

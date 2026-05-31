@@ -59,7 +59,7 @@ class _DataSourceNoResultReturnVisitor extends SimpleAstVisitor<void>
     final classNode = method.thisOrAncestorOfType<ClassDeclaration>();
     if (classNode == null) return;
 
-    final className = classNode.name.lexeme;
+    final className = classNode.namePart.typeName.lexeme;
     if (!CleanArchitectureUtils.isDataSourceClass(className)) return;
 
     final returnType = method.returnType;

@@ -56,7 +56,7 @@ class _RepositoryImplementationVisitor extends SimpleAstVisitor<void> {
     final filePath = _filePath;
     if (CleanArchitectureUtils.shouldExcludeFile(filePath)) return;
 
-    final className = node.name.lexeme;
+    final className = node.namePart.typeName.lexeme;
 
     if (CleanArchitectureUtils.isDataFile(filePath)) {
       _checkDataLayerRepository(node, className);

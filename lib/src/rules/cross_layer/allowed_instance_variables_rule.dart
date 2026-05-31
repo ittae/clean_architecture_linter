@@ -59,7 +59,7 @@ class _AllowedInstanceVariablesVisitor extends SimpleAstVisitor<void> {
 
     if (CleanArchitectureUtils.shouldExcludeFile(filePath)) return;
 
-    final className = node.name.lexeme;
+    final className = node.namePart.typeName.lexeme;
     final isUseCase = CleanArchitectureUtils.isUseCaseClass(className);
     final isRepository = CleanArchitectureUtils.isRepositoryImplClass(
       className,
@@ -70,7 +70,7 @@ class _AllowedInstanceVariablesVisitor extends SimpleAstVisitor<void> {
 
     if (!isUseCase && !isRepository && !isDataSource) return;
 
-    for (final member in node.members) {
+    for (final member in node.body.members) {
       if (member is! FieldDeclaration) continue;
 
       final isImmutable = member.fields.isFinal || member.fields.isConst;
