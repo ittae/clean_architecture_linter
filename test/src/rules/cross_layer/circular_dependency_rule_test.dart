@@ -86,6 +86,44 @@ class C {}
       ]);
     });
 
+    test('does not report cycles that exclude the current file', () async {
+      final result = await V2RuleHarness(rule: CircularDependencyRule())
+          .analyze(
+            files: {
+              'lib/features/todo/domain/current.dart': '''
+import 'a.dart';
+
+class Current {}
+''',
+              'lib/features/todo/domain/a.dart': '''
+import 'b.dart';
+
+class A {}
+''',
+              'lib/features/todo/domain/b.dart': '''
+import 'a.dart';
+
+class B {}
+''',
+            },
+            definingFile: 'lib/features/todo/domain/current.dart',
+            additionalDefiningFiles: const [
+              'lib/features/todo/domain/a.dart',
+              'lib/features/todo/domain/b.dart',
+            ],
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath: 'lib/features/todo/domain/b.dart',
+          codeName: 'circular_dependency',
+          line: 1,
+          problemMessage:
+              'Circular dependency detected: domain/b.dart -> domain/a.dart -> domain/b.dart',
+        ),
+      ]);
+    });
+
     test('reports layer-level cycles', () async {
       final result = await V2RuleHarness(rule: CircularDependencyRule())
           .analyze(
@@ -123,6 +161,47 @@ class ViewModel {}
           line: 1,
           problemMessage:
               'Circular dependency detected: Layer-level cycle: presentation -> domain -> data -> presentation',
+        ),
+      ]);
+    });
+
+    test('does not report layer cycles that exclude the current layer', () async {
+      final result = await V2RuleHarness(rule: CircularDependencyRule())
+          .analyze(
+            files: {
+              'lib/features/todo/domain/entity.dart': '''
+import '../data/repository.dart';
+
+class Entity {}
+''',
+              'lib/features/todo/data/repository.dart': '''
+import '../presentation/page.dart';
+
+class Repository {}
+''',
+              'lib/features/todo/presentation/page.dart': '''
+import '../data/mapper.dart';
+
+class Page {}
+''',
+              'lib/features/todo/data/mapper.dart': '''
+class Mapper {}
+''',
+            },
+            definingFile: 'lib/features/todo/domain/entity.dart',
+            additionalDefiningFiles: const [
+              'lib/features/todo/data/repository.dart',
+              'lib/features/todo/presentation/page.dart',
+            ],
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath: 'lib/features/todo/presentation/page.dart',
+          codeName: 'circular_dependency',
+          line: 1,
+          problemMessage:
+              'Circular dependency detected: Layer-level cycle: presentation -> data -> presentation',
         ),
       ]);
     });
