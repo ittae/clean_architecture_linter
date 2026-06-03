@@ -71,6 +71,18 @@ class _RepositoryPassThroughVisitor extends SimpleAstVisitor<void>
     if (returnTypeString == 'void') return;
     if (returnTypeString.startsWith('Stream<')) return;
 
+    final unit = node.thisOrAncestorOfType<CompilationUnit>();
+    if (isResultReturnType(returnType, unit: unit)) {
+      rule.reportAtNode(
+        returnType,
+        arguments: [
+          'Repository should NOT use Result pattern. Use pass-through pattern instead.',
+          'Return Future<Entity> directly. Let errors pass through to AsyncValue.guard().',
+        ],
+      );
+      return;
+    }
+
     final isFuture =
         returnTypeString.startsWith('Future<') ||
         returnTypeString.startsWith('FutureOr<');
@@ -88,31 +100,17 @@ class _RepositoryPassThroughVisitor extends SimpleAstVisitor<void>
       return;
     }
 
-    final unit = node.thisOrAncestorOfType<CompilationUnit>();
-    if (isResultReturnType(returnType, unit: unit)) {
-      rule.reportAtNode(
-        returnType,
-        arguments: [
-          'Repository should NOT use Result pattern. Use pass-through pattern instead.',
-          'Return Future<Entity> directly. Let errors pass through to AsyncValue.guard().',
-        ],
-      );
-    }
-
     _checkUnnecessaryTryCatch(node);
   }
 
   void _checkUnnecessaryTryCatch(MethodDeclaration method) {
     final body = method.body;
-    final tryStatements = <TryStatement>[];
+    if (body is! BlockFunctionBody) return;
 
-    if (body is BlockFunctionBody) {
-      for (final statement in body.block.statements) {
-        _collectTryStatements(statement, tryStatements);
-      }
-    }
+    final collector = _TryStatementCollector();
+    body.block.accept(collector);
 
-    for (final tryStmt in tryStatements) {
+    for (final tryStmt in collector.tryStatements) {
       if (tryStmt.catchClauses.isEmpty) continue;
 
       var shouldReport = false;
@@ -140,59 +138,31 @@ class _RepositoryPassThroughVisitor extends SimpleAstVisitor<void>
   }
 
   bool _isAllowedCatch(CatchClause catchClause) {
-    var hasRethrow = false;
+    final catchBody = _CatchBodyVisitor();
+    catchClause.body.accept(catchBody);
+
+    if (catchBody.hasReturn || catchBody.hasThrowNewException) {
+      return false;
+    }
+
+    if (!catchBody.hasRethrow) {
+      return false;
+    }
+
     for (final statement in catchClause.body.statements) {
-      if (_containsRethrow(statement)) {
-        hasRethrow = true;
-      }
-      if (_containsReturn(statement)) {
-        return false;
-      }
-      if (_containsThrowNewException(statement)) {
-        return false;
-      }
-      if (!_containsRethrow(statement) && !_isLoggingStatement(statement)) {
+      if (!_isDirectRethrowStatement(statement) &&
+          !_isLoggingStatement(statement)) {
         return false;
       }
     }
 
-    return hasRethrow;
+    return true;
   }
 
   bool _looksLikeRewrappingOrConversion(CatchClause catchClause) {
-    for (final statement in catchClause.body.statements) {
-      if (_containsReturn(statement) || _containsThrowNewException(statement)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  void _collectTryStatements(Statement statement, List<TryStatement> output) {
-    if (statement is TryStatement) {
-      output.add(statement);
-      for (final inner in statement.body.statements) {
-        _collectTryStatements(inner, output);
-      }
-      for (final catchClause in statement.catchClauses) {
-        for (final inner in catchClause.body.statements) {
-          _collectTryStatements(inner, output);
-        }
-      }
-      final finallyBlock = statement.finallyBlock;
-      if (finallyBlock != null) {
-        for (final inner in finallyBlock.statements) {
-          _collectTryStatements(inner, output);
-        }
-      }
-      return;
-    }
-
-    if (statement is Block) {
-      for (final inner in statement.statements) {
-        _collectTryStatements(inner, output);
-      }
-    }
+    final catchBody = _CatchBodyVisitor();
+    catchClause.body.accept(catchBody);
+    return catchBody.hasReturn || catchBody.hasThrowNewException;
   }
 
   bool _isLoggingStatement(Statement statement) {
@@ -210,18 +180,9 @@ class _RepositoryPassThroughVisitor extends SimpleAstVisitor<void>
     return loggingHints.any(src.contains);
   }
 
-  bool _containsRethrow(Statement statement) {
-    if (statement is ExpressionStatement &&
-        statement.expression is RethrowExpression) {
-      return true;
-    }
-    return statement.toSource().contains('rethrow');
-  }
-
-  bool _containsReturn(Statement statement) => statement is ReturnStatement;
-
-  bool _containsThrowNewException(Statement statement) {
-    return statement.toSource().trimLeft().startsWith('throw ');
+  bool _isDirectRethrowStatement(Statement statement) {
+    return statement is ExpressionStatement &&
+        statement.expression is RethrowExpression;
   }
 
   bool _looksLikeEntityType(String typeName) {
@@ -294,5 +255,51 @@ class _RepositoryPassThroughVisitor extends SimpleAstVisitor<void>
     final keyType = inner.substring(0, commaIndex).trim();
     final valueType = inner.substring(commaIndex + 1).trim();
     return (keyType, valueType);
+  }
+}
+
+class _TryStatementCollector extends RecursiveAstVisitor<void> {
+  final tryStatements = <TryStatement>[];
+
+  @override
+  void visitFunctionDeclaration(FunctionDeclaration node) {}
+
+  @override
+  void visitFunctionExpression(FunctionExpression node) {}
+
+  @override
+  void visitTryStatement(TryStatement node) {
+    tryStatements.add(node);
+    super.visitTryStatement(node);
+  }
+}
+
+class _CatchBodyVisitor extends RecursiveAstVisitor<void> {
+  var hasRethrow = false;
+  var hasReturn = false;
+  var hasThrowNewException = false;
+
+  @override
+  void visitFunctionDeclaration(FunctionDeclaration node) {}
+
+  @override
+  void visitFunctionExpression(FunctionExpression node) {}
+
+  @override
+  void visitRethrowExpression(RethrowExpression node) {
+    hasRethrow = true;
+    super.visitRethrowExpression(node);
+  }
+
+  @override
+  void visitReturnStatement(ReturnStatement node) {
+    hasReturn = true;
+    super.visitReturnStatement(node);
+  }
+
+  @override
+  void visitThrowExpression(ThrowExpression node) {
+    hasThrowNewException = true;
+    super.visitThrowExpression(node);
   }
 }
