@@ -92,56 +92,50 @@ class _CircularDependencyVisitor extends SimpleAstVisitor<void> {
   }
 
   void _checkForCircularDependencies(String currentFile, CompilationUnit node) {
-    final visited = <String>{};
-    final recursionStack = <String>[];
+    for (final directive in node.directives) {
+      if (directive is! ImportDirective) continue;
 
-    final cycle = _findCycle(
-      currentFile,
-      visited,
-      recursionStack,
-      rule._dependencyGraph,
-    );
+      final importUri = directive.uri.stringValue;
+      if (importUri == null) continue;
 
-    if (cycle != null) {
-      for (final directive in node.directives) {
-        if (directive is! ImportDirective) continue;
+      final resolvedPath = _resolveImportPath(importUri, currentFile);
+      if (resolvedPath == null) continue;
 
-        final importUri = directive.uri.stringValue;
-        if (importUri == null) continue;
-
-        final resolvedPath = _resolveImportPath(importUri, currentFile);
-        if (resolvedPath != null && cycle.contains(resolvedPath)) {
-          rule.reportAtNode(directive, arguments: [_describeCycle(cycle)]);
-        }
+      final path = _findPath(
+        resolvedPath,
+        currentFile,
+        <String>{},
+        rule._dependencyGraph,
+      );
+      if (path != null) {
+        final cycle = [currentFile, ...path];
+        rule.reportAtNode(directive, arguments: [_describeCycle(cycle)]);
+        return;
       }
-      return;
     }
 
     _checkLayerCircularDependency(currentFile, node);
   }
 
-  List<String>? _findCycle(
-    String node,
+  List<String>? _findPath(
+    String start,
+    String target,
     Set<String> visited,
-    List<String> recursionStack,
     Map<String, Set<String>> graph,
   ) {
-    visited.add(node);
-    recursionStack.add(node);
+    if (start == target) return [start];
 
-    final dependencies = graph[node] ?? {};
+    visited.add(start);
+    final dependencies = graph[start] ?? {};
     for (final dependency in dependencies) {
-      if (!visited.contains(dependency)) {
-        final cycle = _findCycle(dependency, visited, recursionStack, graph);
-        if (cycle != null) return cycle;
-      } else if (recursionStack.contains(dependency)) {
-        final cycleStartIndex = recursionStack.indexOf(dependency);
-        return recursionStack.sublist(cycleStartIndex).toList()
-          ..add(dependency);
+      if (visited.contains(dependency)) continue;
+
+      final path = _findPath(dependency, target, visited, graph);
+      if (path != null) {
+        return [start, ...path];
       }
     }
 
-    recursionStack.removeLast();
     return null;
   }
 
@@ -163,33 +157,31 @@ class _CircularDependencyVisitor extends SimpleAstVisitor<void> {
       }
     }
 
-    final layerVisited = <String>{};
-    final layerStack = <String>[];
-    final layerCycle = _findCycle(
-      currentLayer,
-      layerVisited,
-      layerStack,
-      layerGraph,
-    );
+    for (final directive in node.directives) {
+      if (directive is! ImportDirective) continue;
 
-    if (layerCycle != null && layerCycle.length > 2) {
-      for (final directive in node.directives) {
-        if (directive is! ImportDirective) continue;
+      final importUri = directive.uri.stringValue;
+      if (importUri == null) continue;
 
-        final importUri = directive.uri.stringValue;
-        if (importUri == null) continue;
+      final resolvedPath = _resolveImportPath(importUri, currentFile);
+      if (resolvedPath == null) continue;
 
-        final resolvedPath = _resolveImportPath(importUri, currentFile);
-        if (resolvedPath != null) {
-          final targetLayer = rule._fileToLayer[resolvedPath];
-          if (targetLayer != null && layerCycle.contains(targetLayer)) {
-            rule.reportAtNode(
-              directive,
-              arguments: ['Layer-level cycle: ${layerCycle.join(' -> ')}'],
-            );
-            break;
-          }
-        }
+      final targetLayer = rule._fileToLayer[resolvedPath];
+      if (targetLayer == null || targetLayer == currentLayer) continue;
+
+      final layerPath = _findPath(
+        targetLayer,
+        currentLayer,
+        <String>{},
+        layerGraph,
+      );
+      if (layerPath != null && layerPath.length > 1) {
+        final layerCycle = [currentLayer, ...layerPath];
+        rule.reportAtNode(
+          directive,
+          arguments: ['Layer-level cycle: ${layerCycle.join(' -> ')}'],
+        );
+        break;
       }
     }
   }
