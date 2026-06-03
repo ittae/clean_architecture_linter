@@ -141,7 +141,7 @@ class _RepositoryPassThroughVisitor extends SimpleAstVisitor<void>
     final catchBody = _CatchBodyVisitor();
     catchClause.body.accept(catchBody);
 
-    if (catchBody.hasReturn || catchBody.hasThrowNewException) {
+    if (catchBody.hasReturn || catchBody.hasThrowExpression) {
       return false;
     }
 
@@ -162,7 +162,7 @@ class _RepositoryPassThroughVisitor extends SimpleAstVisitor<void>
   bool _looksLikeRewrappingOrConversion(CatchClause catchClause) {
     final catchBody = _CatchBodyVisitor();
     catchClause.body.accept(catchBody);
-    return catchBody.hasReturn || catchBody.hasThrowNewException;
+    return catchBody.hasReturn || catchBody.hasThrowExpression;
   }
 
   bool _isLoggingStatement(Statement statement) {
@@ -277,13 +277,16 @@ class _TryStatementCollector extends RecursiveAstVisitor<void> {
 class _CatchBodyVisitor extends RecursiveAstVisitor<void> {
   var hasRethrow = false;
   var hasReturn = false;
-  var hasThrowNewException = false;
+  var hasThrowExpression = false;
 
   @override
   void visitFunctionDeclaration(FunctionDeclaration node) {}
 
   @override
   void visitFunctionExpression(FunctionExpression node) {}
+
+  @override
+  void visitTryStatement(TryStatement node) {}
 
   @override
   void visitRethrowExpression(RethrowExpression node) {
@@ -299,7 +302,7 @@ class _CatchBodyVisitor extends RecursiveAstVisitor<void> {
 
   @override
   void visitThrowExpression(ThrowExpression node) {
-    hasThrowNewException = true;
+    hasThrowExpression = true;
     super.visitThrowExpression(node);
   }
 }

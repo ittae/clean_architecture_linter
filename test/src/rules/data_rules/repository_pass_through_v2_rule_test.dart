@@ -261,6 +261,49 @@ class TodoRepositoryImpl implements TodoRepository {
       ]);
     });
 
+    test('does not let nested try catch returns taint outer catch', () async {
+      final result = await V2RuleHarness(rule: RepositoryPassThroughRule())
+          .analyze(
+            files: {
+              'lib/features/todo/data/repositories/todo_repository_impl.dart':
+                  '''
+class Todo {}
+abstract class TodoRepository {}
+
+class TodoRepositoryImpl implements TodoRepository {
+  Future<Todo> getTodo() async {
+    try {
+      return Todo();
+    } catch (e) {
+      try {
+        print(e);
+      } catch (_) {
+        return Todo();
+      }
+      rethrow;
+    }
+  }
+}
+''',
+            },
+            definingFile:
+                'lib/features/todo/data/repositories/todo_repository_impl.dart',
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/data/repositories/todo_repository_impl.dart',
+          codeName: 'repository_pass_through',
+          line: 9,
+          problemMessage:
+              'Repository should not handle/re-wrap exceptions. Use pass-through.',
+          correctionMessage:
+              'Do not convert/wrap exceptions in catch. Prefer logging + rethrow (or let it pass through).',
+        ),
+      ]);
+    });
+
     test('allows logging and rethrow catch block', () async {
       final result = await V2RuleHarness(rule: RepositoryPassThroughRule())
           .analyze(
