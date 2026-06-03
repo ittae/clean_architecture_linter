@@ -5,6 +5,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
+import '../../compat/analyzer_ast_compat.dart';
 import '../../clean_architecture_linter_base.dart';
 
 class PresentationUseAsyncValueRule extends AnalysisRule {
@@ -191,15 +192,10 @@ class _PresentationUseAsyncValueVisitor extends SimpleAstVisitor<void> {
       String? paramName;
       AstNode? nameNode;
 
-      if (param is RegularFormalParameter) {
-        paramName = param.name?.lexeme;
-        nameNode = param;
-      } else if (param is FieldFormalParameter) {
-        paramName = param.name.lexeme;
-        nameNode = param;
-      }
+      paramName = formalParameterName(param);
+      nameNode = param;
 
-      if (paramName == null || nameNode == null) continue;
+      if (paramName == null) continue;
 
       final paramNameLower = paramName.toLowerCase();
 

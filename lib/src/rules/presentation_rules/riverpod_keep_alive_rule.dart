@@ -5,6 +5,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
+import '../../compat/analyzer_ast_compat.dart';
 import '../../clean_architecture_linter_base.dart';
 
 /// Warns against unnecessary usage of `@Riverpod(keepAlive: true)`.
@@ -90,10 +91,7 @@ class _RiverpodKeepAliveVisitor extends SimpleAstVisitor<void> {
 
     var hasKeepAliveTrue = false;
     for (final arg in arguments.arguments) {
-      if (arg is NamedArgument &&
-          arg.name.lexeme == 'keepAlive' &&
-          arg.argumentExpression is BooleanLiteral &&
-          (arg.argumentExpression as BooleanLiteral).value) {
+      if (isNamedBooleanArgument(arg, name: 'keepAlive', value: true)) {
         hasKeepAliveTrue = true;
         break;
       }

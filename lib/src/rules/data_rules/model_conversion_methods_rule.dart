@@ -5,6 +5,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
+import '../../compat/analyzer_ast_compat.dart';
 import '../../clean_architecture_linter_base.dart';
 
 /// Enforces presence of toEntity() conversion method in Model extensions.
@@ -109,11 +110,8 @@ class _ModelConversionMethodsVisitor extends SimpleAstVisitor<void> {
   }
 
   _FieldInfo? _extractFieldInfo(FormalParameter param) {
-    if (param is! RegularFormalParameter) return null;
-    final normalParam = param;
-
-    final name = normalParam.name?.lexeme;
-    final type = normalParam.type?.toSource();
+    final name = formalParameterName(param);
+    final type = formalParameterType(param)?.toSource();
     if (name == null || type == null) return null;
 
     return _FieldInfo(name: name, type: type);

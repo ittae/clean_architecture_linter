@@ -82,15 +82,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 - **Flutter**: 3.0+ (optional, for Flutter projects)
 - **Riverpod**: Required for presentation layer rules (riverpod_generator recommended)
 
-### 1. Add to your project
-
-```yaml
-# pubspec.yaml
-dev_dependencies:
-  clean_architecture_linter: ^2.0.0-dev.1
-```
-
-### 2. Enable the plugin
+### 1. Enable the plugin
 
 ```yaml
 # analysis_options.yaml
@@ -106,7 +98,12 @@ analyzer:
     - "**/*.mocks.dart"   # Exclude mock files
 ```
 
-### 3. Run the linter
+Do not also add `clean_architecture_linter` to `dev_dependencies` when your
+project uses analyzer-bound tools such as `riverpod_lint`. The ASP plugin is
+resolved in its own synthetic package from the `plugins:` section, which avoids
+forcing its analyzer constraints into your app's pub solve.
+
+### 2. Run the linter
 
 ```bash
 dart pub get
@@ -121,9 +118,17 @@ That's it! The 33 rules are reported directly in your `dart analyze` / `flutter 
 
 See `docs/config/RECOMMENDED_SETUP.md` for details.
 
-## 🧩 Compatibility — analyzer 13 / Riverpod 3+
+## 🧩 Compatibility — analyzer 9-13 / Riverpod 3+
 
-v2.0 runs on the official `analysis_server_plugin` (`^0.3.15`), which pins `analyzer ^13.0.0`. This matches the analyzer bundled with **Dart 3.10+**, so the plugin loads inside your project's analysis server with no `pubspec_overrides.yaml` workaround. It resolves cleanly alongside the latest `riverpod_generator 4.x`, `riverpod_lint 3.1.x`, `freezed 3.x`, and `json_serializable 6.13+`.
+v2.0 runs on the official `analysis_server_plugin` (`>=0.3.4 <0.4.0`) and supports analyzer `>=9.0.0 <14.0.0`. This covers the analyzer bundled with **Dart 3.10+**, so the plugin loads inside your project's analysis server with no `.dartServer` or `pubspec_overrides.yaml` workaround.
+
+`riverpod_lint 3.1.x` still carries its own analyzer constraints (`^9.0.0` for stable 3.1.3 and `^12.0.0` for current dev releases). Keep analyzer plugins out of `dev_dependencies` and enable both tools through top-level `plugins:` when you need them in one consumer project. The analyzer plugin manager resolves all enabled plugins in one synthetic package, so this package keeps its analyzer range broad enough to share that solve:
+
+```yaml
+plugins:
+  clean_architecture_linter: ^2.0.0-dev.1
+  riverpod_lint: ^3.1.3
+```
 
 > The v1 `custom_lint` upstream ([invertase/dart_custom_lint](https://github.com/invertase/dart_custom_lint)) was archived in May 2026. v2.0 moves fully to the official plugin, so the old `pubspec_overrides.yaml` bridge is no longer needed — delete it when upgrading.
 

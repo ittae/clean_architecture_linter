@@ -5,6 +5,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
+import '../../compat/analyzer_ast_compat.dart';
 import '../../clean_architecture_linter_base.dart';
 
 /// Enforces no field duplication in Model when Entity field exists.
@@ -124,14 +125,11 @@ class _ModelFieldDuplicationVisitor extends SimpleAstVisitor<void> {
   }
 
   _FieldInfo? _extractFieldInfo(FormalParameter param) {
-    if (param is! RegularFormalParameter) return null;
-    final normalParam = param;
-
-    final name = normalParam.name?.lexeme;
-    final type = normalParam.type?.toSource();
+    final name = formalParameterName(param);
+    final type = formalParameterType(param)?.toSource();
     if (name == null || type == null) return null;
 
-    return _FieldInfo(name: name, type: type, node: normalParam);
+    return _FieldInfo(name: name, type: type, node: param);
   }
 
   _FieldInfo? _findEntityField(List<_FieldInfo> fields) {

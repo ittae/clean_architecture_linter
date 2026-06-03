@@ -80,15 +80,7 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 - **Flutter**: 3.0+ (Flutter 프로젝트의 경우 선택사항)
 - **Riverpod**: 프레젠테이션 계층 규칙에 필수 (riverpod_generator 권장)
 
-### 1. 프로젝트에 추가
-
-```yaml
-# pubspec.yaml
-dev_dependencies:
-  clean_architecture_linter: ^2.0.0-dev.1
-```
-
-### 2. 플러그인 활성화
+### 1. 플러그인 활성화
 
 ```yaml
 # analysis_options.yaml
@@ -104,7 +96,12 @@ analyzer:
     - "**/*.mocks.dart"   # Mock 파일 제외
 ```
 
-### 3. 린터 실행
+`riverpod_lint`처럼 analyzer constraint가 있는 도구와 함께 쓸 때는
+`clean_architecture_linter`를 `dev_dependencies`에 함께 넣지 마세요. ASP
+plugin은 top-level `plugins:` 설정에서 별도 synthetic package로 resolve되므로,
+앱의 pub solve에 analyzer constraint를 강제로 섞지 않아도 됩니다.
+
+### 2. 린터 실행
 
 ```bash
 dart pub get
@@ -113,9 +110,17 @@ dart analyze        # Flutter 프로젝트는 flutter analyze
 
 완료되었습니다! 33개 규칙이 `dart analyze` / `flutter analyze` 결과에 직접 포함됩니다.
 
-## 🧩 호환성 — analyzer 13 / Riverpod 3+
+## 🧩 호환성 — analyzer 9-13 / Riverpod 3+
 
-v2.0은 공식 `analysis_server_plugin`(`^0.3.15`) 위에서 동작하며, 이는 `analyzer ^13.0.0`에 고정됩니다. 이 버전은 **Dart 3.10+** 에 번들된 analyzer와 일치하므로, 플러그인이 프로젝트의 analysis server 안에서 `pubspec_overrides.yaml` 워크어라운드 없이 그대로 로드됩니다. 최신 `riverpod_generator 4.x`, `riverpod_lint 3.1.x`, `freezed 3.x`, `json_serializable 6.13+` 와도 깨끗하게 해소됩니다.
+v2.0은 공식 `analysis_server_plugin`(`>=0.3.4 <0.4.0`) 위에서 동작하며, analyzer `>=9.0.0 <14.0.0`을 지원합니다. 이 범위는 **Dart 3.10+** 에 번들된 analyzer를 포함하므로, 플러그인이 프로젝트의 analysis server 안에서 `.dartServer` 또는 `pubspec_overrides.yaml` 워크어라운드 없이 그대로 로드됩니다.
+
+`riverpod_lint 3.1.x`는 아직 자체 analyzer constraint를 가집니다(안정판 3.1.3은 `^9.0.0`, 현재 dev release는 `^12.0.0`). 한 consumer 프로젝트에서 두 도구를 함께 써야 하면 analyzer plugin은 `dev_dependencies`에서 제외하고 둘 다 top-level `plugins:`로 활성화하세요. analyzer plugin manager는 활성화된 plugin들을 하나의 synthetic package에서 함께 resolve하므로, 이 패키지는 그 solve를 공유할 수 있도록 analyzer 범위를 넓게 유지합니다:
+
+```yaml
+plugins:
+  clean_architecture_linter: ^2.0.0-dev.1
+  riverpod_lint: ^3.1.3
+```
 
 > v1 `custom_lint` upstream([invertase/dart_custom_lint](https://github.com/invertase/dart_custom_lint))은 2026년 5월에 archive 처리되었습니다. v2.0은 공식 플러그인으로 완전히 이주했으므로 기존 `pubspec_overrides.yaml` 다리는 더 이상 필요 없습니다 — 업그레이드 시 삭제하세요.
 
