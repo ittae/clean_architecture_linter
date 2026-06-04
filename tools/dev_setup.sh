@@ -14,13 +14,13 @@ echo "Resolving v2 riverpod_lint consumer package..."
 
 echo "Running analyzer plugin smoke check..."
 set +e
-ANALYZE_OUTPUT="$(cd "$ROOT_DIR/poc_v2/example" && dart analyze 2>&1)"
+ANALYZE_OUTPUT="$(cd "$ROOT_DIR/poc_v2/example" && dart analyze --no-fatal-warnings 2>&1)"
 ANALYZE_STATUS=$?
 set -e
 
 printf '%s\n' "$ANALYZE_OUTPUT"
 
-if [[ $ANALYZE_STATUS -ne 0 && $ANALYZE_STATUS -ne 1 && $ANALYZE_STATUS -ne 2 && $ANALYZE_STATUS -ne 3 ]]; then
+if [[ $ANALYZE_STATUS -ne 0 ]]; then
   exit "$ANALYZE_STATUS"
 fi
 
@@ -37,14 +37,14 @@ fi
 echo "Running analyzer plugin + riverpod_lint consumer smoke check..."
 set +e
 CONSUMER_ANALYZE_OUTPUT="$(
-  cd "$ROOT_DIR/poc_v2/consumer_riverpod_lint" && dart analyze 2>&1
+  cd "$ROOT_DIR/poc_v2/consumer_riverpod_lint" && dart analyze --no-fatal-warnings 2>&1
 )"
 CONSUMER_ANALYZE_STATUS=$?
 set -e
 
 printf '%s\n' "$CONSUMER_ANALYZE_OUTPUT"
 
-if [[ $CONSUMER_ANALYZE_STATUS -ne 0 && $CONSUMER_ANALYZE_STATUS -ne 1 && $CONSUMER_ANALYZE_STATUS -ne 2 && $CONSUMER_ANALYZE_STATUS -ne 3 ]]; then
+if [[ $CONSUMER_ANALYZE_STATUS -ne 0 ]]; then
   exit "$CONSUMER_ANALYZE_STATUS"
 fi
 

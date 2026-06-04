@@ -9,6 +9,7 @@ import 'package:analyzer/error/error.dart';
 import 'package:path/path.dart' as path;
 
 import '../../clean_architecture_linter_base.dart';
+import '../../compat/analyzer_ast_compat.dart';
 
 /// Enforces proper DataSource abstraction patterns in the data layer.
 class DataSourceAbstractionRule extends AnalysisRule {
@@ -73,7 +74,7 @@ class _DataSourceAbstractionVisitor extends SimpleAstVisitor<void> {
   void _checkDataSourceAbstraction(ClassDeclaration node, String filePath) {
     if (!CleanArchitectureUtils.isDataFile(filePath)) return;
 
-    final className = node.namePart.typeName.lexeme;
+    final className = classDeclarationName(node) ?? '';
     if (!CleanArchitectureUtils.isDataSourceClass(className)) return;
 
     if (node.abstractKeyword != null) return;
@@ -90,7 +91,7 @@ class _DataSourceAbstractionVisitor extends SimpleAstVisitor<void> {
   }
 
   void _checkDataSourceLocation(ClassDeclaration node, String filePath) {
-    final className = node.namePart.typeName.lexeme;
+    final className = classDeclarationName(node) ?? '';
     if (!CleanArchitectureUtils.isDataSourceClass(className)) return;
 
     if (CleanArchitectureUtils.isDomainFile(filePath)) {
@@ -113,7 +114,7 @@ class _DataSourceAbstractionVisitor extends SimpleAstVisitor<void> {
     final classNode = method.thisOrAncestorOfType<ClassDeclaration>();
     if (classNode == null) return;
 
-    final className = classNode.namePart.typeName.lexeme;
+    final className = classDeclarationName(classNode) ?? '';
     if (!CleanArchitectureUtils.isDataSourceClass(className)) return;
 
     final returnType = method.returnType;

@@ -6,6 +6,7 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
 import '../../clean_architecture_linter_base.dart';
+import '../../compat/analyzer_ast_compat.dart';
 import '../../mixins/return_type_validation_mixin.dart';
 
 /// Prevents DataSource methods from returning Result/Either wrappers.
@@ -59,7 +60,7 @@ class _DataSourceNoResultReturnVisitor extends SimpleAstVisitor<void>
     final classNode = method.thisOrAncestorOfType<ClassDeclaration>();
     if (classNode == null) return;
 
-    final className = classNode.namePart.typeName.lexeme;
+    final className = classDeclarationName(classNode) ?? '';
     if (!CleanArchitectureUtils.isDataSourceClass(className)) return;
 
     final returnType = method.returnType;

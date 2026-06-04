@@ -72,7 +72,7 @@ class _ModelFieldDuplicationVisitor extends SimpleAstVisitor<void> {
 
     if (!_isDataModelFile(filePath)) return;
 
-    final className = node.namePart.typeName.lexeme;
+    final className = classDeclarationName(node) ?? '';
     if (!className.endsWith('Model')) return;
 
     if (!_hasFreezedAnnotation(node)) return;
@@ -108,7 +108,7 @@ class _ModelFieldDuplicationVisitor extends SimpleAstVisitor<void> {
   List<_FieldInfo> _extractFields(ClassDeclaration node) {
     final fields = <_FieldInfo>[];
 
-    for (final member in node.body.members) {
+    for (final member in classMembers(node)) {
       if (member is! ConstructorDeclaration || member.factoryKeyword == null) {
         continue;
       }

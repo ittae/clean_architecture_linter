@@ -1,6 +1,7 @@
 import 'package:analyzer/dart/ast/ast.dart';
 
 import '../clean_architecture_linter_base.dart';
+import '../compat/analyzer_ast_compat.dart';
 
 /// Mixin providing standardized Repository identification for lint rules.
 ///
@@ -61,7 +62,7 @@ mixin RepositoryRuleVisitor {
   /// isRepositoryInterface(node) // true
   /// ```
   bool isRepositoryInterface(ClassDeclaration node) {
-    final className = node.namePart.typeName.lexeme;
+    final className = classDeclarationName(node) ?? '';
 
     // Must have "Repository" in name
     if (!className.contains('Repository')) return false;
@@ -70,7 +71,7 @@ mixin RepositoryRuleVisitor {
     if (node.abstractKeyword != null) return true;
 
     // Check if all methods are abstract (no implementation)
-    final methods = node.body.members.whereType<MethodDeclaration>();
+    final methods = classMembers(node).whereType<MethodDeclaration>();
     if (methods.isEmpty) return false;
 
     return methods.every((method) => method.body is EmptyFunctionBody);
@@ -95,7 +96,7 @@ mixin RepositoryRuleVisitor {
   /// isRepositoryImplementation(node) // true
   /// ```
   bool isRepositoryImplementation(ClassDeclaration node) {
-    final className = node.namePart.typeName.lexeme;
+    final className = classDeclarationName(node) ?? '';
 
     // Check class name pattern
     if (CleanArchitectureUtils.isRepositoryImplClass(className)) {

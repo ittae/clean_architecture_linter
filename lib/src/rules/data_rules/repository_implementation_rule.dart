@@ -6,6 +6,7 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
 import '../../clean_architecture_linter_base.dart';
+import '../../compat/analyzer_ast_compat.dart';
 
 /// Enforces data RepositoryImpl classes implementing domain repository interfaces.
 class RepositoryImplementationRule extends AnalysisRule {
@@ -56,7 +57,7 @@ class _RepositoryImplementationVisitor extends SimpleAstVisitor<void> {
     final filePath = _filePath;
     if (CleanArchitectureUtils.shouldExcludeFile(filePath)) return;
 
-    final className = node.namePart.typeName.lexeme;
+    final className = classDeclarationName(node) ?? '';
 
     if (CleanArchitectureUtils.isDataFile(filePath)) {
       _checkDataLayerRepository(node, className);

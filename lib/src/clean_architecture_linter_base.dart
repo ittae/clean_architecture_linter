@@ -6,6 +6,8 @@ library;
 
 import 'package:analyzer/dart/ast/ast.dart';
 
+import 'compat/analyzer_ast_compat.dart';
+
 /// Utility functions for Clean Architecture layer detection and file filtering.
 ///
 /// This class provides a unified API for analyzing Dart files in Clean Architecture
@@ -541,7 +543,7 @@ class CleanArchitectureUtils {
   /// - [isRepositoryInterfaceClass] for fast name-based filtering
   /// - [isRepositoryInterfaceMethod] for individual method validation
   static bool isRepositoryInterface(ClassDeclaration classDeclaration) {
-    final className = classDeclaration.namePart.typeName.lexeme;
+    final className = classDeclarationName(classDeclaration) ?? '';
 
     // Step 1: Check naming patterns
     final repositoryPatterns = ['Repository', 'DataSource', 'Gateway', 'Port'];
@@ -555,7 +557,7 @@ class CleanArchitectureUtils {
     final isAbstractClass = classDeclaration.abstractKeyword != null;
 
     // Step 3: Check if all methods are abstract
-    final hasOnlyAbstractMethods = classDeclaration.body.members
+    final hasOnlyAbstractMethods = classMembers(classDeclaration)
         .whereType<MethodDeclaration>()
         .every(
           (method) => method.isAbstract || method.isGetter || method.isSetter,

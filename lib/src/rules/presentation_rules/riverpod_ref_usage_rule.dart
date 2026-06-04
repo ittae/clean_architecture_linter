@@ -6,6 +6,7 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
 import '../../clean_architecture_linter_base.dart';
+import '../../compat/analyzer_ast_compat.dart';
 
 /// Enforces proper usage of ref.watch() vs ref.read() in Riverpod code.
 class RiverpodRefUsageRule extends AnalysisRule {
@@ -52,7 +53,7 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
     if (!_isProviderFile(_filePath)) return;
     if (!_isRiverpodProviderClass(node)) return;
 
-    for (final member in node.body.members) {
+    for (final member in classMembers(node)) {
       if (member is MethodDeclaration) {
         _checkMethodRefUsage(member, member.name.lexeme == 'build');
       }

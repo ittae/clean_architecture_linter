@@ -117,7 +117,7 @@ class _PresentationUseAsyncValueVisitor extends SimpleAstVisitor<void> {
   }
 
   bool _isNotifierOrProviderClass(ClassDeclaration node) {
-    final className = node.namePart.typeName.lexeme;
+    final className = classDeclarationName(node) ?? '';
     if (className.contains('Notifier') || className.contains('Provider')) {
       return true;
     }
@@ -153,7 +153,7 @@ class _PresentationUseAsyncValueVisitor extends SimpleAstVisitor<void> {
   }
 
   void _checkForErrorFields(ClassDeclaration node) {
-    for (final member in node.body.members) {
+    for (final member in classMembers(node)) {
       if (member is FieldDeclaration) {
         for (final variable in member.fields.variables) {
           final fieldName = variable.name.lexeme;

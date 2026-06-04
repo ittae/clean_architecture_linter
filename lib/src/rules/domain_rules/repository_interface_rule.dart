@@ -75,7 +75,7 @@ class _RepositoryInterfaceVisitor extends SimpleAstVisitor<void>
   void visitClassDeclaration(ClassDeclaration node) {
     if (_shouldSkipFile) return;
 
-    final className = node.namePart.typeName.lexeme;
+    final className = classDeclarationName(node) ?? '';
     if (!className.contains('Repository')) return;
 
     if (!isRepositoryInterface(node)) {
@@ -88,7 +88,7 @@ class _RepositoryInterfaceVisitor extends SimpleAstVisitor<void>
       );
     }
 
-    for (final member in node.body.members) {
+    for (final member in classMembers(node)) {
       if (member is MethodDeclaration) {
         _checkRepositoryMethod(member);
       }

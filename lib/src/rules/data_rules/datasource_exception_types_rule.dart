@@ -6,6 +6,7 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
 import '../../clean_architecture_linter_base.dart';
+import '../../compat/analyzer_ast_compat.dart';
 import '../../mixins/exception_validation_mixin.dart';
 
 /// Enforces that DataSource code only throws defined AppException types.
@@ -93,7 +94,7 @@ class _DataSourceExceptionTypesVisitor extends SimpleAstVisitor<void>
     if (classNode == null) return false;
 
     return CleanArchitectureUtils.isDataSourceClass(
-      classNode.namePart.typeName.lexeme,
+      classDeclarationName(classNode) ?? '',
     );
   }
 }

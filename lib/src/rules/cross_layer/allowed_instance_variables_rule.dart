@@ -6,6 +6,7 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
 import '../../clean_architecture_linter_base.dart';
+import '../../compat/analyzer_ast_compat.dart';
 
 /// Validates instance variables in UseCase, Repository, and DataSource classes.
 ///
@@ -59,7 +60,7 @@ class _AllowedInstanceVariablesVisitor extends SimpleAstVisitor<void> {
 
     if (CleanArchitectureUtils.shouldExcludeFile(filePath)) return;
 
-    final className = node.namePart.typeName.lexeme;
+    final className = classDeclarationName(node) ?? '';
     final isUseCase = CleanArchitectureUtils.isUseCaseClass(className);
     final isRepository = CleanArchitectureUtils.isRepositoryImplClass(
       className,
@@ -70,7 +71,7 @@ class _AllowedInstanceVariablesVisitor extends SimpleAstVisitor<void> {
 
     if (!isUseCase && !isRepository && !isDataSource) return;
 
-    for (final member in node.body.members) {
+    for (final member in classMembers(node)) {
       if (member is! FieldDeclaration) continue;
 
       final isImmutable = member.fields.isFinal || member.fields.isConst;

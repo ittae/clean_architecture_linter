@@ -101,7 +101,7 @@ class _RiverpodKeepAliveVisitor extends SimpleAstVisitor<void> {
     final parent = node.parent;
     if (parent is! ClassDeclaration) return;
 
-    final className = parent.namePart.typeName.lexeme.toLowerCase();
+    final className = (classDeclarationName(parent) ?? '').toLowerCase();
     final isInfrastructure = RiverpodKeepAliveRule._infrastructurePatterns.any(
       className.contains,
     );
