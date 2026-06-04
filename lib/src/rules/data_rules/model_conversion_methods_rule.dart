@@ -5,6 +5,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
+import '../../compat/analyzer_ast_compat.dart';
 import '../../clean_architecture_linter_base.dart';
 
 /// Enforces presence of toEntity() conversion method in Model extensions.
@@ -58,7 +59,7 @@ class _ModelConversionMethodsVisitor extends SimpleAstVisitor<void> {
 
     if (!_isDataModelFile(filePath)) return;
 
-    final className = node.namePart.typeName.lexeme;
+    final className = classDeclarationName(node) ?? '';
     if (!className.endsWith('Model')) return;
 
     if (!_hasFreezedAnnotation(node)) return;
@@ -91,7 +92,7 @@ class _ModelConversionMethodsVisitor extends SimpleAstVisitor<void> {
   }
 
   bool _hasEntityField(ClassDeclaration node) {
-    for (final member in node.body.members) {
+    for (final member in classMembers(node)) {
       if (member is! ConstructorDeclaration || member.factoryKeyword == null) {
         continue;
       }
@@ -109,11 +110,8 @@ class _ModelConversionMethodsVisitor extends SimpleAstVisitor<void> {
   }
 
   _FieldInfo? _extractFieldInfo(FormalParameter param) {
-    if (param is! RegularFormalParameter) return null;
-    final normalParam = param;
-
-    final name = normalParam.name?.lexeme;
-    final type = normalParam.type?.toSource();
+    final name = formalParameterName(param);
+    final type = formalParameterType(param)?.toSource();
     if (name == null || type == null) return null;
 
     return _FieldInfo(name: name, type: type);
@@ -141,7 +139,7 @@ class _ModelConversionMethodsVisitor extends SimpleAstVisitor<void> {
     String methodName, {
     required bool isStatic,
   }) {
-    for (final member in extension.body.members) {
+    for (final member in extensionMembers(extension)) {
       if (member is MethodDeclaration &&
           member.name.lexeme == methodName &&
           member.isStatic == isStatic) {

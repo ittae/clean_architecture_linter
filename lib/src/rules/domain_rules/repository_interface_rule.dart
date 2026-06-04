@@ -5,6 +5,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
+import '../../compat/analyzer_ast_compat.dart';
 import '../../clean_architecture_linter_base.dart';
 import '../../mixins/repository_rule_visitor.dart';
 
@@ -74,7 +75,7 @@ class _RepositoryInterfaceVisitor extends SimpleAstVisitor<void>
   void visitClassDeclaration(ClassDeclaration node) {
     if (_shouldSkipFile) return;
 
-    final className = node.namePart.typeName.lexeme;
+    final className = classDeclarationName(node) ?? '';
     if (!className.contains('Repository')) return;
 
     if (!isRepositoryInterface(node)) {
@@ -87,7 +88,7 @@ class _RepositoryInterfaceVisitor extends SimpleAstVisitor<void>
       );
     }
 
-    for (final member in node.body.members) {
+    for (final member in classMembers(node)) {
       if (member is MethodDeclaration) {
         _checkRepositoryMethod(member);
       }
@@ -99,19 +100,17 @@ class _RepositoryInterfaceVisitor extends SimpleAstVisitor<void>
     if (_shouldSkipFile) return;
 
     for (final param in node.parameters.parameters) {
-      if (param is RegularFormalParameter) {
-        final type = param.type;
-        if (type is NamedType) {
-          final typeName = type.name.lexeme;
-          if (CleanArchitectureUtils.isRepositoryImplClass(typeName)) {
-            rule.reportAtNode(
-              type,
-              arguments: [
-                'Constructor depends on concrete repository implementation: $typeName',
-                'Use abstract repository interface instead of concrete implementation.',
-              ],
-            );
-          }
+      final type = formalParameterType(param);
+      if (type is NamedType) {
+        final typeName = type.name.lexeme;
+        if (CleanArchitectureUtils.isRepositoryImplClass(typeName)) {
+          rule.reportAtNode(
+            type,
+            arguments: [
+              'Constructor depends on concrete repository implementation: $typeName',
+              'Use abstract repository interface instead of concrete implementation.',
+            ],
+          );
         }
       }
     }
@@ -189,11 +188,7 @@ class _RepositoryInterfaceVisitor extends SimpleAstVisitor<void>
     if (parameters == null) return;
 
     for (final param in parameters.parameters) {
-      TypeAnnotation? paramType;
-
-      if (param is RegularFormalParameter) {
-        paramType = param.type;
-      }
+      final paramType = formalParameterType(param);
 
       if (paramType is NamedType) {
         final paramTypeName = paramType.name.lexeme;

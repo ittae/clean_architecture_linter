@@ -6,6 +6,7 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
 import '../../clean_architecture_linter_base.dart';
+import '../../compat/analyzer_ast_compat.dart';
 
 /// Enforces Freezed usage for data classes instead of Equatable.
 class FreezedUsageRule extends AnalysisRule {
@@ -76,7 +77,7 @@ class _FreezedUsageVisitor extends SimpleAstVisitor<void> {
         rule.reportAtNode(
           extendsClause,
           arguments: [
-            'Class "${node.namePart.typeName.lexeme}" uses Equatable. Use @freezed instead.',
+            'Class "${classDeclarationName(node) ?? ''}" uses Equatable. Use @freezed instead.',
             'Replace "extends Equatable" with @freezed annotation. Remove props getter and use Freezed factory constructor.',
           ],
         );
@@ -90,7 +91,7 @@ class _FreezedUsageVisitor extends SimpleAstVisitor<void> {
           rule.reportAtNode(
             implementsClause,
             arguments: [
-              'Class "${node.namePart.typeName.lexeme}" implements Equatable. Use @freezed instead.',
+              'Class "${classDeclarationName(node) ?? ''}" implements Equatable. Use @freezed instead.',
               'Use @freezed annotation for immutable data classes.',
             ],
           );

@@ -6,6 +6,7 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
 import '../../clean_architecture_linter_base.dart';
+import '../../compat/analyzer_ast_compat.dart';
 import '../../mixins/exception_validation_mixin.dart';
 
 /// Enforces Domain Exception naming convention with feature prefix.
@@ -60,7 +61,7 @@ class _ExceptionNamingConventionVisitor extends SimpleAstVisitor<void>
     if (filePath.contains('/core/')) return;
     if (!isExceptionClass(node)) return;
 
-    final className = node.namePart.typeName.lexeme;
+    final className = classDeclarationName(node) ?? '';
     if (ExceptionValidationMixin.dartBuiltInExceptions.contains(className)) {
       return;
     }

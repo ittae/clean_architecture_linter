@@ -28,6 +28,11 @@ poc_v2/example/
   lib/features/todo/presentation/
     bad_notifier.dart
     good_notifier.dart
+poc_v2/consumer_riverpod_lint/
+  pubspec.yaml
+  analysis_options.yaml
+  lib/features/todo/presentation/states/
+    bad_notifier.dart
 test/v2_harness/
 tools/dev_setup.sh
 ```
@@ -60,9 +65,11 @@ script는 아래 순서로 실행한다.
 dart pub get
 cd poc_v2/example && dart pub get
 dart analyze
+cd ../consumer_riverpod_lint && dart pub get
+dart analyze
 ```
 
-기대 결과: `dart analyze`가 `bad_notifier.dart`에서는 `presentation_no_throw`를 보고하고, `good_notifier.dart`에서는 보고하지 않는다.
+기대 결과: `dart analyze`가 `bad_notifier.dart`에서는 `presentation_no_throw`를 보고하고, `good_notifier.dart`에서는 보고하지 않는다. `poc_v2/consumer_riverpod_lint`는 clean linter와 `riverpod_lint ^3.1.3`을 모두 top-level `plugins:`로 켜는 consumer-style fixture다. 두 plugin을 `dev_dependencies`에 넣으면 analyzer constraint가 app pub solve에 섞여 충돌하므로, 이 fixture는 의도적으로 analyzer plugin dependency를 선언하지 않는다.
 
 ## 수동 검증
 
@@ -70,6 +77,10 @@ dart analyze
 dart pub get
 
 cd poc_v2/example
+dart pub get
+dart analyze
+
+cd ../consumer_riverpod_lint
 dart pub get
 dart analyze
 ```

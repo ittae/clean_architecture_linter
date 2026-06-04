@@ -2,6 +2,7 @@ import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:test/test.dart';
 
+import '../../../lib/src/compat/analyzer_ast_compat.dart';
 import '../../../lib/src/mixins/return_type_validation_mixin.dart';
 
 class _TestRule with ReturnTypeValidationMixin {}
@@ -10,7 +11,7 @@ MethodDeclaration _getMethod(String source, String methodName) {
   final unit = parseString(content: source).unit;
   for (final declaration in unit.declarations) {
     if (declaration is ClassDeclaration) {
-      for (final member in declaration.body.members) {
+      for (final member in classMembers(declaration)) {
         if (member is MethodDeclaration && member.name.lexeme == methodName) {
           return member;
         }

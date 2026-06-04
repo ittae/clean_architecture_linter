@@ -9,6 +9,7 @@ import 'package:analyzer/error/error.dart';
 import 'package:path/path.dart' as path;
 
 import '../../clean_architecture_linter_base.dart';
+import '../../compat/analyzer_ast_compat.dart';
 
 /// Enforces test coverage for critical Clean Architecture components.
 ///
@@ -72,7 +73,7 @@ class _TestCoverageVisitor extends SimpleAstVisitor<void> {
         context.currentUnit?.file.path ?? context.definingUnit.file.path;
     if (CleanArchitectureUtils.shouldExcludeFile(filePath)) return;
 
-    final className = node.namePart.typeName.lexeme;
+    final className = classDeclarationName(node) ?? '';
 
     final componentType = _identifyComponentType(filePath, className, node);
     if (componentType == null) return;
@@ -147,7 +148,7 @@ class _TestCoverageVisitor extends SimpleAstVisitor<void> {
 
     final normalized = filePath.replaceAll('\\', '/').toLowerCase();
     if (normalized.contains('/providers/')) {
-      final className = node.namePart.typeName.lexeme;
+      final className = classDeclarationName(node) ?? '';
       if (className.endsWith('Notifier')) {
         return true;
       }
@@ -161,7 +162,7 @@ class _TestCoverageVisitor extends SimpleAstVisitor<void> {
       return true;
     }
 
-    final className = node.namePart.typeName.lexeme;
+    final className = classDeclarationName(node) ?? '';
     if (className.endsWith('Impl')) {
       return true;
     }

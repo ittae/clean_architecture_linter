@@ -6,6 +6,7 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
 import '../../clean_architecture_linter_base.dart';
+import '../../compat/analyzer_ast_compat.dart';
 
 /// Enforces NO Presentation Models or ViewModels pattern.
 class NoPresentationModelsRule extends AnalysisRule {
@@ -81,7 +82,7 @@ class _NoPresentationModelsVisitor extends SimpleAstVisitor<void> {
   void visitClassDeclaration(ClassDeclaration node) {
     if (CleanArchitectureUtils.shouldExcludeFile(_filePath)) return;
 
-    final className = node.namePart.typeName.lexeme;
+    final className = classDeclarationName(node) ?? '';
     if (className.endsWith('ViewModel')) {
       rule.reportAtNode(
         node,

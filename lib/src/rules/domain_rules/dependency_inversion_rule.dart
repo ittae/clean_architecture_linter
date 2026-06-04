@@ -5,6 +5,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
+import '../../compat/analyzer_ast_compat.dart';
 import '../../clean_architecture_linter_base.dart';
 
 /// Enforces Dependency Inversion Principle in the domain layer.
@@ -151,13 +152,11 @@ class _DependencyInversionVisitor extends SimpleAstVisitor<void> {
     final violations = <DependencyViolation>[];
 
     for (final param in parameters) {
-      if (param is RegularFormalParameter) {
-        final type = param.type;
-        if (type is NamedType) {
-          final violation = _checkParameterDependency(type, param);
-          if (violation != null) {
-            violations.add(violation);
-          }
+      final type = formalParameterType(param);
+      if (type is NamedType) {
+        final violation = _checkParameterDependency(type, param);
+        if (violation != null) {
+          violations.add(violation);
         }
       }
     }

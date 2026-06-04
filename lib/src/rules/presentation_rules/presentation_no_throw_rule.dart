@@ -5,6 +5,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
+import '../../compat/analyzer_ast_compat.dart';
+
 /// Prevents business exception throws from presentation state management code.
 ///
 /// The throw-expression check intentionally mirrors the v1 custom-lint rule:
@@ -119,7 +121,7 @@ class _PresentationNoThrowVisitor extends SimpleAstVisitor<void> {
   }
 
   bool _isStateOrNotifierClass(ClassDeclaration classNode) {
-    final className = classNode.namePart.typeName.lexeme;
+    final className = classDeclarationName(classNode) ?? '';
 
     for (final metadata in classNode.metadata) {
       final name = metadata.name.name;
@@ -208,7 +210,7 @@ class _PresentationNoThrowVisitor extends SimpleAstVisitor<void> {
   }
 
   bool _isWidgetClass(ClassDeclaration classNode) {
-    final className = classNode.namePart.typeName.lexeme;
+    final className = classDeclarationName(classNode) ?? '';
     if (className.endsWith('Page') ||
         className.endsWith('Screen') ||
         className.endsWith('View') ||

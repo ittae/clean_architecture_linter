@@ -6,6 +6,7 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
 import '../../clean_architecture_linter_base.dart';
+import '../../compat/analyzer_ast_compat.dart';
 
 /// Enforces Model naming convention independent from DataSource details.
 class ModelNamingConventionRule extends AnalysisRule {
@@ -105,7 +106,7 @@ class _ModelNamingConventionVisitor extends SimpleAstVisitor<void> {
     final normalizedPath = filePath.replaceAll('\\', '/').toLowerCase();
     if (!normalizedPath.contains('/models/')) return;
 
-    final className = node.namePart.typeName.lexeme;
+    final className = classDeclarationName(node) ?? '';
     if (!className.endsWith('Model')) return;
 
     final lowerClassName = className.toLowerCase();

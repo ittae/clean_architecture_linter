@@ -6,6 +6,7 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
 import '../../clean_architecture_linter_base.dart';
+import '../../compat/analyzer_ast_compat.dart';
 import '../../mixins/return_type_validation_mixin.dart';
 
 class UseCaseNoResultReturnRule extends AnalysisRule {
@@ -59,7 +60,7 @@ class _UseCaseNoResultReturnVisitor extends SimpleAstVisitor<void>
     final classNode = method.thisOrAncestorOfType<ClassDeclaration>();
     if (classNode == null) return;
 
-    final className = classNode.namePart.typeName.lexeme;
+    final className = classDeclarationName(classNode) ?? '';
     if (!CleanArchitectureUtils.isUseCaseClass(className)) return;
 
     if (shouldSkipMethod(method)) return;

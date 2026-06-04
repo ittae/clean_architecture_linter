@@ -5,6 +5,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
+import '../../compat/analyzer_ast_compat.dart';
 import '../../clean_architecture_linter_base.dart';
 
 /// Enforces proper Freezed Model structure following CLEAN_ARCHITECTURE_GUIDE.md.
@@ -55,7 +56,7 @@ class _ModelStructureVisitor extends SimpleAstVisitor<void> {
 
     if (!_isDataModelFile(filePath)) return;
 
-    final className = node.namePart.typeName.lexeme;
+    final className = classDeclarationName(node) ?? '';
     if (!className.endsWith('Model')) return;
 
     if (_hasDatabaseAnnotation(node)) return;
@@ -123,17 +124,14 @@ class _ModelStructureVisitor extends SimpleAstVisitor<void> {
   }
 
   bool _hasEntityField(ClassDeclaration node) {
-    for (final member in node.body.members) {
+    for (final member in classMembers(node)) {
       if (member is! ConstructorDeclaration || member.factoryKeyword == null) {
         continue;
       }
 
       for (final param in member.parameters.parameters) {
-        if (param is! RegularFormalParameter) continue;
-        final normalParam = param;
-
-        final paramName = normalParam.name?.lexeme ?? '';
-        final typeName = normalParam.type?.toSource() ?? '';
+        final paramName = formalParameterName(param) ?? '';
+        final typeName = formalParameterType(param)?.toSource() ?? '';
         if (paramName == 'entity' ||
             paramName.endsWith('Entity') ||
             _isEntityType(typeName)) {
