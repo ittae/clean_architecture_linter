@@ -216,6 +216,8 @@ sealed class BooleanModel {
             .analyze(
               files: {
                 'lib/features/metrics/data/models/metrics_model.dart': '''
+import 'dart:async';
+
 const freezed = Object();
 
 @freezed
@@ -224,11 +226,17 @@ sealed class MetricsModel {
     required num amount,
     required Object value,
     required dynamic status,
+    required (String, int) title,
+    required ({String name, int count}) description,
+    required void Function() isCompleted,
+    required String Function(int value) type,
+    required FutureOr<String> content,
+    required MapEntry<String, Object?> productId,
+    required Symbol orderId,
     required Iterable<String> tags,
     required Map<String, Object?> metadata,
     required Set<String> flags,
     required List<String> names,
-    required String title,
   }) = MetricsModelImpl;
 }
 ''',

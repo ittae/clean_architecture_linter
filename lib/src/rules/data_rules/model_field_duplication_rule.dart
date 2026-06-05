@@ -148,6 +148,11 @@ class _ModelFieldDuplicationVisitor extends SimpleAstVisitor<void> {
     if (typeName.isEmpty) return false;
 
     final cleanTypeName = typeName.replaceAll('?', '').trim();
+    if (cleanTypeName.startsWith('(') ||
+        RegExp(r'(^|\s)Function\s*\(').hasMatch(cleanTypeName)) {
+      return false;
+    }
+
     final genericStart = cleanTypeName.indexOf('<');
     final baseTypeName = genericStart == -1
         ? cleanTypeName
@@ -181,6 +186,9 @@ class _ModelFieldDuplicationVisitor extends SimpleAstVisitor<void> {
       'Type',
       'Enum',
       'Function',
+      'FutureOr',
+      'MapEntry',
+      'Symbol',
       'List',
       'Map',
       'Set',
