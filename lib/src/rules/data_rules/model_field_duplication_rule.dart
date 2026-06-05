@@ -62,6 +62,8 @@ class _ModelFieldDuplicationVisitor extends SimpleAstVisitor<void> {
     'isCached',
   };
 
+  static final _inlineFunctionTypePattern = RegExp(r'(^|\s)Function\s*\(');
+
   String get _filePath =>
       context.currentUnit?.file.path ?? context.definingUnit.file.path;
 
@@ -149,7 +151,7 @@ class _ModelFieldDuplicationVisitor extends SimpleAstVisitor<void> {
 
     final cleanTypeName = typeName.replaceAll('?', '').trim();
     if (cleanTypeName.startsWith('(') ||
-        RegExp(r'(^|\s)Function\s*\(').hasMatch(cleanTypeName)) {
+        _inlineFunctionTypePattern.hasMatch(cleanTypeName)) {
       return false;
     }
 
@@ -182,6 +184,7 @@ class _ModelFieldDuplicationVisitor extends SimpleAstVisitor<void> {
       'Uri',
       'RegExp',
       'Pattern',
+      'Record',
       'StackTrace',
       'Type',
       'Enum',

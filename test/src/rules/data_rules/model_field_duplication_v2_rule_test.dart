@@ -228,6 +228,7 @@ sealed class MetricsModel {
     required dynamic status,
     required (String, int) title,
     required ({String name, int count}) description,
+    required Record startDate,
     required void Function() isCompleted,
     required String Function(int value) type,
     required FutureOr<String> content,
