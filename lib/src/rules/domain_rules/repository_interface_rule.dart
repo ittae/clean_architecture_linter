@@ -147,40 +147,28 @@ class _RepositoryInterfaceVisitor extends SimpleAstVisitor<void>
   }
 
   void _checkReturnTypeForModels(TypeAnnotation? returnType) {
-    if (returnType == null) return;
-
-    if (returnType is NamedType) {
-      final returnTypeName = returnType.name.lexeme;
-
-      if (_isDataLayerModel(returnTypeName)) {
-        rule.reportAtNode(
-          returnType,
-          arguments: [
-            'Repository method returns data layer model: $returnTypeName',
-            'Repository methods should return domain entities, not data models.',
-          ],
-        );
-        return;
-      }
-
-      final typeArguments = returnType.typeArguments?.arguments;
-      if (typeArguments != null) {
-        for (final typeArg in typeArguments) {
-          if (typeArg is NamedType) {
-            final typeArgName = typeArg.name.lexeme;
-            if (_isDataLayerModel(typeArgName)) {
-              rule.reportAtNode(
-                typeArg,
-                arguments: [
-                  'Repository method uses data layer model in generic type: $typeArgName',
-                  'Use domain entities in generic types. Example: Future<User> or AsyncValue<User> patterns should never expose UserModel.',
-                ],
-              );
-            }
-          }
+    _checkTypeForModels(
+      returnType,
+      onModel: (type, typeName, isGeneric) {
+        if (isGeneric) {
+          rule.reportAtNode(
+            type,
+            arguments: [
+              'Repository method uses data layer model in generic type: $typeName',
+              'Use domain entities in generic types. Example: Future<User> or AsyncValue<User> patterns should never expose UserModel.',
+            ],
+          );
+        } else {
+          rule.reportAtNode(
+            type,
+            arguments: [
+              'Repository method returns data layer model: $typeName',
+              'Repository methods should return domain entities, not data models.',
+            ],
+          );
         }
-      }
-    }
+      },
+    );
   }
 
   void _checkMethodParametersForModels(MethodDeclaration method) {
@@ -189,37 +177,46 @@ class _RepositoryInterfaceVisitor extends SimpleAstVisitor<void>
 
     for (final param in parameters.parameters) {
       final paramType = formalParameterType(param);
-
-      if (paramType is NamedType) {
-        final paramTypeName = paramType.name.lexeme;
-        if (_isDataLayerModel(paramTypeName)) {
-          rule.reportAtNode(
-            paramType,
-            arguments: [
-              'Repository method parameter uses data layer model: $paramTypeName',
-              'Repository method parameters should use domain entities, not data models.',
-            ],
-          );
-        }
-
-        final typeArguments = paramType.typeArguments?.arguments;
-        if (typeArguments != null) {
-          for (final typeArg in typeArguments) {
-            if (typeArg is NamedType) {
-              final typeArgName = typeArg.name.lexeme;
-              if (_isDataLayerModel(typeArgName)) {
-                rule.reportAtNode(
-                  typeArg,
-                  arguments: [
-                    'Repository parameter uses data layer model in generic type: $typeArgName',
-                    'Use domain entities in generic types. Example: List<User> instead of List<UserModel>',
-                  ],
-                );
-              }
-            }
+      _checkTypeForModels(
+        paramType,
+        onModel: (type, typeName, isGeneric) {
+          if (isGeneric) {
+            rule.reportAtNode(
+              type,
+              arguments: [
+                'Repository parameter uses data layer model in generic type: $typeName',
+                'Use domain entities in generic types. Example: List<User> instead of List<UserModel>',
+              ],
+            );
+          } else {
+            rule.reportAtNode(
+              type,
+              arguments: [
+                'Repository method parameter uses data layer model: $typeName',
+                'Repository method parameters should use domain entities, not data models.',
+              ],
+            );
           }
-        }
-      }
+        },
+      );
+    }
+  }
+
+  void _checkTypeForModels(
+    TypeAnnotation? type, {
+    required void Function(NamedType type, String typeName, bool isGeneric)
+    onModel,
+    bool isGeneric = false,
+  }) {
+    if (type is! NamedType) return;
+
+    final typeName = type.name.lexeme;
+    if (_isDataLayerModel(typeName)) {
+      onModel(type, typeName, isGeneric);
+    }
+
+    for (final typeArgument in type.typeArguments?.arguments ?? const []) {
+      _checkTypeForModels(typeArgument, onModel: onModel, isGeneric: true);
     }
   }
 
