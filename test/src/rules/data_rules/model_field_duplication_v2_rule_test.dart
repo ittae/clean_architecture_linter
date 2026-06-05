@@ -107,6 +107,140 @@ class TodoModelImpl implements TodoModel {
       result.expectNoDiagnostics();
     });
 
+    test('detects custom entity types with primitive prefixes', () async {
+      final result = await V2RuleHarness(rule: ModelFieldDuplicationRule())
+          .analyze(
+            files: {
+              'lib/features/settings/data/models/settings_model.dart': '''
+const freezed = Object();
+
+class Settings {}
+
+@freezed
+sealed class SettingsModel {
+  const factory SettingsModel({
+    required Settings settings,
+    required String title,
+  }) = SettingsModelImpl;
+}
+''',
+              'lib/features/interval/data/models/interval_model.dart': '''
+const freezed = Object();
+
+class Interval {}
+
+@freezed
+sealed class IntervalModel {
+  const factory IntervalModel({
+    required Interval interval,
+    required int value,
+  }) = IntervalModelImpl;
+}
+''',
+              'lib/features/location/data/models/location_model.dart': '''
+const freezed = Object();
+
+class MapLocation {}
+
+@freezed
+sealed class LocationModel {
+  const factory LocationModel({
+    required MapLocation location,
+    required String description,
+  }) = LocationModelImpl;
+}
+''',
+              'lib/features/boolean/data/models/boolean_model.dart': '''
+const freezed = Object();
+
+class Boolean {}
+
+@freezed
+sealed class BooleanModel {
+  const factory BooleanModel({
+    required Boolean boolean,
+    required bool isActive,
+  }) = BooleanModelImpl;
+}
+''',
+            },
+            definingFile:
+                'lib/features/settings/data/models/settings_model.dart',
+            additionalDefiningFiles: [
+              'lib/features/interval/data/models/interval_model.dart',
+              'lib/features/location/data/models/location_model.dart',
+              'lib/features/boolean/data/models/boolean_model.dart',
+            ],
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath: 'lib/features/settings/data/models/settings_model.dart',
+          codeName: 'model_field_duplication',
+          problemMessage:
+              'Field "title" duplicates Entity field. Model should only contain Entity + metadata.',
+          correctionMessage:
+              'Remove "title" field. Access it via entity.title instead.',
+        ),
+        const ExpectedV2Diagnostic(
+          relativePath: 'lib/features/interval/data/models/interval_model.dart',
+          codeName: 'model_field_duplication',
+          problemMessage:
+              'Field "value" duplicates Entity field. Model should only contain Entity + metadata.',
+          correctionMessage:
+              'Remove "value" field. Access it via entity.value instead.',
+        ),
+        const ExpectedV2Diagnostic(
+          relativePath: 'lib/features/location/data/models/location_model.dart',
+          codeName: 'model_field_duplication',
+          problemMessage:
+              'Field "description" duplicates Entity field. Model should only contain Entity + metadata.',
+          correctionMessage:
+              'Remove "description" field. Access it via entity.description instead.',
+        ),
+        const ExpectedV2Diagnostic(
+          relativePath: 'lib/features/boolean/data/models/boolean_model.dart',
+          codeName: 'model_field_duplication',
+          problemMessage:
+              'Field "isActive" duplicates Entity field. Model should only contain Entity + metadata.',
+          correctionMessage:
+              'Remove "isActive" field. Access it via entity.isActive instead.',
+        ),
+      ]);
+    });
+
+    test(
+      'does not treat SDK primitive and container types as entity fields',
+      () async {
+        final result = await V2RuleHarness(rule: ModelFieldDuplicationRule())
+            .analyze(
+              files: {
+                'lib/features/metrics/data/models/metrics_model.dart': '''
+const freezed = Object();
+
+@freezed
+sealed class MetricsModel {
+  const factory MetricsModel({
+    required num amount,
+    required Object value,
+    required dynamic status,
+    required Iterable<String> tags,
+    required Map<String, Object?> metadata,
+    required Set<String> flags,
+    required List<String> names,
+    required String title,
+  }) = MetricsModelImpl;
+}
+''',
+              },
+              definingFile:
+                  'lib/features/metrics/data/models/metrics_model.dart',
+            );
+
+        result.expectNoDiagnostics();
+      },
+    );
+
     test('skips model without Freezed annotation', () async {
       final result = await V2RuleHarness(rule: ModelFieldDuplicationRule())
           .analyze(
