@@ -36,10 +36,9 @@ class PresentationNoDataExceptionsRule extends AnalysisRule {
     RuleVisitorRegistry registry,
     RuleContext context,
   ) {
-    registry.addIsExpression(
-      this,
-      _PresentationNoDataExceptionsVisitor(this, context),
-    );
+    final visitor = _PresentationNoDataExceptionsVisitor(this, context);
+    registry.addIsExpression(this, visitor);
+    registry.addCatchClause(this, visitor);
   }
 }
 
@@ -64,6 +63,29 @@ class _PresentationNoDataExceptionsVisitor extends SimpleAstVisitor<void>
     if (type is! NamedType) return;
 
     final typeName = type.name.lexeme;
+    if (!isDataLayerException(typeName)) return;
+
+    final domainException = suggestFeaturePrefix(typeName, _filePath);
+    rule.reportAtNode(
+      type,
+      arguments: [
+        'Presentation should NOT handle Data exception "$typeName". Use Domain exception instead.',
+        'Replace with Domain exception "$domainException". UseCase should convert Data exceptions.',
+      ],
+    );
+  }
+
+  @override
+  void visitCatchClause(CatchClause node) {
+    if (CleanArchitectureUtils.shouldExcludeFile(_filePath) ||
+        !CleanArchitectureUtils.isPresentationFile(_filePath)) {
+      return;
+    }
+
+    final type = node.exceptionType;
+    if (type == null) return;
+
+    final typeName = type.toSource();
     if (!isDataLayerException(typeName)) return;
 
     final domainException = suggestFeaturePrefix(typeName, _filePath);

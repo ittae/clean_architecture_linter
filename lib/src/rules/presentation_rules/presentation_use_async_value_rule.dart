@@ -148,8 +148,7 @@ class _PresentationUseAsyncValueVisitor extends SimpleAstVisitor<void> {
     return source.contains('AsyncValue.guard(') ||
         source.contains('AsyncValue.error(') ||
         source.contains('AsyncError(') ||
-        source.contains('when(error:') ||
-        source.contains('state = AsyncValue');
+        source.contains('when(error:');
   }
 
   void _checkForErrorFields(ClassDeclaration node) {
