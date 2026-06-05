@@ -57,7 +57,9 @@ class _RefMountedUsageVisitor extends SimpleAstVisitor<void> {
     final parent = node.parent;
     if (parent is PrefixExpression &&
         parent.operator.lexeme == '!' &&
-        parent.operand == node) {
+        parent.operand == node &&
+        node.prefix.name == 'ref' &&
+        node.identifier.name == 'mounted') {
       return;
     }
 
