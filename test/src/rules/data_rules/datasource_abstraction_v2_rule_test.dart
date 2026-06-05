@@ -83,6 +83,24 @@ void main() {}
       result.expectNoDiagnostics();
     });
 
+    test('converts relative lib paths to test paths', () {
+      expect(
+        DataSourceAbstractionRule.testFilePathForTesting(
+          'lib/features/todo/data/datasources/todo_remote_datasource.dart',
+        ),
+        'test/features/todo/data/datasources/todo_remote_datasource_test.dart',
+      );
+    });
+
+    test('uses the package lib segment for absolute paths', () {
+      expect(
+        DataSourceAbstractionRule.testFilePathForTesting(
+          '/workspace/lib_cache/my_app/lib/features/todo/data/datasources/todo_remote_datasource.dart',
+        ),
+        '/workspace/lib_cache/my_app/test/features/todo/data/datasources/todo_remote_datasource_test.dart',
+      );
+    });
+
     test('reports DataSource in domain layer', () async {
       final result = await V2RuleHarness(rule: DataSourceAbstractionRule())
           .analyze(

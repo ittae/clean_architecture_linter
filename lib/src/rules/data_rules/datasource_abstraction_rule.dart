@@ -28,6 +28,10 @@ class DataSourceAbstractionRule extends AnalysisRule {
             'Requires DataSource abstractions, correct layer placement, and Model return types.',
       );
 
+  static String testFilePathForTesting(String libFilePath) {
+    return _expectedDataSourceTestFilePath(libFilePath);
+  }
+
   @override
   bool get canUseParsedResult => true;
 
@@ -170,19 +174,31 @@ class _DataSourceAbstractionVisitor extends SimpleAstVisitor<void> {
   }
 
   bool _hasTestFile(String libFilePath) {
-    final normalized = libFilePath.replaceAll('\\', '/');
-    final libIndex = normalized.indexOf('/lib/');
-    if (libIndex == -1) {
-      final testPath = normalized
-          .replaceFirst('/lib/', '/test/')
-          .replaceFirst('.dart', '_test.dart');
-      return File(testPath).existsSync();
-    }
-
-    final projectRoot = normalized.substring(0, libIndex);
-    final relativePath = normalized.substring(libIndex + 5);
-    final testRelativePath = relativePath.replaceFirst('.dart', '_test.dart');
-    final testPath = path.join(projectRoot, 'test', testRelativePath);
+    final testPath = _expectedDataSourceTestFilePath(libFilePath);
     return File(testPath).existsSync();
   }
+}
+
+String _expectedDataSourceTestFilePath(String libFilePath) {
+  final normalized = libFilePath.replaceAll('\\', '/');
+  if (normalized.startsWith('lib/')) {
+    return path.join(
+      'test',
+      path.setExtension(normalized.substring('lib/'.length), '_test.dart'),
+    );
+  }
+
+  final libIndex = normalized.lastIndexOf('/lib/');
+  if (libIndex == -1) {
+    return path.setExtension(normalized, '_test.dart');
+  }
+
+  final projectRoot = normalized.substring(0, libIndex);
+  final relativePath = normalized.substring(libIndex + '/lib/'.length);
+
+  return path.join(
+    projectRoot,
+    'test',
+    path.setExtension(relativePath, '_test.dart'),
+  );
 }
