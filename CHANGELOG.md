@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-06-05
+
+> **Stable v2.0 release.** First stable release on the official [`analysis_server_plugin`](https://pub.dev/packages/analysis_server_plugin), validated against consumer projects (`ittae`, `flutter_boilerplate`) which fully migrated off `custom_lint`. See [2.0.0-dev.1] below for the full breaking-change list.
+
+### Added
+
+- **analyzer 9–13 compatibility.** Widened the analyzer constraint to `>=9.0.0 <14.0.0` and introduced a runtime AST compatibility layer (`analyzer_ast_compat`) bridging renamed analyzer APIs (formal parameter / named argument / class & extension members). This lets the plugin load across analyzer 9–13 and **coexist with other analysis_server_plugin plugins such as `riverpod_lint`** in a single consumer (ITT-338).
+
+### Fixed (since `2.0.0-dev.1`)
+
+- `repository_pass_through`: false report on non-`Future` `Result` returns and over-flagging of nested try-catch blocks (ITT-301).
+- `circular_dependency`: false positive reporting cycles that do not contain the analyzed file (ITT-290).
+- `repository_interface`: now detects data-layer models exposed inside nested generics (e.g. `Future<Result<UserModel>>`, `Future<List<UserModel>>`) via recursive type-argument inspection (ITT-291).
+- `model_field_duplication`: replaced `startsWith`-based primitive detection with exact base-type matching (fixes false negatives for `Settings`/`Interval`/`MapLocation`/`Boolean`), added missing SDK types (`num`/`Object`/`dynamic`/`Iterable`), and stopped flagging record / function / structural-typed fields (ITT-295, ITT-380).
+- `datasource_abstraction`: correct `lib/`→`test/` resolution for relative paths so a present test file is no longer missed (ITT-296).
+- presentation rules: detect `try { } on X catch` data-exception handling (`CatchClause`), narrow over-broad `state = AsyncValue` matching, de-duplicate `!ref.mounted` reports, and fix the `extension_location` correction message (ITT-304).
+
 ## [2.0.0-dev.1] - 2026-05-31
 
 > **v2.0 first dev release (analysis_server_plugin migration).** Pre-release; the stable `2.0.0` follows once the v2 contract is validated against consumer projects.
