@@ -147,25 +147,48 @@ class _ModelFieldDuplicationVisitor extends SimpleAstVisitor<void> {
   bool _isEntityType(String typeName) {
     if (typeName.isEmpty) return false;
 
-    final cleanTypeName = typeName.replaceAll('?', '');
-    if (cleanTypeName.endsWith('Model') ||
-        cleanTypeName.endsWith('Dto') ||
-        cleanTypeName.endsWith('Response') ||
-        cleanTypeName.endsWith('Request')) {
+    final cleanTypeName = typeName.replaceAll('?', '').trim();
+    final genericStart = cleanTypeName.indexOf('<');
+    final baseTypeName = genericStart == -1
+        ? cleanTypeName
+        : cleanTypeName.substring(0, genericStart).trim();
+
+    if (baseTypeName.endsWith('Model') ||
+        baseTypeName.endsWith('Dto') ||
+        baseTypeName.endsWith('Response') ||
+        baseTypeName.endsWith('Request')) {
       return false;
     }
 
-    const primitiveTypes = {
+    const nonEntityTypes = {
       'String',
       'int',
+      'num',
       'double',
       'bool',
+      'Object',
+      'dynamic',
+      'void',
+      'Never',
+      'Null',
       'DateTime',
+      'Duration',
+      'BigInt',
+      'Uri',
+      'RegExp',
+      'Pattern',
+      'StackTrace',
+      'Type',
+      'Enum',
+      'Function',
       'List',
       'Map',
       'Set',
+      'Iterable',
+      'Future',
+      'Stream',
     };
-    if (primitiveTypes.any(cleanTypeName.startsWith)) {
+    if (nonEntityTypes.contains(baseTypeName)) {
       return false;
     }
 
