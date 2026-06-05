@@ -69,6 +69,40 @@ void render(Object error) {
       ]);
     });
 
+    test('reports catch clauses that handle data exceptions', () async {
+      final result =
+          await V2RuleHarness(rule: PresentationNoDataExceptionsRule()).analyze(
+            files: {
+              'lib/features/todo/presentation/pages/todo_page.dart': '''
+class NotFoundException implements Exception {}
+
+Future<void> render() async {
+  try {
+    await load();
+  } on NotFoundException catch (error) {
+    showError(error);
+  }
+}
+
+Future<void> load() async {}
+void showError(Object error) {}
+''',
+            },
+            definingFile: 'lib/features/todo/presentation/pages/todo_page.dart',
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath: 'lib/features/todo/presentation/pages/todo_page.dart',
+          codeName: 'presentation_no_data_exceptions',
+          problemMessage:
+              'Presentation should NOT handle Data exception "NotFoundException". Use Domain exception instead.',
+          correctionMessage:
+              'Replace with Domain exception "TodoNotFoundException". UseCase should convert Data exceptions.',
+        ),
+      ]);
+    });
+
     test('ignores non-presentation files', () async {
       final result =
           await V2RuleHarness(rule: PresentationNoDataExceptionsRule()).analyze(

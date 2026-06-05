@@ -109,12 +109,12 @@ class _ExtensionLocationVisitor extends SimpleAstVisitor<void> {
 
   String _getLayerName(String forbiddenPath) {
     if (forbiddenPath.contains('domain')) {
-      return 'entity file (e.g., ranking.dart with extension RankingX)';
+      return 'entity (e.g., ranking.dart with extension RankingX)';
     } else if (forbiddenPath.contains('data')) {
-      return 'model file (e.g., ranking_model.dart with extension RankingModelX)';
+      return 'model (e.g., ranking_model.dart with extension RankingModelX)';
     } else if (forbiddenPath.contains('presentation')) {
-      return 'state file or widget file (e.g., ranking_state.dart with UI extensions)';
+      return 'state or widget (e.g., ranking_state.dart with UI extensions)';
     }
-    return 'appropriate file';
+    return 'appropriate';
   }
 }

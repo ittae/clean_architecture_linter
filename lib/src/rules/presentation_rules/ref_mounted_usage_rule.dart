@@ -54,6 +54,13 @@ class _RefMountedUsageVisitor extends SimpleAstVisitor<void> {
   void visitPrefixedIdentifier(PrefixedIdentifier node) {
     if (!_shouldCheckFile) return;
 
+    final parent = node.parent;
+    if (parent is PrefixExpression &&
+        parent.operator.lexeme == '!' &&
+        parent.operand == node) {
+      return;
+    }
+
     if (node.prefix.name == 'ref' && node.identifier.name == 'mounted') {
       rule.reportAtNode(node);
     }

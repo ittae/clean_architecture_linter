@@ -64,14 +64,6 @@ void update(Ref ref) {
           correctionMessage:
               "Instead: (1) Complete async work before navigation, or (2) Call UseCase directly then navigate - new screen's provider will load state.",
         ),
-        const ExpectedV2Diagnostic(
-          relativePath: 'lib/features/todo/providers/todo_provider.dart',
-          codeName: 'ref_mounted_usage',
-          problemMessage:
-              'Avoid using "ref.mounted" to guard async operations. This masks design problems.',
-          correctionMessage:
-              "Instead: (1) Complete async work before navigation, or (2) Call UseCase directly then navigate - new screen's provider will load state.",
-        ),
       ]);
     });
 

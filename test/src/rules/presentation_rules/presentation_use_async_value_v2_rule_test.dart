@@ -146,6 +146,43 @@ class TodoNotifier {
       result.expectNoDiagnostics();
     });
 
+    test('reports catch blocks that only set AsyncValue loading', () async {
+      final result = await V2RuleHarness(rule: PresentationUseAsyncValueRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/providers/todo_notifier.dart': '''
+class TodoNotifier {
+  Object? state;
+
+  Future<void> load() async {
+    try {
+      await fetch();
+    } catch (error) {
+      state = const AsyncValue.loading();
+    }
+  }
+
+  Future<void> fetch() async {}
+}
+''',
+            },
+            definingFile:
+                'lib/features/todo/presentation/providers/todo_notifier.dart',
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/presentation/providers/todo_notifier.dart',
+          codeName: 'presentation_use_async_value',
+          problemMessage:
+              'Notifier/Provider catch did not map exception to UI state.',
+          correctionMessage:
+              'Use AsyncValue.guard(), state = AsyncValue.error(...), or UI handling via when(error: ...).',
+        ),
+      ]);
+    });
+
     test('skips generated files', () async {
       final result = await V2RuleHarness(rule: PresentationUseAsyncValueRule())
           .analyze(

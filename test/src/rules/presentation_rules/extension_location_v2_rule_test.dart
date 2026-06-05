@@ -28,7 +28,7 @@ extension TodoX on Todo {}
             problemMessage:
                 'Extension directory is not allowed: /domain/extensions/',
             correctionMessage:
-                'Move extensions to the entity file (e.g., ranking.dart with extension RankingX) file. Extensions should be in the same file as the class they extend.',
+                'Move extensions to the entity (e.g., ranking.dart with extension RankingX) file. Extensions should be in the same file as the class they extend.',
           ),
         ]);
       },
