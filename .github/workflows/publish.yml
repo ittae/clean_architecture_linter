@@ -35,7 +35,20 @@ jobs:
       run: dart test
 
     - name: Check pub publishing (dry run)
-      run: dart pub publish --dry-run
+      # analysis_server_plugin mandates an entrypoint at lib/main.dart, which
+      # triggers one unavoidable pub warning ("name 'main' should match the
+      # package name"). Allow exactly that warning; fail on anything else.
+      # (Without this, `dart pub publish --dry-run` exits 65 on the warning and
+      # blocks the OIDC publish job — see CHANGELOG 2.0.x / matches ci.yml.)
+      run: |
+        output="$(dart pub publish --dry-run 2>&1 || true)"
+        echo "$output"
+        unexpected="$(printf '%s\n' "$output" | grep -E '^\* ' | grep -v 'lib/main.dart' || true)"
+        if [ -n "$unexpected" ] || printf '%s\n' "$output" | grep -qE 'following error|Package has [0-9]+ error'; then
+          echo "::error::Unexpected pub publish warnings/errors (see output above)."
+          exit 1
+        fi
+        echo "OK: clean, or only the expected asp lib/main.dart naming warning."
 
   # Publish only if tests pass
   publish:
