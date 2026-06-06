@@ -1,6 +1,6 @@
 name: clean_architecture_linter
 description: A comprehensive analysis_server_plugin that automatically enforces Clean Architecture principles in Flutter projects with Riverpod state management.
-version: 2.0.0
+version: 2.0.1
 repository: https://github.com/ittae/clean_architecture_linter
 homepage: https://github.com/ittae/clean_architecture_linter
 documentation: https://github.com/ittae/clean_architecture_linter/blob/main/README.md
@@ -22,8 +22,13 @@ platforms:
   windows:
 
 dependencies:
-  analyzer: '>=9.0.0 <14.0.0'
-  analysis_server_plugin: '>=0.3.4 <0.4.0'
+  # NOTE: capped below analysis_server_plugin 0.3.15 / analyzer 13.x.
+  # The asp 0.3.15+/analyzer 13.x plugin host intermittently hangs during
+  # plugin-isolate load/analysis (observed in consumer CI: `flutter analyze`
+  # never returns). asp 0.3.14/analyzer 12.1 is stable. Re-widen once the
+  # upstream host issue is fixed. See CHANGELOG 2.0.1.
+  analyzer: '>=9.0.0 <13.0.0'
+  analysis_server_plugin: '>=0.3.4 <0.3.15'
   path: ^1.9.1
 
 dev_dependencies:

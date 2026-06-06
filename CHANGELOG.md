@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2026-06-06
+
+### Fixed
+
+- **Consumer CI hang (`flutter analyze` never returns).** Capped `analysis_server_plugin` to `>=0.3.4 <0.3.15` and `analyzer` to `>=9.0.0 <13.0.0`. Root-caused via a controlled experiment: a consumer resolving the plugin against **asp 0.3.16 / analyzer 13.1** intermittently **hangs during plugin-isolate load/analysis** (shard never completes, 20 min+), while the same code on **asp 0.3.14 / analyzer 12.1** completes in ~5 min. The hang is in the upstream asp/analyzer-13.x plugin host, not in this package's rules (all rule visitors are loop-safe; a larger consumer on 12.1 passes). Consumers that also use `riverpod_lint` were already unaffected (it caps them at asp 0.3.14/analyzer 12.1). Consumers on `^2.0.0` pick this up automatically. The analyzer-13 range will be restored once the upstream host issue is resolved.
+
 ## [2.0.0] - 2026-06-05
 
 > **Stable v2.0 release.** First stable release on the official [`analysis_server_plugin`](https://pub.dev/packages/analysis_server_plugin), validated against consumer projects (`ittae`, `flutter_boilerplate`) which fully migrated off `custom_lint`. See [2.0.0-dev.1] below for the full breaking-change list.
