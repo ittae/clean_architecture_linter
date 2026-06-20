@@ -141,7 +141,12 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
 
   @override
   void visitFunctionExpression(FunctionExpression node) {
-    // Async callbacks are scanned separately by _AsyncCallbackScanner.
+    if (node.body.isAsynchronous) {
+      // Async callbacks are scanned separately by _AsyncCallbackScanner.
+      return;
+    }
+
+    super.visitFunctionExpression(node);
   }
 
   @override
@@ -149,13 +154,19 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     final target = node.target;
     final methodName = node.methodName.name;
 
-    if (target is SimpleIdentifier &&
-        target.name == 'ref' &&
-        _trackedRefMethods.contains(methodName)) {
+    if (_isRefTarget(target) && _trackedRefMethods.contains(methodName)) {
       _refCalls.add(node);
     }
 
     super.visitMethodInvocation(node);
+  }
+
+  bool _isRefTarget(Expression? target) {
+    if (target is SimpleIdentifier) return target.name == 'ref';
+
+    return target is PropertyAccess &&
+        target.target is ThisExpression &&
+        target.propertyName.name == 'ref';
   }
 
   bool _hasPriorAsyncGap(MethodInvocation refCall) {
