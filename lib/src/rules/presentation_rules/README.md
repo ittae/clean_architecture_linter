@@ -311,6 +311,33 @@ class TodoPage extends ConsumerWidget {
 
 ---
 
+### 7. Riverpod Ref After Async Gap Rule (`riverpod_ref_after_async_gap_rule.dart`)
+**Purpose**: Advises against accessing Riverpod `ref` after an async gap in provider/notifier methods.
+
+**What it checks**:
+- ❌ `ref.read`, `ref.watch`, `ref.listen`, `ref.invalidate`, `ref.refresh` after `await`
+- ✅ Provider/usecase capture before `await`
+- ✅ Generated files, tests, non-provider files, and private helper methods are skipped
+- ✅ `state = ...` after `await` is not reported by this advisory rule
+
+**Example**:
+```dart
+@riverpod
+class TodoNotifier extends _$TodoNotifier {
+  Future<void> refresh() async {
+    final getTodos = ref.read(getTodosUseCaseProvider); // ✅ Capture before await
+    await getTodos();
+  }
+
+  Future<void> unsafeRefresh() async {
+    await saveTodo();
+    ref.refresh(todoProvider); // ❌ ref access after async gap
+  }
+}
+```
+
+---
+
 ## Best Practices
 
 1. **Use Freezed State**: NO ViewModels or Presentation Models
@@ -318,7 +345,8 @@ class TodoPage extends ConsumerWidget {
 3. **Use AsyncValue**: Let Riverpod handle error states
 4. **Keep Extensions Together**: UI extensions in same file as State
 5. **Handle Domain Exceptions Only**: Never catch Data exceptions
-6. **Test Notifiers**: State management logic should be tested
+6. **Capture Riverpod dependencies before await**: Avoid lifecycle-sensitive `ref` access after async gaps
+7. **Test Notifiers**: State management logic should be tested
 
 ---
 

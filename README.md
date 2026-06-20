@@ -12,7 +12,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 ## ✨ Key Features
 
 - 🛡️ **Automatic Clean Architecture Protection** - Write code freely, linter catches violations
-- 🎯 **33 Specialized Rules** - Comprehensive coverage of all Clean Architecture layers
+- 🎯 **34 Specialized Rules** - Comprehensive coverage of all Clean Architecture layers
 - 🚀 **Flutter-Optimized** - Built specifically for Flutter development patterns
 - 🎨 **Riverpod State Management** - Enforces 3-tier provider architecture (Entity → UI → Computed)
 - 📚 **Educational** - Learn Clean Architecture through guided corrections
@@ -20,7 +20,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 - 🔧 **Zero Configuration** - Works out of the box with sensible defaults
 - 🧪 **Test-Aware** - Smart exceptions for test files and development contexts
 
-## 📋 Rules Overview (33 Rules)
+## 📋 Rules Overview (34 Rules)
 
 ### 🌐 Core Clean Architecture Principles (6 rules)
 1. **Layer Dependency** - Enforces dependency direction (inward only)
@@ -47,7 +47,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 18. **DataSource Exception Types** - Use defined data layer exceptions only
 19. **Model Entity Direct Access** - Use `.toEntity()` instead of direct `.entity` access
 
-### 🎨 Presentation Layer Rules (13 rules)
+### 🎨 Presentation Layer Rules (14 rules)
 20. **No Presentation Models** - Use Freezed State instead of ViewModels
 21. **Extension Location** - Extensions in same file as the class
 22. **Freezed Usage** - Use Freezed instead of Equatable
@@ -58,12 +58,13 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 27. **Widget No UseCase Call** - Widgets should not call UseCases directly (use Providers)
 28. **Widget Ref Read Then When** - Avoid using .when() after ref.read() (anti-pattern)
 29. **Riverpod Ref Usage** - Use ref.watch() in build(), ref.read() in methods (with UseCase detection)
-30. **Riverpod Provider Naming** - Provider functions must include type suffix (repository/usecase/datasource)
-31. **Ref Mounted Usage** - Avoid `ref.mounted` (use AsyncValue or complete async before navigation)
-32. **Riverpod Keep Alive** - Only use `keepAlive: true` for global state (auth, settings, cache)
+30. **Riverpod Ref After Async Gap** - Advisory warning for ref.read/watch/listen/invalidate/refresh after await in provider methods
+31. **Riverpod Provider Naming** - Provider functions must include type suffix (repository/usecase/datasource)
+32. **Ref Mounted Usage** - Avoid `ref.mounted` (use AsyncValue or complete async before navigation)
+33. **Riverpod Keep Alive** - Only use `keepAlive: true` for global state (auth, settings, cache)
 
 ### 🔧 Cross-Layer Rules (1 rule)
-33. **Allowed Instance Variables** - Enforces stateless architecture (UseCase/Repository/DataSource)
+34. **Allowed Instance Variables** - Enforces stateless architecture (UseCase/Repository/DataSource)
 
 ### 🧪 Optional: Test Coverage Rule
 **Test Coverage** - Enforces test files for UseCases, Repositories, DataSources, and Notifiers (disabled by default)
@@ -110,7 +111,7 @@ dart pub get
 dart analyze        # Flutter projects: flutter analyze
 ```
 
-That's it! The 33 rules are reported directly in your `dart analyze` / `flutter analyze` output.
+That's it! The 34 rules are reported directly in your `dart analyze` / `flutter analyze` output.
 
 ### Recommended team profile
 - Local: `docs/config/lint_profile_balanced.yaml`

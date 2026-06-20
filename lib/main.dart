@@ -31,6 +31,7 @@ import 'src/rules/presentation_rules/ref_mounted_usage_rule.dart';
 import 'src/rules/presentation_rules/riverpod_generator_rule.dart';
 import 'src/rules/presentation_rules/riverpod_keep_alive_rule.dart';
 import 'src/rules/presentation_rules/riverpod_provider_naming_rule.dart';
+import 'src/rules/presentation_rules/riverpod_ref_after_async_gap_rule.dart';
 import 'src/rules/presentation_rules/riverpod_ref_usage_rule.dart';
 import 'src/rules/presentation_rules/widget_no_usecase_call_rule.dart';
 import 'src/rules/presentation_rules/widget_ref_read_then_when_rule.dart';
@@ -80,6 +81,7 @@ class CleanArchitectureLinterPlugin extends Plugin {
     registry.registerWarningRule(RiverpodGeneratorRule());
     registry.registerWarningRule(RiverpodKeepAliveRule());
     registry.registerWarningRule(RiverpodProviderNamingRule());
+    registry.registerWarningRule(RiverpodRefAfterAsyncGapRule());
     registry.registerWarningRule(RiverpodRefUsageRule());
     registry.registerWarningRule(WidgetNoUseCaseCallRule());
     registry.registerWarningRule(WidgetRefReadThenWhenRule());
