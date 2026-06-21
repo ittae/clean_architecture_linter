@@ -112,9 +112,22 @@ class _AsyncCallbackScanner extends RecursiveAstVisitor<void> {
 }
 
 class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
-  _AsyncRefAfterGapScanner(this.rule);
+  _AsyncRefAfterGapScanner(
+    this.rule, {
+    bool hasInheritedAsyncGap = false,
+    Map<String, FunctionDeclaration>? localFunctions,
+    Set<String>? activeLocalFunctionNames,
+    Set<int>? reportedRefCallOffsets,
+  }) : _hasInheritedAsyncGap = hasInheritedAsyncGap,
+       _localFunctions = localFunctions ?? {},
+       _activeLocalFunctionNames = activeLocalFunctionNames ?? {},
+       _reportedRefCallOffsets = reportedRefCallOffsets ?? {};
 
   final AnalysisRule rule;
+  final bool _hasInheritedAsyncGap;
+  final Map<String, FunctionDeclaration> _localFunctions;
+  final Set<String> _activeLocalFunctionNames;
+  final Set<int> _reportedRefCallOffsets;
   final List<int> _awaitEnds = [];
   final List<MethodInvocation> _refCalls = [];
 
@@ -122,7 +135,7 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     body.accept(this);
 
     for (final refCall in _refCalls) {
-      if (_hasPriorAsyncGap(refCall)) {
+      if (_shouldReport(refCall)) {
         _report(refCall);
       }
     }
@@ -136,7 +149,12 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
 
   @override
   void visitFunctionDeclaration(FunctionDeclaration node) {
-    // Local functions have their own lifecycle boundary.
+    if (node.functionExpression.body.isAsynchronous) {
+      // Async local functions are scanned separately by _AsyncCallbackScanner.
+      return;
+    }
+
+    _localFunctions[node.name.lexeme] = node;
   }
 
   @override
@@ -158,6 +176,8 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
       _refCalls.add(node);
     }
 
+    _scanLocalFunctionInvocation(node);
+
     super.visitMethodInvocation(node);
   }
 
@@ -171,6 +191,37 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
 
   bool _hasPriorAsyncGap(MethodInvocation refCall) {
     return _awaitEnds.any((awaitEnd) => awaitEnd <= refCall.offset);
+  }
+
+  bool _shouldReport(MethodInvocation refCall) {
+    if (!_hasInheritedAsyncGap && !_hasPriorAsyncGap(refCall)) return false;
+
+    return _reportedRefCallOffsets.add(refCall.offset);
+  }
+
+  void _scanLocalFunctionInvocation(MethodInvocation invocation) {
+    if (invocation.target != null) return;
+    if (!_hasInheritedAsyncGap && !_hasPriorAsyncGap(invocation)) return;
+
+    final functionName = invocation.methodName.name;
+    final declaration = _localFunctions[functionName];
+    if (declaration == null) return;
+
+    final body = declaration.functionExpression.body;
+    if (body.isAsynchronous) return;
+    if (!_activeLocalFunctionNames.add(functionName)) return;
+
+    try {
+      _AsyncRefAfterGapScanner(
+        rule,
+        hasInheritedAsyncGap: true,
+        localFunctions: _localFunctions,
+        activeLocalFunctionNames: _activeLocalFunctionNames,
+        reportedRefCallOffsets: _reportedRefCallOffsets,
+      ).scan(body);
+    } finally {
+      _activeLocalFunctionNames.remove(functionName);
+    }
   }
 
   void _report(MethodInvocation refCall) {

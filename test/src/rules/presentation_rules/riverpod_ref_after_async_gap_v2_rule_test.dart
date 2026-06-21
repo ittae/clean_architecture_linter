@@ -146,6 +146,84 @@ class TodoNotifier {
       ]);
     });
 
+    test(
+      'reports ref.invalidate after await inside invoked synchronous local helper',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
+            .analyze(
+              files: {
+                'lib/features/todo/presentation/providers/todo_notifier.dart':
+                    '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class TodoNotifier {
+  Future<void> createTodo() async {
+    await saveTodo();
+
+    void invalidateTodo() {
+      ref.invalidate(todoProvider);
+    }
+
+    invalidateTodo();
+  }
+}
+''',
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/todo_notifier.dart',
+            );
+
+        result.expectDiagnostics([
+          const ExpectedV2Diagnostic(
+            relativePath:
+                'lib/features/todo/presentation/providers/todo_notifier.dart',
+            codeName: 'riverpod_ref_after_async_gap',
+            problemMessage:
+                'Avoid ref.invalidate() after an async gap in Riverpod providers.',
+            correctionMessage:
+                'Capture provider/usecase dependencies before await, or restructure the async flow so ref is not used after await.',
+          ),
+        ]);
+      },
+    );
+
+    test(
+      'does not inherit outer async gap inside async local functions',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
+            .analyze(
+              files: {
+                'lib/features/todo/presentation/providers/todo_notifier.dart':
+                    '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class TodoNotifier {
+  Future<void> createTodo() async {
+    await saveTodo();
+
+    Future<void> invalidateTodo() async {
+      ref.invalidate(todoProvider);
+    }
+
+    await invalidateTodo();
+  }
+}
+''',
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/todo_notifier.dart',
+            );
+
+        result.expectNoDiagnostics();
+      },
+    );
+
     test('allows provider and usecase capture before await', () async {
       final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
           .analyze(
