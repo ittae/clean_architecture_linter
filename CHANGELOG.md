@@ -7,9 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-06-24
+
 ### Added
 
 - `riverpod_ref_after_async_gap`: advisory INFO lint for `ref.read`, `ref.watch`, `ref.listen`, `ref.invalidate`, and `ref.refresh` after `await` in public Riverpod provider/notifier methods and async callbacks. The first version is intentionally narrow to reduce false positives: it only scans `lib/**/presentation/**/providers/**`, skips generated/test files and private helpers, and does not report `state = ...` after `await`.
+- Package-named public library entrypoint `lib/clean_architecture_linter.dart` exporting `CleanArchitectureUtils`, so the package keeps a conventional importable library alongside the analyzer plugin `lib/main.dart` entrypoint.
 
 ## [2.0.1] - 2026-06-06
 
