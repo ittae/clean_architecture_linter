@@ -188,31 +188,94 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
   ///
   /// Walks the ancestor chain from [refCall] up to the scanned function body and
   /// only counts `await`s that sequentially execute before the ref call:
-  /// earlier statements within an enclosing block, or — when the ref call sits
-  /// inside a `catch`/`finally` — the `try` body. Awaits in mutually exclusive
-  /// sibling branches (`if`/`else`, separate `switch` cases) are NOT counted,
-  /// which removes the false positives the flat-offset scan produced.
+  /// earlier statements within an enclosing block/switch member, earlier
+  /// arguments in the same invocation, or control-flow header expressions that
+  /// execute before the selected body. Awaits in mutually exclusive sibling
+  /// branches (`if`/`else`, separate `switch` cases) are NOT counted, which
+  /// removes the false positives the flat-offset scan produced.
   bool _hasPriorAsyncGap(AstNode refCall) {
     AstNode child = refCall;
     AstNode? parent = child.parent;
     while (parent != null) {
       if (identical(child, _scannedBody)) break;
 
-      if (parent is Block) {
-        for (final statement in parent.statements) {
-          if (identical(statement, child)) break;
-          if (_subtreeHasAwait(statement)) return true;
-        }
-      } else if (parent is TryStatement && !identical(child, parent.body)) {
-        // The ref call lives in a catch clause or finally block, both of which
-        // execute after the try body (including after an await that threw).
-        if (_subtreeHasAwait(parent.body)) return true;
-      }
+      if (_hasAwaitBeforeChild(parent, child)) return true;
 
       child = parent;
       parent = child.parent;
     }
     return false;
+  }
+
+  bool _hasAwaitBeforeChild(AstNode parent, AstNode child) {
+    if (parent is Block) {
+      return _earlierNodesHaveAwait(parent.statements, child);
+    }
+
+    if (parent is SwitchMember) {
+      return _earlierNodesHaveAwait(parent.statements, child);
+    }
+
+    if (parent is ArgumentList) {
+      return _earlierNodesHaveAwait(parent.arguments, child);
+    }
+
+    if (parent is TryStatement) {
+      return _tryHasAwaitBeforeChild(parent, child);
+    }
+
+    if (parent is IfStatement &&
+        (identical(child, parent.thenStatement) ||
+            identical(child, parent.elseStatement))) {
+      return _subtreeHasAwait(parent.expression) ||
+          _subtreeHasAwaitInNullable(parent.caseClause);
+    }
+
+    if (parent is WhileStatement && identical(child, parent.body)) {
+      return _subtreeHasAwait(parent.condition);
+    }
+
+    if (parent is SwitchStatement && parent.members.contains(child)) {
+      return _subtreeHasAwait(parent.expression);
+    }
+
+    if (parent is ConditionalExpression &&
+        (identical(child, parent.thenExpression) ||
+            identical(child, parent.elseExpression))) {
+      return _subtreeHasAwait(parent.condition);
+    }
+
+    return false;
+  }
+
+  bool _tryHasAwaitBeforeChild(TryStatement parent, AstNode child) {
+    if (identical(child, parent.body)) return false;
+
+    // Catch clauses and finally run after the try body, including after an
+    // awaited expression that throws.
+    if (_subtreeHasAwait(parent.body)) return true;
+
+    if (identical(child, parent.finallyBlock)) {
+      for (final catchClause in parent.catchClauses) {
+        if (_subtreeHasAwait(catchClause)) return true;
+      }
+    }
+
+    return false;
+  }
+
+  bool _earlierNodesHaveAwait(Iterable<AstNode> nodes, AstNode child) {
+    for (final node in nodes) {
+      if (identical(node, child)) return false;
+      if (_subtreeHasAwait(node)) return true;
+    }
+
+    return false;
+  }
+
+  bool _subtreeHasAwaitInNullable(AstNode? node) {
+    if (node == null) return false;
+    return _subtreeHasAwait(node);
   }
 
   /// Whether [node]'s subtree contains an `await`, without descending into
