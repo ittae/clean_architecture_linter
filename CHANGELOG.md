@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.1] - 2026-06-25
+
+### Fixed
+
+- `riverpod_ref_after_async_gap`: removed control-flow false positives. The previous implementation collected every `await` in a function body into a flat offset list and flagged any tracked `ref` call positioned after it, which incorrectly reported `ref` usage in mutually exclusive sibling branches (an `else` branch flagged because of an `await` in the `if` branch, or a `switch` case flagged because of an `await` in another case). Detection now walks the ref call's ancestor blocks and only counts `await`s that sequentially precede it on its own execution path; `await`s in a `try` body are still counted for `ref` usage in the matching `catch`/`finally`, and nested function bodies are treated as separate scopes.
+
 ## [2.1.0] - 2026-06-24
 
 ### Added
