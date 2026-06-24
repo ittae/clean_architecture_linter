@@ -128,10 +128,11 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
   final Map<String, FunctionDeclaration> _localFunctions;
   final Set<String> _activeLocalFunctionNames;
   final Set<int> _reportedRefCallOffsets;
-  final List<int> _awaitEnds = [];
   final List<MethodInvocation> _refCalls = [];
+  FunctionBody? _scannedBody;
 
   void scan(FunctionBody body) {
+    _scannedBody = body;
     body.accept(this);
 
     for (final refCall in _refCalls) {
@@ -139,12 +140,6 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
         _report(refCall);
       }
     }
-  }
-
-  @override
-  void visitAwaitExpression(AwaitExpression node) {
-    _awaitEnds.add(node.end);
-    super.visitAwaitExpression(node);
   }
 
   @override
@@ -189,8 +184,44 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
         target.propertyName.name == 'ref';
   }
 
-  bool _hasPriorAsyncGap(MethodInvocation refCall) {
-    return _awaitEnds.any((awaitEnd) => awaitEnd <= refCall.offset);
+  /// Whether an `await` actually precedes [refCall] on its own execution path.
+  ///
+  /// Walks the ancestor chain from [refCall] up to the scanned function body and
+  /// only counts `await`s that sequentially execute before the ref call:
+  /// earlier statements within an enclosing block, or — when the ref call sits
+  /// inside a `catch`/`finally` — the `try` body. Awaits in mutually exclusive
+  /// sibling branches (`if`/`else`, separate `switch` cases) are NOT counted,
+  /// which removes the false positives the flat-offset scan produced.
+  bool _hasPriorAsyncGap(AstNode refCall) {
+    AstNode child = refCall;
+    AstNode? parent = child.parent;
+    while (parent != null) {
+      if (identical(child, _scannedBody)) break;
+
+      if (parent is Block) {
+        for (final statement in parent.statements) {
+          if (identical(statement, child)) break;
+          if (_subtreeHasAwait(statement)) return true;
+        }
+      } else if (parent is TryStatement && !identical(child, parent.body)) {
+        // The ref call lives in a catch clause or finally block, both of which
+        // execute after the try body (including after an await that threw).
+        if (_subtreeHasAwait(parent.body)) return true;
+      }
+
+      child = parent;
+      parent = child.parent;
+    }
+    return false;
+  }
+
+  /// Whether [node]'s subtree contains an `await`, without descending into
+  /// nested function bodies (their awaits do not sequentially precede code in
+  /// the enclosing scope).
+  bool _subtreeHasAwait(AstNode node) {
+    final finder = _AwaitFinder();
+    node.accept(finder);
+    return finder.found;
   }
 
   bool _shouldReport(MethodInvocation refCall) {
@@ -233,5 +264,26 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
         'Capture provider/usecase dependencies before await, or restructure the async flow so ref is not used after await.',
       ],
     );
+  }
+}
+
+/// Detects an `await` within a subtree, stopping at nested function boundaries.
+class _AwaitFinder extends RecursiveAstVisitor<void> {
+  bool found = false;
+
+  @override
+  void visitAwaitExpression(AwaitExpression node) {
+    found = true;
+  }
+
+  @override
+  void visitFunctionExpression(FunctionExpression node) {
+    // Nested closures are a separate execution scope; their awaits do not
+    // sequentially precede code in the enclosing scope.
+  }
+
+  @override
+  void visitFunctionDeclarationStatement(FunctionDeclarationStatement node) {
+    // Local function declarations are likewise a separate scope.
   }
 }
