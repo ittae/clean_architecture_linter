@@ -235,6 +235,10 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
       return _subtreeHasAwait(parent.condition);
     }
 
+    if (parent is ForStatement && identical(child, parent.body)) {
+      return _forHeaderHasAwaitBeforeBody(parent.forLoopParts);
+    }
+
     if (parent is SwitchStatement && parent.members.contains(child)) {
       return _subtreeHasAwait(parent.expression);
     }
@@ -243,6 +247,35 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
         (identical(child, parent.thenExpression) ||
             identical(child, parent.elseExpression))) {
       return _subtreeHasAwait(parent.condition);
+    }
+
+    return false;
+  }
+
+  bool _forHeaderHasAwaitBeforeBody(ForLoopParts forLoopParts) {
+    if (forLoopParts is ForEachParts) {
+      return _subtreeHasAwait(forLoopParts.iterable);
+    }
+
+    if (forLoopParts is ForParts) {
+      return _forInitializerHasAwait(forLoopParts) ||
+          _subtreeHasAwaitInNullable(forLoopParts.condition);
+    }
+
+    return false;
+  }
+
+  bool _forInitializerHasAwait(ForParts forLoopParts) {
+    if (forLoopParts is ForPartsWithDeclarations) {
+      return _subtreeHasAwait(forLoopParts.variables);
+    }
+
+    if (forLoopParts is ForPartsWithExpression) {
+      return _subtreeHasAwaitInNullable(forLoopParts.initialization);
+    }
+
+    if (forLoopParts is ForPartsWithPattern) {
+      return _subtreeHasAwait(forLoopParts.variables);
     }
 
     return false;
