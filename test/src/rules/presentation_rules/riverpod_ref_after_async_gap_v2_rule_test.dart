@@ -190,14 +190,11 @@ class TodoNotifier {
       },
     );
 
-    test(
-      'does not report ref.invalidate or ref.refresh after await (idiomatic)',
-      () async {
-        final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
-            .analyze(
-              files: {
-                'lib/features/todo/presentation/providers/todo_notifier.dart':
-                    '''
+    test('reports ref.invalidate and ref.refresh after await', () async {
+      final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/providers/todo_notifier.dart': '''
 class riverpod {
   const riverpod();
 }
@@ -206,21 +203,37 @@ class riverpod {
 class TodoNotifier {
   Future<void> save() async {
     await saveTodo();
-    // 변경 후 갱신 트리거는 await 뒤가 정상이며 capture-before-await로
-    // 고칠 수 없으므로 추적하지 않는다.
     ref.invalidate(todoListProvider);
     ref.refresh(todoListProvider);
   }
 }
 ''',
-              },
-              definingFile:
-                  'lib/features/todo/presentation/providers/todo_notifier.dart',
-            );
+            },
+            definingFile:
+                'lib/features/todo/presentation/providers/todo_notifier.dart',
+          );
 
-        result.expectNoDiagnostics();
-      },
-    );
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/presentation/providers/todo_notifier.dart',
+          codeName: 'riverpod_ref_after_async_gap',
+          problemMessage:
+              'Avoid ref.invalidate() after an async gap in Riverpod providers.',
+          correctionMessage:
+              'Capture provider/usecase dependencies before await, or restructure the async flow so ref is not used after await.',
+        ),
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/presentation/providers/todo_notifier.dart',
+          codeName: 'riverpod_ref_after_async_gap',
+          problemMessage:
+              'Avoid ref.refresh() after an async gap in Riverpod providers.',
+          correctionMessage:
+              'Capture provider/usecase dependencies before await, or restructure the async flow so ref is not used after await.',
+        ),
+      ]);
+    });
 
     test(
       'does not inherit outer async gap inside async local functions',
