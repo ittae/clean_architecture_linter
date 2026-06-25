@@ -8,7 +8,10 @@ import 'package:analyzer/error/error.dart';
 import '../../clean_architecture_linter_base.dart';
 import '../../compat/analyzer_ast_compat.dart';
 
-const _trackedRefMethods = {'read', 'watch', 'listen', 'invalidate', 'refresh'};
+// `invalidate`/`refresh`는 "변경 후 갱신" 관용구라 await 뒤가 정상이고
+// capture-before-await로 고칠 수 없어 추적하지 않는다. 의존성을 읽는
+// `read`/`watch`/`listen`만 추적한다 (이들은 await 전 캡처로 해결 가능).
+const _trackedRefMethods = {'read', 'watch', 'listen'};
 
 /// Reports Riverpod `ref` usage after an async gap in provider classes.
 class RiverpodRefAfterAsyncGapRule extends AnalysisRule {

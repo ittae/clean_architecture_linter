@@ -51,7 +51,7 @@ class TodoNotifier extends _\$TodoNotifier {
   void createTodo() {
     runAsync(() async {
       await saveTodo();
-      ref.invalidate(todoProvider);
+      ref.read(todoProvider);
     });
   }
 }
@@ -67,7 +67,7 @@ class TodoNotifier extends _\$TodoNotifier {
               'lib/features/todo/presentation/providers/todo_notifier.dart',
           codeName: 'riverpod_ref_after_async_gap',
           problemMessage:
-              'Avoid ref.invalidate() after an async gap in Riverpod providers.',
+              'Avoid ref.read() after an async gap in Riverpod providers.',
           correctionMessage:
               'Capture provider/usecase dependencies before await, or restructure the async flow so ref is not used after await.',
         ),
@@ -147,7 +147,7 @@ class TodoNotifier {
     });
 
     test(
-      'reports ref.invalidate after await inside invoked synchronous local helper',
+      'reports ref.read after await inside invoked synchronous local helper',
       () async {
         final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
             .analyze(
@@ -163,11 +163,11 @@ class TodoNotifier {
   Future<void> createTodo() async {
     await saveTodo();
 
-    void invalidateTodo() {
-      ref.invalidate(todoProvider);
+    void readTodo() {
+      ref.read(todoProvider);
     }
 
-    invalidateTodo();
+    readTodo();
   }
 }
 ''',
@@ -182,11 +182,43 @@ class TodoNotifier {
                 'lib/features/todo/presentation/providers/todo_notifier.dart',
             codeName: 'riverpod_ref_after_async_gap',
             problemMessage:
-                'Avoid ref.invalidate() after an async gap in Riverpod providers.',
+                'Avoid ref.read() after an async gap in Riverpod providers.',
             correctionMessage:
                 'Capture provider/usecase dependencies before await, or restructure the async flow so ref is not used after await.',
           ),
         ]);
+      },
+    );
+
+    test(
+      'does not report ref.invalidate or ref.refresh after await (idiomatic)',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
+            .analyze(
+              files: {
+                'lib/features/todo/presentation/providers/todo_notifier.dart':
+                    '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class TodoNotifier {
+  Future<void> save() async {
+    await saveTodo();
+    // 변경 후 갱신 트리거는 await 뒤가 정상이며 capture-before-await로
+    // 고칠 수 없으므로 추적하지 않는다.
+    ref.invalidate(todoListProvider);
+    ref.refresh(todoListProvider);
+  }
+}
+''',
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/todo_notifier.dart',
+            );
+
+        result.expectNoDiagnostics();
       },
     );
 
@@ -207,11 +239,11 @@ class TodoNotifier {
   Future<void> createTodo() async {
     await saveTodo();
 
-    Future<void> invalidateTodo() async {
-      ref.invalidate(todoProvider);
+    Future<void> readTodo() async {
+      ref.read(todoProvider);
     }
 
-    await invalidateTodo();
+    await readTodo();
   }
 }
 ''',
@@ -288,9 +320,9 @@ class riverpod {
 
 @riverpod
 class TodoNotifier {
-  Future<void> _refreshTodo() async {
+  Future<void> _reloadTodo() async {
     await saveTodo();
-    ref.refresh(todoProvider);
+    ref.read(todoProvider);
   }
 }
 ''',
