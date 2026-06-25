@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.2] - 2026-06-25
+
+### Changed
+
+- `riverpod_ref_after_async_gap`: narrowed the tracked `ref` members to `read`, `watch`, and `listen`. `ref.invalidate` and `ref.refresh` after an `await` are no longer reported — they are the idiomatic "mutate then re-fetch" trigger that is expected to run after the await and cannot be resolved by the rule's capture-before-await guidance, so flagging them only produced noise.
+
+### Fixed
+
+- `riverpod_ref_after_async_gap`: broadened control-flow detection so `ref` usage after an `await` that lives in a control-flow header is no longer missed — `await`s in `if`/`while` conditions, `for` conditions, and `for-in` iterables are now counted as preceding gaps for the dependent body, while an `await` confined to a `for` updater is not. This closes false negatives left by the ancestor-block walk. (ITT-914, ITT-919)
+
 ## [2.1.1] - 2026-06-25
 
 ### Fixed
