@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - New rule `riverpod_uncancelled_disposable` (WARNING): flags a disposable resource started in a class-based provider's `build()` — a timer started via `.start(onX: ...)`, a `Timer`/`AppLifecycleListener`/`StreamSubscription` constructed and stored, or a subscription from `.listen(...)` — that is not released (`cancel`/`dispose`/`close`/`stop`) inside `ref.onDispose`. Such resources keep firing callbacks after the provider is disposed, and those callbacks touch `state`/`ref` on a disposed notifier and crash with `UnmountedRefException`. Matching is by receiver/variable name. Currently covers class-based notifiers only (functional providers are not yet analyzed).
 
+### Changed
+
+- `ref_mounted_usage`: narrowed to the **UI layer only**. `ref.mounted` is now reported in widget/page files (`/presentation/**` excluding `/providers/`) but **allowed in Notifiers/providers**, where it is the framework-recommended post-await dispose guard (Riverpod 3). This reflects the intended separation: widgets render state via `ref.watch` and delegate mutations to Notifier methods; state-lifecycle checks live in the state layer, not the UI. Message/correction updated accordingly.
+
 ## [2.1.1] - 2026-06-25
 
 ### Fixed
