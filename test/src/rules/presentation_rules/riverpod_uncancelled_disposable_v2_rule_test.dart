@@ -74,6 +74,33 @@ class PomodoroNotifier {
       result.expectNoDiagnostics();
     });
 
+    test('does not flag a timer cancelled via onDispose tear-off', () async {
+      final result =
+          await V2RuleHarness(
+            rule: RiverpodUncancelledDisposableRule(),
+          ).analyze(
+            files: {
+              _path: '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class PomodoroNotifier {
+  Future<void> build() async {
+    final timer = ref.watch(timerServiceProvider);
+    timer.start(onComplete: _onComplete);
+    ref.onDispose(timer.cancel);
+  }
+}
+''',
+            },
+            definingFile: _path,
+          );
+
+      result.expectNoDiagnostics();
+    });
+
     test('flags an AppLifecycleListener that is not disposed', () async {
       final result =
           await V2RuleHarness(
@@ -131,6 +158,32 @@ class PomodoroNotifier {
       result.expectNoDiagnostics();
     });
 
+    test('does not flag a listener disposed via onDispose tear-off', () async {
+      final result =
+          await V2RuleHarness(
+            rule: RiverpodUncancelledDisposableRule(),
+          ).analyze(
+            files: {
+              _path: '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class PomodoroNotifier {
+  Future<void> build() async {
+    final listener = AppLifecycleListener(onResume: _onResume);
+    ref.onDispose(listener.dispose);
+  }
+}
+''',
+            },
+            definingFile: _path,
+          );
+
+      result.expectNoDiagnostics();
+    });
+
     test('flags a stream subscription that is not cancelled', () async {
       final result =
           await V2RuleHarness(
@@ -160,6 +213,33 @@ class PomodoroNotifier {
           codeName: 'riverpod_uncancelled_disposable',
         ),
       ]);
+    });
+
+    test('does not flag Riverpod-owned ref.listen callbacks', () async {
+      final result =
+          await V2RuleHarness(
+            rule: RiverpodUncancelledDisposableRule(),
+          ).analyze(
+            files: {
+              _path: '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class PomodoroNotifier {
+  Future<void> build() async {
+    ref.listen(counterProvider, (previous, next) {
+      state = next;
+    });
+  }
+}
+''',
+            },
+            definingFile: _path,
+          );
+
+      result.expectNoDiagnostics();
     });
 
     test(
@@ -201,6 +281,38 @@ class PomodoroNotifier {
             codeName: 'riverpod_uncancelled_disposable',
           ),
         ]);
+      },
+    );
+
+    test(
+      'does not flag a field timer cancelled via property tear-off',
+      () async {
+        final result =
+            await V2RuleHarness(
+              rule: RiverpodUncancelledDisposableRule(),
+            ).analyze(
+              files: {
+                _path: '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class PomodoroNotifier {
+  late final Timer _timer;
+
+  Future<void> build() async {
+    _timer = ref.watch(timerServiceProvider);
+    _timer.start(onComplete: _onComplete);
+    ref.onDispose(this._timer.cancel);
+  }
+}
+''',
+              },
+              definingFile: _path,
+            );
+
+        result.expectNoDiagnostics();
       },
     );
 

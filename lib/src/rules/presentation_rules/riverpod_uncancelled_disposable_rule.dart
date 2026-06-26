@@ -84,8 +84,9 @@ class _UncancelledDisposableVisitor extends SimpleAstVisitor<void> {
     if (!_shouldCheckFile(_filePath)) return;
     if (!_isRiverpodProviderClass(node)) return;
 
-    // The lifecycle resources are created in build(); scan the whole class for
-    // onDispose-released names so a helper method's cleanup still counts.
+    // The lifecycle resources are created in build(); scan the class for
+    // resources and direct ref.onDispose cleanup arguments. Helper method
+    // bodies registered in onDispose are not traversed today.
     final released = <String>{};
     final resources = <_Resource>[];
     final scanner = _BodyScanner(released, resources);
@@ -151,8 +152,10 @@ class _BodyScanner extends RecursiveAstVisitor<void> {
       node.argumentList.accept(_ReleaseCollector(_released));
     }
 
-    // recv.start(onComplete: ...) / recv.listen(...) — resource started.
-    if (_startMethods.contains(node.methodName.name)) {
+    // recv.start(onComplete: ...) / stream.listen(...) — resource started.
+    // Riverpod owns ref.listen callbacks, so they are not user disposables.
+    if (_startMethods.contains(node.methodName.name) &&
+        !_isRiverpodOwnedListen(node)) {
       final name = _receiverName(node.target);
       if (name != null && _hasCallbackArgument(node)) {
         final kind = node.methodName.name == 'listen'
@@ -187,7 +190,9 @@ class _BodyScanner extends RecursiveAstVisitor<void> {
     if (rhs is MethodInvocation) {
       // `X.listen(...)` → the assigned value is a StreamSubscription.
       if (rhs.methodName.name == 'listen') {
-        _resources.add(_Resource(name, reportNode, 'subscription'));
+        if (!_isRiverpodOwnedListen(rhs)) {
+          _resources.add(_Resource(name, reportNode, 'subscription'));
+        }
         return;
       }
       // On parsed (unresolved) AST a constructor call `Timer(...)` /
@@ -227,6 +232,9 @@ class _BodyScanner extends RecursiveAstVisitor<void> {
         target.propertyName.name == 'ref';
   }
 
+  bool _isRiverpodOwnedListen(MethodInvocation node) =>
+      node.methodName.name == 'listen' && _isRefTarget(node.target);
+
   String? _receiverName(Expression? target) => _nameOf(target);
 
   String? _assignedName(Expression lhs) => _nameOf(lhs);
@@ -256,6 +264,24 @@ class _ReleaseCollector extends RecursiveAstVisitor<void> {
       if (name != null) _released.add(name);
     }
     super.visitMethodInvocation(node);
+  }
+
+  @override
+  void visitPrefixedIdentifier(PrefixedIdentifier node) {
+    if (_releaseMethods.contains(node.identifier.name)) {
+      final name = _nameOf(node.prefix);
+      if (name != null) _released.add(name);
+    }
+    super.visitPrefixedIdentifier(node);
+  }
+
+  @override
+  void visitPropertyAccess(PropertyAccess node) {
+    if (_releaseMethods.contains(node.propertyName.name)) {
+      final name = _nameOf(node.target);
+      if (name != null) _released.add(name);
+    }
+    super.visitPropertyAccess(node);
   }
 
   String? _nameOf(Expression? expr) {
