@@ -11,9 +11,9 @@ import '../../clean_architecture_linter_base.dart';
 class RefMountedUsageRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'ref_mounted_usage',
-    'Avoid using "ref.mounted" to guard async operations. This masks design problems.',
+    'Avoid "ref.mounted" in widgets/pages. State-lifecycle checks belong in the Notifier, not the UI.',
     correctionMessage:
-        'Instead: (1) Complete async work before navigation, or (2) Call UseCase directly then navigate - new screen\'s provider will load state.',
+        'Render state with ref.watch and delegate mutations to Notifier methods (ref.mounted is the correct post-await guard there). For widget-local async, use context.mounted.',
     severity: DiagnosticSeverity.INFO,
     uniqueName: 'LintCode.ref_mounted_usage',
   );
@@ -21,7 +21,8 @@ class RefMountedUsageRule extends AnalysisRule {
   RefMountedUsageRule()
     : super(
         name: 'ref_mounted_usage',
-        description: 'Disallows ref.mounted lifecycle masking in providers.',
+        description:
+            'Disallows ref.mounted in the UI layer (widgets/pages); it is allowed in Notifiers/providers.',
       );
 
   @override
@@ -85,7 +86,9 @@ class _RefMountedUsageVisitor extends SimpleAstVisitor<void> {
     if (CleanArchitectureUtils.shouldExcludeFile(_filePath)) return false;
 
     final normalized = _filePath.replaceAll('\\', '/').toLowerCase();
-    return normalized.contains('/presentation/') ||
-        normalized.contains('/providers/');
+    // UI 레이어(위젯/페이지)에서만 금지한다. Notifier/provider(상태 레이어)에서는
+    // ref.mounted가 await-후 dispose 가드로 정당하므로 검사 대상에서 제외한다.
+    return normalized.contains('/presentation/') &&
+        !normalized.contains('/providers/');
   }
 }
