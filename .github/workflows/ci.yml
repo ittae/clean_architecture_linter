@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    runs-on: [self-hosted, clean-architecture-linter]
+    runs-on: [self-hosted, clean-architecture-linter-v4]
 
     steps:
     - name: Checkout repository
@@ -55,7 +55,7 @@ jobs:
         echo "OK: clean, or only the expected asp lib/main.dart naming warning."
 
   coverage:
-    runs-on: [self-hosted, clean-architecture-linter]
+    runs-on: [self-hosted, clean-architecture-linter-v4]
 
     steps:
     - name: Checkout repository
