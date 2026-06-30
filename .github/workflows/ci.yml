@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, ittae]
 
     steps:
     - name: Checkout repository
@@ -55,7 +55,7 @@ jobs:
         echo "OK: clean, or only the expected asp lib/main.dart naming warning."
 
   coverage:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, ittae]
 
     steps:
     - name: Checkout repository
