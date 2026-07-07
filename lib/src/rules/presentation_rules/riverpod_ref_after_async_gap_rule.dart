@@ -64,11 +64,20 @@ class _RiverpodRefAfterAsyncGapVisitor extends SimpleAstVisitor<void> {
       if (member is! MethodDeclaration) continue;
       if (_isPrivate(member.name.lexeme)) continue;
 
+      final reportedRefCallOffsets = <int>{};
       if (member.body.isAsynchronous) {
-        _AsyncRefAfterGapScanner(rule).scan(member.body);
+        _AsyncRefAfterGapScanner(
+          rule,
+          reportedRefCallOffsets: reportedRefCallOffsets,
+        ).scan(member.body);
       }
 
-      member.body.accept(_AsyncCallbackScanner(rule));
+      member.body.accept(
+        _AsyncCallbackScanner(
+          rule,
+          reportedRefCallOffsets: reportedRefCallOffsets,
+        ),
+      );
     }
   }
 
@@ -98,10 +107,11 @@ class _RiverpodRefAfterAsyncGapVisitor extends SimpleAstVisitor<void> {
 }
 
 class _AsyncCallbackScanner extends RecursiveAstVisitor<void> {
-  _AsyncCallbackScanner(this.rule);
+  _AsyncCallbackScanner(this.rule, {Set<int>? reportedRefCallOffsets})
+    : _reportedRefCallOffsets = reportedRefCallOffsets ?? {};
 
   final AnalysisRule rule;
-  final Set<int> _reportedRefCallOffsets = {};
+  final Set<int> _reportedRefCallOffsets;
 
   @override
   void visitFunctionExpression(FunctionExpression node) {
