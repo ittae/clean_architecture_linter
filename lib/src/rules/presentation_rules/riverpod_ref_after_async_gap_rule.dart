@@ -9,6 +9,7 @@ import '../../clean_architecture_linter_base.dart';
 import '../../compat/analyzer_ast_compat.dart';
 
 const _trackedRefMethods = {'read', 'watch', 'listen', 'invalidate', 'refresh'};
+const _futureContinuationMethods = {'then', 'catchError', 'whenComplete'};
 
 /// Reports Riverpod `ref` usage after an async gap in provider classes.
 class RiverpodRefAfterAsyncGapRule extends AnalysisRule {
@@ -100,14 +101,46 @@ class _AsyncCallbackScanner extends RecursiveAstVisitor<void> {
   _AsyncCallbackScanner(this.rule);
 
   final AnalysisRule rule;
+  final Set<int> _reportedRefCallOffsets = {};
 
   @override
   void visitFunctionExpression(FunctionExpression node) {
     if (node.body.isAsynchronous) {
-      _AsyncRefAfterGapScanner(rule).scan(node.body);
+      _AsyncRefAfterGapScanner(
+        rule,
+        reportedRefCallOffsets: _reportedRefCallOffsets,
+      ).scan(node.body);
     }
 
     super.visitFunctionExpression(node);
+  }
+
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    if (_futureContinuationMethods.contains(node.methodName.name)) {
+      for (final argument in node.argumentList.arguments) {
+        final callback = _asFunctionExpression(argument);
+        if (callback == null) continue;
+
+        _AsyncRefAfterGapScanner(
+          rule,
+          hasInheritedAsyncGap: true,
+          reportedRefCallOffsets: _reportedRefCallOffsets,
+        ).scan(callback.body);
+      }
+    }
+
+    super.visitMethodInvocation(node);
+  }
+
+  FunctionExpression? _asFunctionExpression(Expression argument) {
+    if (argument is FunctionExpression) return argument;
+    if (argument is NamedExpression) {
+      final expression = argument.expression;
+      if (expression is FunctionExpression) return expression;
+    }
+
+    return null;
   }
 }
 
