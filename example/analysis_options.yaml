@@ -1,0 +1,8 @@
+plugins:
+  clean_architecture_linter:
+    path: ..
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"

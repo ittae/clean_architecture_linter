@@ -27,6 +27,7 @@ analyzer:
     - "**/*.g.dart"
     - "**/*.mocks.dart"
     - poc_v2/**
+    - example/**
   plugins:
     - custom_lint
 
