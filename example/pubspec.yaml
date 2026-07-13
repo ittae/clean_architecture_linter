@@ -1,0 +1,6 @@
+name: clean_architecture_linter_example
+description: Runnable example for clean_architecture_linter — good and bad Clean Architecture patterns.
+publish_to: none
+
+environment:
+  sdk: ^3.10.0

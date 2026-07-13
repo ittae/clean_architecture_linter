@@ -113,6 +113,25 @@ dart analyze        # Flutter projects: flutter analyze
 
 That's it! The 34 rules are reported directly in your `dart analyze` / `flutter analyze` output.
 
+### 3. See it in action
+
+[`example/`](example/) is a runnable Dart project with a `good_examples/` (0 warnings) and a `bad_examples/` folder (2 intentional violations). Clone this repo, then:
+
+```bash
+cd example
+dart pub get
+dart analyze
+```
+
+Real output:
+
+```
+warning - lib/bad_examples/features/todo/data/models/todo_remote_model.dart:12:1 - Model name "TodoRemoteModel" should not include DataSource implementation "remote". This violates implementation independence. Rename to "TodoModel". Models should be independent of DataSource implementation. - model_naming_convention
+warning - lib/bad_examples/features/todo/data/repositories/todo_repository_impl.dart:25:3 - Repository should NOT use Result pattern. Use pass-through pattern instead. Return Future<Entity> directly. Let errors pass through to AsyncValue.guard(). - repository_pass_through
+```
+
+**In VS Code / Android Studio / IntelliJ**, the same two warnings appear as inline squiggles in the editor and as entries in the **Problems** panel — no extra setup beyond the Dart/Flutter extension. Hovering a squiggle shows the problem message; the correction message underneath tells you the fix (there is no auto-fix quick action yet, since these rules don't register an analyzer `CorrectionProducer`). Each file under `example/lib/bad_examples/` links to its fixed counterpart in `example/lib/good_examples/` in a header comment.
+
 ### Recommended team profile
 - Local: `docs/config/lint_profile_balanced.yaml`
 - CI: `docs/config/lint_profile_strict.yaml`

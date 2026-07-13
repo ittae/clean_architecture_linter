@@ -111,6 +111,25 @@ dart analyze        # Flutter 프로젝트는 flutter analyze
 
 완료되었습니다! 34개 규칙이 `dart analyze` / `flutter analyze` 결과에 직접 포함됩니다.
 
+### 3. 실제 동작 확인
+
+[`example/`](example/)는 바로 실행 가능한 Dart 프로젝트로, `good_examples/`(경고 0개)와 `bad_examples/`(의도적 위반 2개)로 구성됩니다. 이 저장소를 clone한 뒤:
+
+```bash
+cd example
+dart pub get
+dart analyze
+```
+
+실제 출력:
+
+```
+warning - lib/bad_examples/features/todo/data/models/todo_remote_model.dart:12:1 - Model name "TodoRemoteModel" should not include DataSource implementation "remote". This violates implementation independence. Rename to "TodoModel". Models should be independent of DataSource implementation. - model_naming_convention
+warning - lib/bad_examples/features/todo/data/repositories/todo_repository_impl.dart:25:3 - Repository should NOT use Result pattern. Use pass-through pattern instead. Return Future<Entity> directly. Let errors pass through to AsyncValue.guard(). - repository_pass_through
+```
+
+**VS Code / Android Studio / IntelliJ**에서도 동일한 경고 2개가 에디터의 인라인 밑줄과 **Problems** 패널 항목으로 표시됩니다 — Dart/Flutter 확장 외에 별도 설정이 필요 없습니다. 밑줄에 마우스를 올리면 problem 메시지가, 그 아래 correction 메시지가 수정 방법을 알려줍니다(이 규칙들은 analyzer `CorrectionProducer`를 등록하지 않으므로 자동 수정 quick action은 아직 없습니다). `example/lib/bad_examples/` 아래 각 파일은 헤더 주석에서 `example/lib/good_examples/`의 수정된 버전을 가리킵니다.
+
 ## 🧩 호환성 — analyzer 9-13 / Riverpod 3+
 
 v2.0은 공식 `analysis_server_plugin`(`>=0.3.4 <0.4.0`) 위에서 동작하며, analyzer `>=9.0.0 <14.0.0`을 지원합니다. 이 범위는 **Dart 3.10+** 에 번들된 analyzer를 포함하므로, 플러그인이 프로젝트의 analysis server 안에서 `.dartServer` 또는 `pubspec_overrides.yaml` 워크어라운드 없이 그대로 로드됩니다.
