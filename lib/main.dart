@@ -45,45 +45,45 @@ class CleanArchitectureLinterPlugin extends Plugin {
   @override
   void register(PluginRegistry registry) {
     // Cross-layer rules
-    registry.registerWarningRule(LayerDependencyRule());
-    registry.registerWarningRule(CircularDependencyRule());
-    registry.registerWarningRule(BoundaryCrossingRule());
-    registry.registerWarningRule(AllowedInstanceVariablesRule());
+    registry.registerLintRule(LayerDependencyRule());
+    registry.registerLintRule(CircularDependencyRule());
+    registry.registerLintRule(BoundaryCrossingRule());
+    registry.registerLintRule(AllowedInstanceVariablesRule());
 
     // Data layer rules
-    registry.registerWarningRule(DataSourceAbstractionRule());
-    registry.registerWarningRule(DataSourceExceptionTypesRule());
-    registry.registerWarningRule(DataSourceNoResultReturnRule());
-    registry.registerWarningRule(ModelConversionMethodsRule());
-    registry.registerWarningRule(ModelEntityDirectAccessRule());
-    registry.registerWarningRule(ModelFieldDuplicationRule());
-    registry.registerWarningRule(ModelNamingConventionRule());
-    registry.registerWarningRule(ModelStructureRule());
-    registry.registerWarningRule(RepositoryImplementationRule());
-    registry.registerWarningRule(RepositoryNoThrowRule());
-    registry.registerWarningRule(RepositoryPassThroughRule());
+    registry.registerLintRule(DataSourceAbstractionRule());
+    registry.registerLintRule(DataSourceExceptionTypesRule());
+    registry.registerLintRule(DataSourceNoResultReturnRule());
+    registry.registerLintRule(ModelConversionMethodsRule());
+    registry.registerLintRule(ModelEntityDirectAccessRule());
+    registry.registerLintRule(ModelFieldDuplicationRule());
+    registry.registerLintRule(ModelNamingConventionRule());
+    registry.registerLintRule(ModelStructureRule());
+    registry.registerLintRule(RepositoryImplementationRule());
+    registry.registerLintRule(RepositoryNoThrowRule());
+    registry.registerLintRule(RepositoryPassThroughRule());
 
     // Domain layer rules
-    registry.registerWarningRule(DomainPurityRule());
-    registry.registerWarningRule(DependencyInversionRule());
-    registry.registerWarningRule(RepositoryInterfaceRule());
-    registry.registerWarningRule(UseCaseNoResultReturnRule());
-    registry.registerWarningRule(ExceptionNamingConventionRule());
+    registry.registerLintRule(DomainPurityRule());
+    registry.registerLintRule(DependencyInversionRule());
+    registry.registerLintRule(RepositoryInterfaceRule());
+    registry.registerLintRule(UseCaseNoResultReturnRule());
+    registry.registerLintRule(ExceptionNamingConventionRule());
 
     // Presentation layer rules
-    registry.registerWarningRule(ExtensionLocationRule());
-    registry.registerWarningRule(FreezedUsageRule());
-    registry.registerWarningRule(NoPresentationModelsRule());
-    registry.registerWarningRule(PresentationNoDataExceptionsRule());
-    registry.registerWarningRule(PresentationNoThrowRule());
-    registry.registerWarningRule(PresentationUseAsyncValueRule());
-    registry.registerWarningRule(RefMountedUsageRule());
-    registry.registerWarningRule(RiverpodGeneratorRule());
-    registry.registerWarningRule(RiverpodKeepAliveRule());
-    registry.registerWarningRule(RiverpodProviderNamingRule());
-    registry.registerWarningRule(RiverpodRefAfterAsyncGapRule());
-    registry.registerWarningRule(RiverpodRefUsageRule());
-    registry.registerWarningRule(WidgetNoUseCaseCallRule());
-    registry.registerWarningRule(WidgetRefReadThenWhenRule());
+    registry.registerLintRule(ExtensionLocationRule());
+    registry.registerLintRule(FreezedUsageRule());
+    registry.registerLintRule(NoPresentationModelsRule());
+    registry.registerLintRule(PresentationNoDataExceptionsRule());
+    registry.registerLintRule(PresentationNoThrowRule());
+    registry.registerLintRule(PresentationUseAsyncValueRule());
+    registry.registerLintRule(RefMountedUsageRule());
+    registry.registerLintRule(RiverpodGeneratorRule());
+    registry.registerLintRule(RiverpodKeepAliveRule());
+    registry.registerLintRule(RiverpodProviderNamingRule());
+    registry.registerLintRule(RiverpodRefAfterAsyncGapRule());
+    registry.registerLintRule(RiverpodRefUsageRule());
+    registry.registerLintRule(WidgetNoUseCaseCallRule());
+    registry.registerLintRule(WidgetRefReadThenWhenRule());
   }
 }
