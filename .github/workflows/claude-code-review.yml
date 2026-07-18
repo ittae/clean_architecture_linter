@@ -1,5 +1,12 @@
 name: Claude Code Review
 
+# ittae/.github의 claude-review-light.yml **인라인 복사본** (2026-07-19).
+# 이 repo는 public이라 private reusable을 호출할 수 없어 (GitHub 제약,
+# referenced_workflows 해석 실패로 startup_failure) 스탠드얼론으로 둔다.
+# ⚠️ 정본은 ittae/.github/claude-review-light.yml — 정본 변경 시 이 파일도 동기화할 것.
+# 원본 대비 변경점: workflow_call → pull_request/workflow_dispatch, inputs → env 리터럴,
+# 잡에 same-repo 가드(fork PR은 self-hosted 잡 실행 금지) + dependabot 가드 추가.
+
 on:
   pull_request:
     types: [opened, synchronize, ready_for_review, reopened]
@@ -11,20 +18,530 @@ on:
       - 'analysis_options.yaml'
       - 'pubspec.yaml'
       - 'pubspec.lock'
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to review'
+        required: true
+        type: string
 
+env:
+  PR_NUM: ${{ github.event.pull_request.number || inputs.pr_number }}
+  REPO: ${{ github.repository }}
+  MODEL: 'claude-opus-4-7'
+  PR_SIZE_LIMIT: 800
+  EXCLUDE_RENAMES: true
+  ITERATE_LIMIT: 5
+  HIGH_RISK_PATHS: '^\.github/workflows/|^\.env|/secret|/secrets/|password|api[_-]?key|/auth/'
+  STACK: 'Dart package (custom_lint rules / analyzer plugin)'
+
+
+# 동시성: 같은 PR에 새 커밋이 오면 이전 SHA의 잡을 자동 취소/대체한다 (러너 1대 큐 낭비 방지).
+# reusable(called) 워크플로는 workflow-level concurrency가 무시되므로 각 job 레벨에 건다.
 jobs:
-  call:
+  # ─────────────────────────────────────────
+  # 단일 리뷰 잡 (2026-07-19): gate-skip → gate-classify → 엔진 리뷰(Grok primary /
+  # Claude 로컬 fallback) → 판정을 한 잡의 스텝 체인으로 통합 — full 변형(#44)과 동일
+  # 구조. 잡 4→1. 추가 수정: 프롬프트 env 정본화, author 필터→마커 기반,
+  # 크로스-스텝 셸 변수 버그(ITER)와 max_prior 출처 버그 수정.
+  # ─────────────────────────────────────────
+  review:
+    # public repo + self-hosted 러너 조합의 안전핀: fork PR에선 잡 자체가 돌지 않는다.
+    if: >-
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       github.actor != 'dependabot[bot]')
+    concurrency:
+      group: crl-review-${{ github.workflow }}-${{ github.repository }}-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
+    runs-on: [self-hosted, ittae-light]
     permissions:
       contents: read
       pull-requests: write
       issues: write
       id-token: write
-    uses: ittae/.github/.github/workflows/claude-review-light.yml@main
-    with:
-      stack: 'Dart package (custom_lint rules / analyzer plugin)'
-      # v2.0 마이그레이션 기간 한정 상향 — rule rename + test 하네스가 함께 들어가는
-      # mechanical migration PR 이 500 줄 임계를 자주 넘어 false alarm 발생.
-      # 정교한 size 측정 (rename 제외 / test 가중치) 은 ittae/.github 의
-      # reusable workflow 개선으로 추적 (별도 epic).
-      pr_size_limit: 800
-    secrets: inherit
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - id: check
+        run: |
+          # Bot author skip
+          if [ "${{ github.actor }}" = "dependabot[bot]" ] || \
+             [ "${{ github.event.pull_request.user.type }}" = "Bot" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "reason=bot-author" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # workflow_dispatch는 항상 진행
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "skip=false" >> $GITHUB_OUTPUT; exit 0
+          fi
+
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+
+          # [skip-ci] 커밋 메시지
+          if git log "$BASE_SHA..$HEAD_SHA" --pretty=%B | grep -qiE '\[skip.?ci\]|\[ci.?skip\]'; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "reason=skip-ci-tag" >> $GITHUB_OUTPUT; exit 0
+          fi
+
+          # Merge commit (Update Branch 버튼 등)
+          HEAD_MSG=$(git log -1 --format=%s "$HEAD_SHA")
+          if echo "$HEAD_MSG" | grep -qE "^Merge branch '"; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "reason=merge-commit" >> $GITHUB_OUTPUT; exit 0
+          fi
+
+          # Rebase 감지 (3-dot diff 해시 비교 — 코드 동일하면 skip)
+          if [ "${{ github.event.action }}" = "synchronize" ]; then
+            OLD="${{ github.event.before }}"
+            NEW="${{ github.event.after }}"
+            git fetch origin "$OLD" --depth=1 2>/dev/null || true
+            if git cat-file -e "$OLD" 2>/dev/null; then
+              OLD_HASH=$(git diff "$BASE_SHA...$OLD" 2>/dev/null | grep -v "^diff\|^index\|^---\|^+++" | md5sum | awk '{print $1}')
+              NEW_HASH=$(git diff "$BASE_SHA...$NEW" 2>/dev/null | grep -v "^diff\|^index\|^---\|^+++" | md5sum | awk '{print $1}')
+              if [ "$OLD_HASH" = "$NEW_HASH" ]; then
+                echo "skip=true" >> $GITHUB_OUTPUT
+                echo "reason=rebase-only" >> $GITHUB_OUTPUT; exit 0
+              fi
+            fi
+          fi
+
+          echo "skip=false" >> $GITHUB_OUTPUT
+          echo "reason=" >> $GITHUB_OUTPUT
+
+      - id: classify
+        if: steps.check.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # 1) Raw 크기 — GitHub PR API 기준 additions + deletions
+          ADDITIONS=$(gh pr view "$PR_NUM" -R "$REPO" --json additions --jq .additions)
+          DELETIONS=$(gh pr view "$PR_NUM" -R "$REPO" --json deletions --jq .deletions)
+          RAW_SIZE=$((ADDITIONS + DELETIONS))
+
+          # 2) Effective 크기 — exclude_renames=true이면 merge-base 기준 git diff -M70% --numstat 기반
+          #    (유사도 ≥70% rename pair는 git이 자동 축소: pure rename → 0, rename+edit → edit만)
+          EFFECTIVE_SIZE="$RAW_SIZE"
+          RENAME_COUNT=0
+          RENAME_INFO="rename 검출 비활성 (exclude_renames=false)"
+
+          if [ "$EXCLUDE_RENAMES" = "true" ]; then
+            if [ -n "$BASE_SHA" ] && [ -n "$HEAD_SHA" ]; then
+              # workflow_dispatch 등 PR event 외 호출 대비 fetch 안전망
+              git fetch origin "$BASE_SHA" --depth=50 2>/dev/null || true
+              git fetch origin "$HEAD_SHA" --depth=50 2>/dev/null || true
+
+              if git cat-file -e "$BASE_SHA" 2>/dev/null && git cat-file -e "$HEAD_SHA" 2>/dev/null; then
+                MERGE_BASE=$(git merge-base "$BASE_SHA" "$HEAD_SHA" 2>/dev/null || true)
+                if [ -n "$MERGE_BASE" ] && git cat-file -e "$MERGE_BASE" 2>/dev/null; then
+                  # GitHub PR diff와 맞추기 위해 base/head 양방향 diff가 아니라 merge-base..head 기준으로 계산
+                  NUMSTAT=$(git diff -M70% --numstat "$MERGE_BASE" "$HEAD_SHA" 2>/dev/null || true)
+                  if [ -n "$NUMSTAT" ]; then
+                    EFFECTIVE_SIZE=$(echo "$NUMSTAT" | awk '$1 ~ /^[0-9]+$/ && $2 ~ /^[0-9]+$/ { sum += $1 + $2 } END { print (sum == "" ? 0 : sum) }')
+                    RENAME_COUNT=$(echo "$NUMSTAT" | awk '$3 ~ /=>/ || $0 ~ / => / { count++ } END { print (count == "" ? 0 : count) }')
+                    [[ ! "$EFFECTIVE_SIZE" =~ ^[0-9]+$ ]] && EFFECTIVE_SIZE="$RAW_SIZE"
+                    [[ ! "$RENAME_COUNT" =~ ^[0-9]+$ ]] && RENAME_COUNT=0
+                    if [ "$RENAME_COUNT" -gt 0 ]; then
+                      RENAME_INFO="merge-base 기준 rename pair ${RENAME_COUNT}개 (similarity ≥70%) → effective 크기에서 축소"
+                    else
+                      RENAME_INFO="merge-base 기준 rename 미검출 — effective = raw"
+                    fi
+                  else
+                    RENAME_INFO="merge-base 기준 git diff 결과 없음 — raw 크기 사용"
+                  fi
+                else
+                  RENAME_INFO="merge-base 조회 실패 — raw 크기 사용"
+                fi
+              else
+                RENAME_INFO="base/head SHA 조회 실패 — raw 크기 사용"
+              fi
+            else
+              RENAME_INFO="PR base/head SHA 없음 — raw 크기 사용"
+            fi
+          fi
+
+          echo "📏 PR 크기 — raw=${RAW_SIZE}, effective=${EFFECTIVE_SIZE}, ${RENAME_INFO}"
+          echo "pr_size=$EFFECTIVE_SIZE" >> $GITHUB_OUTPUT
+          echo "pr_raw_size=$RAW_SIZE" >> $GITHUB_OUTPUT
+          echo "rename_count=$RENAME_COUNT" >> $GITHUB_OUTPUT
+
+          if [ "$EFFECTIVE_SIZE" -gt "$PR_SIZE_LIMIT" ]; then
+            gh pr edit "$PR_NUM" -R "$REPO" --add-label "too-large" --add-label "needs-human-review" 2>/dev/null || true
+            BODY=$(printf '🚫 **PR 크기 초과** — effective %s줄 > 제한 %s줄\n\n- Raw additions+deletions: **%s줄**\n- Effective size (merge-base + rename 처리 후): **%s줄**\n- Rename 처리: %s\n\n%s줄 넘는 PR은 AI/사람 모두 정확도가 급락합니다. 단일 concern 단위로 분할 후 다시 올려주세요. 자동 agent 멘션은 사용하지 않습니다. 사람이 Multica 이슈 코멘트에서 적절한 worker를 명시적으로 dispatch해야 합니다.\n\n_rename 검출이 부족하다고 판단되면 caller에서 `exclude_renames: false`로 끄거나 `pr_size_limit`을 조정할 수 있습니다._' "$EFFECTIVE_SIZE" "$PR_SIZE_LIMIT" "$RAW_SIZE" "$EFFECTIVE_SIZE" "$RENAME_INFO" "$PR_SIZE_LIMIT")
+            gh pr comment "$PR_NUM" -R "$REPO" --body "$BODY" || true
+            echo "verdict=too-large" >> $GITHUB_OUTPUT; exit 0
+          fi
+
+          # 위험도 분류 — high-risk이면 라벨/코멘트만 부여하고 진행 (AI 리뷰는 받음, 사람 머지 강제)
+          CHANGED=$(gh pr diff "$PR_NUM" -R "$REPO" --name-only)
+          MATCHED=$(echo "$CHANGED" | grep -E "$HIGH_RISK_PATHS" || true)
+          if [ -n "$MATCHED" ]; then
+            gh pr edit "$PR_NUM" -R "$REPO" --add-label "high-risk" --add-label "needs-human-review" 2>/dev/null || true
+            MATCHED_LIST=$(echo "$MATCHED" | sed 's/^/- /')
+            BODY=$(printf '⚠️ **민감 영역 변경 감지** — AI 리뷰는 진행되지만 자동 머지 라벨(ai-approved) 부여 안 됨. 사람 머지 필수.\n\n매치된 파일:\n```\n%s\n```\n\nHigh-risk 영역 (auth, secure_storage, iap, router, storage_keys, pubspec, native configs, .github/workflows, .env) PR은 점수 통과 시에도 needs-human-review 라벨 유지.' "$MATCHED_LIST")
+            gh pr comment "$PR_NUM" -R "$REPO" --body "$BODY" || true
+          fi
+
+          echo "verdict=proceed" >> $GITHUB_OUTPUT
+
+      # 리뷰 엔진 선택: Grok(러너 로컬 CLI + Grok Build 구독) 우선, Claude(로컬 CLI,
+      # 시크릿 있으면 세션 대신 토큰) fallback — full 변형(claude-code-review.yml)과 동일 정책.
+      - id: auth
+        if: steps.check.outputs.skip != 'true' && steps.classify.outputs.verdict == 'proceed'
+        name: Select review engine (grok primary, claude fallback)
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -x "$HOME/.grok/bin/grok" ] && [ -s "$HOME/.grok/auth.json" ]; then
+            echo "engine=grok" >> "$GITHUB_OUTPUT"; echo "status=ready" >> "$GITHUB_OUTPUT"
+            echo "✓ Grok primary review"
+          elif [ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ] || [ -n "${ANTHROPIC_API_KEY:-}" ] || [ -x "$HOME/.local/bin/claude" ]; then
+            echo "engine=claude" >> "$GITHUB_OUTPUT"; echo "status=ready" >> "$GITHUB_OUTPUT"
+            echo "✓ Claude fallback review"
+          else
+            echo "engine=none" >> "$GITHUB_OUTPUT"; echo "status=skipped_no_auth" >> "$GITHUB_OUTPUT"
+            echo "::notice::AI review skipped — 리뷰 엔진 인증 없음. Objective CI remains the merge gate."
+          fi
+
+      - id: guard
+        if: steps.auth.outputs.status == 'ready'
+        name: Re-review guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ITER=$(gh pr view "$PR_NUM" -R "$REPO" --json comments \
+            --jq '[.comments[] | select(.body | contains("총점:"))] | length')
+          [[ ! "$ITER" =~ ^[0-9]+$ ]] && ITER=0
+          echo "iteration=$ITER" >> $GITHUB_OUTPUT
+
+      - id: context
+        if: steps.auth.outputs.status == 'ready'
+        name: Pre-fetch PR context (개선 #4)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # (버그 수정 2026-07-19) ITER는 별도 스텝 출력 — 셸 변수 공유 불가하므로 명시 주입.
+          ITER='${{ steps.guard.outputs.iteration }}'
+          # PR metadata + diff + 이전 Claude 리뷰를 미리 fetch.
+          # Claude action이 매번 gh pr view/diff 호출하는 토큰 cost 절감.
+          gh pr view "$PR_NUM" -R "$REPO" --json body,title,files,additions,deletions,headRefOid \
+            > /tmp/pr-context.json
+          HEAD_SHA=$(jq -r '.headRefOid // empty' /tmp/pr-context.json)
+          echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+          gh pr diff "$PR_NUM" -R "$REPO" > /tmp/pr-diff.patch 2>/dev/null || echo "" > /tmp/pr-diff.patch
+          gh pr view "$PR_NUM" -R "$REPO" --json comments \
+            --jq '[.comments[] | select(.body | contains("총점:") or contains("ittae-ai-review"))] | last | .body // ""' \
+            > /tmp/prior-review.md
+          echo "✓ PR context fetched: /tmp/{pr-context.json,pr-diff.patch,prior-review.md}"
+
+          MAX_PRIOR=$(gh pr view "$PR_NUM" -R "$REPO" --json comments \
+            --jq '[.comments[] | select(.body | contains("총점:")) | .body] | join("\n")' \
+            | grep -oP '총점:\s*\K[0-9]+(\.[0-9]+)?' | sort -rn | head -1)
+          [[ ! "$MAX_PRIOR" =~ ^[0-9]+(\.[0-9]+)?$ ]] && MAX_PRIOR=0
+          echo "max_prior_score=$MAX_PRIOR" >> $GITHUB_OUTPUT
+
+          # 재시도 한도
+          if [ "$ITER" -ge "$ITERATE_LIMIT" ]; then
+            gh pr edit "$PR_NUM" -R "$REPO" --add-label "needs-human-review" --remove-label "ai-iterating" 2>/dev/null || true
+            BODY=$(printf '🛑 **재리뷰 %s회 한도 도달** — AI self-iterate 종료. 사람 개입 필요.' "$ITERATE_LIMIT")
+            gh pr comment "$PR_NUM" -R "$REPO" --body "$BODY" || true
+            exit 1
+          fi
+      - name: Compose review prompt (엔진 공용 단일 정본)
+        if: steps.auth.outputs.status == 'ready'
+        env:
+          REVIEW_PROMPT: |
+            REPO: ${{ env.REPO }}
+            PR NUMBER: ${{ env.PR_NUM }}
+            REVIEW HEAD SHA: ${{ steps.context.outputs.head_sha }}
+            REVIEW RUN ID: ${{ github.run_id }}
+            ITERATION: ${{ steps.guard.outputs.iteration }}
+            MAX PRIOR SCORE: ${{ steps.guard.outputs.max_prior_score }}
+            STACK: ${{ env.STACK }}
+
+            ## 📂 PR 컨텍스트 (pre-fetched, 별도 gh 호출 불필요)
+
+            아래 파일에 PR 정보가 이미 fetch되어 있습니다. `cat`으로 읽으세요:
+            - `/tmp/pr-context.json` — title, description, files, additions, deletions
+            - `/tmp/pr-diff.patch` — full diff
+            - `/tmp/prior-review.md` — 이전 Claude 리뷰 (재리뷰 시)
+
+            `gh pr view` / `gh pr diff` 별도 호출 자제 (토큰 절약).
+
+            ## 🎯 미션
+            이 PR을 **공통 루브릭 + 역할별 렌즈** 방식으로 검토하고, 마지막에 Orchestrator/Verifier로 false positive와 중복을 거른 뒤 결과를 **인라인 suggestion 우선 + 종합 코멘트 1개**로 게시하세요.
+
+            핵심 원칙:
+            - 동일한 severity 기준을 모든 렌즈에 적용합니다.
+            - 렌즈별 초점은 다르게 둡니다.
+            - PR에는 중복 제거된 orchestrated summary를 남깁니다.
+            - 작업 에이전트에게 넘길 항목은 HIGH/MEDIUM 중심의 명확한 contract로 정리합니다.
+            - 논쟁적 finding은 같은 루브릭으로 재판정하고 confidence가 낮으면 severity를 낮춥니다.
+
+            ## 🎨 출력 우선순위 (MANDATORY — 작은 fix는 suggestion 우선)
+
+            **1. 인라인 suggestion** — 1~10줄 fix는 **모두 이 방식**:
+            - `gh api "repos/${{ env.REPO }}/pulls/${{ env.PR_NUM }}/comments" -f commit_id=<REVIEW_HEAD_SHA> -f path=<파일경로> -F line=<라인번호> -f side=RIGHT -f body=<코멘트본문>` 으로 인라인 리뷰 코멘트 생성 (REVIEW_HEAD_SHA는 위 REVIEW HEAD SHA 값)
+            - body에 GitHub 표준 ` ```suggestion ` 블록 포함:
+              ```
+              [HIGH] **Architecture: layer boundary 위반**
+
+              Caller가 lower layer를 직접 호출하면 architecture 위반. abstraction 경유로 변경:
+
+              ` ```suggestion `
+              service.doSomething(input);  // not repository.directCall(input)
+              ` ``` `
+              ```
+            - 작성자가 1-click "Commit suggestion" 가능 → 빠른 적용
+
+            **2. 종합 코멘트 (1개만)** — 점수 + JSON 메타 + 인라인으로 못 표현한 큰 항목:
+            - 신규 파일 생성, 다중 file 리팩터링, 광범위 변경
+            - 이런 항목은 코멘트로 설명 + `@claude <task>` 멘션 위임 권장
+            - 예: "신규 파일 `xxx_test.dart` 작성 필요 — `@claude xxx 테스트 작성해주세요` 로 위임 가능"
+
+            **3. 비율 가이드**: 보통 PR당 인라인 5~15개 + 종합 코멘트 1개. 종합 코멘트만 게시 금지 (작은 fix는 suggestion으로).
+
+            ## 🔁 재리뷰 가드 (ITERATION > 0일 때 MANDATORY)
+
+            **트랙 A — 계약 이행 검증 (점수 반영)**
+            - 이전 리뷰가 지적한 HIGH/MEDIUM/LOW 항목만 점수 계산
+            - 해결됨 → 점수 회복 / 미해결 → 감점 유지
+            - **FORBIDDEN**: 이전에 지적·해결한 카테고리를 다른 메서드에서 발견했다고 다시 감점 (트랙 B로 분리)
+            - **MANDATORY**: 새 점수 ≥ MAX_PRIOR_SCORE (단조성 강제)
+
+            **트랙 B — 신규 발견 (참고용, 점수 미반영)**
+            - 이전 리뷰에 없던 새 카테고리는 이 트랙에만 기재
+            - PASS/FAIL 판정에 영향 없음
+            - 다음 재리뷰에서도 트랙 B 유지 (소급 강제 금지)
+
+            ## 🔍 역할별 렌즈 검토 (Phase 2A — parallel mental passes)
+            각 렌즈는 독립적으로 검사하되, 아래 **공통 루브릭**은 동일하게 적용합니다.
+
+            ### 공통 루브릭 (모든 렌즈 공통)
+            - HIGH: merge-blocking. 보안 취약점, 데이터 손실, core behavior broken, 이 PR이 유발한 build/test 실패, 심각한 architecture boundary 위반.
+            - MEDIUM: merge 전 수정 권장. edge case, 테스트 누락, 유지보수성 저하, 오류 처리 누락, 사용 흐름 문제.
+            - LOW: 선택 개선. 스타일, naming, 작은 readability, future refactor.
+            - diff/context 근거 없는 추측은 LOW 이하 또는 제외.
+            - confidence < 0.7이면 HIGH로 올리지 말고 MEDIUM/LOW로 낮춥니다.
+            - 같은 root cause는 하나의 finding으로 병합합니다.
+
+            ### Lens A — Claude / Architecture & Spec
+            요구사항 충족, 설계 일관성, layer/module boundary, 과잉/부족 구현, 장기 유지보수성을 봅니다.
+
+            ### Lens B — Codex / Correctness, Tests & Security
+            로직 버그, edge case, null-safety/async pitfall, 테스트 누락, 보안 취약점, 오류 처리를 봅니다.
+
+            ### Lens C — Gemini / Product Context & Side Effects
+            사용자 흐름/UX 영향, cross-file side effect, 상태/API 계약 일관성, 문서/설명 불일치, PR 의도와 구현의 괴리를 봅니다.
+
+            ### Lens D — Copilot / Inline Convention & Readability
+            repo convention, naming/readability, duplication, 작은 inline suggestion, 명백한 maintainability 문제를 봅니다.
+
+            ## 🔬 Orchestrator / Verifier 단계 (Phase 2B — sequential)
+            각 렌즈의 finding을 실제 코드와 대조:
+            - finding이 실제로 그 코드에 존재하는가?
+            - 제안된 fix가 기존 의도를 깨지 않는가?
+            - 다른 finding과 같은 root cause인가? (중복이면 병합)
+            - severity가 공통 루브릭에 맞는가? (스타일 취향은 LOW 이하)
+            - false positive를 제거했는가?
+            - 작업 에이전트에게 넘길 HIGH/MEDIUM contract가 명확한가?
+
+            ## 📊 점수 산정 (10점 만점)
+            - HIGH: -2.0 / MEDIUM: -1.0 / LOW: -0.5
+            - 7.5 미달 → FAIL
+            - 객관 게이트(Phase 1)는 이미 통과했으니 점수에 가산점 없음
+
+            ## ✍️ 출력 (단일 코멘트 1개만)
+            아래 템플릿 그대로 사용. 한국어 작성 (기술 용어 영어 OK).
+
+            ```markdown
+            ## 🎯 코드 리뷰 결과 (iteration ${{ steps.guard.outputs.iteration }})
+
+            **총점: X.X / 10.0** {✅ PASS | ❌ FAIL}
+
+            > Stack: (env.STACK 값 또는 자동 감지 결과)
+            > PR 크기: (Phase 1에서 측정한 줄 수)
+            > Coverage: (Phase 1에서 측정한 %)
+
+            ### ✅ 잘한 점
+            (한국어)
+
+            ### 🚨 HIGH (Must Fix)
+            - [ ] (-2.0) **항목 제목** — Perspective: {Security|Architecture|...}
+
+            (문제 설명)
+
+            ```dart
+            // ❌ 문제 코드
+            ```
+
+            **해결 방법**: (구체적)
+
+            ### ⚠️ MEDIUM (Should Fix)
+            - [ ] (-1.0) **항목 제목** — Perspective: ...
+
+            ### 💡 LOW (Nice to Have)
+            - [ ] (-0.5) **항목 제목**
+
+            ### 📋 최종 판정
+            ✅ PASS / ❌ FAIL (X.X / 10.0)
+
+            ---
+            (재리뷰 모드일 때만 트랙 A/B 추가 섹션)
+            ```
+
+            ## 💾 점수 기록 + JSON 메타데이터 (MANDATORY 마지막 단계)
+
+            **두 가지 모두 필수**:
+
+            1. 점수 파일:
+            ```bash
+            echo "X.X" > /tmp/review_score.txt
+            ```
+
+            2. 리뷰 코멘트 본문 **맨 끝**에 hidden HTML comment 2개를 첨부 (개선 #2 + head freshness):
+            ```html
+            <!-- ittae-ai-review-key:${{ env.REPO }}#${{ env.PR_NUM }}:head:${{ steps.context.outputs.head_sha }}:run:${{ github.run_id }} -->
+            <!-- ittae-ai-review-meta
+            {"score": 8.0, "iteration": 0, "head_sha": "${{ steps.context.outputs.head_sha }}", "high": 0, "medium": 2, "low": 1, "categories": ["Architecture","Test"], "verdict": "PASS"}
+            -->
+            ```
+
+            phase3-decide가 `ittae-ai-review-meta` JSON을 우선 파싱합니다 (legacy `ai-review-meta`와 정규식 fallback은 migration용). categories는 finding이 발견된 perspective 이름들. verdict는 "PASS" 또는 "FAIL".
+        run: |
+          printf '%s' "$REVIEW_PROMPT" > /tmp/review-prompt.md
+          echo "review-prompt 생성 완료 (engine=${{ steps.auth.outputs.engine }})"
+
+      - name: Grok review (primary)
+        if: steps.auth.outputs.status == 'ready' && steps.auth.outputs.engine == 'grok'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          "$HOME/.grok/bin/grok" -p "$(cat /tmp/review-prompt.md)" \
+            --output-format plain \
+            --allow "Bash(cat:*)" \
+            --allow "Bash(echo:*)" \
+            --allow "Bash(gh pr comment:*)" \
+            --allow "Bash(gh pr diff:*)" \
+            --allow "Bash(gh pr view:*)" \
+            --allow "Bash(gh api:*)" \
+            --allow "Bash(gh search:*)"
+
+      - name: Claude review (fallback)
+        if: steps.auth.outputs.status == 'ready' && steps.auth.outputs.engine == 'claude'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          "$HOME/.local/bin/claude" -p "$(cat /tmp/review-prompt.md)" \
+            --model "${{ env.MODEL }}" \
+            --allowedTools "Bash(cat:*),Bash(echo:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api:*),Bash(gh search:*)"
+
+      - name: 점수 추출 + 단조성 보정 (JSON meta 우선)
+        if: steps.auth.outputs.status == 'ready'
+        id: score
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sleep 5  # Claude 코멘트 등록 대기
+          LIVE_HEAD=$(gh pr view "$PR_NUM" -R "$REPO" --json headRefOid --jq '.headRefOid // empty')
+          LATEST=$(gh pr view "$PR_NUM" -R "$REPO" --json comments \
+            --jq '[.comments[] | select(.body | contains("총점:") or contains("ittae-ai-review"))] | last | .body // ""')
+
+          # Namespaced JSON 메타 우선 파싱. legacy ai-review-meta는 migration fallback.
+          META_JSON=$(echo "$LATEST" | sed -n '/<!-- ittae-ai-review-meta/,/-->/p' \
+            | sed '1d;$d' | tr -d '\n')
+          if [ -z "$META_JSON" ]; then
+            META_JSON=$(echo "$LATEST" | sed -n '/<!-- ai-review-meta/,/-->/p' \
+              | sed '1d;$d' | tr -d '\n')
+          fi
+          if [ -n "$META_JSON" ]; then
+            SCORE=$(echo "$META_JSON" | jq -r '.score // empty' 2>/dev/null)
+            COMMENT_HEAD=$(echo "$META_JSON" | jq -r '.head_sha // empty' 2>/dev/null)
+            HIGH_COUNT=$(echo "$META_JSON" | jq -r '.high // 0' 2>/dev/null)
+            MEDIUM_COUNT=$(echo "$META_JSON" | jq -r '.medium // 0' 2>/dev/null)
+            CATEGORIES=$(echo "$META_JSON" | jq -r '.categories // [] | join(", ")' 2>/dev/null)
+            echo "✓ JSON 메타 파싱 성공: score=$SCORE head=${COMMENT_HEAD:-legacy-none} high=$HIGH_COUNT medium=$MEDIUM_COUNT cats=[$CATEGORIES]"
+          fi
+
+          # JSON에 head_sha가 없으면 namespaced key marker에서 보조 추출.
+          if [ -z "${COMMENT_HEAD:-}" ]; then
+            COMMENT_HEAD=$(echo "$LATEST" | sed -nE 's/.*<!-- ittae-ai-review-key:[^ ]*:head:([0-9a-f]{40}):run:[0-9]+ -->.*/\1/p' | tail -1)
+          fi
+          if [ -n "${COMMENT_HEAD:-}" ] && [ -n "$LIVE_HEAD" ] && [ "$COMMENT_HEAD" != "$LIVE_HEAD" ]; then
+            echo "❌ 리뷰 head SHA 불일치: comment=$COMMENT_HEAD live=$LIVE_HEAD"
+            gh pr comment "$PR_NUM" -R "$REPO" --body "⚠️ AI 리뷰가 이전 커밋 기준입니다. comment head=\`$COMMENT_HEAD\`, current head=\`$LIVE_HEAD\`. 최신 커밋 기준 재리뷰가 필요합니다." || true
+            gh pr edit "$PR_NUM" -R "$REPO" --add-label "needs-human-review" 2>/dev/null || true
+            exit 1
+          fi
+          # JSON 없거나 파싱 실패 시 정규식 fallback
+          if [ -z "$SCORE" ]; then
+            SCORE=$(echo "$LATEST" | grep -oP '총점:\s*\K[0-9]+(\.[0-9]+)?' | head -1)
+            HIGH_COUNT=0; MEDIUM_COUNT=0; CATEGORIES=""
+            echo "⚠️ JSON 메타 없음 — 정규식 fallback 사용"
+          fi
+          echo "high_count=${HIGH_COUNT:-0}" >> "$GITHUB_OUTPUT"
+          echo "medium_count=${MEDIUM_COUNT:-0}" >> "$GITHUB_OUTPUT"
+          echo "categories=$CATEGORIES" >> "$GITHUB_OUTPUT"
+
+          if [ -z "$SCORE" ]; then
+            echo "❌ 점수 추출 실패"
+            gh pr comment "$PR_NUM" -R "$REPO" --body "⚠️ AI 리뷰 점수 추출 실패. 사람 확인 필요." || true
+            gh pr edit "$PR_NUM" -R "$REPO" --add-label "needs-human-review" 2>/dev/null || true
+            exit 1
+          fi
+
+          # 단조성: 재리뷰에서 점수 떨어지면 보정
+          MAX_PRIOR="${{ steps.context.outputs.max_prior_score }}"
+          if [ "${{ steps.guard.outputs.iteration }}" != "0" ] && \
+             (( $(echo "$SCORE < $MAX_PRIOR" | bc -l) )); then
+            echo "⚠️ 점수 단조성 위반 — $SCORE < $MAX_PRIOR. 보정."
+            SCORE="$MAX_PRIOR"
+          fi
+          echo "score=$SCORE" >> "$GITHUB_OUTPUT"
+
+      - name: 라벨 + self-iterate 신호
+        if: steps.auth.outputs.status == 'ready'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SCORE="${{ steps.score.outputs.score }}"
+          PASS_THRESHOLD=7.5
+
+          # 모든 ai-* 라벨 정리
+          for L in ai-approved ai-iterating needs-rework ai-rejected; do
+            gh pr edit "$PR_NUM" -R "$REPO" --remove-label "$L" 2>/dev/null || true
+          done
+
+          ITER='${{ steps.guard.outputs.iteration }}'
+          # high-risk 라벨이 있는지 확인 (gate-classify에서 부여됨)
+          IS_HIGH_RISK=$(gh pr view "$PR_NUM" -R "$REPO" --json labels --jq '[.labels[] | select(.name == "high-risk")] | length')
+          [[ ! "$IS_HIGH_RISK" =~ ^[0-9]+$ ]] && IS_HIGH_RISK=0
+
+          if (( $(echo "$SCORE >= $PASS_THRESHOLD" | bc -l) )); then
+            if [ "$IS_HIGH_RISK" -gt 0 ]; then
+              # high-risk: ai-approved 라벨 부여 X, needs-human-review 유지
+              gh pr edit "$PR_NUM" -R "$REPO" --add-label "needs-human-review" 2>/dev/null || true
+              BODY=$(printf '✅ **AI 리뷰 통과** (점수 %s/10.0, iteration %s) — but **high-risk 영역**\n\n자동 머지 라벨(ai-approved) 부여 안 됨. **사람 검토 후 머지 필수**.' "$SCORE" "$ITER")
+              gh pr comment "$PR_NUM" -R "$REPO" --body "$BODY" || true
+            else
+              gh pr edit "$PR_NUM" -R "$REPO" --add-label "ai-approved" 2>/dev/null || true
+              BODY=$(printf '✅ **AI 리뷰 통과** (점수 %s/10.0, iteration %s)\n\n사람 1-click 머지 대기 중. `gh pr merge %s --squash` 또는 web UI에서 처리.' "$SCORE" "$ITER" "$PR_NUM")
+              gh pr comment "$PR_NUM" -R "$REPO" --body "$BODY" || true
+            fi
+          else
+            gh pr edit "$PR_NUM" -R "$REPO" --add-label "needs-rework" --add-label "needs-human-review" 2>/dev/null || true
+            HIGH_C='${{ steps.score.outputs.high_count }}'
+            MED_C='${{ steps.score.outputs.medium_count }}'
+            CATS='${{ steps.score.outputs.categories }}'
+            BODY=$(printf '🛑 **사람 dispatch 필요** (점수 %s/10.0 < %s, iteration %s/%s)\n\n이 PR은 AI 리뷰 기준을 통과하지 못했습니다. 자동 self-improve 멘션은 사용하지 않습니다. `github-actions[bot]`이 게시한 멘션은 `claude-mention-light`의 bot sender guard에서 SKIP되고, 다른 봇 멘션도 follow-up code 변경 작업을 trigger하지 않습니다.\n\n현재 미해결: HIGH=%s, MEDIUM=%s | 카테고리: %s\n\n## 다음 조치\n\n사람이 Multica 이슈 코멘트에서 적절한 worker를 명시적으로 dispatch한 뒤, 리뷰 코멘트의 HIGH → MEDIUM → LOW 순서로 수정하게 하세요. 수정 PR push 후 이 워크플로가 다시 실행되어 재리뷰합니다.\n\n## 참고\n\n이 단기 정리는 dead self-improve loop 제거입니다. 장기적으로는 ITT-276 Hermes Local PR Review Gate 쪽에서 webhook 기반 dispatch로 흡수합니다.' "$SCORE" "$PASS_THRESHOLD" "$ITER" "$ITERATE_LIMIT" "$HIGH_C" "$MED_C" "$CATS")
+            gh pr comment "$PR_NUM" -R "$REPO" --body "$BODY" || true
+          fi
