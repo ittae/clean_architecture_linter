@@ -17,7 +17,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-      issues: read
+      issues: write
       id-token: write
     uses: ittae/.github/.github/workflows/claude-review-light.yml@main
     with:
