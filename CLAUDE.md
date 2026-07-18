@@ -1101,3 +1101,28 @@ test/
 - `analyzer: ^6.8.0` - Dart static analysis
 - `custom_lint_builder: ^0.6.7` - Framework for creating custom lint rules
 - `custom_lint: ^0.6.7` - Runtime for custom lint rules (dev dependency)
+
+## 검색·컨텍스트 규율 (토큰 효율)
+<!-- BEGIN agent-search-discipline (managed) -->
+- 코드/텍스트 검색은 `rg`, 파일 탐색은 `fd`, 구조(AST) 매칭은 `ast-grep` (`grep -r`/`find`/정규식 대신).
+- 파일을 통째로 읽지 않는다. `rg`로 위치를 특정한 뒤 필요한 심볼/라인 범위만 읽는다.
+- 툴 결과 JSON/YAML을 raw로 컨텍스트에 넣지 않는다. `jq`/`yq`로 필요한 필드만 필터한다.
+- 광범위 매칭을 통째로 프롬프트에 넣지 않는다. 범위를 좁히거나 count만 확인한다.
+- 목적: 토큰 낭비·환각(길 잃음) 방지.
+<!-- END agent-search-discipline -->
+
+## 검증 규율 (analyze 먼저, test 나중)
+<!-- BEGIN agent-verify-discipline (managed) -->
+- 코드 작성/수정 직후 정적 분석을 **테스트보다 먼저** 돌린다. 통과 후에만 필요한 테스트를 타겟 실행.
+  - Dart/Flutter: `dart analyze`/`flutter analyze` (+ clean_architecture_linter) · TS/Node: `tsc --noEmit` + eslint · Python: `ruff`+`mypy`
+- analyze 경고/에러는 test 전에 해소. 무지성 전체 test 반복 대신 정적 피드백 루프 우선 → 토큰 절감.
+- 실행 검증도 전체가 아니라 바뀐 부분만 타겟한다.
+<!-- END agent-verify-discipline -->
+
+## PR 작성 규율 (org 템플릿 준수)
+<!-- BEGIN agent-pr-discipline (managed) -->
+- ittae 조직 PR 본문은 `ittae/.github`의 `.github/PULL_REQUEST_TEMPLATE.md` 구조를 그대로 채운다. `gh pr create --body`는 템플릿이 자동 적용되지 않으므로 직접 가져와 작성한다: `gh api repos/ittae/.github/contents/.github/PULL_REQUEST_TEMPLATE.md --jq .content | base64 -d`
+- 필수 섹션: 요약 / 목표·이유 / 변경 사항 / 범위 밖 / 관련 이슈(`Closes ITT-child` vs `Related ITT-parent`) / 실제 동작 증거(실행 환경·명령·결과 수치, 검증 안 한 영역까지 명시) / 위험(Risk tier T0~T3, rollback, 사람 결정 필요) / UI 증빙 / 체크리스트.
+- 모르는 항목은 지우지 말고 "미확인"/"해당 없음". 제목은 `<type>: ITT-123 한국어 요약` 또는 `<type>: 한국어 요약`. 본문 한국어, code/path/error 원문 유지.
+- **머지는 모든 체크 green일 때만** — 실패/대기 중 머지 금지 (서버 강제 없음, main-guard가 사후 적발).
+<!-- END agent-pr-discipline -->
