@@ -1124,5 +1124,6 @@ test/
 - ittae 조직 PR 본문은 `ittae/.github`의 `.github/PULL_REQUEST_TEMPLATE.md` 구조를 그대로 채운다. `gh pr create --body`는 템플릿이 자동 적용되지 않으므로 직접 가져와 작성한다: `gh api repos/ittae/.github/contents/.github/PULL_REQUEST_TEMPLATE.md --jq .content | base64 -d`
 - 필수 섹션: 요약 / 목표·이유 / 변경 사항 / 범위 밖 / 관련 이슈(`Closes ITT-child` vs `Related ITT-parent`) / 실제 동작 증거(실행 환경·명령·결과 수치, 검증 안 한 영역까지 명시) / 위험(Risk tier T0~T3, rollback, 사람 결정 필요) / UI 증빙 / 체크리스트.
 - 모르는 항목은 지우지 말고 "미확인"/"해당 없음". 제목은 `<type>: ITT-123 한국어 요약` 또는 `<type>: 한국어 요약`. 본문 한국어, code/path/error 원문 유지.
+- **PR 완성 시 draft를 해제한다** (`gh pr ready`) — draft는 리뷰·sweep 승격·자동 병합 파이프라인 전체에서 제외된다. ready 전환까지가 작업 완료다.
 - **머지는 모든 체크 green일 때만** — 실패/대기 중 머지 금지 (서버 강제 없음, main-guard가 사후 적발).
 <!-- END agent-pr-discipline -->
