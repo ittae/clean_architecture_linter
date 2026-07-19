@@ -548,3 +548,21 @@ jobs:
             BODY=$(printf '🛑 **사람 dispatch 필요** (점수 %s/10.0 < %s, iteration %s/%s)\n\n이 PR은 AI 리뷰 기준을 통과하지 못했습니다. 자동 self-improve 멘션은 사용하지 않습니다. `github-actions[bot]`이 게시한 멘션은 `claude-mention-light`의 bot sender guard에서 SKIP되고, 다른 봇 멘션도 follow-up code 변경 작업을 trigger하지 않습니다.\n\n현재 미해결: HIGH=%s, MEDIUM=%s | 카테고리: %s\n\n## 다음 조치\n\n사람이 Multica 이슈 코멘트에서 적절한 worker를 명시적으로 dispatch한 뒤, 리뷰 코멘트의 HIGH → MEDIUM → LOW 순서로 수정하게 하세요. 수정 PR push 후 이 워크플로가 다시 실행되어 재리뷰합니다.\n\n## 참고\n\n이 단기 정리는 dead self-improve loop 제거입니다. 장기적으로는 ITT-276 Hermes Local PR Review Gate 쪽에서 webhook 기반 dispatch로 흡수합니다.' "$SCORE" "$PASS_THRESHOLD" "$ITER" "$ITERATE_LIMIT" "$HIGH_C" "$MED_C" "$CATS")
             gh pr comment "$PR_NUM" -R "$REPO" --body "$BODY" || true
           fi
+
+      # ─── 이벤트 훅 (self-hosted 전용) ───────────────────────────────
+      # 리뷰 직후 같은 머신에서: ① 미해결 finding → Multica 이슈 승격(스윕 1회)
+      # ② 이 PR 하나만 병합 one-shot 판정 (강화 게이트: 차단 라벨·score 10.0·PASS).
+      # 주기 병합 금지 정책(workspace policies/macmini-schedulers.md)과 양립하는
+      # deliberate one-shot이며, 스크립트 부재(호스티드 러너 등) 시 조용히 skip —
+      # 30분 cron 스윕이 백스톱. 워크플로 GH_TOKEN은 repo 제한 토큰이라 unset하고
+      # 스크립트가 머신 인증(env/github.env)을 쓰게 한다.
+      - name: Post-review hooks (finding 승격 + 병합 one-shot)
+        if: always() && steps.auth.outputs.status == 'ready'
+        run: |
+          WS=/Volumes/T7Shield/repos/workspace/scripts/pr-autopilot
+          [ -d "$WS" ] || { echo "workspace 스크립트 없음 — skip"; exit 0; }
+          REPO_NAME="${REPO#*/}"
+          env -u GH_TOKEN -u GITHUB_TOKEN bash "$WS/review-findings-sweep.sh" --apply \
+            || echo "::warning::finding 승격 스윕 실패 — 30분 cron 백스톱이 처리"
+          env -u GH_TOKEN -u GITHUB_TOKEN bash "$WS/pr-autopilot.sh" --apply --repo "$REPO_NAME" --pr "$PR_NUM" \
+            || echo "::warning::병합 one-shot 실패 — 수동 확인 필요"
