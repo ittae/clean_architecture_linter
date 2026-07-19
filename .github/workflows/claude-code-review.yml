@@ -47,10 +47,12 @@ jobs:
   # ─────────────────────────────────────────
   review:
     # public repo + self-hosted 러너 조합의 안전핀: fork PR에선 잡 자체가 돌지 않는다.
+    # draft PR은 파이프라인 전체 제외 (리뷰·sweep 승격·병합 일관) — ready 전환 시 ready_for_review로 진입.
     if: >-
       (github.event_name == 'workflow_dispatch') ||
       (github.event.pull_request.head.repo.full_name == github.repository &&
-       github.actor != 'dependabot[bot]')
+       github.actor != 'dependabot[bot]' &&
+       github.event.pull_request.draft != true)
     concurrency:
       group: crl-review-${{ github.workflow }}-${{ github.repository }}-${{ github.event.pull_request.number || github.ref }}
       cancel-in-progress: true
