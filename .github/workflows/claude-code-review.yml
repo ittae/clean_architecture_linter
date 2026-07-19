@@ -356,7 +356,7 @@ jobs:
 
             ## 📊 점수 산정 (10점 만점)
             - HIGH: -2.0 / MEDIUM: -1.0 / LOW: -0.5
-            - 7.5 미달 → FAIL
+            - 판정: 10.0 미만 → FAIL (지적 0건 = 만점이어야 통과). 단 high-risk(민감 영역 감지) PR은 9.5 이상이면 PASS로 기재 — 사람 최종 검토 전제
             - 객관 게이트(Phase 1)는 이미 통과했으니 점수에 가산점 없음
 
             ## ✍️ 출력 (단일 코멘트 1개만)
@@ -514,7 +514,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           SCORE="${{ steps.score.outputs.score }}"
-          PASS_THRESHOLD=7.5
+          # 통과 기준 (2026-07-19 사용자 결정): 일반 PR은 AI가 유일 게이트라 10.0(지적 0건) 요구.
+          # high-risk PR은 사람이 최종 게이트이므로 9.5(LOW 1건까지)를 AI 통과선으로 완화.
+          HR_COUNT=$(gh pr view "$PR_NUM" -R "$REPO" --json labels --jq '[.labels[] | select(.name == "high-risk")] | length')
+          [[ ! "$HR_COUNT" =~ ^[0-9]+$ ]] && HR_COUNT=0
+          if [ "$HR_COUNT" -gt 0 ]; then PASS_THRESHOLD=9.5; else PASS_THRESHOLD=10.0; fi
 
           # 모든 ai-* 라벨 정리
           for L in ai-approved ai-iterating needs-rework ai-rejected; do
@@ -522,9 +526,8 @@ jobs:
           done
 
           ITER='${{ steps.guard.outputs.iteration }}'
-          # high-risk 라벨이 있는지 확인 (gate-classify에서 부여됨)
-          IS_HIGH_RISK=$(gh pr view "$PR_NUM" -R "$REPO" --json labels --jq '[.labels[] | select(.name == "high-risk")] | length')
-          [[ ! "$IS_HIGH_RISK" =~ ^[0-9]+$ ]] && IS_HIGH_RISK=0
+          # high-risk 여부는 임계 결정에서 이미 조회함
+          IS_HIGH_RISK=$HR_COUNT
 
           if (( $(echo "$SCORE >= $PASS_THRESHOLD" | bc -l) )); then
             if [ "$IS_HIGH_RISK" -gt 0 ]; then
