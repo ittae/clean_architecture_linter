@@ -112,6 +112,16 @@ class _AsyncCallbackScanner extends RecursiveAstVisitor<void> {
 
   final AnalysisRule rule;
   final Set<int> _reportedRefCallOffsets;
+  final Map<String, FunctionDeclaration> _localFunctions = {};
+
+  @override
+  void visitFunctionDeclaration(FunctionDeclaration node) {
+    if (!node.functionExpression.body.isAsynchronous) {
+      _localFunctions[node.name.lexeme] = node;
+    }
+
+    super.visitFunctionDeclaration(node);
+  }
 
   @override
   void visitFunctionExpression(FunctionExpression node) {
@@ -129,25 +139,31 @@ class _AsyncCallbackScanner extends RecursiveAstVisitor<void> {
   void visitMethodInvocation(MethodInvocation node) {
     if (_futureContinuationMethods.contains(node.methodName.name)) {
       for (final argument in node.argumentList.arguments) {
-        final callback = _asFunctionExpression(argument);
-        if (callback == null) continue;
+        final body = _resolveCallbackBody(argument);
+        if (body == null) continue;
 
         _AsyncRefAfterGapScanner(
           rule,
           hasInheritedAsyncGap: true,
           reportedRefCallOffsets: _reportedRefCallOffsets,
-        ).scan(callback.body);
+        ).scan(body);
       }
     }
 
     super.visitMethodInvocation(node);
   }
 
-  FunctionExpression? _asFunctionExpression(Expression argument) {
-    if (argument is FunctionExpression) return argument;
+  /// Resolves a `then`/`catchError`/`whenComplete` argument to the
+  /// [FunctionBody] it will run, covering both inline closures and
+  /// tear-offs of a local function declared earlier in the same method
+  /// (e.g. `fetchTodo().then(onDone)`).
+  FunctionBody? _resolveCallbackBody(Expression argument) {
     if (argument is NamedExpression) {
-      final expression = argument.expression;
-      if (expression is FunctionExpression) return expression;
+      return _resolveCallbackBody(argument.expression);
+    }
+    if (argument is FunctionExpression) return argument.body;
+    if (argument is SimpleIdentifier) {
+      return _localFunctions[argument.name]?.functionExpression.body;
     }
 
     return null;

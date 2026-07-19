@@ -211,6 +211,48 @@ class TodoNotifier {
     });
 
     test(
+      'reports ref access inside a tear-off Future continuation callback',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
+            .analyze(
+              files: {
+                'lib/features/todo/presentation/providers/todo_notifier.dart':
+                    '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class TodoNotifier {
+  void createTodo() {
+    void onDone(_) {
+      ref.read(todoProvider);
+    }
+
+    fetchTodo().then(onDone);
+  }
+}
+''',
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/todo_notifier.dart',
+            );
+
+        result.expectDiagnostics([
+          const ExpectedV2Diagnostic(
+            relativePath:
+                'lib/features/todo/presentation/providers/todo_notifier.dart',
+            codeName: 'riverpod_ref_after_async_gap',
+            problemMessage:
+                'Avoid ref.read() after an async gap in Riverpod providers.',
+            correctionMessage:
+                'Capture provider/usecase dependencies before await or Future continuations, not after the async gap.',
+          ),
+        ]);
+      },
+    );
+
+    test(
       'does not duplicate Future continuation callback diagnostics in async methods',
       () async {
         final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
