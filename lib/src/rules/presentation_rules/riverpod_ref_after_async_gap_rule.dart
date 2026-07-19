@@ -25,7 +25,7 @@ class RiverpodRefAfterAsyncGapRule extends AnalysisRule {
     : super(
         name: 'riverpod_ref_after_async_gap',
         description:
-            'Advises against using Riverpod ref after await in provider classes.',
+            'Advises against using Riverpod ref after an async gap (await or Future continuations) in provider classes.',
       );
 
   @override
@@ -304,7 +304,7 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
       refCall,
       arguments: [
         'Avoid ref.$methodName() after an async gap in Riverpod providers.',
-        'Capture provider/usecase dependencies before await, or restructure the async flow so ref is not used after await.',
+        'Capture provider/usecase dependencies before await or Future continuations, not after the async gap.',
       ],
     );
   }
