@@ -9,6 +9,7 @@ import '../../clean_architecture_linter_base.dart';
 import '../../compat/analyzer_ast_compat.dart';
 
 const _trackedRefMethods = {'read', 'watch', 'listen', 'invalidate', 'refresh'};
+const _futureContinuationMethods = {'then', 'catchError', 'whenComplete'};
 
 /// Reports Riverpod `ref` usage after an async gap in provider classes.
 class RiverpodRefAfterAsyncGapRule extends AnalysisRule {
@@ -24,7 +25,7 @@ class RiverpodRefAfterAsyncGapRule extends AnalysisRule {
     : super(
         name: 'riverpod_ref_after_async_gap',
         description:
-            'Advises against using Riverpod ref after await in provider classes.',
+            'Advises against using Riverpod ref after an async gap (await or Future continuations) in provider classes.',
       );
 
   @override
@@ -63,11 +64,20 @@ class _RiverpodRefAfterAsyncGapVisitor extends SimpleAstVisitor<void> {
       if (member is! MethodDeclaration) continue;
       if (_isPrivate(member.name.lexeme)) continue;
 
+      final reportedRefCallOffsets = <int>{};
       if (member.body.isAsynchronous) {
-        _AsyncRefAfterGapScanner(rule).scan(member.body);
+        _AsyncRefAfterGapScanner(
+          rule,
+          reportedRefCallOffsets: reportedRefCallOffsets,
+        ).scan(member.body);
       }
 
-      member.body.accept(_AsyncCallbackScanner(rule));
+      member.body.accept(
+        _AsyncCallbackScanner(
+          rule,
+          reportedRefCallOffsets: reportedRefCallOffsets,
+        ),
+      );
     }
   }
 
@@ -97,17 +107,66 @@ class _RiverpodRefAfterAsyncGapVisitor extends SimpleAstVisitor<void> {
 }
 
 class _AsyncCallbackScanner extends RecursiveAstVisitor<void> {
-  _AsyncCallbackScanner(this.rule);
+  _AsyncCallbackScanner(this.rule, {Set<int>? reportedRefCallOffsets})
+    : _reportedRefCallOffsets = reportedRefCallOffsets ?? {};
 
   final AnalysisRule rule;
+  final Set<int> _reportedRefCallOffsets;
+  final Map<String, FunctionDeclaration> _localFunctions = {};
+
+  @override
+  void visitFunctionDeclaration(FunctionDeclaration node) {
+    if (!node.functionExpression.body.isAsynchronous) {
+      _localFunctions[node.name.lexeme] = node;
+    }
+
+    super.visitFunctionDeclaration(node);
+  }
 
   @override
   void visitFunctionExpression(FunctionExpression node) {
     if (node.body.isAsynchronous) {
-      _AsyncRefAfterGapScanner(rule).scan(node.body);
+      _AsyncRefAfterGapScanner(
+        rule,
+        reportedRefCallOffsets: _reportedRefCallOffsets,
+      ).scan(node.body);
     }
 
     super.visitFunctionExpression(node);
+  }
+
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    if (_futureContinuationMethods.contains(node.methodName.name)) {
+      for (final argument in node.argumentList.arguments) {
+        final body = _resolveCallbackBody(argument);
+        if (body == null) continue;
+
+        _AsyncRefAfterGapScanner(
+          rule,
+          hasInheritedAsyncGap: true,
+          reportedRefCallOffsets: _reportedRefCallOffsets,
+        ).scan(body);
+      }
+    }
+
+    super.visitMethodInvocation(node);
+  }
+
+  /// Resolves a `then`/`catchError`/`whenComplete` argument to the
+  /// [FunctionBody] it will run, covering both inline closures and
+  /// tear-offs of a local function declared earlier in the same method
+  /// (e.g. `fetchTodo().then(onDone)`).
+  FunctionBody? _resolveCallbackBody(Expression argument) {
+    if (argument is NamedExpression) {
+      return _resolveCallbackBody(argument.expression);
+    }
+    if (argument is FunctionExpression) return argument.body;
+    if (argument is SimpleIdentifier) {
+      return _localFunctions[argument.name]?.functionExpression.body;
+    }
+
+    return null;
   }
 }
 
@@ -261,7 +320,7 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
       refCall,
       arguments: [
         'Avoid ref.$methodName() after an async gap in Riverpod providers.',
-        'Capture provider/usecase dependencies before await, or restructure the async flow so ref is not used after await.',
+        'Capture provider/usecase dependencies before await or Future continuations, not after the async gap.',
       ],
     );
   }
