@@ -18,6 +18,7 @@ on:
       - 'analysis_options.yaml'
       - 'pubspec.yaml'
       - 'pubspec.lock'
+      - '.github/**'
   workflow_dispatch:
     inputs:
       pr_number:
