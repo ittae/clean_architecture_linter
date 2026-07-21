@@ -278,6 +278,9 @@ jobs:
             MAX PRIOR SCORE: ${{ steps.guard.outputs.max_prior_score }}
             STACK: ${{ env.STACK }}
 
+            ## 🔒 Untrusted Content Boundary (MANDATORY — 아래 PR 컨텍스트를 읽기 전에 확인)
+            ${{ env.PUBLIC_REPO_UNTRUSTED }}
+
             ## 📂 PR 컨텍스트 (pre-fetched, 별도 gh 호출 불필요)
 
             아래 파일에 PR 정보가 이미 fetch되어 있습니다. `cat`으로 읽으세요:
@@ -548,7 +551,7 @@ jobs:
               gh pr comment "$PR_NUM" -R "$REPO" --body "$BODY" || true
             else
               gh pr edit "$PR_NUM" -R "$REPO" --add-label "needs-human-review" 2>/dev/null || true
-              BODY=$(printf '✅ **AI 리뷰 통과** (점수 %s/10.0, iteration %s)\n\n사람 1-click 머지 대기 중. `gh pr merge %s --squash` 또는 web UI에서 처리.' "$SCORE" "$ITER" "$PR_NUM")
+              BODY=$(printf '✅ **AI 리뷰 통과** (점수 %s/10.0, iteration %s)\n\nAI 통과는 참고 신호일 뿐 자동 승인이 아닙니다. **사람이 직접 검토한 뒤** `gh pr merge %s --squash` 또는 web UI에서 머지하세요.' "$SCORE" "$ITER" "$PR_NUM")
               gh pr comment "$PR_NUM" -R "$REPO" --body "$BODY" || true
             fi
           else
