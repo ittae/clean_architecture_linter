@@ -131,17 +131,56 @@ bool _hasRiverpodAnnotation(Iterable<Annotation> metadata) {
   return false;
 }
 
+const _widgetSuperclasses = {
+  'StatelessWidget',
+  'StatefulWidget',
+  'State',
+  'ConsumerWidget',
+  'HookConsumerWidget',
+  'HookWidget',
+  'ConsumerState',
+  'ConsumerStatefulWidget',
+  'StatefulHookConsumerWidget',
+};
+
+/// Flutter notifiers that end in "Notifier" but are NOT Riverpod state layer.
+/// Without this, `class Foo extends ChangeNotifier` would be exempted by the
+/// suffix heuristic below.
+const _nonRiverpodNotifierSuperclasses = {'ChangeNotifier', 'ValueNotifier'};
+
+/// Whether [node] declares a widget — the UI layer, where `ref.mounted` stays
+/// reportable no matter what the class is named.
+bool _isWidgetClass(ClassDeclaration node) {
+  final superclassName = node.extendsClause?.superclass.name.lexeme;
+  if (superclassName != null && _widgetSuperclasses.contains(superclassName)) {
+    return true;
+  }
+
+  final className = classDeclarationName(node);
+  if (className == null) return false;
+
+  return className.endsWith('Page') ||
+      className.endsWith('Screen') ||
+      className.endsWith('View') ||
+      className.endsWith('Widget');
+}
+
 /// Whether [node] declares a Riverpod state-layer class (a Notifier).
 ///
 /// Recognises the three shapes that appear in Riverpod 2/3 codebases:
 /// the `@riverpod` / `@Riverpod(...)` annotation, the generated `_$Name`
 /// superclass, and the hand-written `Notifier` family base classes.
+///
+/// A widget always wins over the name-based heuristics, so
+/// `class FooNotifier extends ConsumerWidget` is still reported.
 bool _isRiverpodNotifierClass(ClassDeclaration node) {
+  if (_isWidgetClass(node)) return false;
   if (_hasRiverpodAnnotation(node.metadata)) return true;
 
   final superclassName = node.extendsClause?.superclass.name.lexeme;
   if (superclassName != null) {
     if (superclassName.startsWith('_\$')) return true;
+    if (_nonRiverpodNotifierSuperclasses.contains(superclassName)) return false;
     // Notifier, AsyncNotifier, StreamNotifier, AutoDisposeNotifier,
     // FamilyAsyncNotifier, and project-local base notifiers all end in
     // "Notifier".

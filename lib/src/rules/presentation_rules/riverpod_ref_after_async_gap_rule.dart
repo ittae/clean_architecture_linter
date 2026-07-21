@@ -349,6 +349,15 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
             _isRefMountedEarlyReturnGuard(parent)) {
           return true;
         }
+      } else if (parent is TryStatement && !identical(child, parent.body)) {
+        // The ref call is in a catch clause or finally block, which run after
+        // the try body — including after an await in it that threw. Any guard
+        // outside the try is therefore stale.
+        if (_subtreeHasAwait(parent.body)) return false;
+      } else if (_awaitingLoopBody(parent, child)) {
+        // On the second and later iterations the loop body's own await has
+        // already run, so a guard outside the loop no longer holds.
+        return false;
       }
 
       child = parent;
@@ -356,6 +365,22 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     }
 
     return false;
+  }
+
+  /// Whether [child] is the body of a loop whose body contains an `await`.
+  ///
+  /// A guard placed outside such a loop only covers the first iteration: every
+  /// later iteration re-enters the body after the previous iteration's await.
+  bool _awaitingLoopBody(AstNode parent, AstNode child) {
+    final Statement? body = switch (parent) {
+      WhileStatement() => parent.body,
+      DoStatement() => parent.body,
+      ForStatement() => parent.body,
+      _ => null,
+    };
+    if (body == null || !identical(child, body)) return false;
+
+    return _subtreeHasAwait(body);
   }
 
   /// Whether [statement] is `if (!ref.mounted) <exit>;` — a guard whose then
