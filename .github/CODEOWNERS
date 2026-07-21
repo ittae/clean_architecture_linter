@@ -1,0 +1,9 @@
+# Policy SoT for why these paths are high-risk: docs/public-repo-security.md
+
+# Default owner for public package
+*       @get6
+
+# High-risk paths always require owner attention
+/.github/                 @get6
+/docs/public-repo-security.md @get6
+/pubspec.yaml             @get6
