@@ -101,18 +101,34 @@ class _RefMountedUsageVisitor extends SimpleAstVisitor<void> {
         normalized.contains('/providers/');
   }
 
-  /// Whether [node] sits in a class where `ref.mounted` is the recommended
-  /// disposal guard rather than a design smell.
+  /// Whether [node] sits in a state-layer declaration, where `ref.mounted` is
+  /// the recommended disposal guard rather than a design smell.
   ///
-  /// Judged from the enclosing class in the AST, not from the file path: a
-  /// Notifier and the widget that consumes it routinely live under the same
+  /// Judged from the enclosing declaration in the AST, not from the file path:
+  /// a Notifier and the widget that consumes it routinely live under the same
   /// `presentation/providers/` directory.
   bool _isExemptContext(AstNode node) {
     final enclosingClass = node.thisOrAncestorOfType<ClassDeclaration>();
-    if (enclosingClass == null) return false;
+    if (enclosingClass != null) {
+      return _isRiverpodNotifierClass(enclosingClass);
+    }
 
-    return isRiverpodNotifierClass(enclosingClass);
+    // Functional `@riverpod` providers are state layer too — codegen turns them
+    // into providers with the same disposal semantics as a Notifier.
+    final enclosingFunction = node.thisOrAncestorOfType<FunctionDeclaration>();
+    if (enclosingFunction == null) return false;
+
+    return _hasRiverpodAnnotation(enclosingFunction.metadata);
   }
+}
+
+bool _hasRiverpodAnnotation(Iterable<Annotation> metadata) {
+  for (final annotation in metadata) {
+    final name = annotation.name.name;
+    if (name == 'riverpod' || name == 'Riverpod') return true;
+  }
+
+  return false;
 }
 
 /// Whether [node] declares a Riverpod state-layer class (a Notifier).
@@ -120,11 +136,8 @@ class _RefMountedUsageVisitor extends SimpleAstVisitor<void> {
 /// Recognises the three shapes that appear in Riverpod 2/3 codebases:
 /// the `@riverpod` / `@Riverpod(...)` annotation, the generated `_$Name`
 /// superclass, and the hand-written `Notifier` family base classes.
-bool isRiverpodNotifierClass(ClassDeclaration node) {
-  for (final metadata in node.metadata) {
-    final name = metadata.name.name;
-    if (name == 'riverpod' || name == 'Riverpod') return true;
-  }
+bool _isRiverpodNotifierClass(ClassDeclaration node) {
+  if (_hasRiverpodAnnotation(node.metadata)) return true;
 
   final superclassName = node.extendsClause?.superclass.name.lexeme;
   if (superclassName != null) {

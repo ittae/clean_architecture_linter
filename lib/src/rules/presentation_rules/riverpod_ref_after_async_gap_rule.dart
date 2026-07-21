@@ -337,10 +337,18 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
         // An await at this level runs after any guard in an enclosing scope,
         // so no outer guard can still be protecting the ref call.
         if (awaitAfterGuard) return false;
-      } else if (parent is IfStatement &&
-          identical(child, parent.thenStatement) &&
-          _isRefMountedCheck(parent.expression, negated: false)) {
-        return true;
+      } else if (parent is IfStatement) {
+        // `if (ref.mounted) { <refCall> }`
+        if (identical(child, parent.thenStatement) &&
+            _isRefMountedCheck(parent.expression, negated: false)) {
+          return true;
+        }
+        // `if (!ref.mounted) return; else { <refCall> }` — the else branch is
+        // only reachable while mounted.
+        if (identical(child, parent.elseStatement) &&
+            _isRefMountedEarlyReturnGuard(parent)) {
+          return true;
+        }
       }
 
       child = parent;
@@ -429,7 +437,7 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
       refCall,
       arguments: [
         'Avoid ref.$methodName() after an async gap in Riverpod providers.',
-        'Capture provider/usecase dependencies before await or Future continuations, not after the async gap.',
+        'Capture provider/usecase dependencies before the async gap, or guard the post-gap access with "if (!ref.mounted) return;".',
       ],
     );
   }

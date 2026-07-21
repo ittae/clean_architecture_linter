@@ -135,6 +135,33 @@ class TodoNotifier {
       result.expectNoDiagnostics();
     });
 
+    test(
+      'does not report ref.mounted in a functional @riverpod provider',
+      () async {
+        final result = await V2RuleHarness(rule: RefMountedUsageRule()).analyze(
+          files: {
+            'lib/features/todo/presentation/providers/save_todo_provider.dart':
+                '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+Future<void> saveTodo(Object ref) async {
+  await persist();
+  if (!ref.mounted) return;
+  ref.invalidate(todoProvider);
+}
+''',
+          },
+          definingFile:
+              'lib/features/todo/presentation/providers/save_todo_provider.dart',
+        );
+
+        result.expectNoDiagnostics();
+      },
+    );
+
     test('still reports ref.mounted inside a ConsumerWidget', () async {
       final result = await V2RuleHarness(rule: RefMountedUsageRule()).analyze(
         files: {
