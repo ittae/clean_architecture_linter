@@ -256,6 +256,32 @@ class TodoNotifier extends ConsumerWidget {
       ]);
     });
 
+    test('does not report in a Notifier named like a widget', () async {
+      final result = await V2RuleHarness(rule: RefMountedUsageRule()).analyze(
+        files: {
+          'lib/features/todo/presentation/providers/todo_view.dart': '''
+class riverpod {
+  const riverpod();
+}
+
+abstract class _\$TodoView {}
+
+@riverpod
+class TodoView extends _\$TodoView {
+  Future<void> save() async {
+    await persist();
+    if (!ref.mounted) return;
+    state = 1;
+  }
+}
+''',
+        },
+        definingFile: 'lib/features/todo/presentation/providers/todo_view.dart',
+      );
+
+      result.expectNoDiagnostics();
+    });
+
     test('still reports in a ChangeNotifier subclass', () async {
       final result = await V2RuleHarness(rule: RefMountedUsageRule()).analyze(
         files: {

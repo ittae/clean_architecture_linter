@@ -148,14 +148,7 @@ const _widgetSuperclasses = {
 /// suffix heuristic below.
 const _nonRiverpodNotifierSuperclasses = {'ChangeNotifier', 'ValueNotifier'};
 
-/// Whether [node] declares a widget — the UI layer, where `ref.mounted` stays
-/// reportable no matter what the class is named.
-bool _isWidgetClass(ClassDeclaration node) {
-  final superclassName = node.extendsClause?.superclass.name.lexeme;
-  if (superclassName != null && _widgetSuperclasses.contains(superclassName)) {
-    return true;
-  }
-
+bool _hasWidgetName(ClassDeclaration node) {
   final className = classDeclarationName(node);
   if (className == null) return false;
 
@@ -167,25 +160,31 @@ bool _isWidgetClass(ClassDeclaration node) {
 
 /// Whether [node] declares a Riverpod state-layer class (a Notifier).
 ///
-/// Recognises the three shapes that appear in Riverpod 2/3 codebases:
-/// the `@riverpod` / `@Riverpod(...)` annotation, the generated `_$Name`
-/// superclass, and the hand-written `Notifier` family base classes.
+/// Signals are checked strongest first, because the weak name heuristics on
+/// both sides overlap: a provider may be called `TodoView` and a widget may be
+/// called `TodoNotifier`.
 ///
-/// A widget always wins over the name-based heuristics, so
-/// `class FooNotifier extends ConsumerWidget` is still reported.
+/// 1. `@riverpod` / `@Riverpod(...)` annotation, or an `extends _$Name`
+///    generated superclass — unambiguous state layer.
+/// 2. A widget superclass — unambiguous UI layer.
+/// 3. `Notifier` family base classes, minus the Flutter notifiers that are not
+///    Riverpod state layer.
+/// 4. Only then the class-name suffixes.
 bool _isRiverpodNotifierClass(ClassDeclaration node) {
-  if (_isWidgetClass(node)) return false;
   if (_hasRiverpodAnnotation(node.metadata)) return true;
 
   final superclassName = node.extendsClause?.superclass.name.lexeme;
   if (superclassName != null) {
     if (superclassName.startsWith('_\$')) return true;
+    if (_widgetSuperclasses.contains(superclassName)) return false;
     if (_nonRiverpodNotifierSuperclasses.contains(superclassName)) return false;
     // Notifier, AsyncNotifier, StreamNotifier, AutoDisposeNotifier,
     // FamilyAsyncNotifier, and project-local base notifiers all end in
     // "Notifier".
     if (superclassName.endsWith('Notifier')) return true;
   }
+
+  if (_hasWidgetName(node)) return false;
 
   return classDeclarationName(node)?.endsWith('Notifier') ?? false;
 }
