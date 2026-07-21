@@ -152,6 +152,21 @@ bool _isRiverpodNotifierExtension(ExtensionDeclaration node) {
   if (_widgetSuperclasses.contains(targetName)) return false;
   if (_nonRiverpodNotifierSuperclasses.contains(targetName)) return false;
 
+  // Unresolved. Still prefer a real declaration over the name when the target
+  // happens to be declared in this same unit — that covers the single-file
+  // case without any type information.
+  final unit = node.thisOrAncestorOfType<CompilationUnit>();
+  if (unit != null) {
+    for (final declaration in unit.declarations) {
+      if (declaration is ClassDeclaration &&
+          classDeclarationName(declaration) == targetName) {
+        return _isRiverpodNotifierClass(declaration);
+      }
+    }
+  }
+
+  // Last resort: the name alone. This leans false-negative by design — the
+  // point of the rule is to stop punishing the recommended disposal guard.
   return targetName.endsWith('Notifier');
 }
 
