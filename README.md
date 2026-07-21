@@ -138,9 +138,9 @@ warning - lib/bad_examples/features/todo/data/repositories/todo_repository_impl.
 
 See `docs/config/RECOMMENDED_SETUP.md` for details.
 
-## 🧩 Compatibility — analyzer 9-13 / Riverpod 3+
+## 🧩 Compatibility — analyzer 9-12 / Riverpod 3+
 
-v2.0 runs on the official `analysis_server_plugin` (`>=0.3.4 <0.4.0`) and supports analyzer `>=9.0.0 <14.0.0`. This covers the analyzer bundled with **Dart 3.10+**, so the plugin loads inside your project's analysis server with no `.dartServer` or `pubspec_overrides.yaml` workaround.
+v2.0 currently runs on the official `analysis_server_plugin` (`>=0.3.4 <0.3.15`) and supports analyzer `>=9.0.0 <13.0.0`, matching the published `pubspec.yaml` caps. This range reflects the current plugin-host stability limit noted in the package itself, so consumers should stay within those caps until the upstream host issue is resolved and this package widens them again.
 
 `riverpod_lint 3.1.x` still carries its own analyzer constraints (`^9.0.0` for stable 3.1.3 and `^12.0.0` for current dev releases). Keep analyzer plugins out of `dev_dependencies` and enable both tools through top-level `plugins:` when you need them in one consumer project. The analyzer plugin manager resolves all enabled plugins in one synthetic package, so this package keeps its analyzer range broad enough to share that solve:
 
