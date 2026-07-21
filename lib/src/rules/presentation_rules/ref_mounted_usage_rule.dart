@@ -113,6 +113,14 @@ class _RefMountedUsageVisitor extends SimpleAstVisitor<void> {
       return _isRiverpodNotifierClass(enclosingClass);
     }
 
+    // Notifier methods are routinely split into an `extension X on FooNotifier`
+    // in a part file. Those members are still state layer.
+    final enclosingExtension = node
+        .thisOrAncestorOfType<ExtensionDeclaration>();
+    if (enclosingExtension != null) {
+      return _isRiverpodNotifierExtension(enclosingExtension);
+    }
+
     // Functional `@riverpod` providers are state layer too — codegen turns them
     // into providers with the same disposal semantics as a Notifier.
     final enclosingFunction = node.thisOrAncestorOfType<FunctionDeclaration>();
@@ -120,6 +128,31 @@ class _RefMountedUsageVisitor extends SimpleAstVisitor<void> {
 
     return _hasRiverpodAnnotation(enclosingFunction.metadata);
   }
+}
+
+/// Whether [node] extends a Riverpod state-layer class.
+///
+/// Prefers the real declaration when it is visible in the same compilation
+/// unit; otherwise falls back to the same name heuristics used for classes.
+bool _isRiverpodNotifierExtension(ExtensionDeclaration node) {
+  final extendedType = node.onClause?.extendedType;
+  if (extendedType is! NamedType) return false;
+
+  final targetName = extendedType.name.lexeme;
+  if (_widgetSuperclasses.contains(targetName)) return false;
+  if (_nonRiverpodNotifierSuperclasses.contains(targetName)) return false;
+
+  final unit = node.thisOrAncestorOfType<CompilationUnit>();
+  if (unit != null) {
+    for (final declaration in unit.declarations) {
+      if (declaration is ClassDeclaration &&
+          classDeclarationName(declaration) == targetName) {
+        return _isRiverpodNotifierClass(declaration);
+      }
+    }
+  }
+
+  return targetName.endsWith('Notifier');
 }
 
 bool _hasRiverpodAnnotation(Iterable<Annotation> metadata) {

@@ -162,6 +162,71 @@ Future<void> saveTodo(Object ref) async {
       },
     );
 
+    test(
+      'does not report in an extension on a Notifier in a part file',
+      () async {
+        final result = await V2RuleHarness(rule: RefMountedUsageRule()).analyze(
+          files: {
+            'lib/features/todo/presentation/providers/todo_notifier.dart': '''
+part 'todo_notifier_helpers.dart';
+
+abstract class _\$TodoNotifier {}
+
+class TodoNotifier extends _\$TodoNotifier {}
+''',
+            'lib/features/todo/presentation/providers/todo_notifier_helpers.dart':
+                '''
+part of 'todo_notifier.dart';
+
+extension _TodoNotifierHelpers on TodoNotifier {
+  Future<void> save() async {
+    await persist();
+    if (!ref.mounted) return;
+    state = 1;
+  }
+}
+''',
+          },
+          definingFile:
+              'lib/features/todo/presentation/providers/todo_notifier.dart',
+        );
+
+        result.expectNoDiagnostics();
+      },
+    );
+
+    test('still reports in an extension on a widget', () async {
+      final result = await V2RuleHarness(rule: RefMountedUsageRule()).analyze(
+        files: {
+          'lib/features/todo/presentation/pages/todo_page.dart': '''
+class ConsumerWidget {}
+
+class TodoPage extends ConsumerWidget {}
+
+extension TodoPageHelpers on TodoPage {
+  Future<void> onTap() async {
+    await save();
+    if (!ref.mounted) return;
+    navigate();
+  }
+}
+''',
+        },
+        definingFile: 'lib/features/todo/presentation/pages/todo_page.dart',
+      );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath: 'lib/features/todo/presentation/pages/todo_page.dart',
+          codeName: 'ref_mounted_usage',
+          problemMessage:
+              'Avoid using "ref.mounted" to guard async operations in the UI layer. This masks design problems.',
+          correctionMessage:
+              "Instead: (1) Complete async work before navigation, or (2) Call UseCase directly then navigate - new screen's provider will load state. Inside a Notifier, \"if (!ref.mounted) return;\" is the recommended disposal guard and is not reported.",
+        ),
+      ]);
+    });
+
     test('still reports ref.mounted inside a ConsumerWidget', () async {
       final result = await V2RuleHarness(rule: RefMountedUsageRule()).analyze(
         files: {
