@@ -195,6 +195,109 @@ extension _TodoNotifierHelpers on TodoNotifier {
       },
     );
 
+    test(
+      'still reports in an extension on a widget declared in the library body',
+      () async {
+        final result = await V2RuleHarness(rule: RefMountedUsageRule()).analyze(
+          files: {
+            'lib/features/todo/presentation/providers/todo_notifier.dart': '''
+part 'todo_notifier_helpers.dart';
+
+class ConsumerWidget {}
+
+class TodoNotifier extends ConsumerWidget {}
+''',
+            'lib/features/todo/presentation/providers/todo_notifier_helpers.dart':
+                '''
+part of 'todo_notifier.dart';
+
+extension Helpers on TodoNotifier {
+  Future<void> onTap() async {
+    await save();
+    if (!ref.mounted) return;
+    navigate();
+  }
+}
+''',
+          },
+          definingFile:
+              'lib/features/todo/presentation/providers/todo_notifier.dart',
+        );
+
+        result.expectDiagnostics([
+          const ExpectedV2Diagnostic(
+            relativePath:
+                'lib/features/todo/presentation/providers/todo_notifier_helpers.dart',
+            codeName: 'ref_mounted_usage',
+            problemMessage:
+                'Avoid using "ref.mounted" to guard async operations in the UI layer. This masks design problems.',
+            correctionMessage:
+                "Instead: (1) Complete async work before navigation, or (2) Call UseCase directly then navigate - new screen's provider will load state. Inside a Notifier, \"if (!ref.mounted) return;\" is the recommended disposal guard and is not reported.",
+          ),
+        ]);
+      },
+    );
+
+    test('does not report in an extension on a generic Notifier', () async {
+      final result = await V2RuleHarness(rule: RefMountedUsageRule()).analyze(
+        files: {
+          'lib/features/todo/presentation/providers/todo_notifier.dart': '''
+abstract class _\$TodoNotifier<T> {}
+
+class TodoNotifier<T> extends _\$TodoNotifier<T> {}
+
+extension Helpers<T> on TodoNotifier<T> {
+  Future<void> save() async {
+    await persist();
+    if (!ref.mounted) return;
+    state = 1;
+  }
+}
+''',
+        },
+        definingFile:
+            'lib/features/todo/presentation/providers/todo_notifier.dart',
+      );
+
+      result.expectNoDiagnostics();
+    });
+
+    test('still reports in an extension on a widget typedef', () async {
+      final result = await V2RuleHarness(rule: RefMountedUsageRule()).analyze(
+        files: {
+          'lib/features/todo/presentation/providers/todo_alias.dart': '''
+class ConsumerWidget {}
+
+class TodoPage extends ConsumerWidget {}
+
+typedef TodoNotifier = TodoPage;
+
+extension Helpers on TodoNotifier {
+  Future<void> onTap() async {
+    await save();
+    if (!ref.mounted) return;
+    navigate();
+  }
+}
+''',
+        },
+        definingFile:
+            'lib/features/todo/presentation/providers/todo_alias.dart',
+      );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/presentation/providers/todo_alias.dart',
+          codeName: 'ref_mounted_usage',
+          problemMessage:
+              'Avoid using "ref.mounted" to guard async operations in the UI layer. This masks design problems.',
+          correctionMessage:
+              "Instead: (1) Complete async work before navigation, or (2) Call UseCase directly then navigate - new screen's provider will load state. Inside a Notifier, \"if (!ref.mounted) return;\" is the recommended disposal guard and is not reported.",
+        ),
+      ]);
+    });
+
     test('still reports in an extension on a widget', () async {
       final result = await V2RuleHarness(rule: RefMountedUsageRule()).analyze(
         files: {

@@ -3,6 +3,8 @@ import 'package:analyzer/analysis_rule/rule_context.dart';
 import 'package:analyzer/analysis_rule/rule_visitor_registry.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/error/error.dart';
 
 import '../../clean_architecture_linter_base.dart';
@@ -132,27 +134,55 @@ class _RefMountedUsageVisitor extends SimpleAstVisitor<void> {
 
 /// Whether [node] extends a Riverpod state-layer class.
 ///
-/// Prefers the real declaration when it is visible in the same compilation
-/// unit; otherwise falls back to the same name heuristics used for classes.
+/// Prefers the resolved element, which sees through prefixed types, typedefs,
+/// and declarations in another unit of the same library — the common case,
+/// since the Notifier lives in the library body and the extension in a part.
+/// Falls back to the class name heuristics only when the type is unresolved
+/// (this rule also runs on parsed-only results).
 bool _isRiverpodNotifierExtension(ExtensionDeclaration node) {
   final extendedType = node.onClause?.extendedType;
   if (extendedType is! NamedType) return false;
+
+  final resolved = extendedType.type;
+  if (resolved is InterfaceType) {
+    return _isRiverpodNotifierElement(resolved.element);
+  }
 
   final targetName = extendedType.name.lexeme;
   if (_widgetSuperclasses.contains(targetName)) return false;
   if (_nonRiverpodNotifierSuperclasses.contains(targetName)) return false;
 
-  final unit = node.thisOrAncestorOfType<CompilationUnit>();
-  if (unit != null) {
-    for (final declaration in unit.declarations) {
-      if (declaration is ClassDeclaration &&
-          classDeclarationName(declaration) == targetName) {
-        return _isRiverpodNotifierClass(declaration);
-      }
-    }
+  return targetName.endsWith('Notifier');
+}
+
+/// Layer classification for a resolved extension target, mirroring
+/// [_isRiverpodNotifierClass] but reading the element model instead of AST.
+bool _isRiverpodNotifierElement(InterfaceElement element) {
+  for (final annotation in element.metadata.annotations) {
+    final name = annotation.element?.displayName;
+    if (name == 'riverpod' || name == 'Riverpod') return true;
   }
 
-  return targetName.endsWith('Notifier');
+  // allSupertypes covers the whole chain, so a project-local base notifier or
+  // a generated `_$Name` several levels up is still recognised.
+  for (final supertype in element.allSupertypes) {
+    final name = supertype.element.name;
+    if (name == null) continue;
+    if (name.startsWith('_\$')) return true;
+    if (_widgetSuperclasses.contains(name)) return false;
+    if (_nonRiverpodNotifierSuperclasses.contains(name)) return false;
+  }
+
+  for (final supertype in element.allSupertypes) {
+    final name = supertype.element.name;
+    if (name != null && name.endsWith('Notifier')) return true;
+  }
+
+  final elementName = element.name;
+  if (elementName == null) return false;
+  if (_hasWidgetNameSuffix(elementName)) return false;
+
+  return elementName.endsWith('Notifier');
 }
 
 bool _hasRiverpodAnnotation(Iterable<Annotation> metadata) {
@@ -181,14 +211,18 @@ const _widgetSuperclasses = {
 /// suffix heuristic below.
 const _nonRiverpodNotifierSuperclasses = {'ChangeNotifier', 'ValueNotifier'};
 
-bool _hasWidgetName(ClassDeclaration node) {
-  final className = classDeclarationName(node);
-  if (className == null) return false;
-
+bool _hasWidgetNameSuffix(String className) {
   return className.endsWith('Page') ||
       className.endsWith('Screen') ||
       className.endsWith('View') ||
       className.endsWith('Widget');
+}
+
+bool _hasWidgetName(ClassDeclaration node) {
+  final className = classDeclarationName(node);
+  if (className == null) return false;
+
+  return _hasWidgetNameSuffix(className);
 }
 
 /// Whether [node] declares a Riverpod state-layer class (a Notifier).
