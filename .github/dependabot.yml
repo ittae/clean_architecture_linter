@@ -1,0 +1,51 @@
+version: 2
+
+# Policy: workspace policies/dependabot-pr-lanes.md
+# Labels must exist on the repo (see ensure-dependabot-labels.yml); Dependabot omits missing labels.
+# Flutter app: pub + root GHA. Add extra npm directories in-repo if needed (e.g. /functions).
+
+updates:
+  - package-ecosystem: "pub"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Seoul"
+    open-pull-requests-limit: 10
+    versioning-strategy: increase
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "automerge-candidate"
+    groups:
+      pub-minor-and-patch:
+        applies-to: version-updates
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Seoul"
+    open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "automerge-candidate"
+    groups:
+      gha-minor-and-patch:
+        applies-to: version-updates
+        update-types: ["minor", "patch"]
