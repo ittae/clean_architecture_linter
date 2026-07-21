@@ -740,5 +740,151 @@ class TodoNotifier {
 
       result.expectNoDiagnostics();
     });
+
+    test('does not report ref usage guarded by ref.mounted', () async {
+      final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/providers/todo_notifier.dart': '''
+abstract class _\$TodoNotifier {}
+
+class TodoNotifier extends _\$TodoNotifier {
+  Future<bool> save() async {
+    await persist();
+    if (!ref.mounted) return false;
+    ref.invalidate(todoProvider);
+    return true;
+  }
+}
+''',
+            },
+            definingFile:
+                'lib/features/todo/presentation/providers/todo_notifier.dart',
+          );
+
+      result.expectNoDiagnostics();
+    });
+
+    test(
+      'does not report ref usage inside an if (ref.mounted) block',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
+            .analyze(
+              files: {
+                'lib/features/todo/presentation/providers/todo_notifier.dart':
+                    '''
+abstract class _\$TodoNotifier {}
+
+class TodoNotifier extends _\$TodoNotifier {
+  Future<void> save() async {
+    await persist();
+    if (ref.mounted) {
+      ref.invalidate(todoProvider);
+    }
+  }
+}
+''',
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/todo_notifier.dart',
+            );
+
+        result.expectNoDiagnostics();
+      },
+    );
+
+    test(
+      'does not report a guarded ref usage inside a Future continuation',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
+            .analyze(
+              files: {
+                'lib/features/todo/presentation/providers/todo_notifier.dart':
+                    '''
+abstract class _\$TodoNotifier {}
+
+class TodoNotifier extends _\$TodoNotifier {
+  void save() {
+    persist().then((_) {
+      if (!ref.mounted) return;
+      ref.invalidate(todoProvider);
+    });
+  }
+}
+''',
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/todo_notifier.dart',
+            );
+
+        result.expectNoDiagnostics();
+      },
+    );
+
+    test('still reports post-await ref usage without a guard', () async {
+      final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/providers/todo_notifier.dart': '''
+abstract class _\$TodoNotifier {}
+
+class TodoNotifier extends _\$TodoNotifier {
+  Future<void> save() async {
+    await persist();
+    ref.invalidate(todoProvider);
+  }
+}
+''',
+            },
+            definingFile:
+                'lib/features/todo/presentation/providers/todo_notifier.dart',
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/presentation/providers/todo_notifier.dart',
+          codeName: 'riverpod_ref_after_async_gap',
+          problemMessage:
+              'Avoid ref.invalidate() after an async gap in Riverpod providers.',
+          correctionMessage:
+              'Capture provider/usecase dependencies before await or Future continuations, not after the async gap.',
+        ),
+      ]);
+    });
+
+    test('still reports when a later await invalidates an earlier guard', () async {
+      final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/providers/todo_notifier.dart': '''
+abstract class _\$TodoNotifier {}
+
+class TodoNotifier extends _\$TodoNotifier {
+  Future<void> save() async {
+    await persist();
+    if (!ref.mounted) return;
+    await persistAgain();
+    ref.invalidate(todoProvider);
+  }
+}
+''',
+            },
+            definingFile:
+                'lib/features/todo/presentation/providers/todo_notifier.dart',
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/presentation/providers/todo_notifier.dart',
+          codeName: 'riverpod_ref_after_async_gap',
+          problemMessage:
+              'Avoid ref.invalidate() after an async gap in Riverpod providers.',
+          correctionMessage:
+              'Capture provider/usecase dependencies before await or Future continuations, not after the async gap.',
+        ),
+      ]);
+    });
   });
 }
