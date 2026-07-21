@@ -1,6 +1,7 @@
 name: Claude Mention Responder
 
-# Reusable workflow caller — 본체는 ittae/.github/.github/workflows/claude-mention-light.yml
+# Public package: least privilege + trusted commenters only (prompt-injection).
+# Body: ittae/.github claude-mention-light.yml
 
 on:
   issue_comment:
@@ -12,8 +13,13 @@ on:
 
 jobs:
   call:
+    if: >-
+      (contains(fromJSON('["issue_comment", "pull_request_review_comment"]'), github.event_name) &&
+       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)) ||
+      (github.event_name == 'pull_request_review' &&
+       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.review.author_association))
     permissions:
-      contents: write
+      contents: read
       pull-requests: write
       issues: write
       id-token: write
