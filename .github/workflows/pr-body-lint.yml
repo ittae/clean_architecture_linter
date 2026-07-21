@@ -1,0 +1,27 @@
+name: PR body lint
+
+# ittae org template section check. ubuntu-latest only. Draft skipped.
+# Script: .github/scripts/pr_body_lint.sh (synced from ittae/.github tools/pr_body_lint.sh)
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  lint:
+    if: github.event.pull_request.draft != true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch PR body
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh pr view "${{ github.event.pull_request.number }}" -R "${{ github.repository }}" --json body -q .body > /tmp/pr-body.md
+      - name: Lint PR body
+        run: bash .github/scripts/pr_body_lint.sh /tmp/pr-body.md
