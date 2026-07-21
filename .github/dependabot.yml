@@ -1,6 +1,7 @@
 version: 2
 
 # Policy: workspace policies/dependabot-pr-lanes.md
+# Labels must exist on the repo (see ensure-dependabot-labels.yml); Dependabot omits missing labels.
 # Flutter app: pub + root GHA. Add extra npm directories in-repo if needed (e.g. /functions).
 
 updates:
