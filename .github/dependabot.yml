@@ -39,6 +39,9 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+      # 내부 reusable workflow: `@main` 참조라 갱신할 버전이 없고 private이라 접근도
+      # 안 된다. 근거·실측은 policies/dependabot-pr-lanes.md 규칙 6.
+      - dependency-name: "ittae/.github*"
     commit-message:
       prefix: "chore"
       include: "scope"
