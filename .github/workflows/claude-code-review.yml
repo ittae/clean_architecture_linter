@@ -5,7 +5,8 @@ name: Claude Code Review
 # referenced_workflows 해석 실패로 startup_failure) 스탠드얼론으로 둔다.
 # ⚠️ 정본은 ittae/.github/claude-review-light.yml — 정본 변경 시 이 파일도 동기화할 것.
 # 원본 대비 변경점: workflow_call → pull_request/workflow_dispatch, inputs → env 리터럴,
-# 잡에 same-repo 가드(fork PR은 self-hosted 잡 실행 금지) + dependabot 가드 추가.
+# public-only 가드: same-repo + PR author == get6 (owner-authored only).
+# fork / collaborator / bot / 외부 association → self-hosted AI 리뷰 미실행.
 
 on:
   pull_request:
@@ -49,18 +50,18 @@ jobs:
   # 크로스-스텝 셸 변수 버그(ITER)와 max_prior 출처 버그 수정.
   # ─────────────────────────────────────────
   review:
-    # public repo + self-hosted 러너 조합의 안전핀: fork PR에선 잡 자체가 돌지 않는다.
-    # draft PR은 파이프라인 전체 제외 (리뷰·sweep 승격·병합 일관) — ready 전환 시 ready_for_review로 진입.
-    # Public package: same-repo + trusted association only. Forks/first-timers never hit self-hosted.
+    # public + self-hosted 안전핀 (이 레포 전용, org private 기본과 다름):
+    # - fork / 다른 사람 PR / bot → 잡 자체 미실행 (self-hosted·시크릿 미노출)
+    # - draft 제외; ready_for_review 시 재진입
+    # - PR author 는 login == get6 만 (association COLLABORATOR 로 열리지 않음)
+    # - workflow_dispatch 도 get6 만 트리거; 대상 PR author 검증은 check 스텝
     if: >-
       (github.event_name == 'workflow_dispatch' &&
        (github.actor == 'get6' || github.triggering_actor == 'get6')) ||
       (github.event.pull_request.head.repo.full_name == github.repository &&
-       github.actor != 'dependabot[bot]' &&
        github.event.pull_request.draft != true &&
-       (github.event.pull_request.author_association == 'OWNER' ||
-        github.event.pull_request.author_association == 'MEMBER' ||
-        github.event.pull_request.author_association == 'COLLABORATOR'))
+       github.event.pull_request.user.login == 'get6' &&
+       github.event.pull_request.user.type != 'Bot')
     concurrency:
       group: crl-review-${{ github.workflow }}-${{ github.repository }}-${{ github.event.pull_request.number || github.ref }}
       cancel-in-progress: true
@@ -76,16 +77,29 @@ jobs:
           fetch-depth: 0
 
       - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          # Bot author skip
-          if [ "${{ github.actor }}" = "dependabot[bot]" ] || \
-             [ "${{ github.event.pull_request.user.type }}" = "Bot" ]; then
+          # Public lane: owner-authored PRs only (get6). Uses PR author, not event actor.
+          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
+          PR_AUTHOR_TYPE="${{ github.event.pull_request.user.type }}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            PR_AUTHOR=$(gh pr view "$PR_NUM" -R "$REPO" --json author --jq '.author.login // empty')
+            PR_AUTHOR_TYPE=$(gh api "repos/$REPO/pulls/$PR_NUM" --jq '.user.type // empty')
+          fi
+          if [ "$PR_AUTHOR_TYPE" = "Bot" ] || [ -z "$PR_AUTHOR" ]; then
             echo "skip=true" >> $GITHUB_OUTPUT
-            echo "reason=bot-author" >> $GITHUB_OUTPUT
+            echo "reason=bot-or-unknown-author" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          if [ "$PR_AUTHOR" != "get6" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "reason=non-owner-author" >> $GITHUB_OUTPUT
+            echo "::notice title=pr-gate review-check::waived reason=non-owner-author author=$PR_AUTHOR"
             exit 0
           fi
 
-          # workflow_dispatch는 항상 진행
+          # workflow_dispatch + owner PR → 진행
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "skip=false" >> $GITHUB_OUTPUT; exit 0
           fi
