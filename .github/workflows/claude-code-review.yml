@@ -9,21 +9,14 @@ name: Claude Code Review
 
 on:
   pull_request:
+    # paths 필터 금지 (2026-07-22).
+    # path miss면 워크플로 자체가 안 떠서 check/reason이 없고, docs/README-only
+    # PR(#96)처럼 AI 리뷰가 조용히 bypass된다. 이 repo의 리뷰 주체는 에이전트이며
+    # 자동화 게이트에서 리뷰 skip은 허용하지 않는다.
+    # CI(test/coverage)는 별도 워크플로라 여기 paths를 없애도 객체 CI 비용과 무관.
+    # draft/bot/fork는 job-level if + check step reason으로 관측 가능하게 제외.
+    # SoT: ittae/.github docs/pr-gate-contract.md (unobservable path miss 금지).
     types: [opened, synchronize, ready_for_review, reopened]
-    paths:
-      - 'lib/**'
-      - 'test/**'
-      - 'example/**'
-      - '*.dart'
-      - 'analysis_options.yaml'
-      - 'pubspec.yaml'
-      - 'pubspec.lock'
-      # 이 워크플로 파일만 등록돼 있어 다른 .github 변경이 CI·AI 리뷰를 통째로
-      # 건너뛰었다. dependabot.yml·다른 워크플로를 바꾸는 PR이 체크 없이 머지
-      # 가능한 상태였다 (2026-07-21 확인).
-      # pr-gate-contract.md: "Caller paths: filters that drop the entire
-      # workflow cause unobservable misses (no check, no reason)."
-      - '.github/**'
   workflow_dispatch:
     inputs:
       pr_number:
