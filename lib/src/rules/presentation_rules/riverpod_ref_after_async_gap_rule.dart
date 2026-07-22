@@ -285,8 +285,150 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
 
   bool _shouldReport(MethodInvocation refCall) {
     if (!_hasInheritedAsyncGap && !_hasPriorAsyncGap(refCall)) return false;
+    if (_isDisposalGuarded(refCall)) return false;
 
     return _reportedRefCallOffsets.add(refCall.offset);
+  }
+
+  /// Whether [refCall] is dominated by a `ref.mounted` disposal guard that no
+  /// later `await` has invalidated.
+  ///
+  /// Recognises both the early-return form and the positive wrapper:
+  ///
+  /// ```dart
+  /// await save();
+  /// if (!ref.mounted) return;   // early return
+  /// ref.invalidate(p);          // guarded
+  ///
+  /// await save();
+  /// if (ref.mounted) {          // positive wrapper
+  ///   ref.invalidate(p);        // guarded
+  /// }
+  /// ```
+  ///
+  /// A guard only protects the code that runs before the next async gap, so an
+  /// `await` between the guard and [refCall] makes the guard stale:
+  ///
+  /// ```dart
+  /// if (!ref.mounted) return;
+  /// await save();
+  /// ref.invalidate(p);          // still reported
+  /// ```
+  bool _isDisposalGuarded(AstNode refCall) {
+    AstNode child = refCall;
+    AstNode? parent = child.parent;
+    while (parent != null) {
+      if (identical(child, _scannedBody)) break;
+
+      if (parent is Block) {
+        var guarded = false;
+        var awaitAfterGuard = false;
+        for (final statement in parent.statements) {
+          if (identical(statement, child)) break;
+          if (_isRefMountedEarlyReturnGuard(statement)) {
+            guarded = true;
+            awaitAfterGuard = false;
+          } else if (_subtreeHasAwait(statement)) {
+            guarded = false;
+            awaitAfterGuard = true;
+          }
+        }
+        if (guarded) return true;
+        // An await at this level runs after any guard in an enclosing scope,
+        // so no outer guard can still be protecting the ref call.
+        if (awaitAfterGuard) return false;
+      } else if (parent is IfStatement) {
+        // `if (ref.mounted) { <refCall> }`
+        if (identical(child, parent.thenStatement) &&
+            _isRefMountedCheck(parent.expression, negated: false)) {
+          return true;
+        }
+        // `if (!ref.mounted) return; else { <refCall> }` — the else branch is
+        // only reachable while mounted.
+        if (identical(child, parent.elseStatement) &&
+            _isRefMountedEarlyReturnGuard(parent)) {
+          return true;
+        }
+      } else if (parent is TryStatement && !identical(child, parent.body)) {
+        // The ref call is in a catch clause or finally block, which run after
+        // the try body — including after an await in it that threw. Any guard
+        // outside the try is therefore stale.
+        if (_subtreeHasAwait(parent.body)) return false;
+      } else if (_awaitingLoopBody(parent, child)) {
+        // On the second and later iterations the loop body's own await has
+        // already run, so a guard outside the loop no longer holds.
+        return false;
+      }
+
+      child = parent;
+      parent = child.parent;
+    }
+
+    return false;
+  }
+
+  /// Whether [child] is the body of a loop whose body contains an `await`.
+  ///
+  /// A guard placed outside such a loop only covers the first iteration: every
+  /// later iteration re-enters the body after the previous iteration's await.
+  bool _awaitingLoopBody(AstNode parent, AstNode child) {
+    final Statement? body = switch (parent) {
+      WhileStatement() => parent.body,
+      DoStatement() => parent.body,
+      ForStatement() => parent.body,
+      _ => null,
+    };
+    if (body == null || !identical(child, body)) return false;
+
+    return _subtreeHasAwait(body);
+  }
+
+  /// Whether [statement] is `if (!ref.mounted) <exit>;` — a guard whose then
+  /// branch always leaves the current execution path.
+  bool _isRefMountedEarlyReturnGuard(Statement statement) {
+    if (statement is! IfStatement) return false;
+    if (!_isRefMountedCheck(statement.expression, negated: true)) return false;
+
+    return _alwaysExits(statement.thenStatement);
+  }
+
+  bool _alwaysExits(Statement statement) {
+    if (statement is ReturnStatement) return true;
+    if (statement is ExpressionStatement) {
+      return statement.expression is ThrowExpression;
+    }
+    if (statement is Block) {
+      final statements = statement.statements;
+      if (statements.isEmpty) return false;
+      return _alwaysExits(statements.last);
+    }
+
+    return false;
+  }
+
+  /// Whether [expression] is `ref.mounted` (when [negated] is false) or
+  /// `!ref.mounted` (when [negated] is true).
+  bool _isRefMountedCheck(Expression expression, {required bool negated}) {
+    if (negated) {
+      return expression is PrefixExpression &&
+          expression.operator.lexeme == '!' &&
+          _isRefMountedAccess(expression.operand);
+    }
+
+    return _isRefMountedAccess(expression);
+  }
+
+  bool _isRefMountedAccess(Expression expression) {
+    if (expression is PrefixedIdentifier) {
+      return expression.prefix.name == 'ref' &&
+          expression.identifier.name == 'mounted';
+    }
+    if (expression is PropertyAccess) {
+      return expression.propertyName.name == 'mounted' &&
+          _isRefTarget(expression.target);
+    }
+
+    return false;
   }
 
   void _scanLocalFunctionInvocation(MethodInvocation invocation) {
@@ -320,7 +462,7 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
       refCall,
       arguments: [
         'Avoid ref.$methodName() after an async gap in Riverpod providers.',
-        'Capture provider/usecase dependencies before await or Future continuations, not after the async gap.',
+        'Capture provider/usecase dependencies before the async gap, or guard the post-gap access with "if (!ref.mounted) return;".',
       ],
     );
   }

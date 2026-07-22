@@ -41,9 +41,11 @@
 
 ### E. `ref_mounted_usage`
 - 파일: `lib/src/rules/presentation_rules/ref_mounted_usage_rule.dart`
-- 의도: `ref.mounted` 사용을 설계 문제 은폐로 간주해 금지
+- 의도: UI 레이어에서 `ref.mounted`로 상태 로직을 게이팅하는 것을 설계 문제 은폐로 간주해 금지. 단, 상태 레이어(Notifier)에서는 Riverpod 3가 `UnmountedRefException`을 막으라고 제공한 정식 도구이므로 허용.
 - 핵심 탐지:
-  - `ref.mounted`, `!ref.mounted` 패턴 직접 탐지 (lines 81~113)
+  - `ref.mounted`, `!ref.mounted` 패턴 직접 탐지
+  - 경로 문자열이 아니라 **AST 상 enclosing class**로 레이어 판정. `@riverpod` 어노테이션 / `extends _$X` / `Notifier` 계열 상위 클래스 / `...Notifier` 클래스명이면 면제
+  - Notifier와 그것을 소비하는 위젯이 같은 `presentation/providers/` 디렉터리에 사는 경우가 흔하므로 경로 기반 판정으로는 둘을 나눌 수 없다
 
 ### F. `riverpod_keep_alive`
 - 파일: `lib/src/rules/presentation_rules/riverpod_keep_alive_rule.dart`
@@ -233,8 +235,10 @@ class Todo extends _$Todo {}
 - `ref.listen` 사용 중일 때 중복 경고 억제
 
 ### `ref_mounted_usage` 개선
-- 전면 금지 대신 severity 하향 + 예외 태그 허용(예: `// ignore: ...` 가이드 강화)
-- `CancelableOperation`, `ref.onDispose` 사용 시 경고 억제
+- ✅ 적용됨: 전면 금지 폐기. 레이어 인식으로 전환해 Notifier 컨텍스트는 면제하고 위젯 컨텍스트만 보고
+- ✅ 적용됨: `riverpod_ref_after_async_gap`이 `if (!ref.mounted) return;` 가드를 인식해 가드 뒤의 `ref` 사용은 보고하지 않음 (단, 가드 이후 다시 `await`가 오면 가드가 무효화되어 계속 보고)
+- 남은 후보: `CancelableOperation`, `ref.onDispose` 사용 시 경고 억제
+- 남은 후보: `state` getter/setter도 `UnmountedRefException`을 던지지만 현재 `riverpod_ref_after_async_gap`은 `ref.*`만 본다 (린트 사각지대)
 
 ### `riverpod_keep_alive` 개선
 - `@riverpod(keepAlive: true)` 표기도 함께 처리
