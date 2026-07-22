@@ -5,10 +5,15 @@ import '../../../v2_harness/analysis_rule_harness.dart';
 
 void main() {
   group('RefMountedUsageRule v2', () {
-    test('reports ref.mounted in presentation provider files', () async {
+    const problem =
+        'Avoid "ref.mounted" in widgets/pages. State-lifecycle checks belong in the Notifier, not the UI.';
+    const correction =
+        'Render state with ref.watch and delegate mutations to Notifier methods (ref.mounted is the correct post-await guard there). For widget-local async, use context.mounted.';
+
+    test('reports ref.mounted in a page (UI layer)', () async {
       final result = await V2RuleHarness(rule: RefMountedUsageRule()).analyze(
         files: {
-          'lib/features/todo/presentation/providers/todo_provider.dart': '''
+          'lib/features/todo/presentation/pages/todo_page.dart': '''
 class Ref {
   bool get mounted => true;
 }
@@ -20,27 +25,23 @@ void update(Ref ref) {
 }
 ''',
         },
-        definingFile:
-            'lib/features/todo/presentation/providers/todo_provider.dart',
+        definingFile: 'lib/features/todo/presentation/pages/todo_page.dart',
       );
 
       result.expectDiagnostics([
         const ExpectedV2Diagnostic(
-          relativePath:
-              'lib/features/todo/presentation/providers/todo_provider.dart',
+          relativePath: 'lib/features/todo/presentation/pages/todo_page.dart',
           codeName: 'ref_mounted_usage',
-          problemMessage:
-              'Avoid using "ref.mounted" to guard async operations. This masks design problems.',
-          correctionMessage:
-              "Instead: (1) Complete async work before navigation, or (2) Call UseCase directly then navigate - new screen's provider will load state.",
+          problemMessage: problem,
+          correctionMessage: correction,
         ),
       ]);
     });
 
-    test('reports negated ref.mounted pattern', () async {
+    test('reports negated ref.mounted in a widget (UI layer)', () async {
       final result = await V2RuleHarness(rule: RefMountedUsageRule()).analyze(
         files: {
-          'lib/features/todo/providers/todo_provider.dart': '''
+          'lib/features/todo/presentation/widgets/todo_card.dart': '''
 class Ref {
   bool get mounted => true;
 }
@@ -52,19 +53,60 @@ void update(Ref ref) {
 }
 ''',
         },
-        definingFile: 'lib/features/todo/providers/todo_provider.dart',
+        definingFile: 'lib/features/todo/presentation/widgets/todo_card.dart',
       );
 
       result.expectDiagnostics([
         const ExpectedV2Diagnostic(
-          relativePath: 'lib/features/todo/providers/todo_provider.dart',
+          relativePath: 'lib/features/todo/presentation/widgets/todo_card.dart',
           codeName: 'ref_mounted_usage',
-          problemMessage:
-              'Avoid using "ref.mounted" to guard async operations. This masks design problems.',
-          correctionMessage:
-              "Instead: (1) Complete async work before navigation, or (2) Call UseCase directly then navigate - new screen's provider will load state.",
+          problemMessage: problem,
+          correctionMessage: correction,
         ),
       ]);
+    });
+
+    test('allows ref.mounted in a Notifier/provider (state layer)', () async {
+      final result = await V2RuleHarness(rule: RefMountedUsageRule()).analyze(
+        files: {
+          'lib/features/todo/presentation/providers/todo_provider.dart': '''
+class Ref {
+  bool get mounted => true;
+}
+
+void update(Ref ref) {
+  if (!ref.mounted) {
+    return;
+  }
+}
+''',
+        },
+        definingFile:
+            'lib/features/todo/presentation/providers/todo_provider.dart',
+      );
+
+      result.expectNoDiagnostics();
+    });
+
+    test('allows ref.mounted in core/providers', () async {
+      final result = await V2RuleHarness(rule: RefMountedUsageRule()).analyze(
+        files: {
+          'lib/core/providers/auth_provider.dart': '''
+class Ref {
+  bool get mounted => true;
+}
+
+void update(Ref ref) {
+  if (!ref.mounted) {
+    return;
+  }
+}
+''',
+        },
+        definingFile: 'lib/core/providers/auth_provider.dart',
+      );
+
+      result.expectNoDiagnostics();
     });
 
     test('ignores non-presentation non-provider files', () async {
