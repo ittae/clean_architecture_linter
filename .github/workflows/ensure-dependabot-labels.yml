@@ -1,0 +1,27 @@
+name: Ensure Dependabot labels
+
+# Self-heal labels referenced by dependabot.yml (Dependabot does not create missing labels).
+on:
+  push:
+    paths:
+      - ".github/dependabot.yml"
+      - ".github/workflows/ensure-dependabot-labels.yml"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  labels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh label create dependencies -R "$REPO" \
+            --color 0366d6 --description "Pull requests that update a dependency file" --force
+          gh label create automerge-candidate -R "$REPO" \
+            --color 0e8a16 --description "Dependabot minor/patch PR eligible for auto-merge lane" --force

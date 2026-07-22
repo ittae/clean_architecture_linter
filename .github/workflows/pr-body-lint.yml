@@ -1,7 +1,7 @@
 name: PR body lint
 
-# ittae org template section check. ubuntu-latest only. Draft skipped.
-# Script: .github/scripts/pr_body_lint.sh (synced from ittae/.github tools/pr_body_lint.sh)
+# Human/agent PRs only — title/body are AI review inputs (org template).
+# Dependabot/bots: skip — machine changelog ≠ agent template (lane A CI must stay green).
 
 on:
   pull_request:
@@ -13,7 +13,11 @@ permissions:
 
 jobs:
   lint:
-    if: github.event.pull_request.draft != true
+    if: >-
+      github.event.pull_request.draft != true &&
+      github.actor != 'dependabot[bot]' &&
+      github.actor != 'dependabot-preview[bot]' &&
+      github.event.pull_request.user.type != 'Bot'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
