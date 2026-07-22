@@ -18,6 +18,12 @@ on:
       - 'analysis_options.yaml'
       - 'pubspec.yaml'
       - 'pubspec.lock'
+      # 이 워크플로 파일만 등록돼 있어 다른 .github 변경이 CI·AI 리뷰를 통째로
+      # 건너뛰었다. dependabot.yml·다른 워크플로를 바꾸는 PR이 체크 없이 머지
+      # 가능한 상태였다 (2026-07-21 확인).
+      # pr-gate-contract.md: "Caller paths: filters that drop the entire
+      # workflow cause unobservable misses (no check, no reason)."
+      - '.github/**'
   workflow_dispatch:
     inputs:
       pr_number:
