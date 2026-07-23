@@ -71,6 +71,12 @@ Expression? _namedArgumentExpression(AstNode argument) {
   return oldShape is Expression ? oldShape : null;
 }
 
+Expression? callbackArgumentExpression(AstNode argument) {
+  final Object? newShape = _readProperty(argument, #argumentExpression);
+  if (newShape is Expression) return newShape;
+  return argument is Expression ? argument : null;
+}
+
 Object _baseFormalParameter(FormalParameter parameter) {
   return _readProperty(parameter, #parameter) ?? parameter;
 }
