@@ -4,10 +4,12 @@
 이 문서는 Codex/Copilot 계열 코딩 에이전트 공통 규칙이다.
 
 ## 공통 안전 규칙 (절대 우선)
-- 절대 실행 금지: `rm`, `rmdir`, `git rm`
-- 우회성 삭제도 금지: `rm -rf`, `find ... -delete`, `xargs rm` 등
-- 삭제가 필요하면 즉시 중단 후 사용자 확인 + 안전 대안 제시 (`trash` 우선)
-- 대규모/파괴적 변경 전: 영향 범위, 롤백 방법, 승인 여부를 먼저 확인
+- 삭제는 기본 허용이다. 작업에 필요하면 `rm`, `rmdir`, `git rm`을 사용한다. 절대 금지하지 않는다.
+- 삭제 전 대상 경로를 특정한다. 추측으로 광범위 삭제하지 않는다.
+- `rm -rf` / `find ... -delete` / `xargs rm` 등 재귀·일괄 삭제는 **대상이 명확할 때만** 사용한다.
+- 고위험 경로는 사용자 확인 후: 홈 루트(`~`), 레포 `.git/`, 시크릿/ creds, 공유 runner·worktree 루트, 프로덕션 데이터.
+- 복구가 중요하면 `trash`를 우선 고려하되, 도구/작업 흐름상 `rm`이 맞으면 `rm`을 쓴다.
+- 대규모·모호한 정리 전: 영향 범위와 롤백 방법을 한 줄로 남긴다.
 
 ## 작업 품질 규칙
 - 최소 수정 원칙: 필요한 범위만 변경
@@ -86,7 +88,7 @@
 - - 🛡️ **Automatic Clean Architecture Protection** - Write code freely, linter catches violations
 - - 🎯 **34 Specialized Rules** - Comprehensive coverage of all Clean Architecture layers
 - - 🚀 **Flutter-Optimized** - Built specifically for Flutter development patterns
-- - 🎨 **Riverpod State Management** - Enforces 3-tier provider architecture (Entity → UI → Computed)
+- - 🎨 **Riverpod State Management** - Enforces 3-tier provider architecture (Entity  UI  Computed)
 - - 📚 **Educational** - Learn Clean Architecture through guided corrections
 - - ⚡ **Real-time Feedback** - Immediate warnings with actionable solutions
 - - 🔧 **Zero Configuration** - Works out of the box with sensible defaults
