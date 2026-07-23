@@ -27,10 +27,10 @@ dependencies:
   # plugin-isolate load/analysis (observed in consumer CI: `flutter analyze`
   # never returns). asp 0.3.14/analyzer 12.1 is stable. Re-widen once the
   # upstream host issue is fixed. See CHANGELOG 2.0.1.
-  analyzer: '>=9.0.0 <13.0.0'
-  analysis_server_plugin: '>=0.3.4 <0.3.15'
+  analyzer: ^14.1.0
+  analysis_server_plugin: ^0.3.20
   path: ^1.9.1
 
 dev_dependencies:
   lints: ^6.1.0
-  test: ^1.29.0
+  test: ^1.31.2
