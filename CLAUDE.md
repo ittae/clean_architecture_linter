@@ -90,7 +90,7 @@
 - - 🛡️ **Automatic Clean Architecture Protection** - Write code freely, linter catches violations
 - - 🎯 **34 Specialized Rules** - Comprehensive coverage of all Clean Architecture layers
 - - 🚀 **Flutter-Optimized** - Built specifically for Flutter development patterns
-- - 🎨 **Riverpod State Management** - Enforces 3-tier provider architecture (Entity  UI  Computed)
+- - 🎨 **Riverpod State Management** - Enforces 3-tier provider architecture (Entity → UI → Computed)
 - - 📚 **Educational** - Learn Clean Architecture through guided corrections
 - - ⚡ **Real-time Feedback** - Immediate warnings with actionable solutions
 - - 🔧 **Zero Configuration** - Works out of the box with sensible defaults

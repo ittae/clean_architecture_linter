@@ -79,7 +79,7 @@ Gemini CLI 작업 시 적용되는 규칙.
 - - 🛡️ **Automatic Clean Architecture Protection** - Write code freely, linter catches violations
 - - 🎯 **34 Specialized Rules** - Comprehensive coverage of all Clean Architecture layers
 - - 🚀 **Flutter-Optimized** - Built specifically for Flutter development patterns
-- - 🎨 **Riverpod State Management** - Enforces 3-tier provider architecture (Entity  UI  Computed)
+- - 🎨 **Riverpod State Management** - Enforces 3-tier provider architecture (Entity → UI → Computed)
 - - 📚 **Educational** - Learn Clean Architecture through guided corrections
 - - ⚡ **Real-time Feedback** - Immediate warnings with actionable solutions
 - - 🔧 **Zero Configuration** - Works out of the box with sensible defaults
@@ -87,6 +87,12 @@ Gemini CLI 작업 시 적용되는 규칙.
 - ## 📋 Rules Overview (34 Rules)
 - ### 🌐 Core Clean Architecture Principles (6 rules)
 <!-- AGENT_POLICY_MANAGED_BLOCK:END -->
+
+## 이 레포 고유 지침
+- 이 저장소는 Flutter 앱이 아니라 **Dart package (custom_lint rules / analyzer plugin)**.
+- 패키지 코드 경로: `lib/src/rules/`, `lib/src/mixins/` — managed block의 feature 레이아웃을 **이 패키지 자체**에 적용하지 말 것.
+- 상세 규칙: `CLAUDE.md` (managed block 이후 섹션) 참조.
+
 
 ## 검색·컨텍스트 규율 (토큰 효율)
 <!-- BEGIN agent-search-discipline (managed) -->
