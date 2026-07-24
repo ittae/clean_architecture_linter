@@ -1,6 +1,6 @@
 name: clean_architecture_linter
 description: A comprehensive analysis_server_plugin that automatically enforces Clean Architecture principles in Flutter projects with Riverpod state management.
-version: 2.2.0
+version: 2.2.1
 repository: https://github.com/ittae/clean_architecture_linter
 homepage: https://github.com/ittae/clean_architecture_linter
 documentation: https://github.com/ittae/clean_architecture_linter/blob/main/README.md
