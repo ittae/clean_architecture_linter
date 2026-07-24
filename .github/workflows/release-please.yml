@@ -5,91 +5,39 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# contents/pull-requests: release-please opens/merges release artifacts.
-# actions: write — allow dispatching Publish to pub.dev after release_created.
-# NOTE: Do not use workflow_call for publish. Nested calls inherit the caller
-# event (branch push); pub.dev OIDC only allows tag push or workflow_dispatch
-# with ref_type=tag (dispatch with --ref <tag>).
+# contents/pull-requests: release-please opens PRs and creates tags/releases.
+#
+# IMPORTANT — pub.dev OIDC for this package allows **git tag push only**
+# (workflow_dispatch is rejected by pub.dev config).
+# Tags created with the default GITHUB_TOKEN do not re-trigger publish.yml.
+# Pass a PAT / GitHub App token (contents:write) via RELEASE_PLEASE_TOKEN so
+# the tag push is a normal user/app event and Publish to pub.dev runs.
 permissions:
   contents: write
   pull-requests: write
-  actions: write
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
-    outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
-      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+          # Prefer PAT so created tags trigger on.push.tags workflows (publish.yml).
+          # Fallback to GITHUB_TOKEN only creates Release/tag without auto-publish.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
 
-      - name: Note release outcome
+      - name: Warn if publish may not auto-trigger
         if: steps.release.outputs.release_created == 'true'
-        run: |
-          echo "release_created=true"
-          echo "tag_name=${{ steps.release.outputs.tag_name }}"
-          echo "GITHUB_TOKEN tag push does not re-trigger on.push.tags workflows."
-          echo "Next job dispatches Publish on the release tag ref (OIDC ref_type=tag)."
-
-  # Separate workflow_dispatch run so pub.dev OIDC sees event_name=workflow_dispatch
-  # with ref_type=tag (not nested workflow_call under branch push).
-  dispatch-publish:
-    needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
-    runs-on: ubuntu-latest
-    # Publish may run tests + OIDC; allow enough wall time for watch.
-    timeout-minutes: 30
-    permissions:
-      actions: write
-      contents: read
-    steps:
-      - name: Dispatch Publish to pub.dev
         env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ needs.release-please.outputs.tag_name }}
+          HAS_PAT: ${{ secrets.RELEASE_PLEASE_TOKEN != '' }}
+          TAG: ${{ steps.release.outputs.tag_name }}
         run: |
-          set -euo pipefail
-          if [ -z "${TAG:-}" ]; then
-            echo "::error::release-please tag_name is empty; cannot dispatch publish with tag ref"
-            exit 1
+          echo "release_created=true tag=${TAG}"
+          if [ "$HAS_PAT" != "true" ]; then
+            echo "::warning::RELEASE_PLEASE_TOKEN secret is not set. Tag ${TAG} was created with GITHUB_TOKEN and will NOT trigger Publish to pub.dev. Re-push the tag with a human/PAT credential, or add RELEASE_PLEASE_TOKEN (contents:write)."
+          else
+            echo "RELEASE_PLEASE_TOKEN present — tag push should trigger Publish to pub.dev."
           fi
-          echo "Dispatching Publish to pub.dev (tag=${TAG})"
-          # --ref must be the git tag so OIDC has ref_type=tag (pub.dev requirement).
-          gh workflow run "Publish to pub.dev" \
-            --repo "${{ github.repository }}" \
-            --ref "${TAG}"
-
-          # Pin the new dispatch run and fail this job if publish fails.
-          # Without watch, only enqueue success would green this Release Please run.
-          sleep 5
-          RUN_ID=""
-          for _ in 1 2 3 4 5 6; do
-            RUN_ID="$(
-              gh run list --repo "${{ github.repository }}" \
-                --workflow "Publish to pub.dev" \
-                --event workflow_dispatch \
-                --limit 5 \
-                --json databaseId,headBranch,status,event,createdAt \
-              | jq -r --arg tag "$TAG" \
-                'map(select(.headBranch == $tag)) | sort_by(.createdAt) | reverse | .[0].databaseId // empty' \
-              || true
-            )"
-            if [ -n "${RUN_ID:-}" ]; then
-              break
-            fi
-            sleep 5
-          done
-          if [ -z "${RUN_ID:-}" ]; then
-            echo "::error::Publish workflow_dispatch run not found after enqueue (tag=${TAG})"
-            gh run list --repo "${{ github.repository }}" \
-              --workflow "Publish to pub.dev" --limit 5 \
-              --json databaseId,status,event,headBranch,displayTitle,url,createdAt
-            exit 1
-          fi
-          echo "Watching publish run: https://github.com/${{ github.repository }}/actions/runs/${RUN_ID}"
-          gh run watch "$RUN_ID" --repo "${{ github.repository }}" --exit-status
