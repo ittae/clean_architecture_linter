@@ -6,11 +6,13 @@ on:
   workflow_dispatch:
 
 # contents/pull-requests: release-please opens/merges release artifacts.
-# id-token: required so the nested Publish workflow can use pub.dev OIDC.
+# actions: write — allow dispatching Publish to pub.dev after release_created.
+# NOTE: Do not use workflow_call for publish. Nested calls inherit the caller
+# event (branch push); pub.dev OIDC only allows tag push or workflow_dispatch.
 permissions:
   contents: write
   pull-requests: write
-  id-token: write
+  actions: write
 
 jobs:
   release-please:
@@ -30,16 +32,29 @@ jobs:
         run: |
           echo "release_created=true"
           echo "tag_name=${{ steps.release.outputs.tag_name }}"
-          echo "GitHub Release/tag were created by GITHUB_TOKEN."
-          echo "Publish is invoked via workflow_call (tag push from GITHUB_TOKEN does not trigger other workflows)."
+          echo "GITHUB_TOKEN tag push does not re-trigger on.push.tags workflows."
+          echo "Next job dispatches Publish to pub.dev as workflow_dispatch (OIDC-allowed)."
 
-  # GITHUB_TOKEN tag/release events do not re-trigger on.push.tags workflows.
-  # Call publish directly when release-please actually cut a release.
-  publish:
+  # Separate workflow_dispatch run so pub.dev OIDC sees event_name=workflow_dispatch
+  # (not nested workflow_call under branch push).
+  dispatch-publish:
     needs: release-please
     if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
     permissions:
+      actions: write
       contents: read
-      id-token: write
-    uses: ./.github/workflows/publish.yml
-    secrets: inherit
+    steps:
+      - name: Dispatch Publish to pub.dev
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+        run: |
+          set -euo pipefail
+          echo "Dispatching Publish to pub.dev (tag=${TAG:-unknown})"
+          gh workflow run "Publish to pub.dev" --repo "${{ github.repository }}"
+          # Best-effort: show the newest run URL shortly after enqueue
+          sleep 3
+          gh run list --repo "${{ github.repository }}" \
+            --workflow "Publish to pub.dev" --limit 3 \
+            --json databaseId,status,event,displayTitle,url,createdAt

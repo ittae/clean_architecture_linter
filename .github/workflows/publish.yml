@@ -1,14 +1,14 @@
 name: Publish to pub.dev
 
-# Triggers:
-# - push tags vX.Y.Z* (manual tag / PAT-created tag)
-# - workflow_call from Release Please when release_created
-# - workflow_dispatch (backfill / recovery, e.g. tag already exists but publish never ran)
+# pub.dev automated publishing OIDC allows:
+# - push of a git tag
+# - workflow_dispatch
+# Nested workflow_call from a branch-push caller keeps event_name=push + ref_type=branch
+# and is rejected by pub.dev — do not add workflow_call for the Release Please path.
 on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
-  workflow_call:
   workflow_dispatch:
 
 permissions:
