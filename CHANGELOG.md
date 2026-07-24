@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0](https://github.com/ittae/clean_architecture_linter/compare/v2.1.1...v2.2.0) (2026-07-24)
+
+
+### Features
+
+* add release-please pilot for versioned releases ([#89](https://github.com/ittae/clean_architecture_linter/issues/89)) ([968d3f3](https://github.com/ittae/clean_architecture_linter/commit/968d3f34a5ac3fd2ba2a73827a2e44d57d212360))
+
+
+### Bug Fixes
+
+* AI 리뷰 always-on + owner(get6) authored only ([#104](https://github.com/ittae/clean_architecture_linter/issues/104)) ([8e48d49](https://github.com/ittae/clean_architecture_linter/commit/8e48d49132e59f7e5bbdb9bdb0430f1f738a9daa))
+* align release-please tags with vX.Y.Z (avoid false major) ([#91](https://github.com/ittae/clean_architecture_linter/issues/91)) ([f6978ee](https://github.com/ittae/clean_architecture_linter/commit/f6978ee2555bb64da6710eff7d79bcfdabcbcd36))
+* **ci:** harden public package AI review and mention guards ([#93](https://github.com/ittae/clean_architecture_linter/issues/93)) ([dfe8908](https://github.com/ittae/clean_architecture_linter/commit/dfe89083d7d6334d895872589250bda4cdc887cb))
+* dependabot이 내부 reusable workflow를 추적하지 않도록 ignore ([#100](https://github.com/ittae/clean_architecture_linter/issues/100)) ([8cf0943](https://github.com/ittae/clean_architecture_linter/commit/8cf0943ca5a0d0ba37e8828bcf85a0d832999131))
+* ITT-1266 Future continuation callback ref 접근 진단 ([#79](https://github.com/ittae/clean_architecture_linter/issues/79)) ([96de2c6](https://github.com/ittae/clean_architecture_linter/commit/96de2c6f7244ace2ca2c27ce8d93f773ac5daa0b))
+* ITT-1673 ref.mounted 룰 레이어 인식 전환 (Notifier 오탐 제거) ([#97](https://github.com/ittae/clean_architecture_linter/issues/97)) ([d5d200c](https://github.com/ittae/clean_architecture_linter/commit/d5d200ca7729cf419d3995c6d893c84f3d743ee6))
+* light 리뷰 caller issues:write 승격 (reusable harden [#30](https://github.com/ittae/clean_architecture_linter/issues/30) 이후 startup_failure 복구) ([#82](https://github.com/ittae/clean_architecture_linter/issues/82)) ([649c984](https://github.com/ittae/clean_architecture_linter/commit/649c98409d6a8b875878b267d0a560e64e72043d))
+* 동작 불가능한 claude 멘션 워크플로 제거 (ITT-1703) ([#101](https://github.com/ittae/clean_architecture_linter/issues/101)) ([a5aaf05](https://github.com/ittae/clean_architecture_linter/commit/a5aaf05021e91cf9fc65a8905ab0c8b78b268891))
+* 리뷰 caller paths에 .github/** 추가 (ITT-1703 follow / rebased) ([#102](https://github.com/ittae/clean_architecture_linter/issues/102)) ([0bb5b86](https://github.com/ittae/clean_architecture_linter/commit/0bb5b865532a142a2c43a5ca18ba87812e3c9fc4))
+
 ## [Unreleased]
 
 ## [2.1.1] - 2026-06-25
