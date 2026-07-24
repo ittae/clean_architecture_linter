@@ -8,7 +8,8 @@ on:
 # contents/pull-requests: release-please opens/merges release artifacts.
 # actions: write — allow dispatching Publish to pub.dev after release_created.
 # NOTE: Do not use workflow_call for publish. Nested calls inherit the caller
-# event (branch push); pub.dev OIDC only allows tag push or workflow_dispatch.
+# event (branch push); pub.dev OIDC only allows tag push or workflow_dispatch
+# with ref_type=tag (dispatch with --ref <tag>).
 permissions:
   contents: write
   pull-requests: write
@@ -33,14 +34,16 @@ jobs:
           echo "release_created=true"
           echo "tag_name=${{ steps.release.outputs.tag_name }}"
           echo "GITHUB_TOKEN tag push does not re-trigger on.push.tags workflows."
-          echo "Next job dispatches Publish to pub.dev as workflow_dispatch (OIDC-allowed)."
+          echo "Next job dispatches Publish on the release tag ref (OIDC ref_type=tag)."
 
   # Separate workflow_dispatch run so pub.dev OIDC sees event_name=workflow_dispatch
-  # (not nested workflow_call under branch push).
+  # with ref_type=tag (not nested workflow_call under branch push).
   dispatch-publish:
     needs: release-please
     if: needs.release-please.outputs.release_created == 'true'
     runs-on: ubuntu-latest
+    # Publish may run tests + OIDC; allow enough wall time for watch.
+    timeout-minutes: 30
     permissions:
       actions: write
       contents: read
@@ -51,10 +54,42 @@ jobs:
           TAG: ${{ needs.release-please.outputs.tag_name }}
         run: |
           set -euo pipefail
-          echo "Dispatching Publish to pub.dev (tag=${TAG:-unknown})"
-          gh workflow run "Publish to pub.dev" --repo "${{ github.repository }}"
-          # Best-effort: show the newest run URL shortly after enqueue
-          sleep 3
-          gh run list --repo "${{ github.repository }}" \
-            --workflow "Publish to pub.dev" --limit 3 \
-            --json databaseId,status,event,displayTitle,url,createdAt
+          if [ -z "${TAG:-}" ]; then
+            echo "::error::release-please tag_name is empty; cannot dispatch publish with tag ref"
+            exit 1
+          fi
+          echo "Dispatching Publish to pub.dev (tag=${TAG})"
+          # --ref must be the git tag so OIDC has ref_type=tag (pub.dev requirement).
+          gh workflow run "Publish to pub.dev" \
+            --repo "${{ github.repository }}" \
+            --ref "${TAG}"
+
+          # Pin the new dispatch run and fail this job if publish fails.
+          # Without watch, only enqueue success would green this Release Please run.
+          sleep 5
+          RUN_ID=""
+          for _ in 1 2 3 4 5 6; do
+            RUN_ID="$(
+              gh run list --repo "${{ github.repository }}" \
+                --workflow "Publish to pub.dev" \
+                --event workflow_dispatch \
+                --limit 5 \
+                --json databaseId,headBranch,status,event,createdAt \
+              | jq -r --arg tag "$TAG" \
+                'map(select(.headBranch == $tag)) | sort_by(.createdAt) | reverse | .[0].databaseId // empty' \
+              || true
+            )"
+            if [ -n "${RUN_ID:-}" ]; then
+              break
+            fi
+            sleep 5
+          done
+          if [ -z "${RUN_ID:-}" ]; then
+            echo "::error::Publish workflow_dispatch run not found after enqueue (tag=${TAG})"
+            gh run list --repo "${{ github.repository }}" \
+              --workflow "Publish to pub.dev" --limit 5 \
+              --json databaseId,status,event,headBranch,displayTitle,url,createdAt
+            exit 1
+          fi
+          echo "Watching publish run: https://github.com/${{ github.repository }}/actions/runs/${RUN_ID}"
+          gh run watch "$RUN_ID" --repo "${{ github.repository }}" --exit-status

@@ -8,8 +8,8 @@ Automates Release PR + changelog from Conventional Commits on `main`, then publi
 main push
   → Release Please (opens/updates Release PR, or cuts tag + GitHub Release)
   → if release_created:
-       gh workflow run "Publish to pub.dev"   # separate workflow_dispatch run
-         → test + pub.dev OIDC
+       gh workflow run "Publish to pub.dev" --ref <tag>   # workflow_dispatch on tag ref
+         → test + pub.dev OIDC (ref_type=tag)
 ```
 
 ### Why not `workflow_call` / plain tag push
@@ -19,14 +19,34 @@ main push
 
 2. **`workflow_call` from Release Please (branch push)**  
    Nested reusable workflows keep the **caller** OIDC context (`event_name=push`, `ref_type=branch`).  
-   [pub.dev automated publishing](https://dart.dev/tools/pub/automated-publishing) only accepts OIDC from **git tag push** or **`workflow_dispatch`** — not branch push.  
+   [pub.dev automated publishing](https://dart.dev/tools/pub/automated-publishing) only accepts OIDC from **git tag push** or **`workflow_dispatch` with `ref_type=tag`** — not branch push.  
    So `uses: ./publish.yml` under Release Please would run tests but fail (or be rejected) at OIDC publish.
 
-3. **Chosen fix: `gh workflow run`**  
-   After `release_created`, Release Please dispatches Publish as a **new** `workflow_dispatch` run. That event is OIDC-allowed and does not depend on token tag re-trigger.
+3. **Chosen fix: `gh workflow run --ref <tag>`**  
+   After `release_created`, Release Please dispatches Publish as a **new**
+   `workflow_dispatch` run **on the release tag ref** (`--ref vX.Y.Z`).  
+   pub.dev accepts `workflow_dispatch` **only when OIDC `ref_type=tag`**
+   (branch dispatch is rejected the same way as branch `push`).  
+   Also enable **workflow_dispatch** under the package Admin → Automated publishing
+   (tag-push-only config still rejects dispatch events).
+
+   The dispatch job watches the publish run (`gh run watch --exit-status`) so a
+   failed publish fails the Release Please workflow, not only the separate run.
 
 Tag push trigger remains for human/PAT-created tags.  
-`workflow_dispatch` is also the backfill path when tag/Release already exist but pub.dev was missed.
+`workflow_dispatch` with `--ref vX.Y.Z` is also the backfill path when tag/Release already exist but pub.dev was missed.
+
+### OIDC contract (pub.dev)
+
+All of the following must hold (see pub.dev `PackageBackend._checkGitHubActionAllowed`):
+
+| Requirement | Detail |
+|-------------|--------|
+| `event_name` | `push` or `workflow_dispatch` **and** that event enabled in package Admin → Automated publishing |
+| `ref_type` | **Always `tag`** (dispatch on a branch ref is rejected) |
+| `ref` | Matches the configured tag pattern (e.g. `v{{version}}` → `refs/tags/vX.Y.Z`) |
+
+`event_name=workflow_dispatch` alone is **not** enough.
 
 ## Tag convention (must match existing + publish.yml)
 
@@ -40,10 +60,10 @@ Do **not** use component-prefixed tags like `clean_architecture_linter-v2.1.1` �
 
 Merging the Release PR is the ship signal. Multica Version Goal (**ITT-1521**) is `manual` release — never treat Release PR open as approval to publish.
 
-After merge, publish should start automatically via `workflow_dispatch`. If it does not:
+After merge, publish should start automatically via `workflow_dispatch` on the release tag. If it does not:
 
 ```bash
-gh workflow run "Publish to pub.dev" -R ittae/clean_architecture_linter
+gh workflow run "Publish to pub.dev" -R ittae/clean_architecture_linter --ref vX.Y.Z
 ```
 
 Confirm pub.dev version matches `pubspec.yaml` / GitHub Release tag.
@@ -58,5 +78,5 @@ Confirm pub.dev version matches `pubspec.yaml` / GitHub Release tag.
 
 - `release-please-config.json`
 - `.release-please-manifest.json` (last released: see manifest)
-- `.github/workflows/release-please.yml` — release + conditional publish dispatch
-- `.github/workflows/publish.yml` — test + pub.dev OIDC (`push` tags / `workflow_dispatch`)
+- `.github/workflows/release-please.yml` — release + conditional publish dispatch (tag ref + watch)
+- `.github/workflows/publish.yml` — test + pub.dev OIDC (`push` tags / `workflow_dispatch` on tag)

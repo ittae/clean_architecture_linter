@@ -1,10 +1,11 @@
 name: Publish to pub.dev
 
 # pub.dev automated publishing OIDC allows:
-# - push of a git tag
-# - workflow_dispatch
+# - push of a git tag (event_name=push, ref_type=tag)
+# - workflow_dispatch only when OIDC ref_type=tag (dispatch with --ref vX.Y.Z)
 # Nested workflow_call from a branch-push caller keeps event_name=push + ref_type=branch
 # and is rejected by pub.dev — do not add workflow_call for the Release Please path.
+# Branch-default workflow_dispatch (no --ref tag) also yields ref_type=branch and is rejected.
 on:
   push:
     tags:
