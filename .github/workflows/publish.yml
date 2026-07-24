@@ -1,15 +1,12 @@
 name: Publish to pub.dev
 
-# Triggers:
-# - push tags vX.Y.Z* (manual tag / PAT-created tag)
-# - workflow_call from Release Please when release_created
-# - workflow_dispatch (backfill / recovery, e.g. tag already exists but publish never ran)
+# This package's pub.dev GitHub publishing config allows **tag push only**.
+# workflow_dispatch is rejected by pub.dev ("not allowed from workflow_dispatch").
+# Do not rely on workflow_call from branch-push callers either (OIDC inherits push/branch).
 on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
-  workflow_call:
-  workflow_dispatch:
 
 permissions:
   contents: read

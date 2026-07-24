@@ -5,41 +5,39 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# contents/pull-requests: release-please opens/merges release artifacts.
-# id-token: required so the nested Publish workflow can use pub.dev OIDC.
+# contents/pull-requests: release-please opens PRs and creates tags/releases.
+#
+# IMPORTANT — pub.dev OIDC for this package allows **git tag push only**
+# (workflow_dispatch is rejected by pub.dev config).
+# Tags created with the default GITHUB_TOKEN do not re-trigger publish.yml.
+# Pass a PAT / GitHub App token (contents:write) via RELEASE_PLEASE_TOKEN so
+# the tag push is a normal user/app event and Publish to pub.dev runs.
 permissions:
   contents: write
   pull-requests: write
-  id-token: write
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
-    outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
-      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+          # Prefer PAT so created tags trigger on.push.tags workflows (publish.yml).
+          # Fallback to GITHUB_TOKEN only creates Release/tag without auto-publish.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
 
-      - name: Note release outcome
+      - name: Warn if publish may not auto-trigger
         if: steps.release.outputs.release_created == 'true'
+        env:
+          HAS_PAT: ${{ secrets.RELEASE_PLEASE_TOKEN != '' }}
+          TAG: ${{ steps.release.outputs.tag_name }}
         run: |
-          echo "release_created=true"
-          echo "tag_name=${{ steps.release.outputs.tag_name }}"
-          echo "GitHub Release/tag were created by GITHUB_TOKEN."
-          echo "Publish is invoked via workflow_call (tag push from GITHUB_TOKEN does not trigger other workflows)."
-
-  # GITHUB_TOKEN tag/release events do not re-trigger on.push.tags workflows.
-  # Call publish directly when release-please actually cut a release.
-  publish:
-    needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
-    permissions:
-      contents: read
-      id-token: write
-    uses: ./.github/workflows/publish.yml
-    secrets: inherit
+          echo "release_created=true tag=${TAG}"
+          if [ "$HAS_PAT" != "true" ]; then
+            echo "::warning::RELEASE_PLEASE_TOKEN secret is not set. Tag ${TAG} was created with GITHUB_TOKEN and will NOT trigger Publish to pub.dev. Re-push the tag with a human/PAT credential, or add RELEASE_PLEASE_TOKEN (contents:write)."
+          else
+            echo "RELEASE_PLEASE_TOKEN present — tag push should trigger Publish to pub.dev."
+          fi
