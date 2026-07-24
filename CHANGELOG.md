@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.1](https://github.com/ittae/clean_architecture_linter/compare/v2.2.0...v2.2.1) (2026-07-24)
+
+
+### Bug Fixes
+
+* **ci:** Release Please에서 pub.dev publish를 workflow_call로 연결 ([#106](https://github.com/ittae/clean_architecture_linter/issues/106)) ([8eec99b](https://github.com/ittae/clean_architecture_linter/commit/8eec99be3b4be87a9e249b8ded15f546bd3b95f6))
+
 ## [2.2.0](https://github.com/ittae/clean_architecture_linter/compare/v2.1.1...v2.2.0) (2026-07-24)
 
 
