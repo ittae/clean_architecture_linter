@@ -1,9 +1,19 @@
 name: Publish to pub.dev
 
+# Triggers:
+# - push tags vX.Y.Z* (manual tag / PAT-created tag)
+# - workflow_call from Release Please when release_created
+# - workflow_dispatch (backfill / recovery, e.g. tag already exists but publish never ran)
 on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
   # Run all quality checks before publishing

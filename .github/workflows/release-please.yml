@@ -5,15 +5,41 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# contents/pull-requests: release-please opens/merges release artifacts.
+# id-token: required so the nested Publish workflow can use pub.dev OIDC.
 permissions:
   contents: write
   pull-requests: write
+  id-token: write
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - uses: googleapis/release-please-action@v4
+        id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      - name: Note release outcome
+        if: steps.release.outputs.release_created == 'true'
+        run: |
+          echo "release_created=true"
+          echo "tag_name=${{ steps.release.outputs.tag_name }}"
+          echo "GitHub Release/tag were created by GITHUB_TOKEN."
+          echo "Publish is invoked via workflow_call (tag push from GITHUB_TOKEN does not trigger other workflows)."
+
+  # GITHUB_TOKEN tag/release events do not re-trigger on.push.tags workflows.
+  # Call publish directly when release-please actually cut a release.
+  publish:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/publish.yml
+    secrets: inherit
