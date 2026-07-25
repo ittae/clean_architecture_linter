@@ -95,10 +95,20 @@ if command -v flutter >/dev/null 2>&1; then
   set +e
   FLUTTER_OUT="$(cd "$FIXTURE_PATH" && flutter analyze 2>&1)"
   set -e
+  # Flutter human-readable output (3.x):
+  #   warning • message • path:line:col • rule_code
+  #   2 issues found. (ran in 0.3s)
+  # Legacy/alternate forms may use " - rule" or singular "1 issue found".
   if printf '%s\n' "$FLUTTER_OUT" | grep -qE 'No issues found'; then
     FLUTTER_DIAG_COUNT=0
   else
-    FLUTTER_DIAG_COUNT="$(printf '%s\n' "$FLUTTER_OUT" | grep -cE ' - [a-z_]+$' || true)"
+    SUMMARY_LINE="$(printf '%s\n' "$FLUTTER_OUT" | grep -E '[0-9]+ issues? found' | head -1 || true)"
+    if [[ -n "$SUMMARY_LINE" ]]; then
+      FLUTTER_DIAG_COUNT="$(printf '%s\n' "$SUMMARY_LINE" | grep -oE '[0-9]+ issues? found' | head -1 | grep -oE '^[0-9]+')"
+    else
+      # Fallback: count per-issue lines ending with " • rule_code" or " - rule_code"
+      FLUTTER_DIAG_COUNT="$(printf '%s\n' "$FLUTTER_OUT" | grep -cE ' [•-] [a-z_0-9]+$' || true)"
+    fi
   fi
   echo "    flutter analyze reported $FLUTTER_DIAG_COUNT diagnostic(s)."
 
@@ -120,6 +130,10 @@ if command -v flutter >/dev/null 2>&1; then
 else
   echo "==> flutter not found; skipping flutter analyze parity check."
   echo "    (CI Dart-only runners skip this; the dart analyze gate above still runs.)"
+  if [[ "$REQUIRE_PARITY" -eq 1 ]]; then
+    echo "--require-parity set but flutter is not available; cannot verify parity." >&2
+    exit 2
+  fi
 fi
 
 echo ""
