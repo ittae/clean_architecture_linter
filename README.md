@@ -75,7 +75,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 
 ## 🚀 Quick Start
 
-> 🚀 **v2.0**: Starting with `2.0.0-dev.1`, this package runs on the official [`analysis_server_plugin`](https://pub.dev/packages/analysis_server_plugin) — no `custom_lint` dependency, no `pubspec_overrides.yaml` workaround. Lint runs directly via `dart analyze` / `flutter analyze`. Upgrading from a v1 (`custom_lint`) setup? Follow [MIGRATION.md](MIGRATION.md).
+> 🚀 **v2.0**: Starting with `2.0.0-dev.1`, this package runs on the official [`analysis_server_plugin`](https://pub.dev/packages/analysis_server_plugin) — no `custom_lint` dependency, no `pubspec_overrides.yaml` workaround. Lint runs directly via `dart analyze` (use `dart analyze`, not `flutter analyze` — see the warning below). Upgrading from a v1 (`custom_lint`) setup? Follow [MIGRATION.md](MIGRATION.md).
 
 ### 📋 Requirements
 
@@ -108,10 +108,16 @@ forcing its analyzer constraints into your app's pub solve.
 
 ```bash
 dart pub get
-dart analyze        # Flutter projects: flutter analyze
+dart analyze        # Flutter projects too — use `dart analyze`, NOT `flutter analyze`
 ```
 
-That's it! The 34 rules are reported directly in your `dart analyze` / `flutter analyze` output.
+That's it! The 34 rules are reported directly in your `dart analyze` output.
+
+> ⚠️ **Use `dart analyze`, not `flutter analyze`.** `flutter analyze` silently
+> drops `analysis_server_plugin` diagnostics (it stops collecting before the
+> plugin publishes its results) and prints `No issues found!` even when
+> violations exist. This applies to CI and local runs alike. Root cause and a
+> regression guard: [docs/analysis/FLUTTER_ANALYZE_PLUGIN_LOSS.md](docs/analysis/FLUTTER_ANALYZE_PLUGIN_LOSS.md).
 
 ### 3. See it in action
 
@@ -195,8 +201,11 @@ lib/
 
 ```bash
 # Run the linter (rules are included in the analyzer output)
-dart analyze        # Flutter projects: flutter analyze
+dart analyze        # Flutter projects too — NOT `flutter analyze` (drops plugin diagnostics)
 ```
+
+> ⚠️ In Flutter projects run `dart analyze`, not `flutter analyze`. See
+> [docs/analysis/FLUTTER_ANALYZE_PLUGIN_LOSS.md](docs/analysis/FLUTTER_ANALYZE_PLUGIN_LOSS.md).
 
 ### IDE Integration
 
