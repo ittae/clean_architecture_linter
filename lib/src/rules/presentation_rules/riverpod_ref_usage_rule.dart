@@ -7,6 +7,7 @@ import 'package:analyzer/error/error.dart';
 
 import '../../clean_architecture_linter_base.dart';
 import '../../compat/analyzer_ast_compat.dart';
+import '../../utils/riverpod_provider_detector.dart';
 
 /// Enforces proper usage of ref.watch() vs ref.read() in Riverpod code.
 class RiverpodRefUsageRule extends AnalysisRule {
@@ -51,7 +52,7 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
   @override
   void visitClassDeclaration(ClassDeclaration node) {
     if (!_isProviderFile(_filePath)) return;
-    if (!_isRiverpodProviderClass(node)) return;
+    if (!isRiverpodNotifierClass(node)) return;
 
     for (final member in classMembers(node)) {
       if (member is MethodDeclaration) {
@@ -71,21 +72,6 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
         normalizedPath.endsWith('_providers.dart') ||
         normalizedPath.endsWith('_notifier.dart') ||
         normalizedPath.endsWith('_notifiers.dart');
-  }
-
-  bool _isRiverpodProviderClass(ClassDeclaration node) {
-    for (final metadata in node.metadata) {
-      final name = metadata.name.name;
-      if (name == 'riverpod' || name == 'Riverpod') return true;
-    }
-
-    final extendsClause = node.extendsClause;
-    if (extendsClause != null) {
-      final superclassName = extendsClause.superclass.name.lexeme;
-      if (superclassName.startsWith('_\$')) return true;
-    }
-
-    return false;
   }
 
   void _checkMethodRefUsage(MethodDeclaration methodNode, bool isBuildMethod) {

@@ -58,5 +58,61 @@ final todoProvider = FutureProvider((ref) => Object());
 
       result.expectNoDiagnostics();
     });
+
+    test('reports non-codegen NotifierProvider constructor', () async {
+      final result = await V2RuleHarness(rule: RiverpodGeneratorRule()).analyze(
+        files: {
+          'lib/features/todo/presentation/providers/todo_provider.dart': '''
+class NotifierProvider<A, B> {
+  const NotifierProvider(Object create);
+}
+
+final todoProvider = NotifierProvider<Object, Object>(Object());
+''',
+        },
+        definingFile:
+            'lib/features/todo/presentation/providers/todo_provider.dart',
+      );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/presentation/providers/todo_provider.dart',
+          codeName: 'riverpod_generator',
+          problemMessage:
+              'Manual provider "NotifierProvider" detected. Use @riverpod annotation instead.',
+          correctionMessage:
+              'Use riverpod_generator: Create a class with @riverpod annotation instead of manual provider declaration.',
+        ),
+      ]);
+    });
+
+    test('reports non-codegen AsyncNotifierProvider constructor', () async {
+      final result = await V2RuleHarness(rule: RiverpodGeneratorRule()).analyze(
+        files: {
+          'lib/features/todo/presentation/providers/todo_provider.dart': '''
+class AsyncNotifierProvider<A, B> {
+  const AsyncNotifierProvider(Object create);
+}
+
+final todoProvider = AsyncNotifierProvider<Object, Object>(Object());
+''',
+        },
+        definingFile:
+            'lib/features/todo/presentation/providers/todo_provider.dart',
+      );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/presentation/providers/todo_provider.dart',
+          codeName: 'riverpod_generator',
+          problemMessage:
+              'Manual provider "AsyncNotifierProvider" detected. Use @riverpod annotation instead.',
+          correctionMessage:
+              'Use riverpod_generator: Create a class with @riverpod annotation instead of manual provider declaration.',
+        ),
+      ]);
+    });
   });
 }

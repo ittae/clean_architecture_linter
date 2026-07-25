@@ -85,5 +85,53 @@ class TodoListNotifier {}
 
       result.expectNoDiagnostics();
     });
+
+    test('reports functional provider keepAlive outside global state', () async {
+      final result = await V2RuleHarness(rule: RiverpodKeepAliveRule()).analyze(
+        files: {
+          'lib/features/todo/presentation/providers/todo_provider.dart': '''
+class Riverpod {
+  const Riverpod({required bool keepAlive});
+}
+
+@Riverpod(keepAlive: true)
+Future<Object> todoList(Object ref) async => Object();
+''',
+        },
+        definingFile:
+            'lib/features/todo/presentation/providers/todo_provider.dart',
+      );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/presentation/providers/todo_provider.dart',
+          codeName: 'riverpod_keep_alive',
+          problemMessage:
+              'Verify that "keepAlive: true" is necessary. Only use for app-wide persistent state.',
+          correctionMessage:
+              'Valid uses: auth state, app settings, global cache. Invalid: avoiding dispose errors (fix async flow instead).',
+        ),
+      ]);
+    });
+
+    test('allows functional provider keepAlive for global state', () async {
+      final result = await V2RuleHarness(rule: RiverpodKeepAliveRule()).analyze(
+        files: {
+          'lib/features/auth/presentation/providers/auth_provider.dart': '''
+class Riverpod {
+  const Riverpod({required bool keepAlive});
+}
+
+@Riverpod(keepAlive: true)
+Future<Object> authSession(Object ref) async => Object();
+''',
+        },
+        definingFile:
+            'lib/features/auth/presentation/providers/auth_provider.dart',
+      );
+
+      result.expectNoDiagnostics();
+    });
   });
 }
