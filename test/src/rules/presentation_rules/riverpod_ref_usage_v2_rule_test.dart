@@ -112,14 +112,10 @@ class TodoNotifier {
       result.expectNoDiagnostics();
     });
 
-    test(
-      'reports ref.read in build of a non-codegen AsyncNotifier',
-      () async {
-        final result = await V2RuleHarness(rule: RiverpodRefUsageRule())
-            .analyze(
-              files: {
-                'lib/features/todo/presentation/providers/todo_notifier.dart':
-                    '''
+    test('reports ref.read in build of a non-codegen AsyncNotifier', () async {
+      final result = await V2RuleHarness(rule: RiverpodRefUsageRule()).analyze(
+        files: {
+          'lib/features/todo/presentation/providers/todo_notifier.dart': '''
 class TodoNotifier extends AsyncNotifier<Object> {
   @override
   Object build() {
@@ -127,24 +123,23 @@ class TodoNotifier extends AsyncNotifier<Object> {
   }
 }
 ''',
-              },
-              definingFile:
-                  'lib/features/todo/presentation/providers/todo_notifier.dart',
-            );
+        },
+        definingFile:
+            'lib/features/todo/presentation/providers/todo_notifier.dart',
+      );
 
-        result.expectDiagnostics([
-          const ExpectedV2Diagnostic(
-            relativePath:
-                'lib/features/todo/presentation/providers/todo_notifier.dart',
-            codeName: 'riverpod_ref_usage',
-            problemMessage:
-                'Use ref.watch() instead of ref.read() for State providers in build().',
-            correctionMessage:
-                'Change ref.read() to ref.watch() for reactive State provider dependencies.',
-          ),
-        ]);
-      },
-    );
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/presentation/providers/todo_notifier.dart',
+          codeName: 'riverpod_ref_usage',
+          problemMessage:
+              'Use ref.watch() instead of ref.read() for State providers in build().',
+          correctionMessage:
+              'Change ref.read() to ref.watch() for reactive State provider dependencies.',
+        ),
+      ]);
+    });
 
     test('reports ref.watch outside build of a non-codegen Notifier', () async {
       final result = await V2RuleHarness(rule: RiverpodRefUsageRule()).analyze(
