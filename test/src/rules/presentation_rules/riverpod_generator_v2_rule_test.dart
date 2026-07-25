@@ -114,5 +114,93 @@ final todoProvider = AsyncNotifierProvider<Object, Object>(Object());
         ),
       ]);
     });
+
+    test('reports idiomatic NotifierProvider.autoDispose', () async {
+      final result = await V2RuleHarness(rule: RiverpodGeneratorRule()).analyze(
+        files: {
+          'lib/features/todo/presentation/providers/todo_provider.dart': '''
+class NotifierProvider {
+  static Object autoDispose(Object create) => create;
+}
+
+final todoProvider = NotifierProvider.autoDispose(Object());
+''',
+        },
+        definingFile:
+            'lib/features/todo/presentation/providers/todo_provider.dart',
+      );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/presentation/providers/todo_provider.dart',
+          codeName: 'riverpod_generator',
+          problemMessage:
+              'Manual provider "NotifierProvider.autoDispose" detected. Use @riverpod annotation instead.',
+          correctionMessage:
+              'Use riverpod_generator: Create a class with @riverpod annotation instead of manual provider declaration.',
+        ),
+      ]);
+    });
+
+    test('reports idiomatic AsyncNotifierProvider.family', () async {
+      final result = await V2RuleHarness(rule: RiverpodGeneratorRule()).analyze(
+        files: {
+          'lib/features/todo/presentation/providers/todo_provider.dart': '''
+class AsyncNotifierProvider {
+  static Object family(Object create) => create;
+}
+
+final todoProvider = AsyncNotifierProvider.family(Object());
+''',
+        },
+        definingFile:
+            'lib/features/todo/presentation/providers/todo_provider.dart',
+      );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/presentation/providers/todo_provider.dart',
+          codeName: 'riverpod_generator',
+          problemMessage:
+              'Manual provider "AsyncNotifierProvider.family" detected. Use @riverpod annotation instead.',
+          correctionMessage:
+              'Use riverpod_generator: Create a class with @riverpod annotation instead of manual provider declaration.',
+        ),
+      ]);
+    });
+
+    test('reports idiomatic NotifierProvider.autoDispose.family', () async {
+      final result = await V2RuleHarness(rule: RiverpodGeneratorRule()).analyze(
+        files: {
+          'lib/features/todo/presentation/providers/todo_provider.dart': '''
+class _AutoDispose {
+  Object family(Object create) => create;
+}
+
+class NotifierProvider {
+  static final autoDispose = _AutoDispose();
+}
+
+final todoProvider = NotifierProvider.autoDispose.family(Object());
+''',
+        },
+        definingFile:
+            'lib/features/todo/presentation/providers/todo_provider.dart',
+      );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/presentation/providers/todo_provider.dart',
+          codeName: 'riverpod_generator',
+          problemMessage:
+              'Manual provider "NotifierProvider.autoDispose.family" detected. Use @riverpod annotation instead.',
+          correctionMessage:
+              'Use riverpod_generator: Create a class with @riverpod annotation instead of manual provider declaration.',
+        ),
+      ]);
+    });
   });
 }

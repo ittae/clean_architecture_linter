@@ -107,7 +107,9 @@ bool isRiverpodNotifierClass(ClassDeclaration node) {
 ///
 /// Covers the legacy 2.x forms already flagged plus the Riverpod 3 non-codegen
 /// `Notifier` family (`NotifierProvider`, `AsyncNotifierProvider`,
-/// `StreamNotifierProvider`) and their `AutoDispose` variants.
+/// `StreamNotifierProvider`) and their `AutoDispose*` type-name variants.
+/// Idiomatic `.autoDispose` / `.family` MethodInvocation chains are resolved
+/// by `riverpod_generator` against this same set (root type must match).
 ///
 /// Bare `Provider` / `FutureProvider` / `StreamProvider` for pure dependency
 /// injection are intentionally NOT auto-expanded here beyond the existing set,

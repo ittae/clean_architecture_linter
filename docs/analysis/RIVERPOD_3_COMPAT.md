@@ -213,10 +213,11 @@ class Todo extends _$Todo {}
 
 ## 7) 개선 제안 (규칙별)
 
-> ✅ ITT-1838(2026-07-25): Riverpod 3 non-codegen provider 인식을 `lib/src/utils/riverpod_provider_detector.dart`로 공통화했다. Notifier/AsyncNotifier/StreamNotifier(+AutoDispose·Family 변형) 클래스와 함수형 provider를 codegen(`@riverpod`/`_$`)과 동일하게 인식한다. `ref_after_async_gap`·`ref_usage`·`generator`·`keep_alive`가 공통 헬퍼를 사용하고, `ref_mounted_usage`도 중복 헬퍼를 이 모듈로 통합했다.
+> ✅ ITT-1838(2026-07-25): Riverpod 3 non-codegen provider 인식을 `lib/src/utils/riverpod_provider_detector.dart`로 공통화했다. Notifier/AsyncNotifier/StreamNotifier(+AutoDispose·Family 변형) 클래스를 codegen(`@riverpod`/`_$`)과 동일하게 인식한다. `ref_after_async_gap`·`ref_usage`·`generator`·`ref_mounted_usage`가 공통 헬퍼를 사용한다. `keep_alive`는 공통 헬퍼 없이 함수형 `@Riverpod(keepAlive: true)` 선언 이름 heuristic을 추가로 검사한다.
 
 ### `riverpod_generator` 개선
-- ✅ 적용됨: `NotifierProvider`, `AsyncNotifierProvider`, `StreamNotifierProvider`와 각 `AutoDispose*` 변형을 manual provider로 검출한다.
+- ✅ 적용됨: `NotifierProvider`, `AsyncNotifierProvider`, `StreamNotifierProvider`와 각 `AutoDispose*Provider` **타입명** 생성자를 manual provider로 검출한다.
+- ✅ 적용됨: 관용형 `NotifierProvider.autoDispose(...)` / `AsyncNotifierProvider.family(...)` / `NotifierProvider.autoDispose.family(...)` MethodInvocation 체인도 검출한다.
 - ✅ 적용됨: `MethodInvocation` 외 `InstanceCreationExpression`(타입 인자 있는 생성자 호출) 패턴도 커버한다.
 - 남은 후보: bare `Provider`는 순수 DI 패턴 오탐 위험이 커서 의도적으로 확장 목록에서 제외했다. `strict_generator_only` 옵션화는 별도 과제.
 
