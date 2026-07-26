@@ -4,6 +4,7 @@ name: Claude Code Review
 # 이 repo는 public이라 private reusable을 호출할 수 없어 (GitHub 제약,
 # referenced_workflows 해석 실패로 startup_failure) 스탠드얼론으로 둔다.
 # ⚠️ 정본은 ittae/.github/claude-review-light.yml — 정본 변경 시 이 파일도 동기화할 것.
+# 2026-07 sync: runtime engine chain grok→codex→claude; models gpt-5.5 / claude-opus-4-8.
 # 원본 대비 변경점: workflow_call → pull_request/workflow_dispatch, inputs → env 리터럴,
 # public-only 가드: same-repo + PR author == get6 (owner-authored only).
 # fork / collaborator / bot / 외부 association → self-hosted AI 리뷰 미실행.
@@ -28,7 +29,8 @@ on:
 env:
   PR_NUM: ${{ github.event.pull_request.number || inputs.pr_number }}
   REPO: ${{ github.repository }}
-  MODEL: 'claude-opus-4-7'
+  MODEL: 'claude-opus-4-8'
+  CODEX_MODEL: 'gpt-5.5'
   PR_SIZE_LIMIT: 800
   EXCLUDE_RENAMES: true
   ITERATE_LIMIT: 5
@@ -215,25 +217,63 @@ jobs:
 
           echo "verdict=proceed" >> $GITHUB_OUTPUT
 
-      # 리뷰 엔진 선택: Grok(러너 로컬 CLI + Grok Build 구독) 우선, Claude(로컬 CLI,
-      # 시크릿 있으면 세션 대신 토큰) fallback — full 변형(claude-code-review.yml)과 동일 정책.
+      # 리뷰 엔진 가용성 + runtime chain (SoT: ittae/.github claude-review-light.yml 2026-07).
+      # Order fixed: grok → codex → claude. Later engines run only if earlier outcome != success.
       - id: auth
         if: steps.check.outputs.skip != 'true' && steps.classify.outputs.verdict == 'proceed'
-        name: Select review engine (grok primary, claude fallback)
+        name: Select review engines (grok → codex → claude)
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          if [ -x "$HOME/.grok/bin/grok" ] && [ -s "$HOME/.grok/auth.json" ]; then
-            echo "engine=grok" >> "$GITHUB_OUTPUT"; echo "status=ready" >> "$GITHUB_OUTPUT"
-            echo "✓ Grok primary review"
-          elif [ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ] || [ -n "${ANTHROPIC_API_KEY:-}" ] || [ -x "$HOME/.local/bin/claude" ]; then
-            echo "engine=claude" >> "$GITHUB_OUTPUT"; echo "status=ready" >> "$GITHUB_OUTPUT"
-            echo "✓ Claude fallback review"
-          else
-            echo "engine=none" >> "$GITHUB_OUTPUT"; echo "status=skipped_no_auth" >> "$GITHUB_OUTPUT"
-            echo "::notice::AI review skipped — 리뷰 엔진 인증 없음. Objective CI remains the merge gate."
+          set +e
+          grok_live=0
+          grok_bin=""
+          for c in "$HOME/.grok/bin/grok" "$HOME/.local/bin/grok"; do
+            if [ -x "$c" ]; then grok_bin=$c; break; fi
+          done
+          if [ -n "$grok_bin" ] && [ -s "$HOME/.grok/auth.json" ]; then
+            echo 'aW1wb3J0IGpzb24sIHN5cwpmcm9tIGRhdGV0aW1lIGltcG9ydCBkYXRldGltZSwgdGltZWRlbHRhLCB0aW1lem9uZQpmcm9tIHBhdGhsaWIgaW1wb3J0IFBhdGgKcCA9IFBhdGguaG9tZSgpIC8gIi5ncm9rIiAvICJhdXRoLmpzb24iCnRyeToKICAgIGRhdGEgPSBqc29uLmxvYWRzKHAucmVhZF90ZXh0KGVuY29kaW5nPSJ1dGYtOCIpKQpleGNlcHQgRXhjZXB0aW9uOgogICAgc3lzLmV4aXQoMSkKbm93ID0gZGF0ZXRpbWUubm93KHRpbWV6b25lLnV0YykKbWluX2R0ID0gbm93ICsgdGltZWRlbHRhKG1pbnV0ZXM9MTApCm9rID0gRmFsc2UKZm9yIGl0ZW0gaW4gKGRhdGEudmFsdWVzKCkgaWYgaXNpbnN0YW5jZShkYXRhLCBkaWN0KSBlbHNlIFtdKToKICAgIGlmIG5vdCBpc2luc3RhbmNlKGl0ZW0sIGRpY3QpOgogICAgICAgIGNvbnRpbnVlCiAgICBleHAgPSBpdGVtLmdldCgiZXhwaXJlc19hdCIpCiAgICBpZiBub3QgZXhwOgogICAgICAgIGNvbnRpbnVlCiAgICB0cnk6CiAgICAgICAgZHQgPSBkYXRldGltZS5mcm9taXNvZm9ybWF0KHN0cihleHApLnJlcGxhY2UoIloiLCAiKzAwOjAwIikpCiAgICBleGNlcHQgRXhjZXB0aW9uOgogICAgICAgIGNvbnRpbnVlCiAgICBpZiBkdCA+IG1pbl9kdDoKICAgICAgICBvayA9IFRydWUKICAgICAgICBicmVhawpzeXMuZXhpdCgwIGlmIG9rIGVsc2UgMSkK' | base64 --decode > /tmp/check-grok-session-live.py
+            if python3 /tmp/check-grok-session-live.py; then grok_live=1; fi
           fi
+
+          codex_live=0
+          codex_bin=""
+          for c in "$(command -v codex 2>/dev/null || true)" "$HOME/.local/bin/codex" /opt/homebrew/bin/codex; do
+            if [ -n "$c" ] && [ -x "$c" ]; then codex_bin=$c; break; fi
+          done
+          if [ -n "$codex_bin" ] && [ -s "$HOME/.codex/auth.json" ]; then
+            if "$codex_bin" login status 2>&1 | grep -qi 'logged in'; then codex_live=1; fi
+          fi
+
+          claude_ok=0
+          claude_bin=""
+          for c in "$HOME/.local/bin/claude"; do
+            if [ -x "$c" ]; then claude_bin=$c; break; fi
+          done
+          if [ -n "$claude_bin" ] && "$claude_bin" auth status 2>/dev/null | jq -e '.loggedIn == true' >/dev/null; then
+            claude_ok=1
+          fi
+          if [ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ] || [ -n "${ANTHROPIC_API_KEY:-}" ]; then claude_ok=1; fi
+
+          echo "grok=$grok_live" >> "$GITHUB_OUTPUT"
+          echo "codex=$codex_live" >> "$GITHUB_OUTPUT"
+          echo "claude=$claude_ok" >> "$GITHUB_OUTPUT"
+          if [ "$grok_live" = 1 ]; then primary=grok
+          elif [ "$codex_live" = 1 ]; then primary=codex
+          elif [ "$claude_ok" = 1 ]; then primary=claude
+          else primary=none
+          fi
+          echo "engine=$primary" >> "$GITHUB_OUTPUT"
+          echo "primary=$primary" >> "$GITHUB_OUTPUT"
+          if [ "$primary" != none ]; then
+            echo "status=ready" >> "$GITHUB_OUTPUT"
+            echo "✓ Review engines available: grok=$grok_live codex=$codex_live claude=$claude_ok (primary=$primary; chain grok→codex→claude)"
+          else
+            echo "status=skipped_no_auth" >> "$GITHUB_OUTPUT"
+            echo "::notice::AI review skipped — no live Grok/Codex/Claude session. Objective CI remains the merge gate."
+          fi
+
 
       - id: guard
         if: steps.auth.outputs.status == 'ready'
@@ -445,13 +485,18 @@ jobs:
             phase3-decide가 `ittae-ai-review-meta` JSON을 우선 파싱합니다 (legacy `ai-review-meta`와 정규식 fallback은 migration용). categories는 finding이 발견된 perspective 이름들. verdict는 "PASS" 또는 "FAIL".
         run: |
           printf '%s' "$REVIEW_PROMPT" > /tmp/review-prompt.md
-          echo "review-prompt 생성 완료 (engine=${{ steps.auth.outputs.engine }})"
+          echo "review-prompt 생성 완료 (primary=${{ steps.auth.outputs.primary }} chain=grok→codex→claude)"
 
       - name: Grok review (primary)
-        if: steps.auth.outputs.status == 'ready' && steps.auth.outputs.engine == 'grok'
+        id: grok_review
+        if: steps.auth.outputs.status == 'ready' && steps.auth.outputs.grok == '1'
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -o pipefail
+          LOG=/tmp/grok-review.log
+          set +e
           "$HOME/.grok/bin/grok" -p "$(cat /tmp/review-prompt.md)" \
             --output-format plain \
             --allow "Bash(cat:*)" \
@@ -460,17 +505,99 @@ jobs:
             --allow "Bash(gh pr diff:*)" \
             --allow "Bash(gh pr view:*)" \
             --allow "Bash(gh api:*)" \
-            --allow "Bash(gh search:*)"
+            --allow "Bash(gh search:*)" 2>&1 | tee "$LOG"
+          rc=${PIPESTATUS[0]}
+          set -e
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning::Grok review failed (exit=$rc) — falling back to Codex then Claude"
+            exit "$rc"
+          fi
+          echo "engine_used=grok" >> "$GITHUB_OUTPUT"
 
-      - name: Claude review (fallback)
-        if: steps.auth.outputs.status == 'ready' && steps.auth.outputs.engine == 'claude'
+      - name: Codex review (secondary)
+        id: codex_review
+        if: >-
+          steps.auth.outputs.status == 'ready' &&
+          steps.auth.outputs.codex == '1' &&
+          steps.grok_review.outcome != 'success'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CODEX_MODEL: ${{ env.CODEX_MODEL }}
+        run: |
+          set -o pipefail
+          codex_bin=""
+          for c in "$(command -v codex 2>/dev/null || true)" "$HOME/.local/bin/codex" /opt/homebrew/bin/codex; do
+            if [ -n "$c" ] && [ -x "$c" ]; then codex_bin=$c; break; fi
+          done
+          [ -n "$codex_bin" ] || { echo "::error::codex binary missing"; exit 127; }
+          LOG=/tmp/codex-review.log
+          set +e
+          "$codex_bin" exec \
+            -m "${CODEX_MODEL:-gpt-5.5}" \
+            --dangerously-bypass-approvals-and-sandbox \
+            --ephemeral \
+            -C "${GITHUB_WORKSPACE:-.}" \
+            "$(cat /tmp/review-prompt.md)" 2>&1 | tee "$LOG"
+          rc=${PIPESTATUS[0]}
+          set -e
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning::Codex review failed (exit=$rc) — falling back to Claude"
+            exit "$rc"
+          fi
+          echo "engine_used=codex" >> "$GITHUB_OUTPUT"
+
+      - name: Claude review (tertiary)
+        id: claude_review
+        if: >-
+          steps.auth.outputs.status == 'ready' &&
+          steps.auth.outputs.claude == '1' &&
+          steps.grok_review.outcome != 'success' &&
+          steps.codex_review.outcome != 'success'
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: |
+          set -o pipefail
+          LOG=/tmp/claude-review.log
+          set +e
           "$HOME/.local/bin/claude" -p "$(cat /tmp/review-prompt.md)" \
             --model "${{ env.MODEL }}" \
-            --allowedTools "Bash(cat:*),Bash(echo:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api:*),Bash(gh search:*)"
+            --allowedTools "Bash(cat:*),Bash(echo:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api:*),Bash(gh search:*)" 2>&1 | tee "$LOG"
+          rc=${PIPESTATUS[0]}
+          set -e
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning::Claude review failed (exit=$rc)"
+            exit "$rc"
+          fi
+          echo "engine_used=claude" >> "$GITHUB_OUTPUT"
+
+      - name: Require successful review engine
+        if: steps.auth.outputs.status == 'ready'
+        run: |
+          g="${{ steps.grok_review.outcome }}"
+          c="${{ steps.codex_review.outcome }}"
+          l="${{ steps.claude_review.outcome }}"
+          used=""
+          if [ "$g" = success ]; then used=grok
+          elif [ "$c" = success ]; then used=codex
+          elif [ "$l" = success ]; then used=claude
+          fi
+          gu="${{ steps.grok_review.outputs.engine_used }}"
+          cu="${{ steps.codex_review.outputs.engine_used }}"
+          lu="${{ steps.claude_review.outputs.engine_used }}"
+          [ -n "$gu" ] && used=$gu
+          [ -n "$cu" ] && used=$cu
+          [ -n "$lu" ] && used=$lu
+          echo "outcomes: grok=$g codex=$c claude=$l used=${used:-none} (primary=${{ steps.auth.outputs.primary }})"
+          if [ "$g" = success ] || [ "$c" = success ] || [ "$l" = success ]; then
+            echo "✓ at least one review engine succeeded (used=${used:-unknown})"
+            exit 0
+          fi
+          echo "::error::All available review engines failed or were unavailable (grok→codex→claude)."
+          exit 1
+
 
       - name: 점수 추출 + 단조성 보정 (JSON meta 우선)
         if: steps.auth.outputs.status == 'ready'
