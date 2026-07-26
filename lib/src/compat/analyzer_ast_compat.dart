@@ -52,6 +52,11 @@ bool isNamedBooleanArgument(
   return expression is BooleanLiteral && expression.value == value;
 }
 
+/// The name of a named argument (`foo: value` → `foo`), or `null` when
+/// [argument] is a positional argument. Robust across the analyzer 12→13
+/// `NamedExpression` (Label) → `NamedArgument` (Token) rename.
+String? namedArgumentName(AstNode argument) => _namedArgumentName(argument);
+
 String? _namedArgumentName(AstNode argument) {
   final Object? nameNode = _readProperty(argument, #name);
   if (nameNode == null) return null;
