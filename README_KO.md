@@ -73,7 +73,7 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 
 ## 🚀 빠른 시작
 
-> 🚀 **v2.0**: `2.0.0-dev.1`부터 이 패키지는 공식 [`analysis_server_plugin`](https://pub.dev/packages/analysis_server_plugin) 위에서 동작합니다 — `custom_lint` 의존성 불필요, `pubspec_overrides.yaml` 워크어라운드 불필요. lint는 `dart analyze` / `flutter analyze`로 직접 실행됩니다. v1(`custom_lint`) 설정에서 올라오는 경우 [MIGRATION.md](MIGRATION.md)를 따르세요.
+> 🚀 **v2.0**: `2.0.0-dev.1`부터 이 패키지는 공식 [`analysis_server_plugin`](https://pub.dev/packages/analysis_server_plugin) 위에서 동작합니다 — `custom_lint` 의존성 불필요, `pubspec_overrides.yaml` 워크어라운드 불필요. lint는 `dart analyze`로 직접 실행됩니다(`flutter analyze`가 아니라 `dart analyze`를 쓰세요 — 아래 경고 참고). v1(`custom_lint`) 설정에서 올라오는 경우 [MIGRATION.md](MIGRATION.md)를 따르세요.
 
 ### 📋 요구사항
 
@@ -106,10 +106,16 @@ plugin은 top-level `plugins:` 설정에서 별도 synthetic package로 resolve�
 
 ```bash
 dart pub get
-dart analyze        # Flutter 프로젝트는 flutter analyze
+dart analyze        # Flutter 프로젝트도 flutter analyze가 아니라 dart analyze를 쓰세요
 ```
 
-완료되었습니다! 34개 규칙이 `dart analyze` / `flutter analyze` 결과에 직접 포함됩니다.
+완료되었습니다! 34개 규칙이 `dart analyze` 결과에 직접 포함됩니다.
+
+> ⚠️ **`flutter analyze`가 아니라 `dart analyze`를 사용하세요.** `flutter analyze`는
+> `analysis_server_plugin` 진단을 조용히 유실합니다(플러그인이 결과를 내보내기 전에
+> 수집을 멈춤). 위반이 있어도 `No issues found!`로 통과하므로 CI·로컬 모두
+> `dart analyze`로 검사해야 합니다. 원인과 회귀 가드:
+> [docs/analysis/FLUTTER_ANALYZE_PLUGIN_LOSS.md](docs/analysis/FLUTTER_ANALYZE_PLUGIN_LOSS.md).
 
 ### 3. 실제 동작 확인
 
@@ -187,8 +193,11 @@ lib/
 
 ```bash
 # 린터 실행 (규칙이 analyzer 출력에 포함됨)
-dart analyze        # Flutter 프로젝트는 flutter analyze
+dart analyze        # Flutter 프로젝트도 flutter analyze가 아니라 dart analyze
 ```
+
+> ⚠️ Flutter 프로젝트에서도 `flutter analyze`가 아니라 `dart analyze`를 실행하세요.
+> 참고: [docs/analysis/FLUTTER_ANALYZE_PLUGIN_LOSS.md](docs/analysis/FLUTTER_ANALYZE_PLUGIN_LOSS.md).
 
 ### IDE 통합
 

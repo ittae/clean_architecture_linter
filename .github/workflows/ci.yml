@@ -54,6 +54,26 @@ jobs:
         fi
         echo "OK: clean, or only the expected asp lib/main.dart naming warning."
 
+  plugin-diagnostics:
+    # Regression guard for ITT-1677 / ITT-1836: proves the analysis_server_plugin
+    # still emits diagnostics through `dart analyze` (the recommended consumer
+    # path). `flutter analyze` silently drops these diagnostics, so this gate
+    # deliberately uses `dart analyze`. See
+    # docs/analysis/FLUTTER_ANALYZE_PLUGIN_LOSS.md
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Dart SDK
+      uses: dart-lang/setup-dart@v1
+      with:
+        sdk: 'stable'
+
+    - name: Verify plugin diagnostics via dart analyze
+      run: bash tools/verify_analyze_parity.sh
+
   coverage:
     runs-on: ubuntu-latest
 

@@ -4,7 +4,7 @@
 
 ## 이 흐름을 쓰는 이유
 
-Dart의 새 analyzer plugin 시스템은 `analysis_options.yaml`의 top-level `plugins` 섹션에서 켠다. publish된 plugin은 version constraint로 지정하고, 로컬 개발 중인 plugin은 path로 지정할 수 있다. analysis server는 plugin 전용 synthetic package를 만들어 의존성을 resolve한 뒤 `dart analyze` / `flutter analyze`에서 plugin을 실행한다.
+Dart의 새 analyzer plugin 시스템은 `analysis_options.yaml`의 top-level `plugins` 섹션에서 켠다. publish된 plugin은 version constraint로 지정하고, 로컬 개발 중인 plugin은 path로 지정할 수 있다. analysis server는 plugin 전용 synthetic package를 만들어 의존성을 resolve한 뒤 `dart analyze`에서 plugin을 실행한다. (소비자·CI 경로도 `dart analyze`를 쓴다 — `flutter analyze`는 플러그인 진단을 유실할 수 있다. 자세한 내용은 [analysis/FLUTTER_ANALYZE_PLUGIN_LOSS.md](analysis/FLUTTER_ANALYZE_PLUGIN_LOSS.md) 참고.)
 
 따라서 contributor는 `.dartServer/.plugin_manager/<hash>/pubspec_overrides.yaml`을 수정하지 않는다. 해당 hash는 analysis server가 관리하는 임시 상태이고, 머신이나 실행 시점에 따라 달라진다.
 
