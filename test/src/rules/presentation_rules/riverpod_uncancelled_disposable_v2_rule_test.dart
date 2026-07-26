@@ -163,6 +163,159 @@ class PomodoroNotifier {
     });
 
     test(
+      'does not flag assigned listen((e){}) when the subscription is cancelled',
+      () async {
+        final result =
+            await V2RuleHarness(
+              rule: RiverpodUncancelledDisposableRule(),
+            ).analyze(
+              files: {
+                _path: '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class PomodoroNotifier {
+  Future<void> build() async {
+    final sub = someStream.listen((data) {});
+    ref.onDispose(() {
+      sub.cancel();
+    });
+  }
+}
+''',
+              },
+              definingFile: _path,
+            );
+
+        result.expectNoDiagnostics();
+      },
+    );
+
+    test('does not flag ref.listen (Riverpod-owned subscription)', () async {
+      final result =
+          await V2RuleHarness(
+            rule: RiverpodUncancelledDisposableRule(),
+          ).analyze(
+            files: {
+              _path: '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class PomodoroNotifier {
+  Future<void> build() async {
+    ref.listen(otherProvider, (prev, next) {});
+    ref.onDispose(() {});
+  }
+}
+''',
+            },
+            definingFile: _path,
+          );
+
+      result.expectNoDiagnostics();
+    });
+
+    test(
+      'flags assigned Timer.periodic that is not cancelled in onDispose',
+      () async {
+        final result =
+            await V2RuleHarness(
+              rule: RiverpodUncancelledDisposableRule(),
+            ).analyze(
+              files: {
+                _path: '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class PomodoroNotifier {
+  Future<void> build() async {
+    final t = Timer.periodic(const Duration(seconds: 1), (_) {});
+    ref.onDispose(() {});
+  }
+}
+''',
+              },
+              definingFile: _path,
+            );
+
+        result.expectDiagnostics([
+          const ExpectedV2Diagnostic(
+            relativePath: _path,
+            codeName: 'riverpod_uncancelled_disposable',
+          ),
+        ]);
+      },
+    );
+
+    test(
+      'does not flag assigned Timer.periodic cancelled in onDispose',
+      () async {
+        final result =
+            await V2RuleHarness(
+              rule: RiverpodUncancelledDisposableRule(),
+            ).analyze(
+              files: {
+                _path: '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class PomodoroNotifier {
+  Future<void> build() async {
+    final t = Timer.periodic(const Duration(seconds: 1), (_) {});
+    ref.onDispose(() {
+      t.cancel();
+    });
+  }
+}
+''',
+              },
+              definingFile: _path,
+            );
+
+        result.expectNoDiagnostics();
+      },
+    );
+
+    test('flags fire-and-forget Timer.periodic without assignment', () async {
+      final result =
+          await V2RuleHarness(
+            rule: RiverpodUncancelledDisposableRule(),
+          ).analyze(
+            files: {
+              _path: '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class PomodoroNotifier {
+  Future<void> build() async {
+    Timer.periodic(const Duration(seconds: 1), (_) {});
+    ref.onDispose(() {});
+  }
+}
+''',
+            },
+            definingFile: _path,
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath: _path,
+          codeName: 'riverpod_uncancelled_disposable',
+        ),
+      ]);
+    });
+
+    test(
       'matches the real bug: field timer not cancelled while listener is',
       () async {
         final result =

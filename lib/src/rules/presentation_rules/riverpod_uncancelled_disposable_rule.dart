@@ -11,7 +11,12 @@ import '../../utils/riverpod_provider_detector.dart';
 
 /// Methods that register a long-lived callback / start a resource that
 /// out-lives a single async call (and therefore the provider, if not cancelled).
-const _startMethods = {'start', 'listen'};
+///
+/// Stream `.listen` is intentionally **not** here: tracking the stream
+/// receiver double-counts with the assignment path
+/// (`final sub = stream.listen(...)`) and would suggest `stream.cancel()`.
+/// Assigned listens are tracked via `_maybeAddCreation` only.
+const _startMethods = {'start'};
 
 /// Constructors that create a resource which must be disposed.
 const _disposableCtors = {
@@ -95,12 +100,18 @@ class _UncancelledDisposableVisitor extends SimpleAstVisitor<void> {
     node.accept(scanner);
 
     for (final resource in resources) {
-      if (released.contains(resource.name)) continue;
+      // Empty name = anonymous / fire-and-forget; never matches a release.
+      if (resource.name.isNotEmpty && released.contains(resource.name)) {
+        continue;
+      }
+      final example = resource.name.isEmpty
+          ? 'assign it to a variable and call ref.onDispose(() => variable.${_release(resource)}())'
+          : 'ref.onDispose(${resource.name}.${_release(resource)})';
       rule.reportAtNode(
         resource.node,
         arguments: [
           _problem(resource),
-          'Cancel it inside ref.onDispose (e.g. ref.onDispose(${resource.name}.${_release(resource)})) '
+          'Cancel it inside ref.onDispose (e.g. $example) '
               'so its callbacks stop firing after the provider is disposed.',
         ],
       );
@@ -108,13 +119,20 @@ class _UncancelledDisposableVisitor extends SimpleAstVisitor<void> {
   }
 
   String _problem(_Resource r) {
+    final label = r.name.isEmpty ? r.kind : '"${r.name}"';
     switch (r.kind) {
       case 'listener':
-        return 'Lifecycle listener "${r.name}" is not disposed in ref.onDispose.';
+        return r.name.isEmpty
+            ? 'Lifecycle listener is not disposed in ref.onDispose.'
+            : 'Lifecycle listener $label is not disposed in ref.onDispose.';
       case 'subscription':
-        return 'Stream subscription "${r.name}" is not cancelled in ref.onDispose.';
+        return r.name.isEmpty
+            ? 'Stream subscription is not cancelled in ref.onDispose.'
+            : 'Stream subscription $label is not cancelled in ref.onDispose.';
       default:
-        return 'Timer/resource "${r.name}" is started but not cancelled in ref.onDispose.';
+        return r.name.isEmpty
+            ? 'Timer/resource is started but not cancelled in ref.onDispose.'
+            : 'Timer/resource $label is started but not cancelled in ref.onDispose.';
     }
   }
 
@@ -144,20 +162,36 @@ class _BodyScanner extends RecursiveAstVisitor<void> {
       node.argumentList.accept(_ReleaseCollector(_released));
     }
 
-    // recv.start(onComplete: ...) / stream.listen(...) — resource started.
-    // Riverpod owns ref.listen callbacks, so they are not user disposables.
-    if (_startMethods.contains(node.methodName.name) &&
-        !_isRiverpodOwnedListen(node)) {
+    // recv.start(onX: ...) only. Stream.listen is tracked via assignment
+    // (`final sub = stream.listen(...)`) — tracking the stream receiver here
+    // double-counts and suggests `stream.cancel()`, which is wrong.
+    // Fire-and-forget `stream.listen(...)` remains a name-based FN by design.
+    if (_startMethods.contains(node.methodName.name)) {
       final name = _receiverName(node.target);
       if (name != null && _hasCallbackArgument(node)) {
-        final kind = node.methodName.name == 'listen'
-            ? 'subscription'
-            : 'timer';
-        _resources.add(_Resource(name, node, kind));
+        _resources.add(_Resource(name, node, 'timer'));
       }
     }
 
+    // Unassigned disposable ctor as a statement, e.g.
+    //   Timer.periodic(const Duration(seconds: 1), (_) {});
+    // Assigned forms are handled by visitVariableDeclaration / Assignment.
+    if (_isFireAndForgetDisposable(node)) {
+      final kind = _kindForDisposableCtor(_disposableCtorName(node) ?? '');
+      _resources.add(_Resource('', node, kind));
+    }
+
     super.visitMethodInvocation(node);
+  }
+
+  @override
+  void visitInstanceCreationExpression(InstanceCreationExpression node) {
+    // Same as MethodInvocation path for resolved AST fire-and-forget ctors.
+    if (_isFireAndForgetDisposable(node)) {
+      final typeName = node.constructorName.type.name.lexeme;
+      _resources.add(_Resource('', node, _kindForDisposableCtor(typeName)));
+    }
+    super.visitInstanceCreationExpression(node);
   }
 
   @override
@@ -201,10 +235,46 @@ class _BodyScanner extends RecursiveAstVisitor<void> {
 
   void _addByCtorName(String name, String typeName, AstNode reportNode) {
     if (!_disposableCtors.contains(typeName)) return;
-    final kind = typeName == 'AppLifecycleListener'
-        ? 'listener'
-        : (typeName == 'StreamSubscription' ? 'subscription' : 'timer');
-    _resources.add(_Resource(name, reportNode, kind));
+    _resources.add(
+      _Resource(name, reportNode, _kindForDisposableCtor(typeName)),
+    );
+  }
+
+  String _kindForDisposableCtor(String typeName) {
+    if (typeName == 'AppLifecycleListener') return 'listener';
+    if (typeName == 'StreamSubscription') return 'subscription';
+    return 'timer';
+  }
+
+  /// True when [node] is a disposable constructor used as a bare statement
+  /// (no variable / field assignment), so it can never be cancelled by name.
+  bool _isFireAndForgetDisposable(AstNode node) {
+    if (node.parent is! ExpressionStatement) return false;
+    if (node is MethodInvocation) {
+      final typeName = _disposableCtorName(node);
+      return typeName != null && _disposableCtors.contains(typeName);
+    }
+    if (node is InstanceCreationExpression) {
+      final typeName = node.constructorName.type.name.lexeme;
+      return _disposableCtors.contains(typeName);
+    }
+    return false;
+  }
+
+  /// Parsed-AST ctor form: `Timer(...)` or `Timer.periodic(...)`.
+  String? _disposableCtorName(MethodInvocation node) {
+    final target = node.target;
+    if (target == null) {
+      // Unnamed ctor call style: `Timer(...)` / `AppLifecycleListener(...)`.
+      return _disposableCtors.contains(node.methodName.name)
+          ? node.methodName.name
+          : null;
+    }
+    if (target is SimpleIdentifier && _disposableCtors.contains(target.name)) {
+      // Named ctor: `Timer.periodic(...)`.
+      return target.name;
+    }
+    return null;
   }
 
   bool _hasCallbackArgument(MethodInvocation node) {
