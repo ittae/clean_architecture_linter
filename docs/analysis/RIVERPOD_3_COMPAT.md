@@ -213,16 +213,17 @@ class Todo extends _$Todo {}
 
 ## 7) 개선 제안 (규칙별)
 
+> ✅ ITT-1838(2026-07-25): Riverpod 3 non-codegen provider 인식을 `lib/src/utils/riverpod_provider_detector.dart`로 공통화했다. Notifier/AsyncNotifier/StreamNotifier(+AutoDispose·Family 변형) 클래스를 codegen(`@riverpod`/`_$`)과 동일하게 인식한다. `ref_after_async_gap`·`ref_usage`·`generator`·`ref_mounted_usage`가 공통 헬퍼를 사용한다. `keep_alive`는 공통 헬퍼 없이 함수형 `@Riverpod(keepAlive: true)` 선언 이름 heuristic을 추가로 검사한다.
+
 ### `riverpod_generator` 개선
-- `manualProviders` 확장: `Provider`, `NotifierProvider`, `AsyncNotifierProvider`, autoDispose 변형 포함
-- `MethodInvocation` 외 `InstanceCreationExpression` 패턴도 커버
-- 옵션화: `strict_generator_only: true/false`로 팀 정책 강도 조절
+- ✅ 적용됨: `NotifierProvider`, `AsyncNotifierProvider`, `StreamNotifierProvider`와 각 `AutoDispose*Provider` **타입명** 생성자를 manual provider로 검출한다.
+- ✅ 적용됨: 관용형 `NotifierProvider.autoDispose(...)` / `AsyncNotifierProvider.family(...)` / `NotifierProvider.autoDispose.family(...)` MethodInvocation 체인도 검출한다.
+- ✅ 적용됨: `MethodInvocation` 외 `InstanceCreationExpression`(타입 인자 있는 생성자 호출) 패턴도 커버한다.
+- 남은 후보: bare `Provider`는 순수 DI 패턴 오탐 위험이 커서 의도적으로 확장 목록에서 제외했다. `strict_generator_only` 옵션화는 별도 과제.
 
 ### `riverpod_ref_usage` 개선
-- `build()` 내 `ref.read`를 전면 금지 대신 분류:
-  - 상태 provider read만 경고, service/usecase read 허용(타입 기반)
-- 네이밍 기반 UseCase 추론 대신 analyzer type resolution 사용
-- `ref.watch` 허용 예외(메모이즈/derived provider) 옵션 제공
+- ✅ 적용됨: non-codegen Notifier 클래스(`extends AsyncNotifier` 등)도 provider 클래스로 인식해 build/method의 watch·read 규칙을 적용한다.
+- 남은 후보: 네이밍 기반 UseCase 추론 대신 analyzer type resolution 사용, `ref.watch` 허용 예외 옵션.
 
 ### `riverpod_provider_naming` 개선
 - 함수뿐 아니라 class-based `@riverpod class` naming 정책 추가
@@ -241,9 +242,8 @@ class Todo extends _$Todo {}
 - 남은 후보: `state` getter/setter도 `UnmountedRefException`을 던지지만 현재 `riverpod_ref_after_async_gap`은 `ref.*`만 본다 (린트 사각지대)
 
 ### `riverpod_keep_alive` 개선
-- `@riverpod(keepAlive: true)` 표기도 함께 처리
-- class 외 함수형 provider도 검사
-- 키워드 휴리스틱 + 실제 의존성(예: auth/session provider graph) 기반 판단으로 정밀화
+- ✅ 적용됨: class 외 함수형 provider(`@Riverpod(keepAlive: true) Future<T> foo(Ref ref)`)도 함수명 heuristic으로 검사한다.
+- 남은 후보: 키워드 휴리스틱 대신 실제 의존성(auth/session provider graph) 기반 판단으로 정밀화.
 
 ---
 

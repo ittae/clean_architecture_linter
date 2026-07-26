@@ -98,17 +98,20 @@ class _RiverpodKeepAliveVisitor extends SimpleAstVisitor<void> {
     }
     if (!hasKeepAliveTrue) return;
 
-    final parent = node.parent;
-    if (parent is! ClassDeclaration) return;
+    // Riverpod 3 allows `@Riverpod(keepAlive: true)` on both a Notifier class
+    // and a functional provider (`Future<Config> config(Ref ref)`), so the
+    // heuristic name comes from either the class or the function declaration.
+    final declarationName = _annotatedDeclarationName(node.parent);
+    if (declarationName == null) return;
 
-    final className = (classDeclarationName(parent) ?? '').toLowerCase();
+    final normalizedName = declarationName.toLowerCase();
     final isInfrastructure = RiverpodKeepAliveRule._infrastructurePatterns.any(
-      className.contains,
+      normalizedName.contains,
     );
     if (isInfrastructure) return;
 
     final isValidUseCase = RiverpodKeepAliveRule._validKeepAlivePatterns.any(
-      className.contains,
+      normalizedName.contains,
     );
     final normalized = _filePath.replaceAll('\\', '/').toLowerCase();
     final isValidPath = RiverpodKeepAliveRule._validPathPatterns.any(
@@ -118,6 +121,14 @@ class _RiverpodKeepAliveVisitor extends SimpleAstVisitor<void> {
     if (!isValidUseCase && !isValidPath) {
       rule.reportAtNode(node);
     }
+  }
+
+  /// The declaration name a Riverpod annotation is attached to, whether the
+  /// provider is a Notifier class or a functional `@riverpod` provider.
+  String? _annotatedDeclarationName(AstNode? parent) {
+    if (parent is ClassDeclaration) return classDeclarationName(parent);
+    if (parent is FunctionDeclaration) return parent.name.lexeme;
+    return null;
   }
 
   bool get _shouldCheckFile {

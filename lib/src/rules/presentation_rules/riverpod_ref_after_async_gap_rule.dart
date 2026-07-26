@@ -7,6 +7,7 @@ import 'package:analyzer/error/error.dart';
 
 import '../../clean_architecture_linter_base.dart';
 import '../../compat/analyzer_ast_compat.dart';
+import '../../utils/riverpod_provider_detector.dart';
 
 const _trackedRefMethods = {'read', 'watch', 'listen', 'invalidate', 'refresh'};
 const _futureContinuationMethods = {'then', 'catchError', 'whenComplete'};
@@ -58,7 +59,7 @@ class _RiverpodRefAfterAsyncGapVisitor extends SimpleAstVisitor<void> {
   @override
   void visitClassDeclaration(ClassDeclaration node) {
     if (!_shouldCheckFile(_filePath)) return;
-    if (!_isRiverpodProviderClass(node)) return;
+    if (!isRiverpodNotifierClass(node)) return;
 
     for (final member in classMembers(node)) {
       if (member is! MethodDeclaration) continue;
@@ -88,19 +89,6 @@ class _RiverpodRefAfterAsyncGapVisitor extends SimpleAstVisitor<void> {
     return normalized.contains('/lib/') &&
         normalized.contains('/presentation/') &&
         normalized.contains('/providers/');
-  }
-
-  bool _isRiverpodProviderClass(ClassDeclaration node) {
-    for (final metadata in node.metadata) {
-      final name = metadata.name.name;
-      if (name == 'riverpod' || name == 'Riverpod') return true;
-    }
-
-    final extendsClause = node.extendsClause;
-    if (extendsClause == null) return false;
-
-    final superclassName = extendsClause.superclass.name.lexeme;
-    return superclassName.startsWith('_\$');
   }
 
   bool _isPrivate(String name) => name.startsWith('_');

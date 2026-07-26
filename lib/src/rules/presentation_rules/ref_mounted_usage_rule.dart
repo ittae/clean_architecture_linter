@@ -9,6 +9,7 @@ import 'package:analyzer/error/error.dart';
 
 import '../../clean_architecture_linter_base.dart';
 import '../../compat/analyzer_ast_compat.dart';
+import '../../utils/riverpod_provider_detector.dart';
 
 /// Detects usage of `ref.mounted` in the UI layer.
 ///
@@ -112,7 +113,7 @@ class _RefMountedUsageVisitor extends SimpleAstVisitor<void> {
   bool _isExemptContext(AstNode node) {
     final enclosingClass = node.thisOrAncestorOfType<ClassDeclaration>();
     if (enclosingClass != null) {
-      return _isRiverpodNotifierClass(enclosingClass);
+      return isRiverpodNotifierClass(enclosingClass);
     }
 
     // Notifier methods are routinely split into an `extension X on FooNotifier`
@@ -128,7 +129,7 @@ class _RefMountedUsageVisitor extends SimpleAstVisitor<void> {
     final enclosingFunction = node.thisOrAncestorOfType<FunctionDeclaration>();
     if (enclosingFunction == null) return false;
 
-    return _hasRiverpodAnnotation(enclosingFunction.metadata);
+    return hasRiverpodAnnotation(enclosingFunction.metadata);
   }
 }
 
@@ -149,8 +150,8 @@ bool _isRiverpodNotifierExtension(ExtensionDeclaration node) {
   }
 
   final targetName = extendedType.name.lexeme;
-  if (_widgetSuperclasses.contains(targetName)) return false;
-  if (_nonRiverpodNotifierSuperclasses.contains(targetName)) return false;
+  if (riverpodWidgetSuperclasses.contains(targetName)) return false;
+  if (nonRiverpodNotifierSuperclasses.contains(targetName)) return false;
 
   // Unresolved. Still prefer a real declaration over the name when the target
   // happens to be declared in this same unit — that covers the single-file
@@ -160,7 +161,7 @@ bool _isRiverpodNotifierExtension(ExtensionDeclaration node) {
     for (final declaration in unit.declarations) {
       if (declaration is ClassDeclaration &&
           classDeclarationName(declaration) == targetName) {
-        return _isRiverpodNotifierClass(declaration);
+        return isRiverpodNotifierClass(declaration);
       }
     }
   }
@@ -171,7 +172,7 @@ bool _isRiverpodNotifierExtension(ExtensionDeclaration node) {
 }
 
 /// Layer classification for a resolved extension target, mirroring
-/// [_isRiverpodNotifierClass] but reading the element model instead of AST.
+/// [isRiverpodNotifierClass] but reading the element model instead of AST.
 bool _isRiverpodNotifierElement(InterfaceElement element) {
   for (final annotation in element.metadata.annotations) {
     final name = annotation.element?.displayName;
@@ -184,8 +185,8 @@ bool _isRiverpodNotifierElement(InterfaceElement element) {
     final name = supertype.element.name;
     if (name == null) continue;
     if (name.startsWith('_\$')) return true;
-    if (_widgetSuperclasses.contains(name)) return false;
-    if (_nonRiverpodNotifierSuperclasses.contains(name)) return false;
+    if (riverpodWidgetSuperclasses.contains(name)) return false;
+    if (nonRiverpodNotifierSuperclasses.contains(name)) return false;
   }
 
   for (final supertype in element.allSupertypes) {
@@ -195,78 +196,13 @@ bool _isRiverpodNotifierElement(InterfaceElement element) {
 
   final elementName = element.name;
   if (elementName == null) return false;
-  if (_hasWidgetNameSuffix(elementName)) return false;
+  if (hasWidgetNameSuffix(elementName)) return false;
 
   return elementName.endsWith('Notifier');
 }
 
-bool _hasRiverpodAnnotation(Iterable<Annotation> metadata) {
-  for (final annotation in metadata) {
-    final name = annotation.name.name;
-    if (name == 'riverpod' || name == 'Riverpod') return true;
-  }
-
-  return false;
-}
-
-const _widgetSuperclasses = {
-  'StatelessWidget',
-  'StatefulWidget',
-  'State',
-  'ConsumerWidget',
-  'HookConsumerWidget',
-  'HookWidget',
-  'ConsumerState',
-  'ConsumerStatefulWidget',
-  'StatefulHookConsumerWidget',
-};
-
-/// Flutter notifiers that end in "Notifier" but are NOT Riverpod state layer.
-/// Without this, `class Foo extends ChangeNotifier` would be exempted by the
-/// suffix heuristic below.
-const _nonRiverpodNotifierSuperclasses = {'ChangeNotifier', 'ValueNotifier'};
-
-bool _hasWidgetNameSuffix(String className) {
-  return className.endsWith('Page') ||
-      className.endsWith('Screen') ||
-      className.endsWith('View') ||
-      className.endsWith('Widget');
-}
-
-bool _hasWidgetName(ClassDeclaration node) {
-  final className = classDeclarationName(node);
-  if (className == null) return false;
-
-  return _hasWidgetNameSuffix(className);
-}
-
-/// Whether [node] declares a Riverpod state-layer class (a Notifier).
-///
-/// Signals are checked strongest first, because the weak name heuristics on
-/// both sides overlap: a provider may be called `TodoView` and a widget may be
-/// called `TodoNotifier`.
-///
-/// 1. `@riverpod` / `@Riverpod(...)` annotation, or an `extends _$Name`
-///    generated superclass — unambiguous state layer.
-/// 2. A widget superclass — unambiguous UI layer.
-/// 3. `Notifier` family base classes, minus the Flutter notifiers that are not
-///    Riverpod state layer.
-/// 4. Only then the class-name suffixes.
-bool _isRiverpodNotifierClass(ClassDeclaration node) {
-  if (_hasRiverpodAnnotation(node.metadata)) return true;
-
-  final superclassName = node.extendsClause?.superclass.name.lexeme;
-  if (superclassName != null) {
-    if (superclassName.startsWith('_\$')) return true;
-    if (_widgetSuperclasses.contains(superclassName)) return false;
-    if (_nonRiverpodNotifierSuperclasses.contains(superclassName)) return false;
-    // Notifier, AsyncNotifier, StreamNotifier, AutoDisposeNotifier,
-    // FamilyAsyncNotifier, and project-local base notifiers all end in
-    // "Notifier".
-    if (superclassName.endsWith('Notifier')) return true;
-  }
-
-  if (_hasWidgetName(node)) return false;
-
-  return classDeclarationName(node)?.endsWith('Notifier') ?? false;
-}
+// Class-based recognition (`isRiverpodNotifierClass`), the widget/notifier
+// superclass sets, and the annotation/name helpers live in the shared
+// `utils/riverpod_provider_detector.dart` so every Riverpod rule recognises the
+// same set of state-layer classes. Only the resolved-element and extension
+// paths below are specific to this rule.
