@@ -46,10 +46,10 @@ env:
 # reusable(called) 워크플로는 workflow-level concurrency가 무시되므로 각 job 레벨에 건다.
 jobs:
   # ─────────────────────────────────────────
-  # 단일 리뷰 잡 (2026-07-19): gate-skip → gate-classify → 엔진 리뷰(Grok primary /
-  # Claude 로컬 fallback) → 판정을 한 잡의 스텝 체인으로 통합 — full 변형(#44)과 동일
-  # 구조. 잡 4→1. 추가 수정: 프롬프트 env 정본화, author 필터→마커 기반,
-  # 크로스-스텝 셸 변수 버그(ITER)와 max_prior 출처 버그 수정.
+  # 단일 리뷰 잡 (2026-07-19): gate-skip → gate-classify → 엔진 리뷰
+  # (runtime chain grok → codex → claude) → 판정을 한 잡의 스텝 체인으로 통합 —
+  # full 변형(#44)과 동일 구조. 잡 4→1. 추가 수정: 프롬프트 env 정본화,
+  # author 필터→마커 기반, 크로스-스텝 셸 변수 버그(ITER)와 max_prior 출처 버그 수정.
   # ─────────────────────────────────────────
   review:
     # public + self-hosted 안전핀 (이 레포 전용, org private 기본과 다름):
@@ -254,7 +254,10 @@ jobs:
           if [ -n "$claude_bin" ] && "$claude_bin" auth status 2>/dev/null | jq -e '.loggedIn == true' >/dev/null; then
             claude_ok=1
           fi
-          if [ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ] || [ -n "${ANTHROPIC_API_KEY:-}" ]; then claude_ok=1; fi
+          # Secrets alone are not enough: Claude step needs an executable binary.
+          if { [ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ] || [ -n "${ANTHROPIC_API_KEY:-}" ]; } && [ -n "$claude_bin" ]; then
+            claude_ok=1
+          fi
 
           echo "grok=$grok_live" >> "$GITHUB_OUTPUT"
           echo "codex=$codex_live" >> "$GITHUB_OUTPUT"
@@ -495,9 +498,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -o pipefail
+          # Match auth multi-path detection (Codex step pattern).
+          grok_bin=""
+          for c in "$HOME/.grok/bin/grok" "$HOME/.local/bin/grok"; do
+            if [ -x "$c" ]; then grok_bin=$c; break; fi
+          done
+          [ -n "$grok_bin" ] || { echo "::error::grok binary missing"; exit 127; }
           LOG=/tmp/grok-review.log
           set +e
-          "$HOME/.grok/bin/grok" -p "$(cat /tmp/review-prompt.md)" \
+          "$grok_bin" -p "$(cat /tmp/review-prompt.md)" \
             --output-format plain \
             --allow "Bash(cat:*)" \
             --allow "Bash(echo:*)" \
@@ -558,11 +567,18 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           set -o pipefail
+          # Match auth path detection so ready implies executable.
+          claude_bin=""
+          for c in "$HOME/.local/bin/claude"; do
+            if [ -x "$c" ]; then claude_bin=$c; break; fi
+          done
+          [ -n "$claude_bin" ] || { echo "::error::claude binary missing"; exit 127; }
           LOG=/tmp/claude-review.log
           set +e
-          "$HOME/.local/bin/claude" -p "$(cat /tmp/review-prompt.md)" \
+          "$claude_bin" -p "$(cat /tmp/review-prompt.md)" \
             --model "${{ env.MODEL }}" \
             --allowedTools "Bash(cat:*),Bash(echo:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api:*),Bash(gh search:*)" 2>&1 | tee "$LOG"
           rc=${PIPESTATUS[0]}
