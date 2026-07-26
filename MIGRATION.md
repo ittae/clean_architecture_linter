@@ -12,7 +12,7 @@
 |------|--------------------|-------------------------------|
 | `analysis_options.yaml` | `analyzer: plugins: - custom_lint` | top-level `plugins: clean_architecture_linter: <version>` |
 | `pubspec.yaml` dev_dependency | `clean_architecture_linter` + `custom_lint` | `clean_architecture_linter` (단독, `custom_lint` 제거) |
-| 실행 CLI | `dart run custom_lint` | `dart analyze` (Flutter: `flutter analyze`) |
+| 실행 CLI | `dart run custom_lint` | `dart analyze` (Flutter 프로젝트도 동일 — `flutter analyze` 사용 금지) |
 | Dart SDK 최소 | `^3.6.0` | `^3.10.0` |
 | `pubspec_overrides.yaml` 워크어라운드 | 필요 (analyzer 9 / Riverpod 3+ 충돌) | **불필요** — `custom_lint*` 체인 자체가 사라짐 |
 | Rule 개수 / 이름 / 진단 메시지 | 33개 | 33개 (동일, 진단 메시지 동등) |
@@ -67,10 +67,12 @@ analyzer:
 
 ```bash
 dart pub get
-dart analyze        # Flutter 프로젝트는 flutter analyze
+dart analyze        # Flutter 프로젝트도 dart analyze (flutter analyze 아님)
 ```
 
-`dart run custom_lint`은 더 이상 사용하지 않는다. v2.0의 33개 rule은 `dart analyze` / `flutter analyze` 결과에 직접 포함된다.
+`dart run custom_lint`은 더 이상 사용하지 않는다. v2.0의 33개 rule은 `dart analyze` 결과에 직접 포함된다.
+
+> ⚠️ **`flutter analyze`를 쓰지 마세요.** `flutter analyze`는 `analysis_server_plugin` 진단을 조용히 유실할 수 있습니다. Flutter 앱 CI/로컬에서도 반드시 `dart analyze`를 사용하세요. 원인·재현·권장 경로는 [docs/analysis/FLUTTER_ANALYZE_PLUGIN_LOSS.md](docs/analysis/FLUTTER_ANALYZE_PLUGIN_LOSS.md)를 참고하세요.
 
 ### 6. IDE 재시작
 
@@ -78,7 +80,7 @@ dart analyze        # Flutter 프로젝트는 flutter analyze
 
 ## 알려진 차이 / 주의
 
-- **실행 명령 변경**: CI/CD 스크립트나 `Makefile`/`derry`/`melos` 태스크에서 `dart run custom_lint`을 호출하던 부분을 `dart analyze`(또는 `flutter analyze`)로 교체한다.
+- **실행 명령 변경**: CI/CD 스크립트나 `Makefile`/`derry`/`melos` 태스크에서 `dart run custom_lint`을 호출하던 부분을 `dart analyze`로 교체한다. Flutter 프로젝트라도 `flutter analyze`로 바꾸지 않는다 — 플러그인 진단이 유실될 수 있다([FLUTTER_ANALYZE_PLUGIN_LOSS.md](docs/analysis/FLUTTER_ANALYZE_PLUGIN_LOSS.md)).
 - **severity**: v2.0 rule은 대부분 analyzer **WARNING**으로 보고되지만, 일부(7개: `repository_no_throw`, `extension_location`, `freezed_usage`, `no_presentation_models`, `ref_mounted_usage`, `riverpod_generator`, `riverpod_keep_alive`)는 v1 패리티에 맞춰 **INFO**로 보고된다. CI에서 WARNING을 실패로 처리하려면 `dart analyze --fatal-warnings`를 쓰고, **INFO rule까지** 실패로 처리하려면 `--fatal-infos`도 함께 지정해야 한다(`--fatal-warnings`만으로는 INFO가 잡히지 않는다).
 - **IDE 통합**: 별도 `custom_lint` 플러그인 활성화 없이 Dart/Flutter 확장이 제공하는 기본 analyzer 경로로 진단이 표시된다.
 - **테스트 커버리지 rule**: `clean_architecture_linter_require_test` 같은 옵션 rule의 활성화 형식은 v2.0 release 노트(CHANGELOG)에서 최종 확정된다.
@@ -89,4 +91,5 @@ dart analyze        # Flutter 프로젝트는 flutter analyze
 - [Dart analyzer plugins](https://dart.dev/tools/analyzer-plugins)
 - [analysis_server_plugin package](https://pub.dev/packages/analysis_server_plugin)
 - [v2 analyzer plugin 개발 흐름](docs/v2-dev-workflow.md) — contributor용 로컬 개발 가이드
+- [`flutter analyze` 플러그인 진단 유실](docs/analysis/FLUTTER_ANALYZE_PLUGIN_LOSS.md) — Flutter 앱에서도 `dart analyze`를 쓰는 이유
 - 마이그레이션 배경: upstream [invertase/dart_custom_lint](https://github.com/invertase/dart_custom_lint) archive 및 원작자의 `analysis_server_plugin` 이주 권고
