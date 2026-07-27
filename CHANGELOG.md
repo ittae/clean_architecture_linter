@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0](https://github.com/ittae/clean_architecture_linter/compare/v2.2.0...v2.3.0) (2026-07-27)
+
+
+### Features
+
+* ITT-1838 Riverpod 3 non-codegen provider 인식 공통화 ([#110](https://github.com/ittae/clean_architecture_linter/issues/110)) ([b9c8c27](https://github.com/ittae/clean_architecture_linter/commit/b9c8c27d100481e317589998079260eb90387bd3))
+* ITT-1911 riverpod_uncancelled_disposable 룰 main 이식 ([#112](https://github.com/ittae/clean_architecture_linter/issues/112)) ([37e43d8](https://github.com/ittae/clean_architecture_linter/commit/37e43d84cde19b6ef5c0b8054b278e827406d8d0))
+
+
+### Bug Fixes
+
+* AI review engine chain grok→codex→claude (public inline sync) ([#111](https://github.com/ittae/clean_architecture_linter/issues/111)) ([3b1d410](https://github.com/ittae/clean_architecture_linter/commit/3b1d4107b07fb97f490fcecf1a73cfaf0c33e546))
+* **ci:** pub.dev 자동 publish는 tag push + RELEASE_PLEASE_TOKEN ([#108](https://github.com/ittae/clean_architecture_linter/issues/108)) ([315dab9](https://github.com/ittae/clean_architecture_linter/commit/315dab9f91d18ecb2bc649edca1be39c322c2a8d))
+* **ci:** Release Please에서 pub.dev publish를 workflow_call로 연결 ([#106](https://github.com/ittae/clean_architecture_linter/issues/106)) ([8eec99b](https://github.com/ittae/clean_architecture_linter/commit/8eec99be3b4be87a9e249b8ded15f546bd3b95f6))
+
 ## [2.2.0](https://github.com/ittae/clean_architecture_linter/compare/v2.1.1...v2.2.0) (2026-07-24)
 
 
