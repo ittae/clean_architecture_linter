@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1](https://github.com/ittae/clean_architecture_linter/compare/v2.3.0...v2.3.1) (2026-07-28)
+
+
+### Bug Fixes
+
+* ITT-1978 PR body lint이 release-please PR을 봇으로 오인해 실패하는 문제 수정 ([#115](https://github.com/ittae/clean_architecture_linter/issues/115)) ([441cbf4](https://github.com/ittae/clean_architecture_linter/commit/441cbf494c14e88d54c4e6f0bf42bfe453baeeca))
+* pub.dev score 개선 - poc_v2 패키지명 중복 제거 및 isAbstract deprecation 해소 ([#113](https://github.com/ittae/clean_architecture_linter/issues/113)) ([6661bcd](https://github.com/ittae/clean_architecture_linter/commit/6661bcd2cd86b005c3013ea37e88795310ce3685))
+
 ## [2.3.0](https://github.com/ittae/clean_architecture_linter/compare/v2.2.0...v2.3.0) (2026-07-27)
 
 
