@@ -560,7 +560,7 @@ class CleanArchitectureUtils {
     final hasOnlyAbstractMethods = classMembers(classDeclaration)
         .whereType<MethodDeclaration>()
         .every(
-          (method) => method.isAbstract || method.isGetter || method.isSetter,
+          (method) => !method.isComplete || method.isGetter || method.isSetter,
         );
 
     return isRepositoryClass && (isAbstractClass || hasOnlyAbstractMethods);
@@ -590,7 +590,7 @@ class CleanArchitectureUtils {
   ///
   /// Returns `true` if the method is valid for a repository interface.
   static bool isRepositoryInterfaceMethod(MethodDeclaration method) {
-    return method.isAbstract || method.isGetter || method.isSetter;
+    return !method.isComplete || method.isGetter || method.isSetter;
   }
 
   // ============================================================================

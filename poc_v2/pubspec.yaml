@@ -1,4 +1,4 @@
-name: clean_architecture_linter
+name: clean_architecture_linter_poc_v2
 description: PoC package for the analysis_server_plugin based v2 implementation.
 version: 2.0.0-dev.0
 publish_to: none
