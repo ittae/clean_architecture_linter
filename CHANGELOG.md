@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   analyzer plugin synthetic package while retaining the 2.3 rule set.
 - Kept the plugin host on `analysis_server_plugin 0.3.15` after consumer smoke
   found `0.3.18` still hangs during plugin analysis under analyzer 13.
+- **Migration:** analyzer 14 plugin hosts should stay on `2.3.x` until the
+  upstream hang is resolved; `2.4.x` intentionally targets the analyzer 13 line.
 
 ## [2.3.1](https://github.com/ittae/clean_architecture_linter/compare/v2.3.0...v2.3.1) (2026-07-28)
 

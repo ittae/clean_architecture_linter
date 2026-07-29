@@ -2,9 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 
 /// AST API compatibility shims for analyzer 13.
 ///
-/// These helpers keep rule code independent from analyzer AST surface changes
-/// while insulating rule code from analyzer AST surface changes. Re-check this
-/// module before widening the analyzer upper bound.
+/// These helpers keep rule code insulated from analyzer AST surface changes.
+/// Re-check this module before widening the analyzer upper bound.
 String? formalParameterName(FormalParameter parameter) {
   final base = _baseFormalParameter(parameter);
   final Object? name = _readProperty(base, #name);
@@ -36,7 +35,13 @@ Iterable<AstNode> extensionMembers(ExtensionDeclaration declaration) {
 bool methodDeclarationHasImplementation(MethodDeclaration method) {
   final Object? isComplete = _readProperty(method, #isComplete);
   if (isComplete is bool) return isComplete;
-  return method.body is! EmptyFunctionBody;
+
+  // analyzer 13.0: MethodDeclaration has isAbstract, not isComplete.
+  final Object? isAbstract = _readProperty(method, #isAbstract);
+  if (isAbstract is bool) return !isAbstract;
+
+  // Match analyzer 13.1+ isComplete: external counts as implemented.
+  return method.externalKeyword != null || method.body is! EmptyFunctionBody;
 }
 
 bool isNamedBooleanArgument(
@@ -125,6 +130,7 @@ Object? _readProperty(Object target, Symbol getter) {
     if (getter == #body) return receiver.body;
     if (getter == #members) return receiver.members;
     if (getter == #isComplete) return receiver.isComplete;
+    if (getter == #isAbstract) return receiver.isAbstract;
     if (getter == #lexeme) return receiver.lexeme;
     if (getter == #label) return receiver.label;
     if (getter == #argumentExpression) return receiver.argumentExpression;

@@ -47,6 +47,7 @@ class TodoListNotifier {}
 abstract class TodoRepository {
   Future<void> save();
   Future<void> remove() async {}
+  external Future<void> sync();
 }
 ''',
       ).unit;
@@ -60,6 +61,7 @@ abstract class TodoRepository {
 
       expect(methodDeclarationHasImplementation(methods[0]), isFalse);
       expect(methodDeclarationHasImplementation(methods[1]), isTrue);
+      expect(methodDeclarationHasImplementation(methods[2]), isTrue);
     });
   });
 }
