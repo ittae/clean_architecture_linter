@@ -136,16 +136,16 @@ warning - lib/bad_examples/features/todo/data/repositories/todo_repository_impl.
 
 **VS Code / Android Studio / IntelliJ**에서도 동일한 경고 2개가 에디터의 인라인 밑줄과 **Problems** 패널 항목으로 표시됩니다 — Dart/Flutter 확장 외에 별도 설정이 필요 없습니다. 밑줄에 마우스를 올리면 problem 메시지가, 그 아래 correction 메시지가 수정 방법을 알려줍니다(이 규칙들은 analyzer `CorrectionProducer`를 등록하지 않으므로 자동 수정 quick action은 아직 없습니다). `example/lib/bad_examples/` 아래 각 파일은 헤더 주석에서 `example/lib/good_examples/`의 수정된 버전을 가리킵니다.
 
-## 🧩 호환성 — analyzer 9-13 / Riverpod 3+
+## 🧩 호환성 — analyzer 13 / Riverpod 3+
 
-v2.0은 공식 `analysis_server_plugin`(`>=0.3.4 <0.4.0`) 위에서 동작하며, analyzer `>=9.0.0 <14.0.0`을 지원합니다. 이 범위는 **Dart 3.10+** 에 번들된 analyzer를 포함하므로, 플러그인이 프로젝트의 analysis server 안에서 `.dartServer` 또는 `pubspec_overrides.yaml` 워크어라운드 없이 그대로 로드됩니다.
+v2.4는 공식 `analysis_server_plugin`(`>=0.3.15 <0.3.16`) 위에서 동작하며, analyzer `>=13.0.0 <14.0.0`을 지원합니다. 이 범위는 현재 `riverpod_lint 3.1.x` analyzer 라인과 맞으면서 analyzer 14 전용 plugin-host 버전을 피합니다. consumer smoke에서 `0.3.18`은 analyzer 13 plugin analysis 중 여전히 hang이 재현되어 ASP 범위를 `0.3.15`로 고정합니다.
 
-`riverpod_lint 3.1.x`는 아직 자체 analyzer constraint를 가집니다(안정판 3.1.3은 `^9.0.0`, 현재 dev release는 `^12.0.0`). 한 consumer 프로젝트에서 두 도구를 함께 써야 하면 analyzer plugin은 `dev_dependencies`에서 제외하고 둘 다 top-level `plugins:`로 활성화하세요. analyzer plugin manager는 활성화된 plugin들을 하나의 synthetic package에서 함께 resolve하므로, 이 패키지는 그 solve를 공유할 수 있도록 analyzer 범위를 넓게 유지합니다:
+`riverpod_lint 3.1.x`는 자체 analyzer constraint를 가집니다. 한 consumer 프로젝트에서 두 도구를 함께 써야 하면 analyzer plugin은 `dev_dependencies`에서 제외하고 둘 다 top-level `plugins:`로 활성화하세요. analyzer plugin manager는 활성화된 plugin들을 하나의 synthetic package에서 함께 resolve하므로, 이 패키지는 `riverpod_lint`와 같은 solve를 공유할 수 있도록 analyzer 범위를 맞춥니다:
 
 ```yaml
 plugins:
-  clean_architecture_linter: ^2.0.0-dev.1
-  riverpod_lint: ^3.1.3
+  clean_architecture_linter: ^2.4.0
+  riverpod_lint: ^3.1.7
 ```
 
 > v1 `custom_lint` upstream([invertase/dart_custom_lint](https://github.com/invertase/dart_custom_lint))은 2026년 5월에 archive 처리되었습니다. v2.0은 공식 플러그인으로 완전히 이주했으므로 기존 `pubspec_overrides.yaml` 다리는 더 이상 필요 없습니다 — 업그레이드 시 삭제하세요.

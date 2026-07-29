@@ -40,6 +40,27 @@ class TodoListNotifier {}
         isFalse,
       );
     });
+
+    test('detects method implementations on analyzer 13 nodes', () {
+      final unit = parseString(
+        content: '''
+abstract class TodoRepository {
+  Future<void> save();
+  Future<void> remove() async {}
+}
+''',
+      ).unit;
+
+      final classDeclaration = unit.declarations
+          .whereType<ClassDeclaration>()
+          .single;
+      final methods = classMembers(
+        classDeclaration,
+      ).whereType<MethodDeclaration>().toList();
+
+      expect(methodDeclarationHasImplementation(methods[0]), isFalse);
+      expect(methodDeclarationHasImplementation(methods[1]), isTrue);
+    });
   });
 }
 

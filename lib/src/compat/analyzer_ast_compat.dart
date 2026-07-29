@@ -1,11 +1,10 @@
 import 'package:analyzer/dart/ast/ast.dart';
 
-/// AST API compatibility shims for analyzer 9-13.
+/// AST API compatibility shims for analyzer 13.
 ///
 /// These helpers keep rule code independent from analyzer AST surface changes
-/// while `pubspec.yaml` allows a broad `analyzer: >=9.0.0 <14.0.0` range for
-/// analyzer server plugin co-resolution. Re-check this module before widening
-/// the analyzer upper bound.
+/// while insulating rule code from analyzer AST surface changes. Re-check this
+/// module before widening the analyzer upper bound.
 String? formalParameterName(FormalParameter parameter) {
   final base = _baseFormalParameter(parameter);
   final Object? name = _readProperty(base, #name);
@@ -32,6 +31,12 @@ Iterable<AstNode> classMembers(ClassDeclaration declaration) {
 
 Iterable<AstNode> extensionMembers(ExtensionDeclaration declaration) {
   return _membersFrom(declaration);
+}
+
+bool methodDeclarationHasImplementation(MethodDeclaration method) {
+  final Object? isComplete = _readProperty(method, #isComplete);
+  if (isComplete is bool) return isComplete;
+  return method.body is! EmptyFunctionBody;
 }
 
 bool isNamedBooleanArgument(
@@ -119,6 +124,7 @@ Object? _readProperty(Object target, Symbol getter) {
     if (getter == #typeName) return receiver.typeName;
     if (getter == #body) return receiver.body;
     if (getter == #members) return receiver.members;
+    if (getter == #isComplete) return receiver.isComplete;
     if (getter == #lexeme) return receiver.lexeme;
     if (getter == #label) return receiver.label;
     if (getter == #argumentExpression) return receiver.argumentExpression;
