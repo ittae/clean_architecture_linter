@@ -1,0 +1,8 @@
+# actionlint 설정 — 자체 호스팅 러너 라벨을 알려준다.
+self-hosted-runner:
+  labels:
+    - ittae-light
+paths:
+  .github/workflows/claude-code-review.yml:
+    ignore:
+      - 'shellcheck reported issue in this script'

@@ -123,17 +123,39 @@ jobs:
           fi
 
           # Rebase 감지 (3-dot diff 해시 비교 — 코드 동일하면 skip)
+          # 빈 diff 출력 시 skip=false로 안전 폴백하고, needs-rework 라벨이 있으면
+          # synchronize 재리뷰를 강제한다.
           if [ "${{ github.event.action }}" = "synchronize" ]; then
             OLD="${{ github.event.before }}"
             NEW="${{ github.event.after }}"
+            echo "DEBUG[rebase-detect]: action=synchronize OLD=$OLD NEW=$NEW BASE=$BASE_SHA"
             git fetch origin "$OLD" --depth=1 2>/dev/null || true
-            if git cat-file -e "$OLD" 2>/dev/null; then
-              OLD_HASH=$(git diff "$BASE_SHA...$OLD" 2>/dev/null | grep -v "^diff\|^index\|^---\|^+++" | md5sum | awk '{print $1}')
-              NEW_HASH=$(git diff "$BASE_SHA...$NEW" 2>/dev/null | grep -v "^diff\|^index\|^---\|^+++" | md5sum | awk '{print $1}')
-              if [ "$OLD_HASH" = "$NEW_HASH" ]; then
-                echo "skip=true" >> $GITHUB_OUTPUT
-                echo "reason=rebase-only" >> $GITHUB_OUTPUT; exit 0
+            if git cat-file -e "$OLD" 2>/dev/null \
+               && git cat-file -e "$NEW" 2>/dev/null \
+               && git cat-file -e "$BASE_SHA" 2>/dev/null; then
+              OLD_DIFF=$(git diff "$BASE_SHA...$OLD" 2>/dev/null | grep -v "^diff\|^index\|^---\|^+++" || true)
+              NEW_DIFF=$(git diff "$BASE_SHA...$NEW" 2>/dev/null | grep -v "^diff\|^index\|^---\|^+++" || true)
+              OLD_LINES=$(printf "%s" "$OLD_DIFF" | wc -l | tr -d ' ')
+              NEW_LINES=$(printf "%s" "$NEW_DIFF" | wc -l | tr -d ' ')
+              OLD_HASH=$(printf "%s" "$OLD_DIFF" | md5sum | awk '{print $1}')
+              NEW_HASH=$(printf "%s" "$NEW_DIFF" | md5sum | awk '{print $1}')
+              echo "DEBUG[rebase-detect]: OLD_LINES=$OLD_LINES NEW_LINES=$NEW_LINES OLD_HASH=$OLD_HASH NEW_HASH=$NEW_HASH"
+              HAS_NEEDS_REWORK=$(gh pr view "$PR_NUM" -R "$REPO" --json labels --jq '[.labels[] | select(.name == "needs-rework")] | length' 2>/dev/null || echo 0)
+              [[ ! "$HAS_NEEDS_REWORK" =~ ^[0-9]+$ ]] && HAS_NEEDS_REWORK=0
+              # 둘 다 비어있지 않고(false positive 가드) hash가 같을 때만 rebase-only로 판정.
+              # 단 needs-rework가 남아 있으면 동일 diff라도 재리뷰를 강제한다.
+              if [ "$OLD_LINES" -gt 0 ] && [ "$NEW_LINES" -gt 0 ] && [ "$OLD_HASH" = "$NEW_HASH" ]; then
+                if [ "$HAS_NEEDS_REWORK" -gt 0 ]; then
+                  echo "::notice title=pr-gate review-check::rebase-only candidate ignored because needs-rework is present"
+                else
+                  echo "skip=true" >> $GITHUB_OUTPUT
+                  echo "reason=rebase-only" >> $GITHUB_OUTPUT
+                  echo "::notice title=pr-gate review-check::waived reason=rebase-only"
+                  exit 0
+                fi
               fi
+            else
+              echo "DEBUG[rebase-detect]: one of OLD/NEW/BASE unreachable — rebase check skipped"
             fi
           fi
 
@@ -285,7 +307,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           ITER=$(gh pr view "$PR_NUM" -R "$REPO" --json comments \
-            --jq '[.comments[] | select(.body | contains("총점:"))] | length')
+            --jq '[.comments[] | select(.body | contains("총점:") or contains("ittae-ai-review"))] | length')
           [[ ! "$ITER" =~ ^[0-9]+$ ]] && ITER=0
           echo "iteration=$ITER" >> $GITHUB_OUTPUT
 
@@ -309,12 +331,6 @@ jobs:
             > /tmp/prior-review.md
           echo "✓ PR context fetched: /tmp/{pr-context.json,pr-diff.patch,prior-review.md}"
 
-          MAX_PRIOR=$(gh pr view "$PR_NUM" -R "$REPO" --json comments \
-            --jq '[.comments[] | select(.body | contains("총점:")) | .body] | join("\n")' \
-            | grep -oP '총점:\s*\K[0-9]+(\.[0-9]+)?' | sort -rn | head -1)
-          [[ ! "$MAX_PRIOR" =~ ^[0-9]+(\.[0-9]+)?$ ]] && MAX_PRIOR=0
-          echo "max_prior_score=$MAX_PRIOR" >> $GITHUB_OUTPUT
-
           # 재시도 한도
           if [ "$ITER" -ge "$ITERATE_LIMIT" ]; then
             gh pr edit "$PR_NUM" -R "$REPO" --add-label "needs-human-review" --remove-label "ai-iterating" 2>/dev/null || true
@@ -331,7 +347,6 @@ jobs:
             REVIEW HEAD SHA: ${{ steps.context.outputs.head_sha }}
             REVIEW RUN ID: ${{ github.run_id }}
             ITERATION: ${{ steps.guard.outputs.iteration }}
-            MAX PRIOR SCORE: ${{ steps.guard.outputs.max_prior_score }}
             STACK: ${{ env.STACK }}
 
             ## 🔒 Untrusted Content Boundary (MANDATORY — 아래 PR 컨텍스트를 읽기 전에 확인)
@@ -372,7 +387,7 @@ jobs:
               ```
             - 작성자가 1-click "Commit suggestion" 가능 → 빠른 적용
 
-            **2. 종합 코멘트 (1개만)** — 점수 + JSON 메타 + 인라인으로 못 표현한 큰 항목:
+            **2. 종합 코멘트 (1개만)** — 판정 + JSON 메타 + 인라인으로 못 표현한 큰 항목:
             - 신규 파일 생성, 다중 file 리팩터링, 광범위 변경
             - 이런 항목은 코멘트로 설명 + `@claude <task>` 멘션 위임 권장
             - 예: "신규 파일 `xxx_test.dart` 작성 필요 — `@claude xxx 테스트 작성해주세요` 로 위임 가능"
@@ -381,13 +396,12 @@ jobs:
 
             ## 🔁 재리뷰 가드 (ITERATION > 0일 때 MANDATORY)
 
-            **트랙 A — 계약 이행 검증 (점수 반영)**
-            - 이전 리뷰가 지적한 HIGH/MEDIUM/LOW 항목만 점수 계산
-            - 해결됨 → 점수 회복 / 미해결 → 감점 유지
+            **트랙 A — 계약 이행 검증 (판정 반영)**
+            - 이전 리뷰가 지적한 HIGH/MEDIUM/LOW 항목의 해결 여부를 검증
+            - 해결됨 → 해당 finding 제외 / 미해결 → 동일 severity로 유지
             - **FORBIDDEN**: 이전에 지적·해결한 카테고리를 다른 메서드에서 발견했다고 다시 감점 (트랙 B로 분리)
-            - **MANDATORY**: 새 점수 ≥ MAX_PRIOR_SCORE (단조성 강제)
 
-            **트랙 B — 신규 발견 (참고용, 점수 미반영)**
+            **트랙 B — 신규 발견 (참고용, 판정 미반영)**
             - 이전 리뷰에 없던 새 카테고리는 이 트랙에만 기재
             - PASS/FAIL 판정에 영향 없음
             - 다음 재리뷰에서도 트랙 B 유지 (소급 강제 금지)
@@ -424,10 +438,11 @@ jobs:
             - false positive를 제거했는가?
             - 작업 에이전트에게 넘길 HIGH/MEDIUM contract가 명확한가?
 
-            ## 📊 점수 산정 (10점 만점)
-            - HIGH: -2.0 / MEDIUM: -1.0 / LOW: -0.5
-            - 판정: 10.0 미만 → FAIL (지적 0건 = 만점이어야 통과). 단 high-risk(민감 영역 감지) PR은 9.5 이상이면 PASS로 기재 — 사람 최종 검토 전제
-            - 객관 게이트(Phase 1)는 이미 통과했으니 점수에 가산점 없음
+            ## 📊 판정 (점수 없음)
+            - **PASS**: HIGH 0건 AND MEDIUM 0건. LOW는 판정에 영향을 주지 않는다.
+            - **FAIL**: HIGH 또는 MEDIUM이 1건이라도 있으면 FAIL.
+            - LOW는 선택적 개선이다. 머지를 막지 않는다. 다만 작업 계약에는 포함해 자동 수정 대상으로 넘긴다.
+            - 객관 게이트(Phase 1)는 이미 통과했으니 판정에 반영하지 않는다.
 
             ## ✍️ 출력 (단일 코멘트 1개만)
             아래 템플릿 그대로 사용. 한국어 작성 (기술 용어 영어 OK).
@@ -435,7 +450,7 @@ jobs:
             ```markdown
             ## 🎯 코드 리뷰 결과 (iteration ${{ steps.guard.outputs.iteration }})
 
-            **총점: X.X / 10.0** {✅ PASS | ❌ FAIL}
+            **판정: {✅ PASS | ❌ FAIL}** — HIGH {N}건 / MEDIUM {N}건 / LOW {N}건
 
             > Stack: (env.STACK 값 또는 자동 감지 결과)
             > PR 크기: (Phase 1에서 측정한 줄 수)
@@ -445,7 +460,7 @@ jobs:
             (한국어)
 
             ### 🚨 HIGH (Must Fix)
-            - [ ] (-2.0) **항목 제목** — Perspective: {Security|Architecture|...}
+            - [ ] **H1** **항목 제목** — Perspective: {Security|Architecture|...}
 
             (문제 설명)
 
@@ -456,32 +471,25 @@ jobs:
             **해결 방법**: (구체적)
 
             ### ⚠️ MEDIUM (Should Fix)
-            - [ ] (-1.0) **항목 제목** — Perspective: ...
+            - [ ] **M1** **항목 제목** — Perspective: ...
 
             ### 💡 LOW (Nice to Have)
-            - [ ] (-0.5) **항목 제목**
+            - [ ] **L1** **항목 제목**
 
             ### 📋 최종 판정
-            ✅ PASS / ❌ FAIL (X.X / 10.0)
+            ✅ PASS / ❌ FAIL — HIGH {N}건 / MEDIUM {N}건 / LOW {N}건
 
             ---
             (재리뷰 모드일 때만 트랙 A/B 추가 섹션)
             ```
 
-            ## 💾 점수 기록 + JSON 메타데이터 (MANDATORY 마지막 단계)
+            ## 💾 JSON 메타데이터 (MANDATORY 마지막 단계)
 
-            **두 가지 모두 필수**:
-
-            1. 점수 파일:
-            ```bash
-            echo "X.X" > /tmp/review_score.txt
-            ```
-
-            2. 리뷰 코멘트 본문 **맨 끝**에 hidden HTML comment 2개를 첨부 (개선 #2 + head freshness):
+            리뷰 코멘트 본문 **맨 끝**에 hidden HTML comment 2개를 첨부 (개선 #2 + head freshness):
             ```html
             <!-- ittae-ai-review-key:${{ env.REPO }}#${{ env.PR_NUM }}:head:${{ steps.context.outputs.head_sha }}:run:${{ github.run_id }} -->
             <!-- ittae-ai-review-meta
-            {"score": 8.0, "iteration": 0, "head_sha": "${{ steps.context.outputs.head_sha }}", "high": 0, "medium": 2, "low": 1, "categories": ["Architecture","Test"], "verdict": "PASS"}
+            {"iteration": 0, "head_sha": "${{ steps.context.outputs.head_sha }}", "high": 0, "medium": 2, "low": 1, "disputed": 0, "categories": ["Architecture","Test"], "verdict": "FAIL"}
             -->
             ```
 
@@ -615,7 +623,7 @@ jobs:
           exit 1
 
 
-      - name: 점수 추출 + 단조성 보정 (JSON meta 우선)
+      - name: Finding 카운트 추출 (JSON meta 우선)
         if: steps.auth.outputs.status == 'ready'
         id: score
         env:
@@ -634,61 +642,66 @@ jobs:
               | sed '1d;$d' | tr -d '\n')
           fi
           if [ -n "$META_JSON" ]; then
-            SCORE=$(echo "$META_JSON" | jq -r '.score // empty' 2>/dev/null)
+            if ! echo "$META_JSON" | jq -e '
+              (.iteration | type == "number") and
+              (.head_sha | type == "string" and length > 0) and
+              (.high | type == "number") and
+              (.medium | type == "number") and
+              (.low | type == "number") and
+              (.disputed | type == "number") and
+              (.verdict | type == "string" and (. == "PASS" or . == "FAIL"))
+            ' >/dev/null 2>&1; then
+              echo "❌ AI 리뷰 meta schema 검증 실패 — 필수 필드 누락/타입 불일치"
+              META_JSON=""
+            fi
+          fi
+          if [ -n "$META_JSON" ]; then
             COMMENT_HEAD=$(echo "$META_JSON" | jq -r '.head_sha // empty' 2>/dev/null)
-            HIGH_COUNT=$(echo "$META_JSON" | jq -r '.high // 0' 2>/dev/null)
-            MEDIUM_COUNT=$(echo "$META_JSON" | jq -r '.medium // 0' 2>/dev/null)
+            HIGH_COUNT=$(echo "$META_JSON" | jq -r '.high // empty' 2>/dev/null)
+            MEDIUM_COUNT=$(echo "$META_JSON" | jq -r '.medium // empty' 2>/dev/null)
+            LOW_COUNT=$(echo "$META_JSON" | jq -r '.low // empty' 2>/dev/null)
+            DISPUTED_COUNT=$(echo "$META_JSON" | jq -r '.disputed // empty' 2>/dev/null)
+            VERDICT=$(echo "$META_JSON" | jq -r '.verdict // empty' 2>/dev/null)
             CATEGORIES=$(echo "$META_JSON" | jq -r '.categories // [] | join(", ")' 2>/dev/null)
-            echo "✓ JSON 메타 파싱 성공: score=$SCORE head=${COMMENT_HEAD:-legacy-none} high=$HIGH_COUNT medium=$MEDIUM_COUNT cats=[$CATEGORIES]"
+            echo "✓ JSON 메타 파싱: high=$HIGH_COUNT medium=$MEDIUM_COUNT low=$LOW_COUNT disputed=$DISPUTED_COUNT verdict=$VERDICT head=${COMMENT_HEAD:-none} cats=[$CATEGORIES]"
           fi
 
           # JSON에 head_sha가 없으면 namespaced key marker에서 보조 추출.
           if [ -z "${COMMENT_HEAD:-}" ]; then
             COMMENT_HEAD=$(echo "$LATEST" | sed -nE 's/.*<!-- ittae-ai-review-key:[^ ]*:head:([0-9a-f]{40}):run:[0-9]+ -->.*/\1/p' | tail -1)
           fi
-          if [ -n "${COMMENT_HEAD:-}" ] && [ -n "$LIVE_HEAD" ] && [ "$COMMENT_HEAD" != "$LIVE_HEAD" ]; then
-            echo "❌ 리뷰 head SHA 불일치: comment=$COMMENT_HEAD live=$LIVE_HEAD"
-            gh pr comment "$PR_NUM" -R "$REPO" --body "⚠️ AI 리뷰가 이전 커밋 기준입니다. comment head=\`$COMMENT_HEAD\`, current head=\`$LIVE_HEAD\`. 최신 커밋 기준 재리뷰가 필요합니다." || true
+          if [ -z "${COMMENT_HEAD:-}" ] || [ -z "${LIVE_HEAD:-}" ] || [ "$COMMENT_HEAD" != "$LIVE_HEAD" ]; then
+            echo "❌ 리뷰 head SHA 검증 실패: comment=${COMMENT_HEAD:-missing} live=${LIVE_HEAD:-missing}"
+            gh pr comment "$PR_NUM" -R "$REPO" --body "⚠️ AI 리뷰 meta에 유효한 head_sha가 없거나 이전 커밋 기준입니다. comment head=\`${COMMENT_HEAD:-missing}\`, current head=\`${LIVE_HEAD:-missing}\`. 최신 커밋 기준 재리뷰가 필요합니다." || true
             gh pr edit "$PR_NUM" -R "$REPO" --add-label "needs-human-review" 2>/dev/null || true
             exit 1
           fi
-          # JSON 없거나 파싱 실패 시 정규식 fallback
-          if [ -z "$SCORE" ]; then
-            SCORE=$(echo "$LATEST" | grep -oP '총점:\s*\K[0-9]+(\.[0-9]+)?' | head -1)
-            HIGH_COUNT=0; MEDIUM_COUNT=0; CATEGORIES=""
-            echo "⚠️ JSON 메타 없음 — 정규식 fallback 사용"
+          if [ -z "${HIGH_COUNT:-}" ] || [ -z "${MEDIUM_COUNT:-}" ] || \
+             [ -z "${LOW_COUNT:-}" ] || [ -z "${DISPUTED_COUNT:-}" ] || [ -z "${VERDICT:-}" ] || \
+             ! [[ "$HIGH_COUNT" =~ ^[0-9]+$ ]] || ! [[ "$MEDIUM_COUNT" =~ ^[0-9]+$ ]] || \
+             ! [[ "$LOW_COUNT" =~ ^[0-9]+$ ]] || ! [[ "$DISPUTED_COUNT" =~ ^[0-9]+$ ]]; then
+            echo "❌ meta 카운트 추출 실패 (구 스키마이거나 파싱 실패, 또는 정수가 아님: high=${HIGH_COUNT:-} medium=${MEDIUM_COUNT:-} low=${LOW_COUNT:-} disputed=${DISPUTED_COUNT:-} verdict=${VERDICT:-})"
+            gh pr comment "$PR_NUM" -R "$REPO" --body "⚠️ AI 리뷰 meta에서 finding 카운트를 읽지 못했습니다. 구 스키마(score 기반) 코멘트이거나 파싱에 실패했습니다. 재리뷰가 필요합니다." || true
+            gh pr edit "$PR_NUM" -R "$REPO" --add-label "needs-human-review" 2>/dev/null || true
+            exit 1
           fi
-          echo "high_count=${HIGH_COUNT:-0}" >> "$GITHUB_OUTPUT"
-          echo "medium_count=${MEDIUM_COUNT:-0}" >> "$GITHUB_OUTPUT"
+          echo "high_count=${HIGH_COUNT}" >> "$GITHUB_OUTPUT"
+          echo "medium_count=${MEDIUM_COUNT}" >> "$GITHUB_OUTPUT"
+          echo "low_count=${LOW_COUNT:-0}" >> "$GITHUB_OUTPUT"
+          echo "disputed_count=${DISPUTED_COUNT:-0}" >> "$GITHUB_OUTPUT"
           echo "categories=$CATEGORIES" >> "$GITHUB_OUTPUT"
-
-          if [ -z "$SCORE" ]; then
-            echo "❌ 점수 추출 실패"
-            gh pr comment "$PR_NUM" -R "$REPO" --body "⚠️ AI 리뷰 점수 추출 실패. 사람 확인 필요." || true
-            gh pr edit "$PR_NUM" -R "$REPO" --add-label "needs-human-review" 2>/dev/null || true
-            exit 1
-          fi
-
-          # 단조성: 재리뷰에서 점수 떨어지면 보정
-          MAX_PRIOR="${{ steps.context.outputs.max_prior_score }}"
-          if [ "${{ steps.guard.outputs.iteration }}" != "0" ] && \
-             (( $(echo "$SCORE < $MAX_PRIOR" | bc -l) )); then
-            echo "⚠️ 점수 단조성 위반 — $SCORE < $MAX_PRIOR. 보정."
-            SCORE="$MAX_PRIOR"
-          fi
-          echo "score=$SCORE" >> "$GITHUB_OUTPUT"
 
       - name: 라벨 + self-iterate 신호
         if: steps.auth.outputs.status == 'ready'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          SCORE="${{ steps.score.outputs.score }}"
-          # 통과 기준 (2026-07-19 사용자 결정): 일반 PR은 AI가 유일 게이트라 10.0(지적 0건) 요구.
-          # high-risk PR은 사람이 최종 게이트이므로 9.5(LOW 1건까지)를 AI 통과선으로 완화.
+          HIGH="${{ steps.score.outputs.high_count }}"
+          MEDIUM="${{ steps.score.outputs.medium_count }}"
+          LOW="${{ steps.score.outputs.low_count }}"
           HR_COUNT=$(gh pr view "$PR_NUM" -R "$REPO" --json labels --jq '[.labels[] | select(.name == "high-risk")] | length')
           [[ ! "$HR_COUNT" =~ ^[0-9]+$ ]] && HR_COUNT=0
-          if [ "$HR_COUNT" -gt 0 ]; then PASS_THRESHOLD=9.5; else PASS_THRESHOLD=10.0; fi
+          # 통과 기준 (2026-07-20): HIGH 0 AND MEDIUM 0. LOW는 차단하지 않는다.
 
           # 모든 ai-* 라벨 정리
           for L in ai-approved ai-iterating needs-rework ai-rejected; do
@@ -699,29 +712,28 @@ jobs:
           # high-risk 여부는 임계 결정에서 이미 조회함
           IS_HIGH_RISK=$HR_COUNT
 
-          if (( $(echo "$SCORE >= $PASS_THRESHOLD" | bc -l) )); then
+          if [ "$HIGH" -eq 0 ] && [ "$MEDIUM" -eq 0 ]; then
             if [ "$IS_HIGH_RISK" -gt 0 ]; then
               # high-risk: ai-approved 라벨 부여 X, needs-human-review 유지
               gh pr edit "$PR_NUM" -R "$REPO" --add-label "needs-human-review" 2>/dev/null || true
-              BODY=$(printf '✅ **AI 리뷰 통과** (점수 %s/10.0, iteration %s) — but **high-risk 영역**\n\n자동 머지 라벨(ai-approved) 부여 안 됨. **사람 검토 후 머지 필수**.' "$SCORE" "$ITER")
+              BODY=$(printf '✅ **AI 리뷰 통과** (HIGH 0 / MEDIUM 0 / LOW %s, iteration %s) — but **high-risk 영역**\n\n자동 머지 라벨(ai-approved) 부여 안 됨. **사람 검토 후 머지 필수**.' "$LOW" "$ITER")
               gh pr comment "$PR_NUM" -R "$REPO" --body "$BODY" || true
             else
+              # public package lane: AI PASS is a signal only; human merge remains mandatory.
               gh pr edit "$PR_NUM" -R "$REPO" --add-label "needs-human-review" 2>/dev/null || true
-              BODY=$(printf '✅ **AI 리뷰 통과** (점수 %s/10.0, iteration %s)\n\nAI 통과는 참고 신호일 뿐 자동 승인이 아닙니다. **사람이 직접 검토한 뒤** `gh pr merge %s --squash` 또는 web UI에서 머지하세요.' "$SCORE" "$ITER" "$PR_NUM")
+              BODY=$(printf '✅ **AI 리뷰 통과** (HIGH 0 / MEDIUM 0 / LOW %s, iteration %s)\n\nAI 통과는 참고 신호일 뿐 자동 승인이 아닙니다. **사람이 직접 검토한 뒤** `gh pr merge %s --squash` 또는 web UI에서 머지하세요.' "$LOW" "$ITER" "$PR_NUM")
               gh pr comment "$PR_NUM" -R "$REPO" --body "$BODY" || true
             fi
           else
             gh pr edit "$PR_NUM" -R "$REPO" --add-label "needs-rework" --add-label "needs-human-review" 2>/dev/null || true
-            HIGH_C='${{ steps.score.outputs.high_count }}'
-            MED_C='${{ steps.score.outputs.medium_count }}'
-            CATS='${{ steps.score.outputs.categories }}'
-            BODY=$(printf '🛑 **사람 dispatch 필요** (점수 %s/10.0 < %s, iteration %s/%s)\n\n이 PR은 AI 리뷰 기준을 통과하지 못했습니다. 자동 self-improve 멘션은 사용하지 않습니다. `github-actions[bot]`이 게시한 멘션은 `claude-mention-light`의 bot sender guard에서 SKIP되고, 다른 봇 멘션도 follow-up code 변경 작업을 trigger하지 않습니다.\n\n현재 미해결: HIGH=%s, MEDIUM=%s | 카테고리: %s\n\n## 다음 조치\n\n사람이 Multica 이슈 코멘트에서 적절한 worker를 명시적으로 dispatch한 뒤, 리뷰 코멘트의 HIGH → MEDIUM → LOW 순서로 수정하게 하세요. 수정 PR push 후 이 워크플로가 다시 실행되어 재리뷰합니다.\n\n## 참고\n\n이 단기 정리는 dead self-improve loop 제거입니다. 장기적으로는 ITT-276 Hermes Local PR Review Gate 쪽에서 webhook 기반 dispatch로 흡수합니다.' "$SCORE" "$PASS_THRESHOLD" "$ITER" "$ITERATE_LIMIT" "$HIGH_C" "$MED_C" "$CATS")
-            gh pr comment "$PR_NUM" -R "$REPO" --body "$BODY" || true
+            # 실패 안내 PR 코멘트 제거(2026-07): finding 승격 스윕이
+            # Multica worker를 자동 dispatch하므로 PR에는 라벨 신호만 남긴다.
+            echo "high=$HIGH medium=$MEDIUM - needs-rework 라벨 부여, finding 스윕이 worker 자동 dispatch"
           fi
 
       # ─── 이벤트 훅 (self-hosted 전용) ───────────────────────────────
       # 리뷰 직후 같은 머신에서: ① 미해결 finding → Multica 이슈 승격(스윕 1회)
-      # ② 이 PR 하나만 병합 one-shot 판정 (강화 게이트: 차단 라벨·score 10.0·PASS).
+      # ② 이 PR 하나만 병합 one-shot 판정 (강화 게이트: 차단 라벨·HIGH 0/MEDIUM 0·PASS).
       # 주기 병합 금지 정책(workspace policies/macmini-schedulers.md)과 양립하는
       # deliberate one-shot이며, 스크립트 부재(호스티드 러너 등) 시 조용히 skip —
       # 30분 cron 스윕이 백스톱. 워크플로 GH_TOKEN은 repo 제한 토큰이라 unset하고
