@@ -1227,7 +1227,7 @@ test/
 
 ## PR 작성 규율 (org 템플릿 준수)
 <!-- BEGIN agent-pr-discipline (managed) -->
-- ittae 조직 PR 본문은 `ittae/.github`의 `.github/PULL_REQUEST_TEMPLATE.md` 구조를 그대로 채운다. **필수 hard path:** `scripts/git/pr-fetch-template-ittae.sh` → `pr-body-validate-ittae.sh` (+ `.github/scripts/pr_body_lint.sh`) → `pr-create-ittae.sh --body-file`. **금지:** `gh pr create --body "짧은 요약"` / English Summary·Test plan으로 먼저 연 뒤 수정(workspace#77). bare create 차단 보조: `scripts/git/guard-gh-pr-create.sh`.
+- ittae 조직 PR 본문은 `ittae/.github`의 `.github/PULL_REQUEST_TEMPLATE.md` 구조를 그대로 채운다. **필수 hard path:** `scripts/git/pr-fetch-template-ittae.sh` → `pr-body-validate-ittae.sh` (+ `.github/scripts/pr_body_lint.sh`) → `pr-create-ittae.sh --body-file`. **금지:** `gh pr create --body "짧은 요약"` / English Summary·Test plan으로 먼저 연 뒤 수정(workspace#77).
 - 필수 섹션: 요약 / 목표·이유 / 변경 사항 / 범위 밖 / 관련 이슈(`Closes ITT-child` vs `Related ITT-parent`) / 실제 동작 증거(실행 환경·명령·결과 수치, 검증 안 한 영역까지 명시) / 위험(Risk tier T0~T3, rollback, 사람 결정 필요) / **PR metadata 확인**(assignee·labels·reviewers read-back) / UI 증빙 / 체크리스트.
 - **섹션 목록의 정본은 `ittae/.github`의 `tools/pr_body_lint.sh`(또는 repo `.github/scripts/pr_body_lint.sh`)다.** 이 문서와 갈리면 스크립트가 이긴다 — `pr-body-lint` 체크가 org 전체 PR에서 이 스크립트로 본문을 검사하며, 누락 시 `missing section: <이름>`으로 실패한다. **올리기 전 로컬 검증이 필수**이며 `pr-create-ittae.sh`가 create 전에 돌린다.
 - 모르는 항목은 지우지 말고 "미확인"/"해당 없음". 제목은 `<type>: ITT-123 한국어 요약` 또는 `<type>: 한국어 요약`. 본문 한국어, code/path/error 원문 유지.
