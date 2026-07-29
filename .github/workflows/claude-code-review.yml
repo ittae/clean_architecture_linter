@@ -140,8 +140,10 @@ jobs:
               OLD_HASH=$(printf "%s" "$OLD_DIFF" | md5sum | awk '{print $1}')
               NEW_HASH=$(printf "%s" "$NEW_DIFF" | md5sum | awk '{print $1}')
               echo "DEBUG[rebase-detect]: OLD_LINES=$OLD_LINES NEW_LINES=$NEW_LINES OLD_HASH=$OLD_HASH NEW_HASH=$NEW_HASH"
-              HAS_NEEDS_REWORK=$(gh pr view "$PR_NUM" -R "$REPO" --json labels --jq '[.labels[] | select(.name == "needs-rework")] | length' 2>/dev/null || echo 0)
-              [[ ! "$HAS_NEEDS_REWORK" =~ ^[0-9]+$ ]] && HAS_NEEDS_REWORK=0
+              # fail-closed: label 조회 실패/비정상이면 needs-rework 존재로 간주해 재리뷰 강제
+              # (API 일시 오류로 silent rebase-only skip 창이 다시 열리지 않게 한다)
+              HAS_NEEDS_REWORK=$(gh pr view "$PR_NUM" -R "$REPO" --json labels --jq '[.labels[] | select(.name == "needs-rework")] | length' 2>/dev/null) || HAS_NEEDS_REWORK=1
+              [[ ! "$HAS_NEEDS_REWORK" =~ ^[0-9]+$ ]] && HAS_NEEDS_REWORK=1
               # 둘 다 비어있지 않고(false positive 가드) hash가 같을 때만 rebase-only로 판정.
               # 단 needs-rework가 남아 있으면 동일 diff라도 재리뷰를 강제한다.
               if [ "$OLD_LINES" -gt 0 ] && [ "$NEW_LINES" -gt 0 ] && [ "$OLD_HASH" = "$NEW_HASH" ]; then
@@ -233,7 +235,7 @@ jobs:
           if [ -n "$MATCHED" ]; then
             gh pr edit "$PR_NUM" -R "$REPO" --add-label "high-risk" --add-label "needs-human-review" 2>/dev/null || true
             MATCHED_LIST=$(echo "$MATCHED" | sed 's/^/- /')
-            BODY=$(printf '⚠️ **민감 영역 변경 감지** — AI 리뷰는 진행되지만 자동 머지 라벨(ai-approved) 부여 안 됨. 사람 머지 필수.\n\n매치된 파일:\n```\n%s\n```\n\nHigh-risk 영역 (auth, secure_storage, iap, router, storage_keys, pubspec, native configs, .github/workflows, .env) PR은 점수 통과 시에도 needs-human-review 라벨 유지.' "$MATCHED_LIST")
+            BODY=$(printf '⚠️ **민감 영역 변경 감지** — AI 리뷰는 진행되지만 자동 머지 라벨(ai-approved) 부여 안 됨. 사람 머지 필수.\n\n매치된 파일:\n```\n%s\n```\n\nHigh-risk 영역 (auth, secure_storage, iap, router, storage_keys, pubspec, native configs, .github/workflows, .env) PR은 AI PASS(HIGH 0 / MEDIUM 0)여도 needs-human-review 라벨 유지.' "$MATCHED_LIST")
             gh pr comment "$PR_NUM" -R "$REPO" --body "$BODY" || true
           fi
 
@@ -270,9 +272,8 @@ jobs:
 
           claude_ok=0
           claude_bin=""
-          for c in "$HOME/.local/bin/claude"; do
-            if [ -x "$c" ]; then claude_bin=$c; break; fi
-          done
+          c="$HOME/.local/bin/claude"
+          if [ -x "$c" ]; then claude_bin=$c; fi
           if [ -n "$claude_bin" ] && "$claude_bin" auth status 2>/dev/null | jq -e '.loggedIn == true' >/dev/null; then
             claude_ok=1
           fi
@@ -493,7 +494,7 @@ jobs:
             -->
             ```
 
-            phase3-decide가 `ittae-ai-review-meta` JSON을 우선 파싱합니다 (legacy `ai-review-meta`와 정규식 fallback은 migration용). categories는 finding이 발견된 perspective 이름들. verdict는 "PASS" 또는 "FAIL".
+            phase3-decide가 `ittae-ai-review-meta` JSON을 우선 파싱합니다. legacy `ai-review-meta` 블록만 migration fallback이며, score/`총점` 정규식 fallback은 없습니다 — schema 불일치·필수 필드 누락 시 fail-closed(`needs-human-review`). categories는 finding이 발견된 perspective 이름들. verdict는 "PASS" 또는 "FAIL".
         run: |
           printf '%s' "$REVIEW_PROMPT" > /tmp/review-prompt.md
           echo "review-prompt 생성 완료 (primary=${{ steps.auth.outputs.primary }} chain=grok→codex→claude)"
@@ -580,9 +581,8 @@ jobs:
           set -o pipefail
           # Match auth path detection so ready implies executable.
           claude_bin=""
-          for c in "$HOME/.local/bin/claude"; do
-            if [ -x "$c" ]; then claude_bin=$c; break; fi
-          done
+          c="$HOME/.local/bin/claude"
+          if [ -x "$c" ]; then claude_bin=$c; fi
           [ -n "$claude_bin" ] || { echo "::error::claude binary missing"; exit 127; }
           LOG=/tmp/claude-review.log
           set +e
