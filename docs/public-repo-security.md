@@ -23,7 +23,7 @@ Branch protection on `main` is intentionally **checks-only** for pull-request *a
 
 | Gate | Required? |
 |------|-----------|
-| Pull request | yes (no direct push culture; use PR) |
+| Pull request | culture (use PR; not enforced via required approving review) |
 | Required approving review / Code Owners review | **no** (removed — solo owner cannot self-approve) |
 | Required status check `test` (strict) | **yes** |
 | Force-push / branch deletion | still denied |
@@ -35,7 +35,7 @@ Branch protection on `main` is intentionally **checks-only** for pull-request *a
 - same-repo head (not a fork)
 - not draft
 - required checks green (`test`; prefer full CI green when present)
-- AI review **PASS** when the review workflow ran (HIGH=0 and MEDIUM=0). If review was skipped for a documented non-owner reason, do not treat as owner lane.
+- AI review **PASS** required (HIGH=0 and MEDIUM=0) on a completed owner-lane review run. If review did not complete, failed to start, or was skipped for any reason (including non-owner), do not agent-merge.
 - no `needs-rework` / `hold` style block labels
 - user has not held the PR
 
@@ -43,7 +43,7 @@ Branch protection on `main` is intentionally **checks-only** for pull-request *a
 
 - fork / non-`get6` author PRs
 - release / tag / pub.dev publish
-- unclear T3 risk, secrets, workflow privilege expansion, or user `hold`
+- unclear T3 risk, secrets, workflow privilege expansion, `high-risk` label, or user `hold`
 
 ## Enforcement
 
@@ -60,7 +60,7 @@ Branch protection on `main` is intentionally **checks-only** for pull-request *a
 
 | Author | CI (ubuntu) | Self-hosted AI review | Labels like ai-approved | Merge |
 |--------|-------------|----------------------|-------------------------|--------|
-| `get6` (same-repo branch, non-draft) | yes (required) | **yes** | optional, **not** merge authority | **owner/agent** when checks (+ AI PASS if run) green |
+| `get6` (same-repo branch, non-draft) | yes (required) | **yes** | optional, **not** merge authority | **owner/agent** when required checks green **and** AI review PASS |
 | Other OWNER/MEMBER/COLLABORATOR | yes (if triggered) | **no** | **no** | human only |
 | Fork / FIRST_TIMER / CONTRIBUTOR | github-hosted only if enabled | **no** | **no** | human + extra scrutiny |
 | Bot (dependabot, release-please, etc.) | limited | **no** | **no** | policy-specific; never AI-merge |
