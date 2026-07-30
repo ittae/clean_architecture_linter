@@ -144,16 +144,16 @@ warning - lib/bad_examples/features/todo/data/repositories/todo_repository_impl.
 
 See `docs/config/RECOMMENDED_SETUP.md` for details.
 
-## 🧩 Compatibility — analyzer 9-12 / Riverpod 3+
+## 🧩 Compatibility — analyzer 13 / Riverpod 3+
 
-v2.0 currently runs on the official `analysis_server_plugin` (`>=0.3.4 <0.3.15`) and supports analyzer `>=9.0.0 <13.0.0`, matching the published `pubspec.yaml` caps. This range reflects the current plugin-host stability limit noted in the package itself, so consumers should stay within those caps until the upstream host issue is resolved and this package widens them again.
+v2.4 runs on the official `analysis_server_plugin` (`>=0.3.15 <0.3.16`) and supports analyzer `>=13.0.0 <14.0.0`, matching the current `riverpod_lint 3.1.x` analyzer line while avoiding analyzer 14-only plugin-host versions. Consumer smoke keeps the ASP range pinned to `0.3.15` because `0.3.18` still hangs during plugin analysis under analyzer 13.
 
-`riverpod_lint 3.1.x` still carries its own analyzer constraints (`^9.0.0` for stable 3.1.3 and `^12.0.0` for current dev releases). Keep analyzer plugins out of `dev_dependencies` and enable both tools through top-level `plugins:` when you need them in one consumer project. The analyzer plugin manager resolves all enabled plugins in one synthetic package, so this package keeps its analyzer range broad enough to share that solve:
+`riverpod_lint 3.1.x` carries its own analyzer constraints. Keep analyzer plugins out of `dev_dependencies` and enable both tools through top-level `plugins:` when you need them in one consumer project. The analyzer plugin manager resolves all enabled plugins in one synthetic package, so this package keeps its analyzer range aligned with `riverpod_lint`:
 
 ```yaml
 plugins:
-  clean_architecture_linter: ^2.0.0-dev.1
-  riverpod_lint: ^3.1.3
+  clean_architecture_linter: ^2.4.0
+  riverpod_lint: ^3.1.7
 ```
 
 > The v1 `custom_lint` upstream ([invertase/dart_custom_lint](https://github.com/invertase/dart_custom_lint)) was archived in May 2026. v2.0 moves fully to the official plugin, so the old `pubspec_overrides.yaml` bridge is no longer needed — delete it when upgrading.
