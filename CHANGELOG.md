@@ -5,15 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.3.2](https://github.com/ittae/clean_architecture_linter/compare/v2.3.1...v2.3.2) (2026-07-30)
-
-
-### Bug Fixes
-
-* AI 리뷰 게이트를 finding count 기준으로 정렬 ([#117](https://github.com/ittae/clean_architecture_linter/issues/117)) ([4ebf4f6](https://github.com/ittae/clean_architecture_linter/commit/4ebf4f698780739e0c8b4c5e019ecd5abdf6d995))
-* analyzer 13 plugin host 정렬 ([#116](https://github.com/ittae/clean_architecture_linter/issues/116)) ([cfa8f18](https://github.com/ittae/clean_architecture_linter/commit/cfa8f182f86021c2b49fc8dcafc901700a83a63c))
-
-## [2.4.0] - 2026-07-29
+## [2.4.0](https://github.com/ittae/clean_architecture_linter/compare/v2.3.1...v2.4.0) (2026-07-30)
 
 ### Changed
 
@@ -25,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   found `0.3.18` still hangs during plugin analysis under analyzer 13.
 - **Migration:** analyzer 14 plugin hosts should stay on `2.3.x` until the
   upstream hang is resolved; `2.4.x` intentionally targets the analyzer 13 line.
+
+### Bug Fixes
+
+* AI 리뷰 게이트를 finding count 기준으로 정렬 ([#117](https://github.com/ittae/clean_architecture_linter/issues/117)) ([4ebf4f6](https://github.com/ittae/clean_architecture_linter/commit/4ebf4f698780739e0c8b4c5e019ecd5abdf6d995))
+* analyzer 13 plugin host 정렬 ([#116](https://github.com/ittae/clean_architecture_linter/issues/116)) ([cfa8f18](https://github.com/ittae/clean_architecture_linter/commit/cfa8f182f86021c2b49fc8dcafc901700a83a63c))
 
 ## [2.3.1](https://github.com/ittae/clean_architecture_linter/compare/v2.3.0...v2.3.1) (2026-07-28)
 
