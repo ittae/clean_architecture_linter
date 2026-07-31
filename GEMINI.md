@@ -37,9 +37,10 @@
 ## sandbox 안전 규율
 <!-- BEGIN agent-safety-discipline (managed) -->
 - `.env` secret을 출력·검사·커밋하지 않는다. 필요한 경우 `.env.example`의 key 이름만 확인한다.
-- `rm`, `rmdir`, `git rm`, `rm -rf`를 사용하지 않는다. 대량·파괴적 변경은 dry-run과 명시 승인 뒤에만 적용한다.
+- 삭제가 필요하면 대상을 정확히 특정해 `rm`, `rmdir`, `git rm`을 사용할 수 있다. `rm -rf`와 대량 삭제는 명확한 scope·dry-run·rollback을 먼저 확인한다.
+- 홈 루트, repo `.git/`, secret/credential, shared runner/worktree root처럼 고위험 대상을 삭제·정리할 때는 명시 승인을 받는다.
 - 승인 없이 `curl | sh`, 출처 불명 installer, `chmod`, `sudo`, network shell을 실행하지 않는다.
-- conductor/Multica가 관리하는 workspace와 shared runner/worktree root를 직접 정리하지 않는다.
+- conductor/Multica가 관리하는 workspace는 담당 issue/worktree의 scope 안에서만 수정한다.
 <!-- END agent-safety-discipline -->
 
 ## 개발 판단 규율 (위험·경계 비례)
@@ -49,3 +50,9 @@
 - LOC·파일 수는 목표가 아니다. correctness, security, privacy, data integrity, accessibility, i18n, 명시적 error handling과 필요한 경계를 단순화와 교환하지 않는다.
 - repo의 architecture convention과 required gate가 optional skill/plugin/persona 지침보다 우선한다.
 <!-- END agent-lean-discipline -->
+
+## 프로젝트 지침 정본
+<!-- BEGIN agent-project-reference (managed) -->
+- 이 tool-specific 지침과 함께 root `AGENTS.md`의 project role·trust boundary·검증 계약을 반드시 따른다.
+- 더 깊은 project context가 필요하면 root `CLAUDE.md`를 읽고, 충돌 시 repository required gate와 scoped project rule을 우선한다.
+<!-- END agent-project-reference -->
