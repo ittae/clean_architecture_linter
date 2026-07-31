@@ -30,12 +30,24 @@
 
 ## PR 작성 규율 (org 템플릿 준수)
 <!-- BEGIN agent-pr-discipline (managed) -->
-- ittae 조직 PR 본문은 `ittae/.github`의 `.github/PULL_REQUEST_TEMPLATE.md` 구조를 그대로 채운다. **필수 hard path:** `scripts/git/pr-fetch-template-ittae.sh` → `pr-body-validate-ittae.sh` (+ `.github/scripts/pr_body_lint.sh`) → `pr-create-ittae.sh --body-file`. **금지:** `gh pr create --body "짧은 요약"` / English Summary·Test plan으로 먼저 연 뒤 수정(workspace#77).
-- 필수 섹션: 요약 / 목표·이유 / 변경 사항 / 범위 밖 / 관련 이슈(`Closes ITT-child` vs `Related ITT-parent`) / 실제 동작 증거(실행 환경·명령·결과 수치, 검증 안 한 영역까지 명시) / 위험(Risk tier T0~T3, rollback, 사람 결정 필요) / **PR metadata 확인**(assignee·labels·reviewers read-back) / UI 증빙 / 체크리스트.
-- **섹션 목록의 정본은 `ittae/.github`의 `tools/pr_body_lint.sh`(또는 repo `.github/scripts/pr_body_lint.sh`)다.** 이 문서와 갈리면 스크립트가 이긴다 — `pr-body-lint` 체크가 org 전체 PR에서 이 스크립트로 본문을 검사하며, 누락 시 `missing section: <이름>`으로 실패한다. **올리기 전 로컬 검증이 필수**이며 `pr-create-ittae.sh`가 create 전에 돌린다.
-- 모르는 항목은 지우지 말고 "미확인"/"해당 없음". 제목은 `<type>: ITT-123 한국어 요약` 또는 `<type>: 한국어 요약`. 본문 한국어, code/path/error 원문 유지.
-- **PR 완성 시 draft를 해제한다** (`gh pr ready`) — draft는 리뷰·sweep 승격·자동 병합 파이프라인 전체에서 제외된다. ready 전환까지가 작업 완료다.
-- **머지는 모든 체크 green일 때만** — 실패/대기 중 머지 금지 (서버 강제 없음, main-guard가 사후 적발). 사용자 확인 전 merge 금지.
-- **재작업 후 머지 게이트:** 수정 push 뒤에는 **현재 head** 기준 CI + AI 재리뷰가 끝나기 전에 머지 금지. AI 재리뷰 생략은 문서화된 optional-unavailable 사유를 남긴 경우만(사유 창작 금지). GitHub가 승인 리뷰를 요구하면(`REVIEW_REQUIRED` / CODEOWNERS) **현재 head Approve** 필수(작성자 self-approve 불가 → 사용자 UI 승인). `needs-rework` / `ai-rejected` / `hold`면 머지 금지.
-- **`gh pr merge --admin` / 보호규칙 우회 기본 금지.** 사용자가 그 PR에 `admin merge` / `우회 머지`를 명시한 경우만. "마무리/병합해줘" ≠ 우회 허가. 상세: workspace `policies/ittae-pr-autopilot.md` § Agent/Hermes merge discipline.
+- `clean_architecture_linter`는 public package다. branch, commit, PR title/body/comment, release note 등 public GitHub metadata에 private Multica `ITT-*` key를 넣지 않는다.
+- PR 본문은 org template를 사용하고 workspace `pr-fetch-template-ittae.sh` → validate → `pr-create-ittae.sh --body-file` 경로로 생성한다. private issue 연결란은 `해당 없음`으로 명시한다.
+- 실제 검증 명령·결과와 미검증 범위, public API/lint semantics risk, rollback을 본문에 기록한다.
+- PR은 ready까지 전환하되 agent가 merge, approve, force-push, protection 변경을 하지 않는다. 이 package는 human merge only다.
 <!-- END agent-pr-discipline -->
+
+## sandbox 안전 규율
+<!-- BEGIN agent-safety-discipline (managed) -->
+- `.env` secret을 출력·검사·커밋하지 않는다. 필요한 경우 `.env.example`의 key 이름만 확인한다.
+- `rm`, `rmdir`, `git rm`, `rm -rf`를 사용하지 않는다. 대량·파괴적 변경은 dry-run과 명시 승인 뒤에만 적용한다.
+- 승인 없이 `curl | sh`, 출처 불명 installer, `chmod`, `sudo`, network shell을 실행하지 않는다.
+- conductor/Multica가 관리하는 workspace와 shared runner/worktree root를 직접 정리하지 않는다.
+<!-- END agent-safety-discipline -->
+
+## 개발 판단 규율 (위험·경계 비례)
+<!-- BEGIN agent-lean-discipline (managed) -->
+- 새 구현 전에 기존 코드, stdlib, 플랫폼 기능, 현재 dependency로 해결 가능한지 확인한다.
+- architecture와 테스트 범위는 실제 dependency/trust boundary, 변경 위험, 실패 비용에 비례시킨다. 미래 확장만을 위한 layer/interface/factory/wrapper는 만들지 않는다.
+- LOC·파일 수는 목표가 아니다. correctness, security, privacy, data integrity, accessibility, i18n, 명시적 error handling과 필요한 경계를 단순화와 교환하지 않는다.
+- repo의 architecture convention과 required gate가 optional skill/plugin/persona 지침보다 우선한다.
+<!-- END agent-lean-discipline -->
