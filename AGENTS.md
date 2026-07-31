@@ -1,7 +1,11 @@
 ## 이 레포 고유 지침
-- 이 저장소는 Flutter 앱이 아니라 **Dart package (custom_lint rules / analyzer plugin)**.
-- 패키지 코드 경로: `lib/src/rules/`, `lib/src/mixins/` — managed block의 `lib/features/...` 레이아웃을 **이 패키지 자체**에 적용하지 말 것.
-- Vision / rule 등록 / Riverpod 3-tier 상세: `CLAUDE.md` (managed block 이후 섹션) 참조.
+- 이 저장소는 Flutter 앱이 아니라 외부 사용자에게 배포되는 **public Dart package (`analysis_server_plugin` 기반 Clean Architecture linter)**.
+- 패키지 구현 경로는 `lib/src/rules/`, `lib/src/mixins/`, plugin entrypoint는 `lib/clean_architecture_linter.dart`다. 예제/fixture의 `lib/features/...`는 소비자 앱 lint semantics를 검증하기 위한 입력이며, agent 구현 레이아웃으로 해석하지 않는다.
+- lint semantics와 agent 운영 규칙을 분리한다. 이 패키지는 Riverpod 기반 Clean Architecture 위반을 `dart analyze`에서 검출하는 제품이며, agent 지침은 maintainer 작업 절차일 뿐 package behavior나 public docs API가 아니다.
+- public GitHub metadata(브랜치명, PR 제목/본문, release note)에 private Multica `ITT-*` key를 노출하지 않는다. traceability는 Multica 내부에만 둔다.
+- PR은 human merge only다. agent는 명시 승인 없이 merge/close/label/review approval/force push를 하지 않는다.
+- 실제 검증 명령은 manifest/현행 문서 기준으로만 기록하고 실행한다: root `dart analyze`, root `dart test`, consumer smoke `cd example && dart analyze`, analysis_server_plugin/Riverpod coexistence smoke `cd poc_v2/consumer_riverpod_lint && dart analyze`.
+- Vision / rule 등록 / Riverpod 3-tier 상세: `CLAUDE.md` 참조.
 
 
 ## 검색·컨텍스트 규율 (토큰 효율)
