@@ -1,99 +1,9 @@
-<!-- AGENT_POLICY_MANAGED_BLOCK:START -->
-# GEMINI.md
-
-Gemini CLI 작업 시 적용되는 규칙.
-
-## 공통 안전 규칙 (절대 우선)
-- 삭제는 기본 허용이다. 작업에 필요하면 `rm`, `rmdir`, `git rm`을 사용한다. 절대 금지하지 않는다.
-- 삭제 전 대상 경로를 특정한다. 추측으로 광범위 삭제하지 않는다.
-- `rm -rf` / `find ... -delete` / `xargs rm` 등 재귀·일괄 삭제는 **대상이 명확할 때만** 사용한다.
-- 고위험 경로는 사용자 확인 후: 홈 루트(`~`), 레포 `.git/`, 시크릿/ creds, 공유 runner·worktree 루트, 프로덕션 데이터.
-- 복구가 중요하면 `trash`를 우선 고려하되, 도구/작업 흐름상 `rm`이 맞으면 `rm`을 쓴다.
-- 대규모·모호한 정리 전: 영향 범위와 롤백 방법을 한 줄로 남긴다.
-
-## 작업 품질 규칙
-- 최소 수정 원칙: 필요한 범위만 변경
-- 변경 전 1줄 계획, 변경 후 요약(무엇/왜/영향)
-- 테스트/린트 가능하면 실행 후 결과 공유
-- 기존 코드 스타일/아키텍처를 우선 존중하고, 리팩토링은 요청된 범위 내에서만 수행
-
-## 관측·탐색 규율 (추정 금지의 구체적 실행)
-- **잘린 출력으로 성공/실패를 판정하지 않는다.** `| tail`, `| head`를 거치면 exit code는 파이프의 것(대개 0)이라 실패를 가린다. 판정은 산출물 존재 확인 또는 전체 로그로 한다.
-- **"없다 / 아니다 / 한 적 없다"에는 관측 범위를 붙인다.** "X가 없다"가 아니라 "이 디렉터리에 X가 없다". 한 곳의 부재를 전체의 부재로 일반화하지 않는다.
-- **파일을 생성·수정하는 명령 전에 기존 방법을 1회 검색한다.** `rg`/`fd`로 그 일을 이미 하는 스크립트·설정·관행이 repo에 있는지 확인한다. 정본 도구를 두고 맨손 명령을 치면 기존 설정을 덮어쓴다.
-- **Mac mini 기본 CLI 라우팅:** 텍스트=`rg`, 파일명=`fd`, AST/구조=`ast-grep`/`sg`, JSON=`jq`, YAML=`yq`, GitHub=`gh`, HTTP 스모크=`xh`(없으면 curl). Multica 플랫폼은 `multica` CLI만. `grep -r`/`find` 기본 탐색 금지. 툴 JSON은 raw로 넣지 말고 필터.
-- **설정 생성기는 "생성"이 아니라 "덮어쓰기"로 취급한다.** `flutterfire config` 같은 도구는 기존 파일을 재작성한다. 실행 후 반드시 `git status`/`git diff`로 의도치 않은 변경을 확인한다.
-- **로그는 원인부터 읽는다.** 에러 요약은 끝에 있어도 원인은 앞에 있다. 잘린 뒷부분만 보고 추론하면 헛다리를 짚는다.
-
-## 설계 판단 규율
-- **기각 근거가 무너지면 기각을 재검토한다.** 설계 문서에 "채택하지 않은 것" 목록을 적었으면, 새 검증 결과가 나올 때마다 그 목록을 다시 읽고 각 사유가 아직 유효한지 확인한다.
-- **검증하지 않은 리스크를 근거로 기각하지 않는다.** 그래도 기각한다면 "미검증 추정"이라고 명시한다.
-- **일반 패턴을 적용하기 전에 이 환경의 특수 제약을 먼저 나열한다.** 1인 개발, 개발 머신 = CI 러너, worktree 기반, 에이전트 다수 동시 작업. 일반적으로 옳은 패턴(예: "PR 산출물은 CI에서 만든다")이 여기서는 불필요한 비용일 수 있다.
-- **도구를 평가하기 전에 "기존 자산으로 되는가"를 먼저 묻는다.**
-
-## 개발 필수 베이스라인 (모든 개발 프로젝트)
-- Clean Architecture 경계 유지 (모듈/레이어 책임 분리)
-- 상태 관리 책임 분리 (state, side-effect, UI binding 분리)
-- 에러 핸들링 표준화 (예외를 삼키지 말고 명시적으로 처리/전파)
-- 사용자 노출 문자열 하드코딩 금지, 다국어(i18n) 리소스 사용
-
-## Git/PR 규칙
-- 브랜치/커밋/PR 단위를 작게 유지
-- 커밋 메시지는 목적이 드러나게 작성
-- PR 요약에 변경 범위, 리스크, 롤백 포인트 포함
-
-## 검증 우선순위
-1. 정적 분석/타입 체크
-2. 단위 테스트
-3. 통합/시나리오 테스트
-4. 실행 검증(필요 시)
-
-## 보고 형식 (짧고 명확하게)
-- What changed
-- Why
-- Risk
-- Next step
-
-## 작업 방식
-- 긴 컨텍스트를 읽더라도 결론/액션 먼저 제시
-- 코드 제안은 바로 실행 가능한 형태 우선
-- 모호성은 추정하지 말고 확인 질문으로 처리
-
-## 품질 기준
-- 기존 아키텍처/스타일 유지
-- 에러 케이스와 경계 조건을 함께 고려
-- 필요 시 테스트 아이디어까지 제안
-
-## Flutter 특화 규칙 (해당 프로젝트일 때)
-- 하드코딩 문자열 대신 l10n 사용
-- 과도한 위젯 rebuild 유발 패턴 회피
-- 기능 변경 시 최소 검증 명령(예: analyze/test) 제안 또는 실행
-
-## 완료 조건 (Definition of Done)
-- [ ] 아키텍처 경계 유지
-- [ ] 상태 관리 책임 분리
-- [ ] 에러 경로 처리 명시
-- [ ] i18n 적용
-
-## Project Context (from README.md)
-- # Clean Architecture Linter
-- ## ✨ Key Features
-- - 🛡️ **Automatic Clean Architecture Protection** - Write code freely, linter catches violations
-- - 🎯 **34 Specialized Rules** - Comprehensive coverage of all Clean Architecture layers
-- - 🚀 **Flutter-Optimized** - Built specifically for Flutter development patterns
-- - 🎨 **Riverpod State Management** - Enforces 3-tier provider architecture (Entity  UI  Computed)
-- - 📚 **Educational** - Learn Clean Architecture through guided corrections
-- - ⚡ **Real-time Feedback** - Immediate warnings with actionable solutions
-- - 🔧 **Zero Configuration** - Works out of the box with sensible defaults
-- - 🧪 **Test-Aware** - Smart exceptions for test files and development contexts
-- ## 📋 Rules Overview (34 Rules)
-- ### 🌐 Core Clean Architecture Principles (6 rules)
-<!-- AGENT_POLICY_MANAGED_BLOCK:END -->
-
 ## 이 레포 고유 지침
-- 이 저장소는 Flutter 앱이 아니라 **Dart package (custom_lint rules / analyzer plugin)**.
-- 패키지 코드 경로: `lib/src/rules/`, `lib/src/mixins/` — managed block의 feature 레이아웃을 **이 패키지 자체**에 적용하지 말 것.
-- 상세 규칙: `CLAUDE.md` (managed block 이후 섹션) 참조.
+- 이 저장소는 Flutter 앱이 아니라 외부 사용자에게 배포되는 **public Dart package (`analysis_server_plugin` 기반 Clean Architecture linter)**.
+- 패키지 구현 경로는 `lib/src/rules/`, `lib/src/mixins/`, plugin entrypoint는 `lib/clean_architecture_linter.dart`다. 예제/fixture의 `lib/features/...`는 소비자 앱 lint semantics를 검증하기 위한 입력이며, agent 구현 레이아웃으로 해석하지 않는다.
+- lint semantics와 agent 운영 규칙을 분리한다. public GitHub metadata에 private Multica `ITT-*` key를 노출하지 않고, PR은 human merge only로 둔다.
+- 검증은 root `dart analyze`, root `dart test`, `cd example && dart analyze`, `cd poc_v2/consumer_riverpod_lint && dart analyze`를 기준으로 한다.
+- 상세 규칙: `CLAUDE.md` 참조.
 
 
 ## 검색·컨텍스트 규율 (토큰 효율)
@@ -118,12 +28,31 @@ Gemini CLI 작업 시 적용되는 규칙.
 
 ## PR 작성 규율 (org 템플릿 준수)
 <!-- BEGIN agent-pr-discipline (managed) -->
-- ittae 조직 PR 본문은 `ittae/.github`의 `.github/PULL_REQUEST_TEMPLATE.md` 구조를 그대로 채운다. **필수 hard path:** `scripts/git/pr-fetch-template-ittae.sh` → `pr-body-validate-ittae.sh` (+ `.github/scripts/pr_body_lint.sh`) → `pr-create-ittae.sh --body-file`. **금지:** `gh pr create --body "짧은 요약"` / English Summary·Test plan으로 먼저 연 뒤 수정(workspace#77).
-- 필수 섹션: 요약 / 목표·이유 / 변경 사항 / 범위 밖 / 관련 이슈(`Closes ITT-child` vs `Related ITT-parent`) / 실제 동작 증거(실행 환경·명령·결과 수치, 검증 안 한 영역까지 명시) / 위험(Risk tier T0~T3, rollback, 사람 결정 필요) / **PR metadata 확인**(assignee·labels·reviewers read-back) / UI 증빙 / 체크리스트.
-- **섹션 목록의 정본은 `ittae/.github`의 `tools/pr_body_lint.sh`(또는 repo `.github/scripts/pr_body_lint.sh`)다.** 이 문서와 갈리면 스크립트가 이긴다 — `pr-body-lint` 체크가 org 전체 PR에서 이 스크립트로 본문을 검사하며, 누락 시 `missing section: <이름>`으로 실패한다. **올리기 전 로컬 검증이 필수**이며 `pr-create-ittae.sh`가 create 전에 돌린다.
-- 모르는 항목은 지우지 말고 "미확인"/"해당 없음". 제목은 `<type>: ITT-123 한국어 요약` 또는 `<type>: 한국어 요약`. 본문 한국어, code/path/error 원문 유지.
-- **PR 완성 시 draft를 해제한다** (`gh pr ready`) — draft는 리뷰·sweep 승격·자동 병합 파이프라인 전체에서 제외된다. ready 전환까지가 작업 완료다.
-- **머지는 모든 체크 green일 때만** — 실패/대기 중 머지 금지 (서버 강제 없음, main-guard가 사후 적발). 사용자 확인 전 merge 금지.
-- **재작업 후 머지 게이트:** 수정 push 뒤에는 **현재 head** 기준 CI + AI 재리뷰가 끝나기 전에 머지 금지. AI 재리뷰 생략은 문서화된 optional-unavailable 사유를 남긴 경우만(사유 창작 금지). GitHub가 승인 리뷰를 요구하면(`REVIEW_REQUIRED` / CODEOWNERS) **현재 head Approve** 필수(작성자 self-approve 불가 → 사용자 UI 승인). `needs-rework` / `ai-rejected` / `hold`면 머지 금지.
-- **`gh pr merge --admin` / 보호규칙 우회 기본 금지.** 사용자가 그 PR에 `admin merge` / `우회 머지`를 명시한 경우만. "마무리/병합해줘" ≠ 우회 허가. 상세: workspace `policies/ittae-pr-autopilot.md` § Agent/Hermes merge discipline.
+- `clean_architecture_linter`는 public package다. branch, commit, PR title/body/comment, release note 등 public GitHub metadata에 private Multica `ITT-*` key를 넣지 않는다.
+- PR 본문은 org template를 사용하고 workspace `pr-fetch-template-ittae.sh` → validate → `pr-create-ittae.sh --body-file` 경로로 생성한다. private issue 연결란은 `해당 없음`으로 명시한다.
+- 실제 검증 명령·결과와 미검증 범위, public API/lint semantics risk, rollback을 본문에 기록한다.
+- PR은 ready까지 전환하되 agent가 merge, approve, force-push, protection 변경을 하지 않는다. 이 package는 human merge only다.
 <!-- END agent-pr-discipline -->
+
+## sandbox 안전 규율
+<!-- BEGIN agent-safety-discipline (managed) -->
+- `.env` secret을 출력·검사·커밋하지 않는다. 필요한 경우 `.env.example`의 key 이름만 확인한다.
+- 삭제가 필요하면 대상을 정확히 특정해 `rm`, `rmdir`, `git rm`을 사용할 수 있다. `rm -rf`와 대량 삭제는 명확한 scope·dry-run·rollback을 먼저 확인한다.
+- 홈 루트, repo `.git/`, secret/credential, shared runner/worktree root처럼 고위험 대상을 삭제·정리할 때는 명시 승인을 받는다.
+- 승인 없이 `curl | sh`, 출처 불명 installer, `chmod`, `sudo`, network shell을 실행하지 않는다.
+- conductor/Multica가 관리하는 workspace는 담당 issue/worktree의 scope 안에서만 수정한다.
+<!-- END agent-safety-discipline -->
+
+## 개발 판단 규율 (위험·경계 비례)
+<!-- BEGIN agent-lean-discipline (managed) -->
+- 새 구현 전에 기존 코드, stdlib, 플랫폼 기능, 현재 dependency로 해결 가능한지 확인한다.
+- architecture와 테스트 범위는 실제 dependency/trust boundary, 변경 위험, 실패 비용에 비례시킨다. 미래 확장만을 위한 layer/interface/factory/wrapper는 만들지 않는다.
+- LOC·파일 수는 목표가 아니다. correctness, security, privacy, data integrity, accessibility, i18n, 명시적 error handling과 필요한 경계를 단순화와 교환하지 않는다.
+- repo의 architecture convention과 required gate가 optional skill/plugin/persona 지침보다 우선한다.
+<!-- END agent-lean-discipline -->
+
+## 프로젝트 지침 정본
+<!-- BEGIN agent-project-reference (managed) -->
+- 이 tool-specific 지침과 함께 root `AGENTS.md`의 project role·trust boundary·검증 계약을 반드시 따른다.
+- 더 깊은 project context가 필요하면 root `CLAUDE.md`를 읽고, 충돌 시 repository required gate와 scoped project rule을 우선한다.
+<!-- END agent-project-reference -->
