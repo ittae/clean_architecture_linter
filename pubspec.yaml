@@ -25,7 +25,7 @@ dependencies:
   # Keep CAL on the analyzer 13 plugin-host line so it can coexist with
   # riverpod_lint 3.1.x in the analyzer plugin synthetic package.
   analyzer: ">=13.0.0 <14.0.0"
-  analysis_server_plugin: ^0.3.18
+  analysis_server_plugin: ">=0.3.15 <0.3.16"
   path: ^1.9.1
 
 dev_dependencies:
