@@ -42,10 +42,12 @@ section_nonempty() {
     f && /^## / {exit}
     f {print}
   ')
-  # Strip HTML comments (including multi-line <!-- ... -->) before emptiness checks.
-  # Single-line grep alone lets multi-line template instructions pass as "content".
+  # Strip HTML comments before emptiness checks: inline occurrences first (a body may
+  # legitimately mention comment syntax in backticks), then line-anchored multi-line
+  # blocks. Single-line grep alone lets multi-line template instructions pass as "content";
+  # an unanchored range would also swallow real content after a mid-line `<!--` mention.
   useful=$(printf '%s\n' "$content" \
-    | sed '/<!--/,/-->/d' \
+    | sed -e 's/<!--.*-->//g' -e '/^[[:space:]]*<!--/,/-->/d' \
     | grep -vE '^[[:space:]]*$' \
     | grep -vE '^[[:space:]]*-[[:space:]]*$' \
     | head -1 || true)
