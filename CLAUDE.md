@@ -31,7 +31,7 @@ When a new issue arrives, post the following as your first response (if a commen
 
 ## Project Overview
 
-This is a Dart package that provides custom lint rules for enforcing Clean Architecture principles in Flutter projects. It uses the `custom_lint_builder` framework to create static analysis rules that validate proper architectural boundaries and patterns.
+This is a Dart package that provides custom lint rules for enforcing Clean Architecture principles in Flutter projects. It uses the `analysis_server_plugin` framework to create static analysis rules that validate proper architectural boundaries and patterns.
 
 ## Clean Architecture Principles
 
@@ -663,3 +663,12 @@ class TodoRemoteDataSource {
 
 **Mock/Fake Exception:**
 - Classes starting with `Mock` or `Fake` can have mutable state for testing purposes
+
+## Package Internals (rule registration)
+
+AGENTS.md가 위임하는 rule 등록·패키지 내부 가이드 (본 문서 중복 제거 후 정본 링크):
+
+- Rule 추가/등록: [CONTRIBUTING.md](CONTRIBUTING.md), [doc/RULE_DEVELOPMENT_GUIDE.md](doc/RULE_DEVELOPMENT_GUIDE.md)
+- Mixin / 아키텍처: [ARCHITECTURE.md](ARCHITECTURE.md), [lib/src/mixins/README.md](lib/src/mixins/README.md)
+- Exception 패턴: [doc/UNIFIED_ERROR_GUIDE.md](doc/UNIFIED_ERROR_GUIDE.md)
+- Configuration / Testing / Commands: [doc/CONFIGURATION.md](doc/CONFIGURATION.md), [doc/TESTING_GUIDE.md](doc/TESTING_GUIDE.md)
