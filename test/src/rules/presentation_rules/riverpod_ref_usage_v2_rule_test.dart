@@ -171,5 +171,81 @@ class TodoNotifier extends Notifier<Object> {
         ),
       ]);
     });
+
+    test(
+      'flags ref.watch in a private helper synchronously delegated from build() '
+      '(documents a known over-flagging gap, not endorsed behavior)',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefUsageRule())
+            .analyze(
+              files: {
+                'lib/features/todo/presentation/providers/todo_notifier.dart':
+                    '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class TodoNotifier {
+  Object build() {
+    return _computeInitial();
+  }
+
+  Object _computeInitial() {
+    return ref.watch(currentUserProvider);
+  }
+}
+''',
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/todo_notifier.dart',
+            );
+
+        // A private helper invoked synchronously from build() is idiomatic
+        // Riverpod (ref.watch just needs to run during the sync build call
+        // graph), but this rule only recognises a method literally named
+        // `build`, so today it reports the helper as a "read outside build"
+        // violation. This test pins today's behavior as a regression guard;
+        // it is not an endorsement of the false positive.
+        result.expectDiagnostics([
+          const ExpectedV2Diagnostic(
+            relativePath:
+                'lib/features/todo/presentation/providers/todo_notifier.dart',
+            codeName: 'riverpod_ref_usage',
+            problemMessage:
+                'Use ref.read() instead of ref.watch() in methods for one-time reads.',
+            correctionMessage:
+                'Change ref.watch() to ref.read() for one-time provider access in methods.',
+          ),
+        ]);
+      },
+    );
+
+    test('does not check ref usage in top-level @riverpod functional providers '
+        '(documents a known coverage gap)', () async {
+      final result = await V2RuleHarness(rule: RiverpodRefUsageRule()).analyze(
+        files: {
+          'lib/features/todo/presentation/providers/todo_notifier.dart': '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+bool canSubmitTodo(Object ref) {
+  return ref.read(currentUserProvider) != null;
+}
+''',
+        },
+        definingFile:
+            'lib/features/todo/presentation/providers/todo_notifier.dart',
+      );
+
+      // This rule only registers ClassDeclaration nodes, so top-level
+      // @riverpod functions -- this repo's own Tier-3 "computed logic
+      // provider" convention (see CLAUDE.md) -- get no ref.watch/ref.read
+      // discipline check at all. This test documents that gap explicitly
+      // so it cannot regress silently into "already covered".
+      result.expectNoDiagnostics();
+    });
   });
 }
