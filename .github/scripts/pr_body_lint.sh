@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 # Lint an ittae org PR body for required PULL_REQUEST_TEMPLATE sections.
-# Usage: pr_body_lint.sh <body.md|-> 
 set -euo pipefail
 file=${1:-}
-if [ "$file" = "-" ] || [ -z "$file" ]; then
+if [ -z "${file:-}" ]; then
+  echo "usage: pr_body_lint.sh <body.md|->" >&2
+  exit 2
+fi
+if [ "$file" = "-" ]; then
   body=$(cat)
 elif [ -f "$file" ]; then
   body=$(cat "$file")
@@ -31,13 +34,33 @@ need 'Risk tier:' 'Risk tier'
 need '## .*PR metadata|## .*metadata|## .*🧷' 'PR metadata'
 need '## .*체크리스트' 'PR 체크리스트'
 
-sum=$(printf '%s\n' "$body" | awk '/## .*요약/{f=1;next} /^## /{f=0} f' | grep -vE '^[[:space:]]*(<!--.*-->)?[[:space:]]*$' | grep -vE '^[[:space:]]*-[[:space:]]*$' | head -1 || true)
-if [ -z "${sum:-}" ]; then
-  echo "::error::missing content under: 요약 (empty template)"
-  missing=1
-fi
-if printf '%s\n' "$body" | grep -qE 'Risk tier: `T0 docs/test only` \| `T1'; then
+section_nonempty() {
+  local heading_pat="$1" label="$2"
+  local content useful
+  content=$(printf '%s\n' "$body" | awk -v p="$heading_pat" '
+    $0 ~ p {f=1; next}
+    f && /^## / {exit}
+    f {print}
+  ')
+  useful=$(printf '%s\n' "$content" \
+    | grep -vE '^[[:space:]]*(<!--.*-->)?[[:space:]]*$' \
+    | grep -vE '^[[:space:]]*-[[:space:]]*$' \
+    | head -1 || true)
+  if [ -z "${useful:-}" ]; then
+    echo "::error::missing content under: $label"
+    missing=1
+  fi
+}
+section_nonempty '## .*요약' '요약'
+section_nonempty '## .*목표' '목표 / 이유'
+section_nonempty '## .*변경' '변경 사항'
+section_nonempty '## .*범위 밖' '범위 밖'
+
+if printf '%s\n' "$body" | grep -qE 'Risk tier:.*`T0 docs/test only`[[:space:]]*\|'; then
   echo "::error::Risk tier placeholder not selected"
+  missing=1
+elif ! printf '%s\n' "$body" | grep -qE 'Risk tier:.*`T[0-3]'; then
+  echo "::error::Risk tier must select T0-T3"
   missing=1
 fi
 
