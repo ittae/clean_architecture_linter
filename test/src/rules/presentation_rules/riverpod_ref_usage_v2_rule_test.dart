@@ -176,11 +176,11 @@ class TodoNotifier extends Notifier<Object> {
       'flags ref.watch in a private helper synchronously delegated from build() '
       '(documents a known over-flagging gap, not endorsed behavior)',
       () async {
-        final result = await V2RuleHarness(
-          rule: RiverpodRefUsageRule(),
-        ).analyze(
-          files: {
-            'lib/features/todo/presentation/providers/todo_notifier.dart': '''
+        final result = await V2RuleHarness(rule: RiverpodRefUsageRule())
+            .analyze(
+              files: {
+                'lib/features/todo/presentation/providers/todo_notifier.dart':
+                    '''
 class riverpod {
   const riverpod();
 }
@@ -196,10 +196,10 @@ class TodoNotifier {
   }
 }
 ''',
-          },
-          definingFile:
-              'lib/features/todo/presentation/providers/todo_notifier.dart',
-        );
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/todo_notifier.dart',
+            );
 
         // A private helper invoked synchronously from build() is idiomatic
         // Riverpod (ref.watch just needs to run during the sync build call
@@ -221,15 +221,11 @@ class TodoNotifier {
       },
     );
 
-    test(
-      'does not check ref usage in top-level @riverpod functional providers '
-      '(documents a known coverage gap)',
-      () async {
-        final result = await V2RuleHarness(
-          rule: RiverpodRefUsageRule(),
-        ).analyze(
-          files: {
-            'lib/features/todo/presentation/providers/todo_notifier.dart': '''
+    test('does not check ref usage in top-level @riverpod functional providers '
+        '(documents a known coverage gap)', () async {
+      final result = await V2RuleHarness(rule: RiverpodRefUsageRule()).analyze(
+        files: {
+          'lib/features/todo/presentation/providers/todo_notifier.dart': '''
 class riverpod {
   const riverpod();
 }
@@ -239,18 +235,17 @@ bool canSubmitTodo(Object ref) {
   return ref.read(currentUserProvider) != null;
 }
 ''',
-          },
-          definingFile:
-              'lib/features/todo/presentation/providers/todo_notifier.dart',
-        );
+        },
+        definingFile:
+            'lib/features/todo/presentation/providers/todo_notifier.dart',
+      );
 
-        // This rule only registers ClassDeclaration nodes, so top-level
-        // @riverpod functions -- this repo's own Tier-3 "computed logic
-        // provider" convention (see CLAUDE.md) -- get no ref.watch/ref.read
-        // discipline check at all. This test documents that gap explicitly
-        // so it cannot regress silently into "already covered".
-        result.expectNoDiagnostics();
-      },
-    );
+      // This rule only registers ClassDeclaration nodes, so top-level
+      // @riverpod functions -- this repo's own Tier-3 "computed logic
+      // provider" convention (see CLAUDE.md) -- get no ref.watch/ref.read
+      // discipline check at all. This test documents that gap explicitly
+      // so it cannot regress silently into "already covered".
+      result.expectNoDiagnostics();
+    });
   });
 }

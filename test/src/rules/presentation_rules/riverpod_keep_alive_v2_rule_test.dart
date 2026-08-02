@@ -138,11 +138,11 @@ Future<Object> authSession(Object ref) async => Object();
       'does not check programmatic ref.keepAlive() calls (documents a known '
       'scope gap vs the declarative @Riverpod(keepAlive: true) form)',
       () async {
-        final result = await V2RuleHarness(
-          rule: RiverpodKeepAliveRule(),
-        ).analyze(
-          files: {
-            'lib/features/todo/presentation/providers/todo_provider.dart': '''
+        final result = await V2RuleHarness(rule: RiverpodKeepAliveRule())
+            .analyze(
+              files: {
+                'lib/features/todo/presentation/providers/todo_provider.dart':
+                    '''
 class riverpod {
   const riverpod();
 }
@@ -153,10 +153,10 @@ Future<Object> todoList(Object ref) async {
   return Object();
 }
 ''',
-          },
-          definingFile:
-              'lib/features/todo/presentation/providers/todo_provider.dart',
-        );
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/todo_provider.dart',
+            );
 
         // This rule only visits Annotation nodes matching @Riverpod(keepAlive:
         // true), so Riverpod's programmatic ref.keepAlive() API -- the

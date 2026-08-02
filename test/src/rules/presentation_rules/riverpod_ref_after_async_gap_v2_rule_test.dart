@@ -1048,15 +1048,12 @@ class TodoNotifier extends AsyncNotifier<Object> {
       ]);
     });
 
-    test(
-      'does not check ref-after-async-gap in top-level @riverpod functional '
-      'providers (documents a known coverage gap)',
-      () async {
-        final result = await V2RuleHarness(
-          rule: RiverpodRefAfterAsyncGapRule(),
-        ).analyze(
-          files: {
-            'lib/features/todo/presentation/providers/todo_notifier.dart': '''
+    test('does not check ref-after-async-gap in top-level @riverpod functional '
+        'providers (documents a known coverage gap)', () async {
+      final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/providers/todo_notifier.dart': '''
 class riverpod {
   const riverpod();
 }
@@ -1067,18 +1064,17 @@ Future<Object> todoDetail(Object ref) async {
   return ref.read(todoProvider);
 }
 ''',
-          },
-          definingFile:
-              'lib/features/todo/presentation/providers/todo_notifier.dart',
-        );
+            },
+            definingFile:
+                'lib/features/todo/presentation/providers/todo_notifier.dart',
+          );
 
-        // This rule only registers ClassDeclaration nodes, so a top-level
-        // @riverpod async function (this repo's own Tier-3 "computed logic
-        // provider" convention) that reads ref after an await gap is never
-        // scanned. This test documents that gap explicitly so it cannot
-        // regress silently into "already covered".
-        result.expectNoDiagnostics();
-      },
-    );
+      // This rule only registers ClassDeclaration nodes, so a top-level
+      // @riverpod async function (this repo's own Tier-3 "computed logic
+      // provider" convention) that reads ref after an await gap is never
+      // scanned. This test documents that gap explicitly so it cannot
+      // regress silently into "already covered".
+      result.expectNoDiagnostics();
+    });
   });
 }
