@@ -6,6 +6,8 @@ name: PR body lint
 # GITHUB_TOKEN) so tags trigger publish.yml; that makes the PR author a real user, not a
 # bot, so the actor/user.type checks below don't catch it. Its branch name is always
 # `release-please--branches--...`, so match on that instead.
+# Package-local guard: keep even if org SoT mirror omits it — this public package uses PAT
+# release PRs whose body is changelog, not the org template.
 
 on:
   pull_request:
