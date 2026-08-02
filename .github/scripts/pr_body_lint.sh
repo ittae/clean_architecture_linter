@@ -46,6 +46,8 @@ section_nonempty() {
   # legitimately mention comment syntax in backticks), then line-anchored multi-line
   # blocks. Single-line grep alone lets multi-line template instructions pass as "content";
   # an unanchored range would also swallow real content after a mid-line `<!--` mention.
+  # SoT/회귀 계약: ittae/.github tools/tests/test_pr_body_lint.py (이 사본만 단독 수정 금지 —
+  # strip 파이프라인 변경은 org SoT와 동시 반영)
   useful=$(printf '%s\n' "$content" \
     | sed -e 's/<!--.*-->//g' -e '/^[[:space:]]*<!--/,/-->/d' \
     | grep -vE '^[[:space:]]*$' \
