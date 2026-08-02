@@ -1,7 +1,13 @@
 name: PR body lint
 
 # Human/agent PRs only — title/body are AI review inputs (org template).
-# Dependabot/bots skipped (changelog body ≠ template; not AI-reviewed merge lane text).
+# Dependabot/bots: skip — machine changelog ≠ agent template (lane A CI must stay green).
+# release-please: skip — release-please-action runs with RELEASE_PLEASE_TOKEN (a PAT, not
+# GITHUB_TOKEN) so tags trigger publish.yml; that makes the PR author a real user, not a
+# bot, so the actor/user.type checks below don't catch it. Its branch name is always
+# `release-please--branches--...`, so match on that instead.
+# Package-local guard: keep even if org SoT mirror omits it — this public package uses PAT
+# release PRs whose body is changelog, not the org template.
 
 on:
   pull_request:
@@ -17,7 +23,8 @@ jobs:
       github.event.pull_request.draft != true &&
       github.actor != 'dependabot[bot]' &&
       github.actor != 'dependabot-preview[bot]' &&
-      github.event.pull_request.user.type != 'Bot'
+      github.event.pull_request.user.type != 'Bot' &&
+      !startsWith(github.event.pull_request.head.ref, 'release-please--')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

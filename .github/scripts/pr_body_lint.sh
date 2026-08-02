@@ -42,8 +42,11 @@ section_nonempty() {
     f && /^## / {exit}
     f {print}
   ')
+  # Strip HTML comments (including multi-line <!-- ... -->) before emptiness checks.
+  # Single-line grep alone lets multi-line template instructions pass as "content".
   useful=$(printf '%s\n' "$content" \
-    | grep -vE '^[[:space:]]*(<!--.*-->)?[[:space:]]*$' \
+    | sed '/<!--/,/-->/d' \
+    | grep -vE '^[[:space:]]*$' \
     | grep -vE '^[[:space:]]*-[[:space:]]*$' \
     | head -1 || true)
   if [ -z "${useful:-}" ]; then
