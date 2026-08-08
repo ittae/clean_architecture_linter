@@ -1,0 +1,24 @@
+name: Diagnose Claude token (temporary)
+
+# 임시 진단 — 새로 등록한 repo-level CLAUDE_CODE_OAUTH_TOKEN이 실제로
+# 유효한지, grok/codex를 거치지 않고 Claude만 직접 호출해서 확인한다.
+# 조사 종료 후 삭제한다.
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: [self-hosted, ittae-2]
+    steps:
+      - name: Call claude directly with the new token
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          echo "token_length=${#CLAUDE_CODE_OAUTH_TOKEN}"
+          claude -p "Reply with exactly: TOKEN_OK" --model claude-opus-4-8
+          echo "exit=$?"
