@@ -71,7 +71,7 @@ jobs:
     concurrency:
       group: crl-review-${{ github.workflow }}-${{ github.repository }}-${{ github.event.pull_request.number || github.ref }}
       cancel-in-progress: true
-    runs-on: [self-hosted, ittae-light]
+    runs-on: [self-hosted, ittae-2]
     permissions:
       contents: read
       pull-requests: write
