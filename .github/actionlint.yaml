@@ -2,7 +2,7 @@
 # shellcheck 전면 ignore 금지: 이슈 코드 단위로만 억제한다.
 self-hosted-runner:
   labels:
-    - ittae-light
+    - ittae-2
 paths:
   .github/workflows/claude-code-review.yml:
     ignore:
