@@ -115,7 +115,12 @@ class _WidgetNoUseCaseCallVisitor extends SimpleAstVisitor<void> {
     if (methodName != 'read' && methodName != 'watch') return false;
 
     final target = node.target;
-    return target is SimpleIdentifier && target.name == 'ref';
+    // ref.read/watch(...)
+    if (target is SimpleIdentifier && target.name == 'ref') return true;
+    // this.ref.read/watch(...) — ConsumerStatefulWidget / WidgetRef fields
+    return target is PropertyAccess &&
+        target.target is ThisExpression &&
+        target.propertyName.name == 'ref';
   }
 
   String? _getProviderName(MethodInvocation node) {
