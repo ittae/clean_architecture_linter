@@ -28,18 +28,18 @@ jobs:
       group: multica-relay-${{ github.event.pull_request.number }}
       cancel-in-progress: false
     steps:
-      # 이전엔 checkout 없이 event payload만 썼다(최소권한). truncate_body_excerpt.sh를
-      # 정본 하나로 재사용하고 회귀 테스트로 커버하기 위해, 이 파일 하나만 sparse
-      # checkout으로 가져온다 — 인라인 중복을 없애는 게 이 checkout 비용보다 낫다는
-      # 판단이다. contents: read도 그래서 다시 필요하다.
-      # same-repo if 아래에서만 head를 checkout한다 (fork PR head 실행 차단).
-      - name: Checkout .github/scripts (sparse)
+      # truncate_body_excerpt.sh 정본 재사용을 위해 checkout 한다.
+      # ITT-2462: sparse-checkout(.github/scripts only)을 self-hosted 공유
+      # workdir에 남기면 이후 Flutter CI의 actions/checkout가 HEAD는 맞추지만
+      # working tree가 1%만 남는 상태가 재현되고, `flutter pub get`이
+      # "Expected to find project root in current working directory"로 즉시 실패한다.
+      # (관측: workdir에 .git + .github 만 존재, core.sparseCheckout=true)
+      # self-hosted는 레포별 workdir를 재사용하므로 sparse 잔여를 남기지 않는다.
+      - name: Checkout repository (full, no sparse)
         uses: actions/checkout@v6
         with:
-          sparse-checkout: |
-            .github/scripts
-          sparse-checkout-cone-mode: false
           fetch-depth: 1
+          clean: true
 
       - name: Build compact PR payload and forward to Multica
         env:
