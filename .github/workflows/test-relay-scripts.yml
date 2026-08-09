@@ -21,7 +21,10 @@ permissions:
 
 jobs:
   test:
-    runs-on: [self-hosted, ittae-2]
+    # Pure bash regression (bash/head/iconv/mktemp) — no self-hosted secrets or
+    # local webhook files. Use GitHub-hosted to avoid public-repo PR-head script
+    # execution on the Mac mini trust boundary.
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v6

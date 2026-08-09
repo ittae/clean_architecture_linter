@@ -1,4 +1,4 @@
-name: Multica PR Webhook Relay (glimpshot pilot)
+name: Multica PR Webhook Relay
 
 on:
   pull_request:
@@ -9,6 +9,15 @@ permissions:
 
 jobs:
   relay:
+    # Public package trust boundary: never run untrusted fork PR head scripts on
+    # self-hosted (local webhook URL file + home dir). Aligns with
+    # claude-code-review.yml same-repo gate; get6-only is not required here
+    # because this job only forwards metadata and runs a tiny pure-bash helper.
+    # Bootstrap note: scripts are not yet on default branch, so we keep head
+    # checkout under the same-repo if. After merge, prefer
+    # ref: ${{ github.event.pull_request.base.sha }} so fork metadata can still
+    # relay while execution code is pinned to base.
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: self-hosted
     timeout-minutes: 5
     # 같은 PR의 opened/synchronize/closed를 한 그룹으로 묶되, cancel-in-progress
@@ -23,6 +32,7 @@ jobs:
       # 정본 하나로 재사용하고 회귀 테스트로 커버하기 위해, 이 파일 하나만 sparse
       # checkout으로 가져온다 — 인라인 중복을 없애는 게 이 checkout 비용보다 낫다는
       # 판단이다. contents: read도 그래서 다시 필요하다.
+      # same-repo if 아래에서만 head를 checkout한다 (fork PR head 실행 차단).
       - name: Checkout .github/scripts (sparse)
         uses: actions/checkout@v6
         with:
