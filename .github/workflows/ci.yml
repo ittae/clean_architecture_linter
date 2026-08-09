@@ -74,6 +74,18 @@ jobs:
     - name: Verify plugin diagnostics via dart analyze
       run: bash tools/verify_analyze_parity.sh
 
+  high-risk-lockstep:
+    # 1st-line PR gate: HIGH_RISK_PATHS must stay lockstep with light reusable SoT.
+    # 2nd-line (post-merge) guard lives in ittae/.github test_cal_high_risk_lockstep.py.
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Verify HIGH_RISK_PATHS lockstep
+      run: bash tools/verify_high_risk_lockstep.sh
+
   coverage:
     runs-on: ubuntu-latest
 
