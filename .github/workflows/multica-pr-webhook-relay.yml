@@ -1,0 +1,143 @@
+name: Multica PR Webhook Relay (glimpshot pilot)
+
+on:
+  pull_request:
+    types: [opened, closed, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  relay:
+    runs-on: self-hosted
+    timeout-minutes: 5
+    # 같은 PR의 opened/synchronize/closed를 한 그룹으로 묶되, cancel-in-progress
+    # 는 false — 빠른 synchronize가 진행 중 opened relay를 취소하면 Multica가
+    # 개별 action granularity를 잃을 수 있어 큐잉을 택한다 (최신 state 스냅샷
+    # 전달은 유지, 이벤트 드롭만 막음).
+    concurrency:
+      group: multica-relay-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
+    steps:
+      # 이전엔 checkout 없이 event payload만 썼다(최소권한). truncate_body_excerpt.sh를
+      # 정본 하나로 재사용하고 회귀 테스트로 커버하기 위해, 이 파일 하나만 sparse
+      # checkout으로 가져온다 — 인라인 중복을 없애는 게 이 checkout 비용보다 낫다는
+      # 판단이다. contents: read도 그래서 다시 필요하다.
+      - name: Checkout .github/scripts (sparse)
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: |
+            .github/scripts
+          sparse-checkout-cone-mode: false
+          fetch-depth: 1
+
+      - name: Build compact PR payload and forward to Multica
+        env:
+          # self-hosted 러너(우리 소유 맥미니) 로컬 파일에서 읽는다 — GitHub Secret 대신.
+          # 이 워크스페이스의 ai-review-engine-order/ai-review-model과 동일한 패턴.
+          MULTICA_WEBHOOK_URL_FILE: /Users/itae/.config/ittae/multica-worker-result-webhook-url
+          PR_ACTION: ${{ github.event.action }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_STATE: ${{ github.event.pull_request.state }}
+          PR_MERGED: ${{ github.event.pull_request.merged }}
+          PR_REPO: ${{ github.repository }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_SENDER: ${{ github.actor }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_UPDATED_AT: ${{ github.event.pull_request.updated_at }}
+        run: |
+          set -euo pipefail
+
+          # 파일이 없으면 명확히 실패한다 (조용히 건너뛰지 않는다).
+          if [ ! -f "$MULTICA_WEBHOOK_URL_FILE" ]; then
+            echo "::error::Webhook URL file not found on self-hosted runner: $MULTICA_WEBHOOK_URL_FILE"
+            exit 1
+          fi
+
+          MULTICA_WEBHOOK_URL="$(cat "$MULTICA_WEBHOOK_URL_FILE")"
+          if [ -z "$MULTICA_WEBHOOK_URL" ]; then
+            echo "::error::Webhook URL file is empty: $MULTICA_WEBHOOK_URL_FILE"
+            exit 1
+          fi
+
+          # PR_BODY/PR_TITLE come through env indirection (not inlined into the
+          # shell script text) specifically to avoid GitHub Actions script
+          # injection via attacker-controlled PR title/body content.
+          # Truncation logic lives in .github/scripts/truncate_body_excerpt.sh
+          # (single source of truth, covered by
+          # .github/scripts/test_truncate_body_excerpt.sh) — see that script's
+          # header for why a naive `head -c 300` alone previously killed the
+          # whole job on real multibyte PR bodies (ittae/glimpshot#51).
+          # bash 경유: sparse-checkout 후 실행 비트 유실 환경 대비 + test 워크플로와 호출 방식 일치.
+          BODY_EXCERPT=$(printf '%s' "${PR_BODY:-}" | bash "$GITHUB_WORKSPACE/.github/scripts/truncate_body_excerpt.sh")
+
+          PAYLOAD=$(jq -n \
+            --arg event "pull_request.${PR_ACTION}" \
+            --argjson pr_number "${PR_NUMBER}" \
+            --arg pr_title "${PR_TITLE}" \
+            --arg pr_url "${PR_URL}" \
+            --arg state "${PR_STATE}" \
+            --argjson merged "${PR_MERGED}" \
+            --arg repo "${PR_REPO}" \
+            --arg author "${PR_AUTHOR}" \
+            --arg sender "${PR_SENDER}" \
+            --arg head_ref "${PR_HEAD_REF}" \
+            --arg base_ref "${PR_BASE_REF}" \
+            --arg updated_at "${PR_UPDATED_AT}" \
+            --arg body_excerpt "${BODY_EXCERPT}" \
+            '{
+              event: $event,
+              pr_number: $pr_number,
+              pr_title: $pr_title,
+              pr_url: $pr_url,
+              state: $state,
+              merged: $merged,
+              repo: $repo,
+              author: $author,
+              sender: $sender,
+              head_ref: $head_ref,
+              base_ref: $base_ref,
+              updated_at: $updated_at,
+              body_excerpt: $body_excerpt,
+              relay: "github-actions-self-hosted-pilot"
+            }')
+
+          echo "Compact payload size: $(printf '%s' "$PAYLOAD" | wc -c) bytes"
+
+          # GitHub Secret과 달리 로컬 파일 값은 로그 자동 마스킹이 안 된다. curl 실패 시
+          # stderr에 요청 URL(토큰 포함)이 그대로 찍힐 수 있어, stderr를 러너 로컬
+          # 파일로만 리다이렉트하고 GHA 로그에는 절대 원문을 출력하지 않는다.
+          # 고정 /tmp 경로 대신 $RUNNER_TEMP(러너별 job-scoped 고유 디렉터리)를 쓴다 —
+          # 이 org는 같은 물리 맥미니에 self-hosted 러너가 2개(ittae, ittae-2)
+          # 등록돼 있어, 서로 다른 PR의 relay job이 같은 시각 다른 러너에 배정되면
+          # 고정 /tmp 경로를 공유해 로그 오염·조기 삭제가 날 수 있다.
+          echo "Using RUNNER_TEMP=$RUNNER_TEMP (runner=$RUNNER_NAME)"
+          set +e
+          HTTP_STATUS=$(curl -sS -o "$RUNNER_TEMP/multica_relay_response.txt" -w "%{http_code}" \
+            --max-time 15 \
+            -X POST "$MULTICA_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD" 2>"$RUNNER_TEMP/multica_relay_curl_stderr.txt")
+          CURL_EXIT=$?
+          set -e
+
+          if [ "$CURL_EXIT" -ne 0 ]; then
+            echo "::error::curl failed with exit code $CURL_EXIT (detail kept runner-local, not printed here to avoid leaking the webhook URL)"
+            exit 1
+          fi
+
+          echo "Multica response status: $HTTP_STATUS"
+          cat "$RUNNER_TEMP/multica_relay_response.txt" || true
+
+          if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
+            echo "::error::Multica webhook relay failed with status $HTTP_STATUS"
+            exit 1
+          fi
+
+      - name: Cleanup relay temp files
+        if: always()
+        run: rm -f "$RUNNER_TEMP/multica_relay_response.txt" "$RUNNER_TEMP/multica_relay_curl_stderr.txt"
