@@ -1,0 +1,35 @@
+name: Test relay scripts
+
+# .github/scripts/truncate_body_excerpt.sh는 실제로 job을 죽인 버그(iconv가
+# 멀티바이트 PR body의 300바이트 절단 경계에서 비-zero 종료 → set -e로 job
+# 전체 실패, ittae/glimpshot#51에서 재현)를 고친 코드다. 회귀를 막기 위해
+# 이 파일이나 테스트가 바뀔 때마다 자동 실행한다. paths 필터로 조용히
+# 스킵되지 않도록, 이 워크플로 자체 변경도 트리거 조건에 포함한다.
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+    paths:
+      - '.github/scripts/truncate_body_excerpt.sh'
+      - '.github/scripts/test_truncate_body_excerpt.sh'
+      - '.github/scripts/testdata/**'
+      - '.github/workflows/test-relay-scripts.yml'
+      - '.github/workflows/multica-pr-webhook-relay.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    # Pure bash regression (bash/head/iconv/mktemp) — no self-hosted secrets or
+    # local webhook files. Use GitHub-hosted to avoid public-repo PR-head script
+    # execution on the Mac mini trust boundary.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Run truncate_body_excerpt.sh regression tests
+        run: bash .github/scripts/test_truncate_body_excerpt.sh
