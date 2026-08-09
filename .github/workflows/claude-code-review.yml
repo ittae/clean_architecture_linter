@@ -1,13 +1,13 @@
 name: Claude Code Review
 
-# ittae/.github의 claude-review-light.yml **인라인 복사본** (2026-07-19).
-# 이 repo는 public이라 private reusable을 호출할 수 없어 (GitHub 제약,
-# referenced_workflows 해석 실패로 startup_failure) 스탠드얼론으로 둔다.
-# ⚠️ 정본은 ittae/.github/claude-review-light.yml — 정본 변경 시 이 파일도 동기화할 것.
-# 2026-07 sync: runtime engine chain grok→codex→claude; models gpt-5.5 / claude-opus-4-8.
-# 원본 대비 변경점: workflow_call → pull_request/workflow_dispatch, inputs → env 리터럴,
-# public-only 가드: same-repo + PR author == get6 (owner-authored only).
-# fork / collaborator / bot / 외부 association → self-hosted AI 리뷰 미실행.
+# Public standalone AI PR review (cannot uses: private ittae/.github reusables).
+# HIGH_RISK_PATHS inherits by lockstep from light reusable SoT:
+#   ittae/.github tools/high_risk_policy.py :: DEFAULT_HIGH_RISK_PATHS_LIGHT
+#   == claude-review-light.yml inputs.high_risk_paths default
+# Enforced by ittae/.github tools/tests/test_cal_high_risk_lockstep.py
+# Engine/prompt body remains inlined (GitHub blocks public→private reusable).
+# Public-only guard: same-repo + PR author == get6 (owner-authored only).
+# fork / collaborator / bot → no self-hosted AI review.
 
 on:
   pull_request:
@@ -34,7 +34,7 @@ env:
   PR_SIZE_LIMIT: 800
   EXCLUDE_RENAMES: true
   ITERATE_LIMIT: 5
-  HIGH_RISK_PATHS: '^\.github/workflows/|^\.env|/secret|/secrets/|password|api[_-]?key|/auth/'
+  HIGH_RISK_PATHS: '^\.github/workflows/|^\.env|^env/|/secrets?/|secret|secrets|(^|/)auth(/|$)|api[_-]?key|password|scripts/pr-autopilot|dependabot-alerts-sweep|crontab'
   STACK: 'Dart package (custom_lint rules / analyzer plugin)'
   REVIEW_ITEMS_JQ: >-
     [(.comments[] | {body:(.body//""),ts:.createdAt}),(.reviews[] | {body:(.body//""),ts:.submittedAt})]
