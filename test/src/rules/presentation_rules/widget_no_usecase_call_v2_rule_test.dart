@@ -83,6 +83,30 @@ class TodoPage {
       ]);
     });
 
+
+    test('ignores non-this receivers (widget.ref / other.ref) for UseCase providers', () async {
+      final result = await V2RuleHarness(rule: WidgetNoUseCaseCallRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/widgets/todo_card.dart': '''
+class TodoCard {
+  late final widget;
+  late final other;
+
+  void build() {
+    widget.ref.read(getTodosUseCaseProvider);
+    other.ref.watch(getTodosUseCaseProvider);
+  }
+}
+''',
+            },
+            definingFile:
+                'lib/features/todo/presentation/widgets/todo_card.dart',
+          );
+
+      result.expectNoDiagnostics();
+    });
+
     test('ignores provider files and non-usecase providers', () async {
       final result = await V2RuleHarness(rule: WidgetNoUseCaseCallRule())
           .analyze(

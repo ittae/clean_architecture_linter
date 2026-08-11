@@ -117,7 +117,8 @@ class _WidgetNoUseCaseCallVisitor extends SimpleAstVisitor<void> {
     final target = node.target;
     // ref.read/watch(...)
     if (target is SimpleIdentifier && target.name == 'ref') return true;
-    // this.ref.read/watch(...) — ConsumerStatefulWidget / WidgetRef fields
+    // this.ref.read/watch(...) — ConsumerStatefulWidget / WidgetRef fields.
+    // Intentionally no match for non-this receivers (widget.ref / other.ref).
     return target is PropertyAccess &&
         target.target is ThisExpression &&
         target.propertyName.name == 'ref';
