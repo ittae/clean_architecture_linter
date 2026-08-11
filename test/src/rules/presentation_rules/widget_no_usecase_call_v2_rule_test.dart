@@ -42,6 +42,73 @@ class TodoPage {
       ]);
     });
 
+    test('reports this.ref.read/watch UseCase provider calls in widgets', () async {
+      final result = await V2RuleHarness(rule: WidgetNoUseCaseCallRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/pages/todo_page.dart': '''
+class TodoPage {
+  late final ref;
+
+  void onRefresh() {
+    this.ref.read(getTodosUseCaseProvider);
+  }
+
+  void build() {
+    this.ref.watch(getTodosUseCaseProvider);
+  }
+}
+''',
+            },
+            definingFile: 'lib/features/todo/presentation/pages/todo_page.dart',
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath: 'lib/features/todo/presentation/pages/todo_page.dart',
+          codeName: 'widget_no_usecase_call',
+          problemMessage:
+              'Widget/Page should NOT call UseCase provider "getTodosUseCaseProvider" directly via read()',
+          correctionMessage:
+              'Create an Entity Provider that calls the UseCase, then ref.watch() that provider.',
+        ),
+        const ExpectedV2Diagnostic(
+          relativePath: 'lib/features/todo/presentation/pages/todo_page.dart',
+          codeName: 'widget_no_usecase_call',
+          problemMessage:
+              'Widget/Page should NOT call UseCase provider "getTodosUseCaseProvider" directly via watch()',
+          correctionMessage:
+              'Create an Entity Provider that calls the UseCase, then ref.watch() that provider.',
+        ),
+      ]);
+    });
+
+    test(
+      'ignores non-this receivers (widget.ref / other.ref) for UseCase providers',
+      () async {
+        final result = await V2RuleHarness(rule: WidgetNoUseCaseCallRule())
+            .analyze(
+              files: {
+                'lib/features/todo/presentation/widgets/todo_card.dart': '''
+class TodoCard {
+  late final widget;
+  late final other;
+
+  void build() {
+    widget.ref.read(getTodosUseCaseProvider);
+    other.ref.watch(getTodosUseCaseProvider);
+  }
+}
+''',
+              },
+              definingFile:
+                  'lib/features/todo/presentation/widgets/todo_card.dart',
+            );
+
+        result.expectNoDiagnostics();
+      },
+    );
+
     test('ignores provider files and non-usecase providers', () async {
       final result = await V2RuleHarness(rule: WidgetNoUseCaseCallRule())
           .analyze(
