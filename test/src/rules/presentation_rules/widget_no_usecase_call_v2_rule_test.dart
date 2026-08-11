@@ -83,12 +83,13 @@ class TodoPage {
       ]);
     });
 
-
-    test('ignores non-this receivers (widget.ref / other.ref) for UseCase providers', () async {
-      final result = await V2RuleHarness(rule: WidgetNoUseCaseCallRule())
-          .analyze(
-            files: {
-              'lib/features/todo/presentation/widgets/todo_card.dart': '''
+    test(
+      'ignores non-this receivers (widget.ref / other.ref) for UseCase providers',
+      () async {
+        final result = await V2RuleHarness(rule: WidgetNoUseCaseCallRule())
+            .analyze(
+              files: {
+                'lib/features/todo/presentation/widgets/todo_card.dart': '''
 class TodoCard {
   late final widget;
   late final other;
@@ -99,13 +100,14 @@ class TodoCard {
   }
 }
 ''',
-            },
-            definingFile:
-                'lib/features/todo/presentation/widgets/todo_card.dart',
-          );
+              },
+              definingFile:
+                  'lib/features/todo/presentation/widgets/todo_card.dart',
+            );
 
-      result.expectNoDiagnostics();
-    });
+        result.expectNoDiagnostics();
+      },
+    );
 
     test('ignores provider files and non-usecase providers', () async {
       final result = await V2RuleHarness(rule: WidgetNoUseCaseCallRule())
