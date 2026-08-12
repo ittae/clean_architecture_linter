@@ -240,12 +240,93 @@ bool canSubmitTodo(Object ref) {
             'lib/features/todo/presentation/providers/todo_notifier.dart',
       );
 
-      // This rule only registers ClassDeclaration nodes, so top-level
-      // @riverpod functions -- this repo's own Tier-3 "computed logic
-      // provider" convention (see CLAUDE.md) -- get no ref.watch/ref.read
-      // discipline check at all. This test documents that gap explicitly
-      // so it cannot regress silently into "already covered".
+      // This rule registers ClassDeclaration and ExtensionDeclaration nodes,
+      // so top-level @riverpod functions -- this repo's own Tier-3 "computed
+      // logic provider" convention (see CLAUDE.md) -- still get no
+      // ref.watch/ref.read discipline check. This test documents that gap
+      // explicitly so it cannot regress silently into "already covered".
       result.expectNoDiagnostics();
     });
+
+    test('reports ref.watch in an extension method on a Notifier', () async {
+      final result = await V2RuleHarness(rule: RiverpodRefUsageRule()).analyze(
+        files: {
+          'lib/features/todo/presentation/providers/todo_notifier.dart': '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class TodoNotifier {}
+
+extension TodoNotifierHelpers on TodoNotifier {
+  void save() {
+    final todo = ref.watch(todoProvider);
+  }
+}
+''',
+        },
+        definingFile:
+            'lib/features/todo/presentation/providers/todo_notifier.dart',
+      );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/presentation/providers/todo_notifier.dart',
+          codeName: 'riverpod_ref_usage',
+          line: 10,
+          problemMessage:
+              'Use ref.read() instead of ref.watch() in methods for one-time reads.',
+          correctionMessage:
+              'Change ref.watch() to ref.read() for one-time provider access in methods.',
+        ),
+      ]);
+    });
+
+    test(
+      'reports ref.watch in a Notifier extension method in a part file',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefUsageRule()).analyze(
+          files: {
+            'lib/features/todo/presentation/providers/todo_notifier.dart': '''
+part 'todo_notifier_helpers.dart';
+
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class TodoNotifier {}
+''',
+            'lib/features/todo/presentation/providers/todo_notifier_helpers.dart':
+                '''
+part of 'todo_notifier.dart';
+
+extension TodoNotifierHelpers on TodoNotifier {
+  void save() {
+    final todo = ref.watch(todoProvider);
+  }
+}
+''',
+          },
+          definingFile:
+              'lib/features/todo/presentation/providers/todo_notifier.dart',
+        );
+
+        result.expectDiagnostics([
+          const ExpectedV2Diagnostic(
+            relativePath:
+                'lib/features/todo/presentation/providers/todo_notifier_helpers.dart',
+            codeName: 'riverpod_ref_usage',
+            line: 5,
+            problemMessage:
+                'Use ref.read() instead of ref.watch() in methods for one-time reads.',
+            correctionMessage:
+                'Change ref.watch() to ref.read() for one-time provider access in methods.',
+          ),
+        ]);
+      },
+    );
   });
 }

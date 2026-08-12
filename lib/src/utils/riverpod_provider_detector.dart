@@ -101,6 +101,45 @@ bool isRiverpodNotifierClass(ClassDeclaration node) {
   return className.endsWith('Notifier');
 }
 
+/// Whether [node] is an extension on a Riverpod state-layer type.
+///
+/// Notifier methods are routinely split into `extension X on FooNotifier` in a
+/// part file. Rules that only register [ClassDeclaration] miss those members,
+/// so callers that scan method bodies should also visit extensions and gate
+/// with this helper.
+///
+/// Preference order matches the class path as closely as possible without
+/// requiring element resolution (parsed-only safe):
+///
+/// 1. Same-unit [ClassDeclaration] looked up by the extended type name, then
+///    [isRiverpodNotifierClass].
+/// 2. Name heuristics: exclude known widget / `ChangeNotifier` /
+///    `ValueNotifier` targets; accept `*Notifier` suffix.
+///
+/// Cross-unit extensions (class in the library body, extension in a part)
+/// rely on (2). That leans false-negative for non-`Notifier` names, which is
+/// safer than punishing UI helper extensions.
+bool isRiverpodNotifierExtension(ExtensionDeclaration node) {
+  final extendedType = node.onClause?.extendedType;
+  if (extendedType is! NamedType) return false;
+
+  final targetName = extendedType.name.lexeme;
+  if (riverpodWidgetSuperclasses.contains(targetName)) return false;
+  if (nonRiverpodNotifierSuperclasses.contains(targetName)) return false;
+
+  final unit = node.thisOrAncestorOfType<CompilationUnit>();
+  if (unit != null) {
+    for (final declaration in unit.declarations) {
+      if (declaration is ClassDeclaration &&
+          classDeclarationName(declaration) == targetName) {
+        return isRiverpodNotifierClass(declaration);
+      }
+    }
+  }
+
+  return targetName.endsWith('Notifier');
+}
+
 /// Riverpod provider constructors that declare state manually instead of via
 /// the `@riverpod` generator. Recognising these lets `riverpod_generator`
 /// nudge teams toward codegen.

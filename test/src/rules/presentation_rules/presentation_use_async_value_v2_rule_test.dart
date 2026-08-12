@@ -205,5 +205,95 @@ class TodoState {
 
       result.expectNoDiagnostics();
     });
+
+    test(
+      'reports catch blocks that swallow exceptions in an extension on a Notifier',
+      () async {
+        final result =
+            await V2RuleHarness(rule: PresentationUseAsyncValueRule()).analyze(
+              files: {
+                'lib/features/todo/presentation/providers/todo_notifier.dart':
+                    '''
+class TodoNotifier {}
+
+extension TodoNotifierHelpers on TodoNotifier {
+  Future<void> load() async {
+    try {
+      await fetch();
+    } catch (error) {
+      print(error);
+    }
+  }
+
+  Future<void> fetch() async {}
+}
+''',
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/todo_notifier.dart',
+            );
+
+        result.expectDiagnostics([
+          const ExpectedV2Diagnostic(
+            relativePath:
+                'lib/features/todo/presentation/providers/todo_notifier.dart',
+            codeName: 'presentation_use_async_value',
+            line: 7,
+            problemMessage:
+                'Notifier/Provider catch did not map exception to UI state.',
+            correctionMessage:
+                'Use AsyncValue.guard(), state = AsyncValue.error(...), or UI handling via when(error: ...).',
+          ),
+        ]);
+      },
+    );
+
+    test(
+      'reports catch blocks that swallow exceptions in a Notifier extension part',
+      () async {
+        final result =
+            await V2RuleHarness(rule: PresentationUseAsyncValueRule()).analyze(
+              files: {
+                'lib/features/todo/presentation/providers/todo_notifier.dart':
+                    '''
+part 'todo_notifier_helpers.dart';
+
+class TodoNotifier {}
+''',
+                'lib/features/todo/presentation/providers/todo_notifier_helpers.dart':
+                    '''
+part of 'todo_notifier.dart';
+
+extension TodoNotifierHelpers on TodoNotifier {
+  Future<void> load() async {
+    try {
+      await fetch();
+    } catch (error) {
+      print(error);
+    }
+  }
+
+  Future<void> fetch() async {}
+}
+''',
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/todo_notifier.dart',
+            );
+
+        result.expectDiagnostics([
+          const ExpectedV2Diagnostic(
+            relativePath:
+                'lib/features/todo/presentation/providers/todo_notifier_helpers.dart',
+            codeName: 'presentation_use_async_value',
+            line: 7,
+            problemMessage:
+                'Notifier/Provider catch did not map exception to UI state.',
+            correctionMessage:
+                'Use AsyncValue.guard(), state = AsyncValue.error(...), or UI handling via when(error: ...).',
+          ),
+        ]);
+      },
+    );
   });
 }

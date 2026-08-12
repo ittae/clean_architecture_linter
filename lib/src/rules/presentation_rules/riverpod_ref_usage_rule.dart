@@ -36,7 +36,11 @@ class RiverpodRefUsageRule extends AnalysisRule {
     RuleVisitorRegistry registry,
     RuleContext context,
   ) {
-    registry.addClassDeclaration(this, _RiverpodRefUsageVisitor(this, context));
+    final visitor = _RiverpodRefUsageVisitor(this, context);
+    registry.addClassDeclaration(this, visitor);
+    // Extension methods on Notifiers (common part-file helpers) need the same
+    // ref.watch / ref.read discipline as class members.
+    registry.addExtensionDeclaration(this, visitor);
   }
 }
 
@@ -54,9 +58,25 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
     if (!_isProviderFile(_filePath)) return;
     if (!isRiverpodNotifierClass(node)) return;
 
-    for (final member in classMembers(node)) {
+    _scanMembers(classMembers(node));
+  }
+
+  @override
+  void visitExtensionDeclaration(ExtensionDeclaration node) {
+    if (!_isProviderFile(_filePath)) return;
+    if (!isRiverpodNotifierExtension(node)) return;
+
+    // Extension members are never the Riverpod `build()` override.
+    _scanMembers(extensionMembers(node), isBuildMethod: false);
+  }
+
+  void _scanMembers(Iterable<AstNode> members, {bool? isBuildMethod}) {
+    for (final member in members) {
       if (member is MethodDeclaration) {
-        _checkMethodRefUsage(member, member.name.lexeme == 'build');
+        _checkMethodRefUsage(
+          member,
+          isBuildMethod ?? member.name.lexeme == 'build',
+        );
       }
     }
   }

@@ -85,8 +85,9 @@ class _PresentationUseAsyncValueVisitor extends SimpleAstVisitor<void> {
   void visitCatchClause(CatchClause node) {
     if (_shouldSkipFile) return;
 
-    final classNode = node.thisOrAncestorOfType<ClassDeclaration>();
-    if (classNode == null || !_isNotifierOrProviderClass(classNode)) return;
+    // Class-only ancestor lookup skipped catches inside
+    // `extension on FooNotifier` (including part-file helpers).
+    if (!_isInNotifierOrProviderScope(node)) return;
 
     if (node.body.toSource().contains('rethrow')) return;
 
@@ -99,6 +100,40 @@ class _PresentationUseAsyncValueVisitor extends SimpleAstVisitor<void> {
         ],
       );
     }
+  }
+
+  /// Whether [node] sits in a Notifier/Provider class body or an extension on
+  /// one of those types.
+  bool _isInNotifierOrProviderScope(AstNode node) {
+    final classNode = node.thisOrAncestorOfType<ClassDeclaration>();
+    if (classNode != null) return _isNotifierOrProviderClass(classNode);
+
+    final extensionNode = node.thisOrAncestorOfType<ExtensionDeclaration>();
+    if (extensionNode == null) return false;
+
+    return _isNotifierOrProviderExtension(extensionNode);
+  }
+
+  bool _isNotifierOrProviderExtension(ExtensionDeclaration node) {
+    final extendedType = node.onClause?.extendedType;
+    if (extendedType is! NamedType) return false;
+
+    final targetName = extendedType.name.lexeme;
+    if (targetName.contains('Notifier') || targetName.contains('Provider')) {
+      return true;
+    }
+
+    final unit = node.thisOrAncestorOfType<CompilationUnit>();
+    if (unit == null) return false;
+
+    for (final declaration in unit.declarations) {
+      if (declaration is ClassDeclaration &&
+          classDeclarationName(declaration) == targetName) {
+        return _isNotifierOrProviderClass(declaration);
+      }
+    }
+
+    return false;
   }
 
   bool get _shouldSkipFile {
