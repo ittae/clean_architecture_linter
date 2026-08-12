@@ -137,6 +137,12 @@ bool isRiverpodNotifierExtension(ExtensionDeclaration node) {
     }
   }
 
+  // Part-file extensions have no same-unit class body, so subclass names like
+  // `CounterChangeNotifier` would otherwise match `endsWith('Notifier')`.
+  if (targetName.endsWith('ChangeNotifier') ||
+      targetName.endsWith('ValueNotifier')) {
+    return false;
+  }
   return targetName.endsWith('Notifier');
 }
 

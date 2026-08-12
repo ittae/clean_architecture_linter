@@ -1209,5 +1209,37 @@ extension TodoNotifierHelpers on TodoNotifier {
         result.expectNoDiagnostics();
       },
     );
+
+    test(
+      'does not report ref after await in a part-file extension on CounterChangeNotifier',
+      () async {
+        final result =
+            await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule()).analyze(
+              files: {
+                'lib/features/todo/presentation/providers/counter_notifier.dart':
+                    '''
+part 'counter_notifier_helpers.dart';
+
+class CounterChangeNotifier {}
+''',
+                'lib/features/todo/presentation/providers/counter_notifier_helpers.dart':
+                    '''
+part of 'counter_notifier.dart';
+
+extension CounterChangeNotifierHelpers on CounterChangeNotifier {
+  Future<void> createTodo() async {
+    await saveTodo();
+    final todo = ref.read(todoProvider);
+  }
+}
+''',
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/counter_notifier.dart',
+            );
+
+        result.expectNoDiagnostics();
+      },
+    );
   });
 }

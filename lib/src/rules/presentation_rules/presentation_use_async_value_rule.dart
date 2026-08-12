@@ -7,6 +7,7 @@ import 'package:analyzer/error/error.dart';
 
 import '../../compat/analyzer_ast_compat.dart';
 import '../../clean_architecture_linter_base.dart';
+import '../../utils/riverpod_provider_detector.dart';
 
 class PresentationUseAsyncValueRule extends AnalysisRule {
   static const LintCode code = LintCode(
@@ -119,6 +120,14 @@ class _PresentationUseAsyncValueVisitor extends SimpleAstVisitor<void> {
     if (extendedType is! NamedType) return false;
 
     final targetName = extendedType.name.lexeme;
+    // Flutter notifiers end in "Notifier" but are not Riverpod state layer.
+    // Keep the same exclusions as [isRiverpodNotifierExtension].
+    if (riverpodWidgetSuperclasses.contains(targetName) ||
+        nonRiverpodNotifierSuperclasses.contains(targetName) ||
+        targetName.endsWith('ChangeNotifier') ||
+        targetName.endsWith('ValueNotifier')) {
+      return false;
+    }
     if (targetName.contains('Notifier') || targetName.contains('Provider')) {
       return true;
     }

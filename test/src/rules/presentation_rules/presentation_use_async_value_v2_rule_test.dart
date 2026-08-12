@@ -295,5 +295,63 @@ extension TodoNotifierHelpers on TodoNotifier {
         ]);
       },
     );
+
+    test(
+      'does not report catch blocks in an extension on ChangeNotifier',
+      () async {
+        final result =
+            await V2RuleHarness(rule: PresentationUseAsyncValueRule()).analyze(
+              files: {
+                'lib/features/todo/presentation/providers/todo_notifier.dart':
+                    '''
+extension ChangeNotifierHelpers on ChangeNotifier {
+  Future<void> load() async {
+    try {
+      await fetch();
+    } catch (error) {
+      print(error);
+    }
+  }
+
+  Future<void> fetch() async {}
+}
+''',
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/todo_notifier.dart',
+            );
+
+        result.expectNoDiagnostics();
+      },
+    );
+
+    test(
+      'does not report catch blocks in an extension on CounterChangeNotifier',
+      () async {
+        final result =
+            await V2RuleHarness(rule: PresentationUseAsyncValueRule()).analyze(
+              files: {
+                'lib/features/todo/presentation/providers/todo_notifier.dart':
+                    '''
+extension CounterChangeNotifierHelpers on CounterChangeNotifier {
+  Future<void> load() async {
+    try {
+      await fetch();
+    } catch (error) {
+      print(error);
+    }
+  }
+
+  Future<void> fetch() async {}
+}
+''',
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/todo_notifier.dart',
+            );
+
+        result.expectNoDiagnostics();
+      },
+    );
   });
 }
