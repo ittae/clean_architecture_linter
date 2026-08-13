@@ -40,10 +40,11 @@ class RiverpodRefAfterAsyncGapRule extends AnalysisRule {
     RuleVisitorRegistry registry,
     RuleContext context,
   ) {
-    registry.addClassDeclaration(
-      this,
-      _RiverpodRefAfterAsyncGapVisitor(this, context),
-    );
+    final visitor = _RiverpodRefAfterAsyncGapVisitor(this, context);
+    registry.addClassDeclaration(this, visitor);
+    // Notifier helpers are routinely `extension on FooNotifier` (often in a
+    // part file). Class-only registration skipped those members entirely.
+    registry.addExtensionDeclaration(this, visitor);
   }
 }
 
@@ -61,7 +62,19 @@ class _RiverpodRefAfterAsyncGapVisitor extends SimpleAstVisitor<void> {
     if (!_shouldCheckFile(_filePath)) return;
     if (!isRiverpodNotifierClass(node)) return;
 
-    for (final member in classMembers(node)) {
+    _scanMembers(classMembers(node));
+  }
+
+  @override
+  void visitExtensionDeclaration(ExtensionDeclaration node) {
+    if (!_shouldCheckFile(_filePath)) return;
+    if (!isRiverpodNotifierExtension(node)) return;
+
+    _scanMembers(extensionMembers(node));
+  }
+
+  void _scanMembers(Iterable<AstNode> members) {
+    for (final member in members) {
       if (member is! MethodDeclaration) continue;
       if (_isPrivate(member.name.lexeme)) continue;
 
