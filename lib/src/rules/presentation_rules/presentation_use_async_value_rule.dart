@@ -422,7 +422,16 @@ class _StateAssignmentProbe extends RecursiveAstVisitor<void> {
   @override
   void visitSimpleIdentifier(SimpleIdentifier node) {
     if (catchParamNames.contains(node.name)) {
-      usesCatchParam = true;
+      final parent = node.parent;
+      // Property/method selectors (.error, Log.error) are not catch-param refs.
+      final isSelector =
+          (parent is PropertyAccess && identical(parent.propertyName, node)) ||
+          (parent is PrefixedIdentifier &&
+              identical(parent.identifier, node)) ||
+          (parent is MethodInvocation && identical(parent.methodName, node));
+      if (!isSelector) {
+        usesCatchParam = true;
+      }
     }
     super.visitSimpleIdentifier(node);
   }
@@ -430,7 +439,9 @@ class _StateAssignmentProbe extends RecursiveAstVisitor<void> {
   @override
   void visitNamedArgument(NamedArgument node) {
     // analyzer 13+: NamedArgument; name Token.lexeme via namedArgumentName.
-    if (namedArgumentName(node) == 'uiEffect') {
+    // uiEffect: null is a clear, not a failure mapping.
+    if (namedArgumentName(node) == 'uiEffect' &&
+        node.argumentExpression is! NullLiteral) {
       hasUiEffect = true;
     }
     super.visitNamedArgument(node);
