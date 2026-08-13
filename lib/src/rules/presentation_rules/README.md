@@ -260,9 +260,16 @@ class TodoList extends _$TodoList {
 **Purpose**: Enforces using AsyncValue for error handling instead of error fields in State.
 
 **What it checks**:
-- ❌ Don't add error fields to Freezed State classes
-- ✅ Use Riverpod's `AsyncValue<T>` for error handling
-- ✅ Let Riverpod automatically wrap exceptions in `AsyncValue.error`
+- ❌ Don't add error fields / loading flags to Freezed State classes
+- ✅ Use Riverpod's `AsyncValue<T>` for error/loading handling
+- ✅ Notifier/Provider `catch` must map the exception into UI state
+
+**Catch acceptance criteria** (AST-based):
+- ✅ `AsyncValue.guard(...)` / `AsyncValue.error(...)` / `AsyncError(...)`
+- ✅ `when(error: ...)` UI handler
+- ✅ `state = ...` whose RHS uses a catch parameter (exception/stackTrace)
+- ✅ `state = ...` whose RHS includes a `uiEffect:` named argument (partial failure: keep data, toast the error)
+- ❌ Logging-only catch, empty catch, or `state = AsyncValue.loading()` without error mapping
 
 **Example**:
 ```dart
@@ -291,6 +298,27 @@ class TodoNotifier extends _$TodoNotifier {
     // If this throws, Riverpod wraps it in AsyncValue.error
     final todos = await getTodosUseCase();
     return TodoState(todos: todos);
+  }
+
+  // ✅ GOOD: full failure → AsyncValue.error
+  Future<void> reload() async {
+    try {
+      state = AsyncData(await fetch());
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
+  }
+
+  // ✅ GOOD: partial failure → keep data, surface toast via uiEffect
+  Future<void> deleteOne(String id) async {
+    final latest = state.requireValue;
+    try {
+      await delete(id);
+    } catch (error) {
+      state = AsyncData(
+        latest.copyWith(uiEffect: toastFor(error)),
+      );
+    }
   }
 }
 

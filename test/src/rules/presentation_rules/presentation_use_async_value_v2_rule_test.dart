@@ -114,7 +114,8 @@ class TodoNotifier {
           problemMessage:
               'Notifier/Provider catch did not map exception to UI state.',
           correctionMessage:
-              'Use AsyncValue.guard(), state = AsyncValue.error(...), or UI handling via when(error: ...).',
+              'Use AsyncValue.guard(), state = AsyncValue.error(...), '
+              'state = AsyncData(...uiEffect...), or UI handling via when(error: ...).',
         ),
       ]);
     });
@@ -144,6 +145,157 @@ class TodoNotifier {
           );
 
       result.expectNoDiagnostics();
+    });
+
+    test(
+      'allows catch blocks that map partial failure via AsyncData + uiEffect',
+      () async {
+        final result =
+            await V2RuleHarness(rule: PresentationUseAsyncValueRule()).analyze(
+              files: {
+                'lib/features/todo/presentation/providers/todo_notifier.dart':
+                    '''
+class TodoNotifier {
+  Object? state;
+
+  Future<void> deleteItem(String id) async {
+    final latest = state as dynamic;
+    try {
+      await delete(id);
+    } catch (error) {
+      // Keep list data; surface failure as a toast effect (not AsyncError).
+      state = AsyncData(
+        latest.copyWith(uiEffect: _toast(error)),
+      );
+    }
+  }
+
+  Object _toast(Object error) => error;
+  Future<void> delete(String id) async {}
+}
+''',
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/todo_notifier.dart',
+            );
+
+        result.expectNoDiagnostics();
+      },
+    );
+
+    test(
+      'allows catch blocks that set uiEffect without referencing catch param',
+      () async {
+        final result =
+            await V2RuleHarness(rule: PresentationUseAsyncValueRule()).analyze(
+              files: {
+                'lib/features/todo/presentation/providers/todo_notifier.dart':
+                    '''
+class TodoNotifier {
+  Object? state;
+
+  Future<void> deleteItem(String id) async {
+    final latest = state as dynamic;
+    try {
+      await delete(id);
+    } catch (error) {
+      Log.error('delete failed: \$error');
+      state = AsyncData(
+        latest.copyWith(uiEffect: _toast('failed')),
+      );
+    }
+  }
+
+  Object _toast(String message) => message;
+  Future<void> delete(String id) async {}
+}
+
+class Log {
+  static void error(String message) {}
+}
+''',
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/todo_notifier.dart',
+            );
+
+        result.expectNoDiagnostics();
+      },
+    );
+
+    test(
+      'allows catch blocks that map via AsyncValue.guard with uiEffect',
+      () async {
+        final result =
+            await V2RuleHarness(rule: PresentationUseAsyncValueRule()).analyze(
+              files: {
+                'lib/features/todo/presentation/providers/todo_notifier.dart':
+                    '''
+class TodoNotifier {
+  Object? state;
+
+  Future<void> deleteItem(String id) async {
+    final latest = state as dynamic;
+    try {
+      await delete(id);
+    } catch (error) {
+      state = await AsyncValue.guard(
+        () async => latest.copyWith(uiEffect: _toast('failed')),
+      );
+    }
+  }
+
+  Object _toast(String message) => message;
+  Future<void> delete(String id) async {}
+}
+''',
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/todo_notifier.dart',
+            );
+
+        result.expectNoDiagnostics();
+      },
+    );
+
+    test('reports catch blocks that only log without updating state', () async {
+      final result = await V2RuleHarness(rule: PresentationUseAsyncValueRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/providers/todo_notifier.dart': '''
+class TodoNotifier {
+  Future<void> load() async {
+    try {
+      await fetch();
+    } catch (error) {
+      Log.error('load failed: \$error');
+    }
+  }
+
+  Future<void> fetch() async {}
+}
+
+class Log {
+  static void error(String message) {}
+}
+''',
+            },
+            definingFile:
+                'lib/features/todo/presentation/providers/todo_notifier.dart',
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/presentation/providers/todo_notifier.dart',
+          codeName: 'presentation_use_async_value',
+          problemMessage:
+              'Notifier/Provider catch did not map exception to UI state.',
+          correctionMessage:
+              'Use AsyncValue.guard(), state = AsyncValue.error(...), '
+              'state = AsyncData(...uiEffect...), or UI handling via when(error: ...).',
+        ),
+      ]);
     });
 
     test('reports catch blocks that only set AsyncValue loading', () async {
@@ -178,7 +330,8 @@ class TodoNotifier {
           problemMessage:
               'Notifier/Provider catch did not map exception to UI state.',
           correctionMessage:
-              'Use AsyncValue.guard(), state = AsyncValue.error(...), or UI handling via when(error: ...).',
+              'Use AsyncValue.guard(), state = AsyncValue.error(...), '
+              'state = AsyncData(...uiEffect...), or UI handling via when(error: ...).',
         ),
       ]);
     });
@@ -242,7 +395,8 @@ extension TodoNotifierHelpers on TodoNotifier {
             problemMessage:
                 'Notifier/Provider catch did not map exception to UI state.',
             correctionMessage:
-                'Use AsyncValue.guard(), state = AsyncValue.error(...), or UI handling via when(error: ...).',
+                'Use AsyncValue.guard(), state = AsyncValue.error(...), '
+                'state = AsyncData(...uiEffect...), or UI handling via when(error: ...).',
           ),
         ]);
       },
@@ -290,7 +444,8 @@ extension TodoNotifierHelpers on TodoNotifier {
             problemMessage:
                 'Notifier/Provider catch did not map exception to UI state.',
             correctionMessage:
-                'Use AsyncValue.guard(), state = AsyncValue.error(...), or UI handling via when(error: ...).',
+                'Use AsyncValue.guard(), state = AsyncValue.error(...), '
+                'state = AsyncData(...uiEffect...), or UI handling via when(error: ...).',
           ),
         ]);
       },
