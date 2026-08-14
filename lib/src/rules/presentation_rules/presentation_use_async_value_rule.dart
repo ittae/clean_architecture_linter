@@ -90,14 +90,15 @@ class _PresentationUseAsyncValueVisitor extends SimpleAstVisitor<void> {
     // `extension on FooNotifier` (including part-file helpers).
     if (!_isInNotifierOrProviderScope(node)) return;
 
-    if (node.body.toSource().contains('rethrow')) return;
+    if (_containsRethrow(node.body)) return;
 
-    if (!_containsAsyncValueErrorHandling(node.body)) {
+    if (!_mapsExceptionToUiState(node)) {
       rule.reportAtNode(
         node,
         arguments: const [
           'Notifier/Provider catch did not map exception to UI state.',
-          'Use AsyncValue.guard(), state = AsyncValue.error(...), or UI handling via when(error: ...).',
+          'Use AsyncValue.guard(), state = AsyncValue.error(...), '
+              'state = AsyncData(...uiEffect...), or UI handling via when(error: ...).',
         ],
       );
     }
@@ -186,13 +187,32 @@ class _PresentationUseAsyncValueVisitor extends SimpleAstVisitor<void> {
     return false;
   }
 
-  bool _containsAsyncValueErrorHandling(Block block) {
-    final source = block.toSource();
+  /// Whether the catch body rethrows without local UI mapping.
+  bool _containsRethrow(Block block) {
+    final finder = _RethrowFinder();
+    block.accept(finder);
+    return finder.found;
+  }
 
-    return source.contains('AsyncValue.guard(') ||
-        source.contains('AsyncValue.error(') ||
-        source.contains('AsyncError(') ||
-        source.contains('when(error:');
+  /// Whether [catchClause] maps the exception into UI-visible state.
+  ///
+  /// Accepted patterns (AST, not source-string contains):
+  /// 1. Classic AsyncValue sinks: `AsyncValue.guard` / `AsyncValue.error` /
+  ///    `AsyncError` / `when(error: ...)`.
+  /// 2. `state = ...` whose RHS references a catch parameter (exception or
+  ///    stackTrace) — covers intentional partial-failure mapping.
+  /// 3. `state = ...` whose RHS includes a `uiEffect:` named argument —
+  ///    ittae policy keeps list/timer data and surfaces the failure as a
+  ///    toast/effect instead of covering the whole tree with AsyncError.
+  bool _mapsExceptionToUiState(CatchClause catchClause) {
+    final catchParamNames = <String>{
+      if (catchClause.exceptionParameter case final param?) param.name.lexeme,
+      if (catchClause.stackTraceParameter case final param?) param.name.lexeme,
+    };
+
+    final scanner = _CatchUiMappingScanner(catchParamNames: catchParamNames);
+    catchClause.body.accept(scanner);
+    return scanner.found;
   }
 
   void _checkForErrorFields(ClassDeclaration node) {
@@ -290,5 +310,140 @@ class _PresentationUseAsyncValueVisitor extends SimpleAstVisitor<void> {
     }
 
     return false;
+  }
+}
+
+class _RethrowFinder extends RecursiveAstVisitor<void> {
+  var found = false;
+
+  @override
+  void visitRethrowExpression(RethrowExpression node) {
+    found = true;
+  }
+}
+
+/// Walks a catch body looking for accepted UI-error mapping patterns.
+class _CatchUiMappingScanner extends RecursiveAstVisitor<void> {
+  _CatchUiMappingScanner({required this.catchParamNames});
+
+  final Set<String> catchParamNames;
+  var found = false;
+
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    if (_isAsyncValueErrorApi(node)) {
+      found = true;
+      return;
+    }
+    if (_isWhenErrorHandler(node)) {
+      found = true;
+      return;
+    }
+    super.visitMethodInvocation(node);
+  }
+
+  @override
+  void visitInstanceCreationExpression(InstanceCreationExpression node) {
+    final typeName = node.constructorName.type.name.lexeme;
+    if (typeName == 'AsyncError' || typeName == 'AsyncValue') {
+      // AsyncError(...) / AsyncValue.error(...) as constructor forms.
+      final name = node.constructorName.name?.name;
+      if (typeName == 'AsyncError' || name == 'error') {
+        found = true;
+        return;
+      }
+    }
+    super.visitInstanceCreationExpression(node);
+  }
+
+  @override
+  void visitAssignmentExpression(AssignmentExpression node) {
+    if (_isStateTarget(node.leftHandSide) &&
+        _rhsMapsExceptionToUi(node.rightHandSide)) {
+      found = true;
+      return;
+    }
+    super.visitAssignmentExpression(node);
+  }
+
+  bool _isAsyncValueErrorApi(MethodInvocation node) {
+    final method = node.methodName.name;
+    if (method != 'guard' && method != 'error') return false;
+    return _isAsyncValueTarget(node.target);
+  }
+
+  bool _isAsyncValueTarget(Expression? target) {
+    if (target is SimpleIdentifier) {
+      return target.name == 'AsyncValue';
+    }
+    if (target is PrefixedIdentifier) {
+      return target.identifier.name == 'AsyncValue';
+    }
+    return false;
+  }
+
+  bool _isWhenErrorHandler(MethodInvocation node) {
+    if (node.methodName.name != 'when') return false;
+    for (final argument in node.argumentList.arguments) {
+      if (namedArgumentName(argument) == 'error') return true;
+    }
+    return false;
+  }
+
+  bool _isStateTarget(Expression target) {
+    if (target is SimpleIdentifier) {
+      return target.name == 'state';
+    }
+    if (target is PropertyAccess) {
+      return target.propertyName.name == 'state';
+    }
+    if (target is PrefixedIdentifier) {
+      return target.identifier.name == 'state';
+    }
+    return false;
+  }
+
+  /// True when a `state = ...` RHS maps the failure into UI state.
+  bool _rhsMapsExceptionToUi(Expression rhs) {
+    final probe = _StateAssignmentProbe(catchParamNames: catchParamNames);
+    rhs.accept(probe);
+    return probe.usesCatchParam || probe.hasUiEffect;
+  }
+}
+
+/// Collects signals from a `state =` right-hand side only.
+class _StateAssignmentProbe extends RecursiveAstVisitor<void> {
+  _StateAssignmentProbe({required this.catchParamNames});
+
+  final Set<String> catchParamNames;
+  var usesCatchParam = false;
+  var hasUiEffect = false;
+
+  @override
+  void visitSimpleIdentifier(SimpleIdentifier node) {
+    if (catchParamNames.contains(node.name)) {
+      final parent = node.parent;
+      // Property/method selectors (.error, Log.error) are not catch-param refs.
+      final isSelector =
+          (parent is PropertyAccess && identical(parent.propertyName, node)) ||
+          (parent is PrefixedIdentifier &&
+              identical(parent.identifier, node)) ||
+          (parent is MethodInvocation && identical(parent.methodName, node));
+      if (!isSelector) {
+        usesCatchParam = true;
+      }
+    }
+    super.visitSimpleIdentifier(node);
+  }
+
+  @override
+  void visitNamedArgument(NamedArgument node) {
+    // analyzer 13+: NamedArgument; name Token.lexeme via namedArgumentName.
+    // uiEffect: null is a clear, not a failure mapping.
+    if (namedArgumentName(node) == 'uiEffect' &&
+        node.argumentExpression is! NullLiteral) {
+      hasUiEffect = true;
+    }
+    super.visitNamedArgument(node);
   }
 }
