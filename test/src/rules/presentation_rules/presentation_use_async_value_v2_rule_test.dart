@@ -84,13 +84,11 @@ class TodoState {
       ]);
     });
 
-    test(
-      'ignores non-error fields that only embed the word error',
-      () async {
-        final result =
-            await V2RuleHarness(rule: PresentationUseAsyncValueRule()).analyze(
-              files: {
-                'lib/features/todo/presentation/states/todo_state.dart': '''
+    test('ignores non-error fields that only embed the word error', () async {
+      final result = await V2RuleHarness(rule: PresentationUseAsyncValueRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/states/todo_state.dart': '''
 class freezed {
   const freezed();
 }
@@ -105,14 +103,13 @@ class TodoState {
   });
 }
 ''',
-              },
-              definingFile:
-                  'lib/features/todo/presentation/states/todo_state.dart',
-            );
+            },
+            definingFile:
+                'lib/features/todo/presentation/states/todo_state.dart',
+          );
 
-        result.expectNoDiagnostics();
-      },
-    );
+      result.expectNoDiagnostics();
+    });
 
     test('reports hasError alias as error state field', () async {
       final result = await V2RuleHarness(rule: PresentationUseAsyncValueRule())
