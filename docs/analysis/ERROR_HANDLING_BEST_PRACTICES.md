@@ -106,7 +106,7 @@
 | Repository 직접 throw 금지 | `repository_no_throw` | 부분 | 비표준 throw만 INFO; AppException throw는 허용되어 정책 강제 약함 |
 | UseCase Result/Either 금지(프로젝트 정책) | `usecase_no_result_return` | 충분(현 정책) | pass-through 정책과 정합. 단, 일반론(Either 선호)과는 충돌 가능 |
 | 도메인 예외 네이밍 표준화 | `exception_naming_convention` | 부분 | 이름 강제는 좋으나 도메인 예외 “사용 위치/변환 책임”까지는 미검증 |
-| Presentation에서 AsyncValue 사용 | `presentation_use_async_value` | 부분 | 네이밍 기반 탐지로 FP 가능(예: `hasErrorPermission`) |
+| Presentation에서 AsyncValue 사용 | `presentation_use_async_value` | 충분 | exact set(case-insensitive) 매칭으로 `errorBoundaryEnabled` / `hasErrorPermission` 등 부분일치 FP 제거. Failure 계열 exact alias(`isFailure` 등) 포함. 접두 합성명(`userErrorMessage`)은 의도적 FN |
 | Presentation에서 throw 금지 | `presentation_no_throw` | 충분 | 방향 명확. 다만 일부 프레임워크 코드 패턴에서 오탐 여지 |
 | UI에서 Data 예외 직접 처리 금지 | `presentation_no_data_exceptions` | 부분 | `is` 표현식만 탐지(try-on-catch, pattern matching 일부 미포착) |
 
@@ -126,12 +126,12 @@
    - 현상: 일부 규칙 허용, 일부 메시지와 불일치
    - 영향: 개발자 혼란(정책 해석 차이)
 
-4. **State 필드명에 `error` 문자열 포함된 비에러 의미**
-   - 예: `errorBoundaryEnabled`
-   - 영향: FP (`presentation_use_async_value`)
+4. **State 필드명에 `error` 문자열이 포함된 비에러 의미**
+   - 예: `errorBoundaryEnabled`, `hasErrorPermission`
+   - 영향: ~~과거 FP~~ — exact set 매칭으로 해소 (`presentation_use_async_value`)
 
 5. **`isLoading`이 실제로 UI-only 플래그(비동기와 무관)**
-   - 영향: FP 가능 (`presentation_use_async_value`)
+   - 영향: 여전히 exact set 진단 대상 (의도적 TP; AsyncValue 분리를 강제)
 
 6. **Presentation에서 `on AppException catch`는 합리적이지만, `is` 분기만 금지 우회**
    - 영향: 룰 일관성 공백 (`presentation_no_data_exceptions`는 `is`만 검사)
@@ -171,9 +171,9 @@
 - 우선순위: **P1**
 
 4) `presentation_use_async_value`
-- 현재: 문자열 포함 탐지로 FP 여지 큼
-- 제안: 타입 정보 결합 (`String?`, `Exception`, `Failure`, `bool isLoading`)일 때만 경고 강화
-- 우선순위: **P2**
+- 현재: lowercase exact set 매칭 (부분일치 FP 제거 완료; Failure boolean/last alias 포함)
+- 잔여: 접두 합성명(`userErrorMessage`)은 의도적 FN. 타입 정보 결합은 선택적 강화 후보
+- 우선순위: **P3** (잔여 FN 정밀화; 긴급 아님)
 
 5) 문서 정합성
 - `lib/src/rules/data_rules/README.md`, `domain_rules/README.md`, 각 규칙 주석에서 Result 잔재 제거
@@ -296,9 +296,11 @@ class UserList extends _$UserList {
 - [ ] 신규 룰 1개 우선 구현: `repository_no_try_catch_passthrough`
 
 ### P2 (다음 스프린트 시작)
-- [ ] `presentation_use_async_value` 오탐 축소(이름+타입 결합)
 - [ ] `usecase_must_not_catch_and_wrap` 신규 룰 PoC
 - [ ] 경계 사례 10개를 회귀 테스트 fixture로 추가
+
+### P3 (백로그)
+- [ ] `presentation_use_async_value` 접두 합성명 FN 정밀화(선택: 이름+타입 결합)
 
 ---
 

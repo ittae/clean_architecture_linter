@@ -44,6 +44,10 @@ class PresentationUseAsyncValueRule extends AnalysisRule {
     'iserror',
     'lasterror',
     'lasterrormessage',
+    'hasfailure',
+    'isfailure',
+    'lastfailure',
+    'lastfailuremessage',
   };
 
   /// Exact Freezed/state field names (lowercase) that store loading state.

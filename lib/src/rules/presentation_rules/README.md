@@ -265,7 +265,8 @@ class TodoList extends _$TodoList {
 - ✅ Notifier/Provider `catch` must map the exception into UI state
 
 **Error/loading field name matching** (exact, case-insensitive):
-- ❌ Exact anti-pattern names only: `error`, `errorMessage`, `failure`, `hasError`, `isLoading`, …
+- ❌ Error (exact): `error`, `errorMessage`, `errorMsg`, `errorText`, `errorDescription`, `failure`, `failureMessage`, `exception`, `exceptionMessage`, `hasError`, `isError`, `lastError`, `lastErrorMessage`, `hasFailure`, `isFailure`, `lastFailure`, `lastFailureMessage`
+- ❌ Loading (exact): `isLoading`, `loading`, `isSubmitting`, `submitting`, `isFetching`, `fetching`, `isProcessing`, `processing`
 - ✅ Names that merely embed those words are allowed: `errorBoundaryEnabled`, `hasErrorPermission`
 - Substring `contains` matching was removed to cut consumer FP noise
 
