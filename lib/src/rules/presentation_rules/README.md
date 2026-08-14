@@ -269,7 +269,7 @@ class TodoList extends _$TodoList {
 - ✅ `when(error: ...)` UI handler
 - ✅ `state = ...` whose RHS uses a catch parameter (exception/stackTrace)
 - ✅ `state = ...` whose RHS includes a `uiEffect:` named argument (partial failure: keep data, toast the error)
-- ❌ Logging-only catch, empty catch, or `state = AsyncValue.loading()` without error mapping
+- ❌ Logging-only catch, empty catch, `state = AsyncValue.loading()`, or `state = AsyncData(latest)` without `uiEffect:` / catch param
 
 **Example**:
 ```dart
