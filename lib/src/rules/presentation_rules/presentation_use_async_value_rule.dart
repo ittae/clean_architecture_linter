@@ -25,26 +25,36 @@ class PresentationUseAsyncValueRule extends AnalysisRule {
             'Requires presentation state errors/loading to use AsyncValue.',
       );
 
+  /// Exact Freezed/state field names (lowercase) that store error state.
+  ///
+  /// Exact match only. A previous `contains` scan flagged non-error fields
+  /// whose names merely embed the word "error" (e.g. `errorBoundaryEnabled`,
+  /// `hasErrorPermission`).
   static const errorFieldNames = {
     'error',
-    'errorMessage',
-    'errorMsg',
-    'errorText',
-    'errorDescription',
+    'errormessage',
+    'errormsg',
+    'errortext',
+    'errordescription',
     'failure',
-    'failureMessage',
+    'failuremessage',
     'exception',
-    'exceptionMessage',
+    'exceptionmessage',
+    'haserror',
+    'iserror',
+    'lasterror',
+    'lasterrormessage',
   };
 
+  /// Exact Freezed/state field names (lowercase) that store loading state.
   static const loadingFieldNames = {
-    'isLoading',
+    'isloading',
     'loading',
-    'isSubmitting',
+    'issubmitting',
     'submitting',
-    'isFetching',
+    'isfetching',
     'fetching',
-    'isProcessing',
+    'isprocessing',
     'processing',
   };
 
@@ -284,32 +294,16 @@ class _PresentationUseAsyncValueVisitor extends SimpleAstVisitor<void> {
     }
   }
 
-  bool _isErrorField(String fieldName) {
-    if (PresentationUseAsyncValueRule.errorFieldNames.contains(fieldName)) {
-      return true;
-    }
-
-    for (final keyword in PresentationUseAsyncValueRule.errorFieldNames) {
-      if (fieldName.contains(keyword)) {
-        return true;
-      }
-    }
-
-    return false;
+  bool _isErrorField(String fieldNameLower) {
+    return PresentationUseAsyncValueRule.errorFieldNames.contains(
+      fieldNameLower,
+    );
   }
 
-  bool _isLoadingField(String fieldName) {
-    if (PresentationUseAsyncValueRule.loadingFieldNames.contains(fieldName)) {
-      return true;
-    }
-
-    for (final keyword in PresentationUseAsyncValueRule.loadingFieldNames) {
-      if (fieldName.contains(keyword)) {
-        return true;
-      }
-    }
-
-    return false;
+  bool _isLoadingField(String fieldNameLower) {
+    return PresentationUseAsyncValueRule.loadingFieldNames.contains(
+      fieldNameLower,
+    );
   }
 }
 

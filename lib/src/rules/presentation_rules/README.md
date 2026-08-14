@@ -264,6 +264,11 @@ class TodoList extends _$TodoList {
 - ✅ Use Riverpod's `AsyncValue<T>` for error/loading handling
 - ✅ Notifier/Provider `catch` must map the exception into UI state
 
+**Error/loading field name matching** (exact, case-insensitive):
+- ❌ Exact anti-pattern names only: `error`, `errorMessage`, `failure`, `hasError`, `isLoading`, …
+- ✅ Names that merely embed those words are allowed: `errorBoundaryEnabled`, `hasErrorPermission`
+- Substring `contains` matching was removed to cut consumer FP noise
+
 **Catch acceptance criteria** (AST-based):
 - ✅ `AsyncValue.guard(...)` / `AsyncValue.error(...)` / `AsyncError(...)`
 - ✅ `when(error: ...)` UI handler
