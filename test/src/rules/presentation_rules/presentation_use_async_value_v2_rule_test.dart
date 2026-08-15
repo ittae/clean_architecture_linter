@@ -84,6 +84,95 @@ class TodoState {
       ]);
     });
 
+    test('ignores non-error fields that only embed the word error', () async {
+      final result = await V2RuleHarness(rule: PresentationUseAsyncValueRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/states/todo_state.dart': '''
+class freezed {
+  const freezed();
+}
+
+@freezed
+class TodoState {
+  final bool errorBoundaryEnabled;
+  final bool hasErrorPermission;
+  TodoState({
+    this.errorBoundaryEnabled = false,
+    this.hasErrorPermission = false,
+  });
+}
+''',
+            },
+            definingFile:
+                'lib/features/todo/presentation/states/todo_state.dart',
+          );
+
+      result.expectNoDiagnostics();
+    });
+
+    test('reports hasError alias as error state field', () async {
+      final result = await V2RuleHarness(rule: PresentationUseAsyncValueRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/states/todo_state.dart': '''
+class freezed {
+  const freezed();
+}
+
+@freezed
+class TodoState {
+  final bool hasError;
+}
+''',
+            },
+            definingFile:
+                'lib/features/todo/presentation/states/todo_state.dart',
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath: 'lib/features/todo/presentation/states/todo_state.dart',
+          codeName: 'presentation_use_async_value',
+          problemMessage:
+              'State should NOT have error field "hasError". Use AsyncValue instead.',
+          correctionMessage:
+              'Remove error field. Use AsyncNotifier with AsyncValue.when() pattern. AsyncValue automatically manages error states.',
+        ),
+      ]);
+    });
+
+    test('reports isFailure alias as error state field', () async {
+      final result = await V2RuleHarness(rule: PresentationUseAsyncValueRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/states/todo_state.dart': '''
+class freezed {
+  const freezed();
+}
+
+@freezed
+class TodoState {
+  final bool isFailure;
+}
+''',
+            },
+            definingFile:
+                'lib/features/todo/presentation/states/todo_state.dart',
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath: 'lib/features/todo/presentation/states/todo_state.dart',
+          codeName: 'presentation_use_async_value',
+          problemMessage:
+              'State should NOT have error field "isFailure". Use AsyncValue instead.',
+          correctionMessage:
+              'Remove error field. Use AsyncNotifier with AsyncValue.when() pattern. AsyncValue automatically manages error states.',
+        ),
+      ]);
+    });
+
     test('reports notifier catch blocks that swallow exceptions', () async {
       final result = await V2RuleHarness(rule: PresentationUseAsyncValueRule())
           .analyze(
