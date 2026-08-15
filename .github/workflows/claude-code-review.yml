@@ -399,13 +399,17 @@ jobs:
         run: |
           # Only count trusted-author AI review items (META_TRUSTED_AUTHORS).
           # Prevents untrusted comments from inflating iteration / exhausting ITERATE_LIMIT.
+          # select(A and B) must wrap the whole predicate — map(select(A) and B)
+          # yields booleans and breaks length (and prior-review sort_by(.ts)).
           ITER=$(gh pr view "$PR_NUM" -R "$REPO" --json comments,reviews \
             | jq --arg trusted "${META_TRUSTED_AUTHORS:-github-actions github-actions[bot]}" '
                 ($trusted | split(" ") | map(select(length > 0))) as $allow
                 | [(.comments[]? | {body:(.body//""),ts:.createdAt,login:(.author.login//"")}),
                    (.reviews[]? | {body:(.body//""),ts:.submittedAt,login:(.author.login//"")})]
-                | map(select((.login as $l | $allow | index($l)) != null)
-                      and (.body | contains("총점:") or contains("ittae-ai-review")))
+                | map(select(
+                    ((.login as $l | $allow | index($l)) != null)
+                    and (.body | contains("총점:") or contains("ittae-ai-review"))
+                  ))
                 | length')
           [[ ! "$ITER" =~ ^[0-9]+$ ]] && ITER=0
           echo "iteration=$ITER" >> $GITHUB_OUTPUT
@@ -426,15 +430,18 @@ jobs:
           echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
           gh pr diff "$PR_NUM" -R "$REPO" > /tmp/pr-diff.patch 2>/dev/null || echo "" > /tmp/pr-diff.patch
           # Trusted-author prior review only — do not inject attacker-controlled body into the prompt.
+          # Empty prior body is OK (exit 0). select(A and B) keeps objects; last // empty is null-safe.
           gh pr view "$PR_NUM" -R "$REPO" --json comments,reviews \
             | jq -r --arg trusted "${META_TRUSTED_AUTHORS:-github-actions github-actions[bot]}" '
                 ($trusted | split(" ") | map(select(length > 0))) as $allow
                 | [(.comments[]? | {body:(.body//""),ts:.createdAt,login:(.author.login//"")}),
                    (.reviews[]? | {body:(.body//""),ts:.submittedAt,login:(.author.login//"")})]
-                | map(select((.login as $l | $allow | index($l)) != null)
-                      and (.body | contains("총점:") or contains("ittae-ai-review")))
-                | sort_by(.ts)
-                | last
+                | map(select(
+                    ((.login as $l | $allow | index($l)) != null)
+                    and (.body | contains("총점:") or contains("ittae-ai-review"))
+                  ))
+                | sort_by(.ts // "")
+                | last // empty
                 | .body // empty' \
             > /tmp/prior-review.md
           echo "✓ PR context fetched: /tmp/{pr-context.json,pr-diff.patch,prior-review.md}"
