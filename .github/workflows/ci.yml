@@ -89,14 +89,20 @@ jobs:
 
   host-sot-tools:
     # Regression guard for tools/ai_review_sot.py + resolve_ai_review_model.py
-    # (H1–H6 host SoT validation units). Python-only; no Dart SDK required.
+    # + resolve_ai_review_engine_order.py (H1–H6 + engine-order units).
+    # Python-only; no Dart SDK required. Discover all tools/tests/test_*.py.
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
     - name: Run host SoT helper units
-      run: python3 tools/tests/test_host_sot_validation_cases.py -v
+      run: |
+        if [ -d tools/tests ] && ls tools/tests/test_*.py >/dev/null 2>&1; then
+          PYTHONPATH=tools python3 -m unittest discover -s tools/tests -p 'test_*.py' -v
+        else
+          echo "No tools/tests — skip"
+        fi
 
   coverage:
     runs-on: ubuntu-latest
