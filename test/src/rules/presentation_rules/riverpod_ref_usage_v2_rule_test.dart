@@ -67,8 +67,9 @@ class TodoNotifier {
       () async {
         final result = await V2RuleHarness(rule: RiverpodRefUsageRule())
             .analyze(
-          files: {
-            'lib/features/todo/presentation/providers/todo_notifier.dart': '''
+              files: {
+                'lib/features/todo/presentation/providers/todo_notifier.dart':
+                    '''
 class riverpod {
   const riverpod();
 }
@@ -96,10 +97,10 @@ class TodoNotifier {
   }
 }
 ''',
-          },
-          definingFile:
-              'lib/features/todo/presentation/providers/todo_notifier.dart',
-        );
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/todo_notifier.dart',
+            );
 
         result.expectNoDiagnostics();
       },
