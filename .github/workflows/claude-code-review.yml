@@ -48,8 +48,12 @@ env:
   ITERATE_LIMIT: 5
   HIGH_RISK_PATHS: '^\.github/workflows/|^\.env|^env/|/secrets?/|secret|secrets|(^|/)auth(/|$)|api[_-]?key|password|scripts/pr-autopilot|dependabot-alerts-sweep|crontab'
   STACK: 'Dart package (custom_lint rules / analyzer plugin)'
+  # Meta consumers (guard/context/score) filter by META_TRUSTED_AUTHORS at call sites.
+  # GraphQL author.login=github-actions; REST user.login=github-actions[bot]. Both in allowlist.
+  # REVIEW_ITEMS_JQ kept as GraphQL-shape reference only (call sites use external jq + --arg trusted).
   REVIEW_ITEMS_JQ: >-
-    [(.comments[] | {body:(.body//""),ts:.createdAt}),(.reviews[] | {body:(.body//""),ts:.submittedAt})]
+    [(.comments[] | {body:(.body//""),ts:.createdAt,login:(.author.login//"")}),(.reviews[] | {body:(.body//""),ts:.submittedAt,login:(.author.login//"")})]
+    | map(select(.login == "github-actions" or .login == "github-actions[bot]"))
     | map(select(.body | contains("총점:") or contains("ittae-ai-review")))
     | sort_by(.ts)
   PUBLIC_REPO_UNTRUSTED: |
@@ -393,8 +397,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # Only count trusted-author AI review items (META_TRUSTED_AUTHORS).
+          # Prevents untrusted comments from inflating iteration / exhausting ITERATE_LIMIT.
           ITER=$(gh pr view "$PR_NUM" -R "$REPO" --json comments,reviews \
-            --jq "$REVIEW_ITEMS_JQ | length")
+            | jq --arg trusted "${META_TRUSTED_AUTHORS:-github-actions github-actions[bot]}" '
+                ($trusted | split(" ") | map(select(length > 0))) as $allow
+                | [(.comments[]? | {body:(.body//""),ts:.createdAt,login:(.author.login//"")}),
+                   (.reviews[]? | {body:(.body//""),ts:.submittedAt,login:(.author.login//"")})]
+                | map(select((.login as $l | $allow | index($l)) != null)
+                      and (.body | contains("총점:") or contains("ittae-ai-review")))
+                | length')
           [[ ! "$ITER" =~ ^[0-9]+$ ]] && ITER=0
           echo "iteration=$ITER" >> $GITHUB_OUTPUT
 
@@ -413,8 +425,17 @@ jobs:
           HEAD_SHA=$(jq -r '.headRefOid // empty' /tmp/pr-context.json)
           echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
           gh pr diff "$PR_NUM" -R "$REPO" > /tmp/pr-diff.patch 2>/dev/null || echo "" > /tmp/pr-diff.patch
+          # Trusted-author prior review only — do not inject attacker-controlled body into the prompt.
           gh pr view "$PR_NUM" -R "$REPO" --json comments,reviews \
-            --jq "$REVIEW_ITEMS_JQ | last | .body // \"\"" \
+            | jq -r --arg trusted "${META_TRUSTED_AUTHORS:-github-actions github-actions[bot]}" '
+                ($trusted | split(" ") | map(select(length > 0))) as $allow
+                | [(.comments[]? | {body:(.body//""),ts:.createdAt,login:(.author.login//"")}),
+                   (.reviews[]? | {body:(.body//""),ts:.submittedAt,login:(.author.login//"")})]
+                | map(select((.login as $l | $allow | index($l)) != null)
+                      and (.body | contains("총점:") or contains("ittae-ai-review")))
+                | sort_by(.ts)
+                | last
+                | .body // empty' \
             > /tmp/prior-review.md
           echo "✓ PR context fetched: /tmp/{pr-context.json,pr-diff.patch,prior-review.md}"
 
@@ -720,8 +741,8 @@ jobs:
           fi
           case "$used" in
             grok)
-              # Prefer host-resolved pin (incl. DEFAULT fill). If grok -m was attached, same value.
-              if [ -n "${GROK_MODEL:-}" ]; then
+              # ITT-2499: -m 을 붙인 경우에만 SoT pin을 주장. unpinned는 provenance fallback.
+              if [ "${GROK_MODEL_PINNED:-0}" = "1" ] && [ -n "${GROK_MODEL:-}" ]; then
                 model_used="$GROK_MODEL"
               else
                 model_used="grok-4.5-build"
@@ -762,7 +783,7 @@ jobs:
           }
           LATEST_JSON=""
           for attempt in 1 2 3; do
-            [ "$attempt" -eq 1 ] && sleep 2 || sleep 2
+            [ "$attempt" -gt 1 ] && sleep 2
             COMMENTS=$(gh api "repos/$REPO/issues/$PR_NUM/comments" --paginate | jq -s 'add // []')
             LATEST_JSON=$(echo "$COMMENTS" | jq -c --arg trusted "${META_TRUSTED_AUTHORS:-github-actions github-actions[bot]}" '
                 ($trusted | split(" ") | map(select(length > 0))) as $allow
@@ -840,8 +861,17 @@ jobs:
         run: |
           sleep 5  # Claude 코멘트 등록 대기
           LIVE_HEAD=$(gh pr view "$PR_NUM" -R "$REPO" --json headRefOid --jq '.headRefOid // empty')
-          LATEST=$(gh pr view "$PR_NUM" -R "$REPO" --json comments,reviews \
-            --jq "$REVIEW_ITEMS_JQ | last | .body // \"\"")
+          # Trusted-author meta only (same allowlist as inject). Untrusted forged PASS must not score.
+          COMMENTS=$(gh api "repos/$REPO/issues/$PR_NUM/comments" --paginate | jq -s 'add // []')
+          LATEST=$(echo "$COMMENTS" | jq -r --arg trusted "${META_TRUSTED_AUTHORS:-github-actions github-actions[bot]}" '
+              ($trusted | split(" ") | map(select(length > 0))) as $allow
+              | [.[]
+                  | select(((.user.login // "") as $login | $allow | index($login)) != null)
+                  | select((.body // "") | contains("ittae-ai-review-meta") or contains("총점:"))
+                ]
+              | sort_by(.created_at // "")
+              | last
+              | .body // empty')
 
           # Namespaced JSON 메타 우선 파싱. legacy ai-review-meta는 migration fallback.
           META_JSON=$(echo "$LATEST" | sed -n '/<!-- ittae-ai-review-meta/,/-->/p' \
