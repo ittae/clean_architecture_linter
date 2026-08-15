@@ -186,6 +186,24 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
     final lowerName = name.toLowerCase();
     if (lowerName.endsWith('usecaseprovider')) return true;
 
+    // Stable DI / infrastructure providers are one-shot dependencies, not
+    // reactive UI state. Riverpod 3.3 still models them as Provider/Ref reads;
+    // flagging them as "use ref.watch" is a common false positive.
+    const stableDependencySuffixes = [
+      'repositoryprovider',
+      'datasourceprovider',
+      'serviceprovider',
+      'clientprovider',
+      'apiprovider',
+      'daoprovider',
+      'loggerprovider',
+      'analyticsprovider',
+      'storageprovider',
+    ];
+    for (final suffix in stableDependencySuffixes) {
+      if (lowerName.endsWith(suffix)) return true;
+    }
+
     const useCasePrefixes = [
       'get',
       'create',
