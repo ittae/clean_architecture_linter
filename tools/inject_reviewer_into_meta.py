@@ -147,7 +147,6 @@ def inject_into_body(
         run_attempt=run_attempt,
         job=job,
     )
-    require_reviewer_engine(updated)
     return rewrite_meta_block_in_body(body, updated)
 
 
@@ -204,7 +203,7 @@ def main(argv: list[str] | None = None) -> int:
                     raise InjectError("meta JSON must be an object")
             else:
                 raise InjectError("--require-only needs --body-file or --meta-json")
-            # Still apply allowlist via provided engine when present in meta only.
+            # Validate reviewer_engine/model already present in the parsed meta.
             require_reviewer_engine(meta)
             if args.print_meta:
                 sys.stdout.write(json.dumps(meta, ensure_ascii=False, separators=(",", ":")))
@@ -226,7 +225,6 @@ def main(argv: list[str] | None = None) -> int:
                 job=args.job,
             )
             meta = extract_meta_json(new_body)
-            require_reviewer_engine(meta)
             if args.in_place:
                 with open(args.body_file, "w", encoding="utf-8") as handle:
                     handle.write(new_body)

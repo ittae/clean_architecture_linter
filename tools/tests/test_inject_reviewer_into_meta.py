@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Unit tests for tools/inject_reviewer_into_meta.py (ITT-2553 / ITT-2554)."""
+"""Unit tests for tools/inject_reviewer_into_meta.py."""
 
 from __future__ import annotations
 
 import json
-import os
 import subprocess
 import sys
 import tempfile
@@ -248,6 +247,18 @@ class TestCli(unittest.TestCase):
                 "--model",
                 "x",
                 "--in-place",
+            )
+            self.assertNotEqual(proc.returncode, 0)
+            self.assertNotIn("reviewer_engine", path.read_text(encoding="utf-8"))
+
+    def test_cli_require_only_missing_engine_nonzero(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "review-result.md"
+            path.write_text(_body({"high": 0, "verdict": "PASS"}), encoding="utf-8")
+            proc = self._run(
+                "--body-file",
+                str(path),
+                "--require-only",
             )
             self.assertNotEqual(proc.returncode, 0)
 
