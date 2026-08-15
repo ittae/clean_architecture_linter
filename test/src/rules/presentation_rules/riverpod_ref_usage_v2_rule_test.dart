@@ -63,7 +63,7 @@ class TodoNotifier {
     });
 
     test(
-      'allows stable DI dependency reads (repository/service/analytics) in build',
+      'allows stable DI dependency reads (repository/datasource/service/client/api/dao/logger/analytics/storage) in build',
       () async {
         final result = await V2RuleHarness(rule: RiverpodRefUsageRule())
             .analyze(
@@ -77,9 +77,21 @@ class riverpod {
 class TodoNotifier {
   Object build() {
     final repo = ref.read(todoRepositoryProvider);
-    final analytics = ref.read(analyticsProvider);
+    final dataSource = ref.read(todoDataSourceProvider);
+    final service = ref.read(todoServiceProvider);
+    final client = ref.read(todoClientProvider);
     final api = ref.read(todoApiProvider);
+    final dao = ref.read(todoDaoProvider);
+    final logger = ref.read(appLoggerProvider);
+    final analytics = ref.read(analyticsProvider);
+    final storage = ref.read(appStorageProvider);
     analytics.trackOpen();
+    logger.log('open');
+    service.ping();
+    client.connect();
+    dao.touch();
+    dataSource.warmup();
+    storage.readAll();
     return repo;
   }
 }

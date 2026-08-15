@@ -75,10 +75,12 @@ Verdict key:
   `build()`. Message claims “State providers” even when the dependency is pure DI.
 - **Fix (2.x additive):** treat known stable-dependency suffixes as allowed
   one-shot reads (same gate as UseCase / `.notifier`).
-- **Evidence:** `riverpod_ref_usage_rule.dart` `_isUseCaseProviderName`;
-  test `allows stable DI dependency reads (repository/service/analytics) in build`.
-- **Residual:** locale/config/theme state providers without those suffixes still
-  flag when intentionally one-shot — keep as policy TP unless config later.
+- **Evidence:** `riverpod_ref_usage_rule.dart` `_isAllowedOneShotProviderName`;
+  test `allows stable DI dependency reads (repository/datasource/service/client/api/dao/logger/analytics/storage) in build`.
+- **Residual:**
+  - locale/config/theme 등 suffix 없는 의도적 one-shot state read → 계속 TP(정책).
+  - `*ServiceProvider` / `*ApiProvider` / `*StorageProvider`가 반응형 상태를 감싼
+    경우 → 새 FN 가능(이름 휴리스틱 한계). type-aware 전환 전까지 허용 목록 유지.
 
 ### 2. `widget_ref_read_then_when` — Freezed/sealed `.when` after snapshot read
 
@@ -110,6 +112,6 @@ pattern-match FN.
 | --- | --- |
 | Docs | This matrix + top-3 ranking |
 | Rule | `riverpod_ref_usage`: allow stable DI suffix reads in `build()` |
-| Tests | New case for repository/service/analytics/api reads |
+| Tests | New case covering all stable DI suffixes (repository/datasource/service/client/api/dao/logger/analytics/storage) |
 
 No publish/release. Public GitHub metadata must not carry private Multica issue keys.
