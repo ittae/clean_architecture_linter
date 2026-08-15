@@ -6,6 +6,14 @@ name: Claude Code Review
 #   == claude-review-light.yml inputs.high_risk_paths default
 # Enforced by ittae/.github tools/tests/test_cal_high_risk_lockstep.py
 # Engine/prompt body remains inlined (GitHub blocks public→private reusable).
+# Host SoT (self-hosted Mac mini) — config fail-open:
+#   Preferred: ~/.config/ittae/ai-review-engines   (engine[:model] CSV)
+#   Legacy:    ~/.config/ittae/ai-review-engine-order + ai-review-model
+#   Missing/invalid file → DEFAULT_ORDER + DEFAULT_MODELS (tools/ai_review_sot.py);
+#   emit ::warning, continue job (do not fail for config alone).
+#   Engine binary/auth try failures remain fail-closed at Require.
+# Producer inject (tools/inject_reviewer_into_meta.py): records actual try-chain
+#   winner engine_used + host-resolved model_used into ittae-ai-review-meta.
 # Public-only guard: same-repo + PR author == get6 (owner-authored only).
 # fork / collaborator / bot → no self-hosted AI review.
 
@@ -29,8 +37,12 @@ on:
 env:
   PR_NUM: ${{ github.event.pull_request.number || inputs.pr_number }}
   REPO: ${{ github.repository }}
+  # Bootstrap only until "Resolve AI review models from host" overwrites GITHUB_ENV.
+  # These match tools/ai_review_sot.py DEFAULT_MODELS (fail-open defaults), NOT host SoT.
   MODEL: 'claude-opus-4-8'
   CODEX_MODEL: 'gpt-5.5'
+  GROK_MODEL: 'grok-4.5-build'
+  META_TRUSTED_AUTHORS: 'github-actions github-actions[bot]'
   PR_SIZE_LIMIT: 800
   EXCLUDE_RENAMES: true
   ITERATE_LIMIT: 5
@@ -305,6 +317,62 @@ jobs:
           fi
 
 
+
+      # --- Host SoT resolve (fail-open) ---
+      - name: Install host SoT helpers
+        if: steps.auth.outputs.status == 'ready'
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP"
+          for f in ai_review_sot.py resolve_ai_review_engine_order.py resolve_ai_review_model.py inject_reviewer_into_meta.py; do
+            if [ -f "tools/$f" ]; then
+              cp "tools/$f" "$RUNNER_TEMP/$f"
+            else
+              echo "::error::tools/$f missing (public CAL must vendor host SoT + inject helpers)"
+              exit 1
+            fi
+          done
+          PYTHONPATH="$RUNNER_TEMP" python3 -c "import ai_review_sot, resolve_ai_review_engine_order, resolve_ai_review_model, inject_reviewer_into_meta"
+          echo "✓ vendored host SoT + inject helpers"
+
+      - id: engine_order
+        if: steps.auth.outputs.status == 'ready'
+        name: Resolve AI review engine order from host
+        run: |
+          set -euo pipefail
+          # Reads ~/.config/ittae/ai-review-engines (or legacy order). Missing/invalid → default.
+          PYTHONPATH="$RUNNER_TEMP${PYTHONPATH:+:$PYTHONPATH}" python3 "$RUNNER_TEMP/resolve_ai_review_engine_order.py" \
+            --live-grok "${{ steps.auth.outputs.grok }}" \
+            --live-codex "${{ steps.auth.outputs.codex }}" \
+            --live-claude "${{ steps.auth.outputs.claude }}"
+          ORDER_LINE=$(grep -E '^order_csv=' "$GITHUB_OUTPUT" | tail -1 || true)
+          SOURCE_LINE=$(grep -E '^source=' "$GITHUB_OUTPUT" | tail -1 || true)
+          PRIMARY_LINE=$(grep -E '^primary=' "$GITHUB_OUTPUT" | tail -1 || true)
+          echo "✓ $ORDER_LINE $SOURCE_LINE $PRIMARY_LINE"
+
+      - id: review_model
+        if: steps.auth.outputs.status == 'ready'
+        name: Resolve AI review models from host
+        run: |
+          set -euo pipefail
+          # Unified engines file or legacy ai-review-model. Missing keys → DEFAULT_MODELS.
+          PYTHONPATH="$RUNNER_TEMP${PYTHONPATH:+:$PYTHONPATH}" python3 "$RUNNER_TEMP/resolve_ai_review_model.py"
+          GROK_M=$(grep -E '^grok_model=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2-)
+          CODEX_M=$(grep -E '^codex_model=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2-)
+          CLAUDE_M=$(grep -E '^claude_model=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2-)
+          SRC=$(grep -E '^source=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2-)
+          FROM_FILE=$(grep -E '^from_file=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2- || true)
+          # Propagate to later steps (engine CLIs + review_engine model_used).
+          echo "GROK_MODEL=$GROK_M" >> "$GITHUB_ENV"
+          echo "CODEX_MODEL=$CODEX_M" >> "$GITHUB_ENV"
+          echo "MODEL=$CLAUDE_M" >> "$GITHUB_ENV"
+          GROK_PINNED=0
+          case ",${FROM_FILE}," in
+            *,grok,*) GROK_PINNED=1 ;;
+          esac
+          echo "GROK_MODEL_PINNED=$GROK_PINNED" >> "$GITHUB_ENV"
+          echo "✓ models grok=$GROK_M codex=$CODEX_M claude=$CLAUDE_M source=$SRC from_file=${FROM_FILE:-} grok_pinned=$GROK_PINNED"
+
       - id: guard
         if: steps.auth.outputs.status == 'ready'
         name: Re-review guard
@@ -519,7 +587,12 @@ jobs:
           [ -n "$grok_bin" ] || { echo "::error::grok binary missing"; exit 127; }
           LOG=/tmp/grok-review.log
           set +e
+          GROK_MODEL_ARGS=()
+          if [ "${GROK_MODEL_PINNED:-0}" = "1" ] && [ -n "${GROK_MODEL:-}" ]; then
+            GROK_MODEL_ARGS=(-m "$GROK_MODEL")
+          fi
           "$grok_bin" -p "$(cat /tmp/review-prompt.md)" \
+            "${GROK_MODEL_ARGS[@]}" \
             --output-format plain \
             --allow "Bash(cat:*)" \
             --allow "Bash(echo:*)" \
@@ -602,11 +675,19 @@ jobs:
           echo "engine_used=claude" >> "$GITHUB_OUTPUT"
 
       - name: Require successful review engine
+        id: review_engine
         if: steps.auth.outputs.status == 'ready'
         run: |
+          set -euo pipefail
+          # Actual try-chain winner (not host order primary). Model pins from host resolve
+          # (GITHUB_ENV GROK_MODEL/CODEX_MODEL/MODEL) with DEFAULT_MODELS already applied.
           g="${{ steps.grok_review.outcome }}"
           c="${{ steps.codex_review.outcome }}"
           l="${{ steps.claude_review.outcome }}"
+          order_csv="${{ steps.engine_order.outputs.order_csv }}"
+          source="${{ steps.engine_order.outputs.source }}"
+          [ -n "$order_csv" ] || order_csv="grok,codex,claude"
+          [ -n "$source" ] || source="default"
           used=""
           if [ "$g" = success ]; then used=grok
           elif [ "$c" = success ]; then used=codex
@@ -618,14 +699,124 @@ jobs:
           [ -n "$gu" ] && used=$gu
           [ -n "$cu" ] && used=$cu
           [ -n "$lu" ] && used=$lu
-          echo "outcomes: grok=$g codex=$c claude=$l used=${used:-none} (primary=${{ steps.auth.outputs.primary }})"
-          if [ "$g" = success ] || [ "$c" = success ] || [ "$l" = success ]; then
-            echo "✓ at least one review engine succeeded (used=${used:-unknown})"
+          echo "outcomes: grok=$g codex=$c claude=$l used=${used:-none} order=$order_csv source=$source primary=${{ steps.auth.outputs.primary }}"
+          if [ -z "$used" ]; then
+            echo "::error::All available review engines failed or were unavailable (order=$order_csv source=$source)."
+            exit 1
+          fi
+          case "$used" in
+            grok)
+              # Prefer host-resolved pin (incl. DEFAULT fill). If grok -m was attached, same value.
+              if [ -n "${GROK_MODEL:-}" ]; then
+                model_used="$GROK_MODEL"
+              else
+                model_used="grok-4.5-build"
+              fi
+              ;;
+            codex) model_used="${CODEX_MODEL:-gpt-5.5}" ;;
+            claude) model_used="${MODEL:-claude-opus-4-8}" ;;
+            *) echo "::error::successful engine identity missing"; exit 1 ;;
+          esac
+          [[ "$model_used" =~ ^[A-Za-z0-9._:-]+$ ]] || {
+            echo "::error::invalid reviewer model identity: $model_used"
+            exit 1
+          }
+          echo "engine_used=$used" >> "$GITHUB_OUTPUT"
+          echo "model_used=$model_used" >> "$GITHUB_OUTPUT"
+          echo "order_csv=$order_csv" >> "$GITHUB_OUTPUT"
+          echo "order_source=$source" >> "$GITHUB_OUTPUT"
+          echo "✓ winner engine_used=$used model_used=$model_used (host source=$source order=$order_csv)"
+
+      - name: Inject reviewer_engine into published meta
+        if: steps.auth.outputs.status == 'ready'
+        id: inject_reviewer_meta
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ENGINE_USED: ${{ steps.review_engine.outputs.engine_used }}
+          MODEL_USED: ${{ steps.review_engine.outputs.model_used }}
+        run: |
+          set -euo pipefail
+          # Post-hoc PATCH: record actual winner (host-resolved model) into meta.
+          [ -n "${ENGINE_USED:-}" ] && [ -n "${MODEL_USED:-}" ] || {
+            echo "::error::reviewer engine identity missing for meta inject"
+            exit 1
+          }
+          LIVE_HEAD=$(gh pr view "$PR_NUM" -R "$REPO" --json headRefOid --jq '.headRefOid // empty')
+          [ -n "$LIVE_HEAD" ] || {
+            echo "::error::live head missing; cannot inject reviewer_engine"
+            exit 1
+          }
+          LATEST_JSON=""
+          for attempt in 1 2 3; do
+            [ "$attempt" -eq 1 ] && sleep 2 || sleep 2
+            COMMENTS=$(gh api "repos/$REPO/issues/$PR_NUM/comments" --paginate | jq -s 'add // []')
+            LATEST_JSON=$(echo "$COMMENTS" | jq -c --arg trusted "${META_TRUSTED_AUTHORS:-github-actions github-actions[bot]}" '
+                ($trusted | split(" ") | map(select(length > 0))) as $allow
+                | [.[]
+                    | select(((.user.login // "") as $login | $allow | index($login)) != null)
+                    | select((.body // "") | contains("ittae-ai-review-meta"))
+                  ]
+                | sort_by(.created_at // "")
+                | last // empty')
+            if [ -n "$LATEST_JSON" ] && [ "$LATEST_JSON" != "null" ]; then
+              break
+            fi
+            echo "trusted meta comment not visible yet (attempt $attempt/3)"
+          done
+          if [ -z "$LATEST_JSON" ] || [ "$LATEST_JSON" = "null" ]; then
+            echo "::warning::no trusted ittae-ai-review-meta issue comment for inject; deferring to score fail-closed"
             exit 0
           fi
-          echo "::error::All available review engines failed or were unavailable (grok→codex→claude)."
-          exit 1
-
+          COMMENT_ID=$(echo "$LATEST_JSON" | jq -r '.id // empty')
+          BODY=$(echo "$LATEST_JSON" | jq -r '.body // empty')
+          [ -n "$COMMENT_ID" ] && [ -n "$BODY" ] || {
+            echo "::warning::trusted meta comment id/body missing; deferring to score fail-closed"
+            exit 0
+          }
+          META_JSON=$(printf '%s' "$BODY" | sed -n '/<!-- ittae-ai-review-meta/,/-->/p' | sed '1d;$d' | tr -d '\n')
+          [ -n "$META_JSON" ] || {
+            echo "::warning::meta JSON empty; deferring to score fail-closed"
+            exit 0
+          }
+          META_HEAD=$(printf '%s' "$META_JSON" | jq -r '.head_sha // empty')
+          [ "$META_HEAD" = "$LIVE_HEAD" ] || {
+            echo "::warning::refusing inject on head mismatch (meta=${META_HEAD:-missing} live=$LIVE_HEAD); deferring to score"
+            exit 0
+          }
+          EXISTING_ENGINE=$(printf '%s' "$META_JSON" | jq -r '.reviewer_engine // empty')
+          EXISTING_MODEL=$(printf '%s' "$META_JSON" | jq -r '.reviewer_model // empty')
+          if [ "$EXISTING_ENGINE" = "$ENGINE_USED" ] && [ "$EXISTING_MODEL" = "$MODEL_USED" ]; then
+            echo "✓ meta already matches producer ($ENGINE_USED/$MODEL_USED); skip PATCH"
+            exit 0
+          fi
+          BODY_FILE="$RUNNER_TEMP/cal-review-body-for-inject.md"
+          printf '%s' "$BODY" > "$BODY_FILE"
+          PYTHONPATH="$RUNNER_TEMP" python3 "$RUNNER_TEMP/inject_reviewer_into_meta.py" \
+            --body-file "$BODY_FILE" \
+            --engine "$ENGINE_USED" \
+            --model "$MODEL_USED" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --job "$GITHUB_JOB" \
+            --in-place
+          PYTHONPATH="$RUNNER_TEMP" python3 "$RUNNER_TEMP/inject_reviewer_into_meta.py" \
+            --body-file "$BODY_FILE" \
+            --require-only
+          jq -n --rawfile body "$BODY_FILE" '{body: $body}' \
+            | gh api --method PATCH "repos/$REPO/issues/comments/$COMMENT_ID" --input - >/dev/null
+          REFRESH=$(gh api "repos/$REPO/issues/comments/$COMMENT_ID" --jq '.body // empty')
+          REFRESH_META=$(printf '%s' "$REFRESH" | sed -n '/<!-- ittae-ai-review-meta/,/-->/p' | sed '1d;$d' | tr -d '\n')
+          REFRESH_ENGINE=$(printf '%s' "$REFRESH_META" | jq -r '.reviewer_engine // empty')
+          REFRESH_MODEL=$(printf '%s' "$REFRESH_META" | jq -r '.reviewer_model // empty')
+          case "$REFRESH_ENGINE" in
+            grok|codex|claude)
+              echo "✓ inject ok engine=$REFRESH_ENGINE model=$REFRESH_MODEL comment=$COMMENT_ID"
+              ;;
+            *)
+              echo "::error::reviewer_engine still missing after inject (got=${REFRESH_ENGINE:-empty})"
+              exit 1
+              ;;
+          esac
 
       - name: Finding 카운트 추출 (JSON meta 우선)
         if: steps.auth.outputs.status == 'ready'
@@ -653,9 +844,11 @@ jobs:
               (.medium | type == "number") and
               (.low | type == "number") and
               (.disputed | type == "number") and
-              (.verdict | type == "string" and (. == "PASS" or . == "FAIL"))
+              (.verdict | type == "string" and (. == "PASS" or . == "FAIL")) and
+              (.reviewer_engine == "grok" or .reviewer_engine == "codex" or .reviewer_engine == "claude") and
+              (.reviewer_model | type == "string" and length > 0)
             ' >/dev/null 2>&1; then
-              echo "❌ AI 리뷰 meta schema 검증 실패 — 필수 필드 누락/타입 불일치"
+              echo "❌ AI 리뷰 meta schema 검증 실패 — 필수 필드 누락/타입 불일치 (incl. reviewer_engine/model)"
               META_JSON=""
             fi
           fi
@@ -667,7 +860,22 @@ jobs:
             DISPUTED_COUNT=$(echo "$META_JSON" | jq -r '.disputed // empty' 2>/dev/null)
             VERDICT=$(echo "$META_JSON" | jq -r '.verdict // empty' 2>/dev/null)
             CATEGORIES=$(echo "$META_JSON" | jq -r '.categories // [] | join(", ")' 2>/dev/null)
-            echo "✓ JSON 메타 파싱: high=$HIGH_COUNT medium=$MEDIUM_COUNT low=$LOW_COUNT disputed=$DISPUTED_COUNT verdict=$VERDICT head=${COMMENT_HEAD:-none} cats=[$CATEGORIES]"
+            REVIEWER_ENGINE=$(echo "$META_JSON" | jq -r '.reviewer_engine // empty' 2>/dev/null)
+            REVIEWER_MODEL=$(echo "$META_JSON" | jq -r '.reviewer_model // empty' 2>/dev/null)
+            echo "✓ JSON 메타 파싱: high=$HIGH_COUNT medium=$MEDIUM_COUNT low=$LOW_COUNT disputed=$DISPUTED_COUNT verdict=$VERDICT head=${COMMENT_HEAD:-none} engine=${REVIEWER_ENGINE:-none} model=${REVIEWER_MODEL:-none} cats=[$CATEGORIES]"
+            case "$REVIEWER_ENGINE" in
+              grok|codex|claude) ;;
+              *)
+                echo "❌ reviewer_engine missing or invalid (got=${REVIEWER_ENGINE:-empty})"
+                gh pr edit "$PR_NUM" -R "$REPO" --add-label "needs-human-review" 2>/dev/null || true
+                exit 1
+                ;;
+            esac
+            if [ -z "$REVIEWER_MODEL" ] || ! [[ "$REVIEWER_MODEL" =~ ^[A-Za-z0-9._:-]+$ ]]; then
+              echo "❌ reviewer_model missing or invalid (got=${REVIEWER_MODEL:-empty})"
+              gh pr edit "$PR_NUM" -R "$REPO" --add-label "needs-human-review" 2>/dev/null || true
+              exit 1
+            fi
           fi
 
           # JSON에 head_sha가 없으면 namespaced key marker에서 보조 추출.
