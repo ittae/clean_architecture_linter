@@ -70,7 +70,7 @@ except ImportError:  # pragma: no cover - flat embed without sibling module
             model = model.strip()
             if eng not in ALLOWED or eng in seen:
                 return None, {}, "bad"
-            if model and not _MODEL_RE.match(model):
+            if ":" in tok and (not model or not _MODEL_RE.match(model)):
                 return None, {}, f"bad-model:{eng}"
             seen.add(eng)
             order.append(eng)
@@ -330,7 +330,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument(
         "--path",
         default=None,
-        help=f"config path (default: {DEFAULT_PATH})",
+        help=f"legacy order file only; omit to resolve unified SoT then {DEFAULT_PATH}",
     )
     p.add_argument(
         "--text",
@@ -379,10 +379,11 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.write("\n")
         return 0
 
-    if result.get("warning") and result["source"] == "default":
-        print(f"::warning::ai-review engine order: {result['warning']} — using default {result['order_csv']}", file=sys.stderr)
-    elif result.get("warning"):
-        print(f"::warning::ai-review engine order: {result['warning']}", file=sys.stderr)
+    warn = str(result.get("warning") or "").replace("\n", " ").replace("\r", " ")
+    if warn and result["source"] == "default":
+        print(f"::warning::ai-review engine order: {warn} — using default {result['order_csv']}", file=sys.stderr)
+    elif warn:
+        print(f"::warning::ai-review engine order: {warn}", file=sys.stderr)
         print(f"::notice::ai-review engine order={result['order_csv']} source={result['source']} path={result['path']}", file=sys.stderr)
     elif result["source"] in ("file", "unified"):
         print(f"::notice::ai-review engine order={result['order_csv']} source={result['source']} path={result['path']}", file=sys.stderr)
