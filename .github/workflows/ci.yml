@@ -116,3 +116,15 @@ jobs:
         file: coverage/lcov.info
         flags: unittests
         name: codecov-umbrella
+
+  host-sot-tools:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run AI review host helper units
+        run: |
+          if [ -d tools/tests ] && ls tools/tests/test_*.py >/dev/null 2>&1; then
+            PYTHONPATH=tools python3 -m unittest discover -s tools/tests -p 'test_*.py' -v
+          else
+            echo "No tools/tests — skip"
+          fi
