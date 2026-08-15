@@ -324,12 +324,26 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP"
+          ROOT="${GITHUB_WORKSPACE:-.}"
+          echo "cwd=$(pwd) GITHUB_WORKSPACE=${GITHUB_WORKSPACE:-} ls_tools=$(ls -la "$ROOT/tools" 2>/dev/null | head -20 || true)"
           for f in ai_review_sot.py resolve_ai_review_engine_order.py resolve_ai_review_model.py inject_reviewer_into_meta.py; do
-            if [ -f "tools/$f" ]; then
-              cp "tools/$f" "$RUNNER_TEMP/$f"
+            src=""
+            if [ -f "$ROOT/tools/$f" ]; then
+              src="$ROOT/tools/$f"
+            elif [ -f "tools/$f" ]; then
+              src="tools/$f"
+            elif git cat-file -e "HEAD:tools/$f" 2>/dev/null; then
+              git show "HEAD:tools/$f" > "$RUNNER_TEMP/$f"
+              src="$RUNNER_TEMP/$f"
+              echo "restored tools/$f from HEAD via git show"
             else
               echo "::error::tools/$f missing (public CAL must vendor host SoT + inject helpers)"
+              ls -la "$ROOT" || true
+              ls -la "$ROOT/tools" || true
               exit 1
+            fi
+            if [ "$src" != "$RUNNER_TEMP/$f" ]; then
+              cp "$src" "$RUNNER_TEMP/$f"
             fi
           done
           PYTHONPATH="$RUNNER_TEMP" python3 -c "import ai_review_sot, resolve_ai_review_engine_order, resolve_ai_review_model, inject_reviewer_into_meta"
