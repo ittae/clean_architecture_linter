@@ -130,9 +130,9 @@ def read_text_file(path: Path) -> tuple[str | None, str | None]:
 def load_unified(
     path: Path | None = None,
 ) -> dict | None:
-    """Load unified file. None if missing/invalid (caller falls back).
+    """Load unified file. None if missing; dict with error if unreadable/invalid.
 
-    Returns dict: order, models_partial, path, warning(optional)
+    Success dict: order, models_partial, path, error=None.
     """
     cfg = path if path is not None else default_unified_path()
     text, err = read_text_file(cfg)

@@ -86,6 +86,18 @@ jobs:
     - name: Verify HIGH_RISK_PATHS lockstep
       run: bash tools/verify_high_risk_lockstep.sh
 
+
+  host-sot-tools:
+    # Regression guard for tools/ai_review_sot.py + resolve_ai_review_model.py
+    # (H1–H6 host SoT validation units). Python-only; no Dart SDK required.
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Run host SoT helper units
+      run: python3 tools/tests/test_host_sot_validation_cases.py -v
+
   coverage:
     runs-on: ubuntu-latest
 

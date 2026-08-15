@@ -35,13 +35,13 @@ class TestHostFileMissing(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             self.assertIsNone(load_unified(Path(td) / "ai-review-engines"))
 
-    def test_h1_load_models_missing_unified_and_legacy_is_default(self) -> None:
+    def test_h1_load_models_missing_legacy_path_is_default(self) -> None:
         with tempfile.TemporaryDirectory() as td:
-            root = Path(td)
-            # Point resolvers at empty dir via explicit paths
+            # path= is legacy-only (skips unified). Do not pass unified_path —
+            # it is ignored here, and path=None would read the real host file.
             r = load_models(
-                path=root / "ai-review-model",
-                unified_path=root / "ai-review-engines",
+                path=Path(td) / "ai-review-model",
+                skip_unified=True,
             )
             self.assertEqual(r["source"], "default")
             self.assertEqual(r["models"], dict(DEFAULT_MODELS))
@@ -73,6 +73,7 @@ class TestInvalidModel(unittest.TestCase):
     def test_h3_model_with_space_rejected(self) -> None:
         order, models, err = parse_unified_line("codex:gpt 5.5")
         self.assertIsNone(order)
+        self.assertEqual(models, {})
         self.assertEqual(err, "bad-model:codex")
 
     def test_h3_model_with_bang_rejected(self) -> None:
@@ -169,15 +170,21 @@ class TestValidAndMonotonic(unittest.TestCase):
 class TestGithubEnvMappingContract(unittest.TestCase):
     """Document mapping resolve_ai_review_model outputs → GITHUB_ENV keys."""
 
-    def test_env_key_mapping(self) -> None:
-        # Workflow contract (review_model step):
-        mapping = {
-            "grok_model": "GROK_MODEL",
-            "codex_model": "CODEX_MODEL",
-            "claude_model": "MODEL",  # historical CLAUDE env name in workflows
-        }
-        self.assertEqual(mapping["claude_model"], "MODEL")
-        # Defaults must cover all three engines for fail-open
+    def test_emit_gha_writes_model_output_keys(self) -> None:
+        # Workflow (#138) maps: grok_model→GROK_MODEL, codex_model→CODEX_MODEL,
+        # claude_model→MODEL (historical CLAUDE env name).
+        from io import StringIO
+        from unittest.mock import patch
+        from resolve_ai_review_model import emit_gha
+
+        result = load_models(text="codex=gpt-5.5\n")
+        buf = StringIO()
+        with patch("sys.stdout", buf):
+            emit_gha(result)
+        out = buf.getvalue()
+        self.assertIn("codex_model=gpt-5.5", out)
+        self.assertIn("grok_model=", out)
+        self.assertIn("claude_model=", out)
         for eng in ("grok", "codex", "claude"):
             self.assertIn(eng, DEFAULT_MODELS)
 
