@@ -104,7 +104,7 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
 
     if (isBuildMethod) {
       for (final refReadCall in refReadCalls) {
-        if (_isUseCaseProviderCall(refReadCall) ||
+        if (_isAllowedOneShotProviderCall(refReadCall) ||
             _isNotifierAccess(refReadCall)) {
           continue;
         }
@@ -153,7 +153,7 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
     }
   }
 
-  bool _isUseCaseProviderCall(MethodInvocation refReadCall) {
+  bool _isAllowedOneShotProviderCall(MethodInvocation refReadCall) {
     final args = refReadCall.argumentList.arguments;
     if (args.isEmpty) return false;
 
