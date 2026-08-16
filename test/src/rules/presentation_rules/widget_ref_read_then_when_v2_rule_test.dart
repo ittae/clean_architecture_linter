@@ -25,9 +25,12 @@ class TodoPage {
           relativePath: 'lib/features/todo/presentation/pages/todo_page.dart',
           codeName: 'widget_ref_read_then_when',
           problemMessage:
-              'Anti-pattern: Using .when() after ref.read() in the same function',
+              'Anti-pattern: Using AsyncValue.when() after ref.read() '
+              'in the same function',
           correctionMessage:
-              'Use ref.watch() + .when() in build() for UI, ref.listen() for side effects, or try-catch for one-off operations.',
+              'Use ref.watch() + .when() in build() for UI, ref.listen() '
+              'for side effects, or try-catch for one-off operations. '
+              'Freezed/sealed Result .when after a snapshot read is allowed.',
         ),
       ]);
     });
@@ -57,11 +60,88 @@ void build(ref) {
                 'lib/features/todo/presentation/widgets/todo_button.dart',
             codeName: 'widget_ref_read_then_when',
             problemMessage:
-                'Anti-pattern: Using .when() after ref.read() in the same function',
+                'Anti-pattern: Using AsyncValue.when() after ref.read() '
+                'in the same function',
             correctionMessage:
-                'Use ref.watch() + .when() in build() for UI, ref.listen() for side effects, or try-catch for one-off operations.',
+                'Use ref.watch() + .when() in build() for UI, ref.listen() '
+                'for side effects, or try-catch for one-off operations. '
+                'Freezed/sealed Result .when after a snapshot read is allowed.',
           ),
         ]);
+      },
+    );
+
+    test('reports AsyncValue maybeWhen/map after ref.read', () async {
+      final result = await V2RuleHarness(rule: WidgetRefReadThenWhenRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/pages/todo_page.dart': '''
+class TodoPage {
+  void onTap(ref) {
+    ref.read(todoProvider).maybeWhen(data: (_) {}, orElse: () {});
+    final state = ref.read(todoProvider);
+    state.map(data: (_) {}, loading: () {}, error: (_, __) {});
+  }
+}
+''',
+            },
+            definingFile: 'lib/features/todo/presentation/pages/todo_page.dart',
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath: 'lib/features/todo/presentation/pages/todo_page.dart',
+          codeName: 'widget_ref_read_then_when',
+          problemMessage:
+              'Anti-pattern: Using AsyncValue.maybeWhen() after ref.read() '
+              'in the same function',
+          correctionMessage:
+              'Use ref.watch() + .maybeWhen() in build() for UI, ref.listen() '
+              'for side effects, or try-catch for one-off operations. '
+              'Freezed/sealed Result .when after a snapshot read is allowed.',
+        ),
+        const ExpectedV2Diagnostic(
+          relativePath: 'lib/features/todo/presentation/pages/todo_page.dart',
+          codeName: 'widget_ref_read_then_when',
+          problemMessage:
+              'Anti-pattern: Using AsyncValue.map() after ref.read() '
+              'in the same function',
+          correctionMessage:
+              'Use ref.watch() + .map() in build() for UI, ref.listen() '
+              'for side effects, or try-catch for one-off operations. '
+              'Freezed/sealed Result .when after a snapshot read is allowed.',
+        ),
+      ]);
+    });
+
+    test(
+      'allows Freezed/sealed Result .when after snapshot ref.read',
+      () async {
+        final result = await V2RuleHarness(rule: WidgetRefReadThenWhenRule())
+            .analyze(
+              files: {
+                'lib/features/todo/presentation/pages/todo_page.dart': '''
+class TodoPage {
+  void onSubmit(ref) {
+    final r = ref.read(resultProvider);
+    r.when(success: (_) {}, failure: (_) {});
+    ref.read(resultProvider).maybeWhen(
+      success: (_) {},
+      orElse: () {},
+    );
+    ref.read(resultProvider).map(
+      success: (_) => null,
+      failure: (_) => null,
+    );
+  }
+}
+''',
+              },
+              definingFile:
+                  'lib/features/todo/presentation/pages/todo_page.dart',
+            );
+
+        result.expectNoDiagnostics();
       },
     );
 

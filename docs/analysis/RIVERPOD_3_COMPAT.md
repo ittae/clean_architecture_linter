@@ -239,9 +239,9 @@ class Todo extends _$Todo {}
 - 별칭(`Repo`, `UC`, `DS`) 허용 여부를 config로 제공
 
 ### `widget_ref_read_then_when` 개선
-- “같은 함수 내 존재”가 아닌 데이터 흐름 기반으로 정밀화
-- 허용 컨텍스트 도입: debug/logging/instant snapshot handler
-- `ref.listen` 사용 중일 때 중복 경고 억제
+- ✅ 적용됨: AsyncValue 스타일 named arg(`data`/`loading`/`error`)가 있을 때만 보고. Freezed/sealed Result snapshot `.when(success:…, failure:…)` 허용.
+- ✅ 적용됨: `maybeWhen` / `map` / `maybeMap` / `whenOrNull` / `mapOrNull`도 동일 게이트로 추적.
+- 남은 후보: type-aware receiver(`AsyncValue` 정적 타입) 전환; Freezed case 이름이 `data`/`loading`/`error`인 residual FP; `ref.listen` 중복 억제.
 
 ### `ref_mounted_usage` 개선
 - ✅ 적용됨: 전면 금지 폐기. 레이어 인식으로 전환해 Notifier 컨텍스트는 면제하고 위젯 컨텍스트만 보고
