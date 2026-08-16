@@ -1416,5 +1416,68 @@ class TodoNotifier extends _\$TodoNotifier {
 
       result.expectNoDiagnostics();
     });
+
+    test('reports state assignment whose RHS contains await', () async {
+      final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/providers/todo_notifier.dart': '''
+abstract class _\$TodoNotifier {}
+
+class TodoNotifier extends _\$TodoNotifier {
+  Future<void> load() async {
+    state = await fetchTodo();
+  }
+}
+''',
+            },
+            definingFile:
+                'lib/features/todo/presentation/providers/todo_notifier.dart',
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/presentation/providers/todo_notifier.dart',
+          codeName: 'riverpod_ref_after_async_gap',
+          problemMessage:
+              'Avoid assigning to state after an async gap in Riverpod providers.',
+          correctionMessage:
+              'Guard the post-gap state assignment with "if (!ref.mounted) return;" before writing to state.',
+        ),
+      ]);
+    });
+
+    test('still reports state = await after a preceding mounted guard', () async {
+      final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/providers/todo_notifier.dart': '''
+abstract class _\$TodoNotifier {}
+
+class TodoNotifier extends _\$TodoNotifier {
+  Future<void> load() async {
+    if (!ref.mounted) return;
+    state = await fetchTodo();
+  }
+}
+''',
+            },
+            definingFile:
+                'lib/features/todo/presentation/providers/todo_notifier.dart',
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/presentation/providers/todo_notifier.dart',
+          codeName: 'riverpod_ref_after_async_gap',
+          problemMessage:
+              'Avoid assigning to state after an async gap in Riverpod providers.',
+          correctionMessage:
+              'Guard the post-gap state assignment with "if (!ref.mounted) return;" before writing to state.',
+        ),
+      ]);
+    });
   });
 }

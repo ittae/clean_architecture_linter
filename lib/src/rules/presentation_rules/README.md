@@ -351,6 +351,7 @@ class TodoPage extends ConsumerWidget {
 **What it checks**:
 - ❌ `ref.read`, `ref.watch`, `ref.listen`, `ref.invalidate`, `ref.refresh` after `await`
 - ❌ unguarded `state = …` / `this.state = …` after `await` (Riverpod 3 can throw `UnmountedRefException`)
+- ❌ same-statement `state = await …` (store runs after RHS await; preceding `ref.mounted` does not protect it)
 - ✅ Provider/usecase capture before `await`
 - ✅ Post-gap access/assignment guarded by `if (!ref.mounted) return;` or `if (ref.mounted) { … }`
 - ✅ Generated files, tests, non-provider files, and private helper methods are skipped
@@ -372,6 +373,10 @@ class TodoNotifier extends _$TodoNotifier {
   Future<void> unsafeLoad() async {
     final todo = await fetchTodo();
     state = AsyncData(todo); // ❌ state write after async gap
+  }
+
+  Future<void> unsafeLoadRhsAwait() async {
+    state = await fetchTodo(); // ❌ same-statement RHS await; split then re-guard
   }
 
   Future<void> safeLoad() async {

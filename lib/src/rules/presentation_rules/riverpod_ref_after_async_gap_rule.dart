@@ -244,7 +244,9 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
 
   @override
   void visitAssignmentExpression(AssignmentExpression node) {
-    // Simple `state = …` / `this.state = …` only (compound ops out of scope).
+    // Simple `state = …` / `this.state = …` only.
+    // Out of scope: compound ops (`??=`, `+=`, …); name-based match may FP on
+    // a local `state` variable (file path is limited to presentation/providers).
     if (node.operator.lexeme == '=' && _isStateTarget(node.leftHandSide)) {
       _stateAssignments.add(node);
     }
@@ -309,8 +311,15 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
   }
 
   bool _shouldReport(AstNode node) {
-    if (!_hasInheritedAsyncGap && !_hasPriorAsyncGap(node)) return false;
-    if (_isDisposalGuarded(node)) return false;
+    // `state = await expr` — the store runs after the await. A preceding
+    // `ref.mounted` guard cannot protect the write mid-expression, so RHS
+    // await is always an unguardable gap for state assignments.
+    final hasRhsAwait =
+        node is AssignmentExpression && _subtreeHasAwait(node.rightHandSide);
+    if (!_hasInheritedAsyncGap && !hasRhsAwait && !_hasPriorAsyncGap(node)) {
+      return false;
+    }
+    if (!hasRhsAwait && _isDisposalGuarded(node)) return false;
 
     return _reportedRefCallOffsets.add(node.offset);
   }
