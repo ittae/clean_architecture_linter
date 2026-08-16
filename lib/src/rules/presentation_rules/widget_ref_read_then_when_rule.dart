@@ -35,11 +35,7 @@ class WidgetRefReadThenWhenRule extends AnalysisRule {
   };
 
   /// Named args that mark an AsyncValue-style branch (vs Freezed case names).
-  static const Set<String> asyncValueBranchArgs = {
-    'data',
-    'loading',
-    'error',
-  };
+  static const Set<String> asyncValueBranchArgs = {'data', 'loading', 'error'};
 
   WidgetRefReadThenWhenRule()
     : super(
