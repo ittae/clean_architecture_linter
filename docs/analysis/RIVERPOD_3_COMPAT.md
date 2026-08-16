@@ -1,5 +1,13 @@
 # Riverpod 3.0 호환성 분석 (clean_architecture_linter)
 
+> **Update (2026-08):** presentation-only re-inventory against Riverpod 3.3.x /
+> generator 4.x / Flutter 3.44.x lives in
+> [`PRESENTATION_RULE_GAP_RIVERPOD_3_3.md`](./PRESENTATION_RULE_GAP_RIVERPOD_3_3.md).
+> Prefer that matrix for pass|FP|FN|stale and the current top-3 fix ranking.
+> Sections below remain useful as historical context; several listed FNs were
+> closed by later work (non-codegen detector, keepAlive functional providers,
+> layer-aware `ref.mounted`).
+
 분석 대상: `/Volumes/T7 Shield/dev/clean_architecture_linter`
 
 기준 파일(룰 등록):

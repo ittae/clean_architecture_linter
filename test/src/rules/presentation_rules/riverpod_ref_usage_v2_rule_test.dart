@@ -62,6 +62,50 @@ class TodoNotifier {
       result.expectNoDiagnostics();
     });
 
+    test(
+      'allows stable DI dependency reads (repository/datasource/service/client/api/dao/logger/analytics/storage) in build',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefUsageRule())
+            .analyze(
+              files: {
+                'lib/features/todo/presentation/providers/todo_notifier.dart':
+                    '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class TodoNotifier {
+  Object build() {
+    final repo = ref.read(todoRepositoryProvider);
+    final dataSource = ref.read(todoDataSourceProvider);
+    final service = ref.read(todoServiceProvider);
+    final client = ref.read(todoClientProvider);
+    final api = ref.read(todoApiProvider);
+    final dao = ref.read(todoDaoProvider);
+    final logger = ref.read(appLoggerProvider);
+    final analytics = ref.read(analyticsProvider);
+    final storage = ref.read(appStorageProvider);
+    analytics.trackOpen();
+    logger.log('open');
+    service.ping();
+    client.connect();
+    dao.touch();
+    dataSource.warmup();
+    storage.readAll();
+    return repo;
+  }
+}
+''',
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/todo_notifier.dart',
+            );
+
+        result.expectNoDiagnostics();
+      },
+    );
+
     test('reports ref.watch usage outside build', () async {
       final result = await V2RuleHarness(rule: RiverpodRefUsageRule()).analyze(
         files: {

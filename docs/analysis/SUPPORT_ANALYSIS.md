@@ -141,7 +141,7 @@
    - 팀의 Riverpod 스타일 다양성을 제한 가능
 2. **UseCase provider 판별이 네이밍 기반**
    - `...UseCaseProvider`, 동사+provider 등 추정
-   - 근거: `riverpod_ref_usage_rule.dart` (`_isUseCaseProviderName`)
+   - 근거: `riverpod_ref_usage_rule.dart` (`_isAllowedOneShotProviderName`)
 3. **파일 위치 기반 검사 범위 제한**
    - `/presentation/providers/`, `_provider.dart` 등에 집중
    - 다른 구조에서는 룰 미적용(FN) 가능

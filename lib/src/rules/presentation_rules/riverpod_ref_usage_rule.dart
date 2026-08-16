@@ -104,7 +104,7 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
 
     if (isBuildMethod) {
       for (final refReadCall in refReadCalls) {
-        if (_isUseCaseProviderCall(refReadCall) ||
+        if (_isAllowedOneShotProviderCall(refReadCall) ||
             _isNotifierAccess(refReadCall)) {
           continue;
         }
@@ -153,7 +153,7 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
     }
   }
 
-  bool _isUseCaseProviderCall(MethodInvocation refReadCall) {
+  bool _isAllowedOneShotProviderCall(MethodInvocation refReadCall) {
     final args = refReadCall.argumentList.arguments;
     if (args.isEmpty) return false;
 
@@ -168,7 +168,7 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
       if (function is SimpleIdentifier) providerName = function.name;
     }
 
-    if (providerName != null && _isUseCaseProviderName(providerName)) {
+    if (providerName != null && _isAllowedOneShotProviderName(providerName)) {
       return true;
     }
 
@@ -182,9 +182,29 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
     return false;
   }
 
-  bool _isUseCaseProviderName(String name) {
+  bool _isAllowedOneShotProviderName(String name) {
     final lowerName = name.toLowerCase();
     if (lowerName.endsWith('usecaseprovider')) return true;
+
+    // Stable DI / infrastructure providers are one-shot dependencies, not
+    // reactive UI state. Riverpod 3.3 still models them as Provider/Ref reads;
+    // flagging them as "use ref.watch" is a common false positive.
+    // Residual FN: names ending in Service/Api/Storage can still wrap reactive
+    // state in some apps — prefer tighter suffixes or type-aware checks later.
+    const stableDependencySuffixes = [
+      'repositoryprovider',
+      'datasourceprovider',
+      'serviceprovider',
+      'clientprovider',
+      'apiprovider',
+      'daoprovider',
+      'loggerprovider',
+      'analyticsprovider',
+      'storageprovider',
+    ];
+    for (final suffix in stableDependencySuffixes) {
+      if (lowerName.endsWith(suffix)) return true;
+    }
 
     const useCasePrefixes = [
       'get',
