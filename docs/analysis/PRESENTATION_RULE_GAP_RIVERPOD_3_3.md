@@ -39,7 +39,7 @@ Verdict key:
 | `riverpod_generator` | INFO | **pass** (residual **FN** on bare `Provider`) | Notifier/Async/Stream(+AutoDispose/family) covered; bare DI `Provider` left out by design | `riverpod_generator_rule.dart`, `riverpod_provider_detector.dart`, `riverpod_generator_v2_rule_test.dart` |
 | `riverpod_keep_alive` | INFO | **FP** | Name/path keyword allowlist misses real global stores (`TokenStore`, `WalletBalance`, …) | `riverpod_keep_alive_rule.dart` `_validKeepAlivePatterns`, `riverpod_keep_alive_v2_rule_test.dart` |
 | `riverpod_provider_naming` | WARNING | **FN** | Function `@riverpod` only; class-based notifiers + `Future<T>` unwrap not covered | `riverpod_provider_naming_rule.dart`, `riverpod_provider_naming_v2_rule_test.dart` |
-| `riverpod_ref_after_async_gap` | INFO | **FN** | Path-sensitive `ref.*` + `ref.mounted` guards good; **`state =` after await not tracked** (still throws `UnmountedRefException` in Riverpod 3) | `riverpod_ref_after_async_gap_rule.dart` `_trackedRefMethods`, rule doc comment; `riverpod_ref_after_async_gap_v2_rule_test.dart` |
+| `riverpod_ref_after_async_gap` | INFO | **fixed (state write; same-statement RHS await)** | Path-sensitive `ref.*` + unguarded `state =` / `this.state =` after await (incl. `state = await …`); `ref.mounted` guards shared; RHS-await skips disposal-guard suppress | `riverpod_ref_after_async_gap_rule.dart`; `riverpod_ref_after_async_gap_v2_rule_test.dart` |
 | `riverpod_ref_usage` | WARNING | **FP** → mitigated | `build()` one-shot DI reads were flagged; UseCase prefix alone too narrow | `riverpod_ref_usage_rule.dart`, tests below |
 | `riverpod_uncancelled_disposable` | WARNING | **pass** | Timer / StreamSubscription / listener + `ref.onDispose` still the 3.3 disposal story | `riverpod_uncancelled_disposable_rule.dart`, `riverpod_uncancelled_disposable_v2_rule_test.dart` |
 | `widget_no_usecase_call` | WARNING | **pass** | Widget→UseCase direct call ban remains CA-correct | `widget_no_usecase_call_rule.dart`, `widget_no_usecase_call_v2_rule_test.dart` |
@@ -55,9 +55,12 @@ Verdict key:
    like `@riverpod` classes for ref-usage / async-gap / generator / mounted.
 2. **`ref.mounted` is the documented post-gap guard** on the state layer.
    `ref_mounted_usage` correctly exempts Notifiers; `riverpod_ref_after_async_gap`
-   suppresses guarded `ref.*` (and invalidates the guard after a later `await`).
-3. **`state =` after dispose still throws.** Gap rule silence on `state`
-   assignments is the largest remaining safety FN for 3.3 Notifiers.
+   suppresses guarded `ref.*` and unguarded `state =` / `this.state =` (and
+   invalidates the guard after a later `await`).
+3. **`state =` after dispose still throws** in Riverpod 3 — tracked as INFO by
+   `riverpod_ref_after_async_gap` when unguarded after an async gap, including
+   same-statement `state = await …` (RHS await; preceding `ref.mounted` does
+   not protect the store — split then re-guard).
 4. **Bare `Provider` for DI stays legal.** `riverpod_generator` intentionally
    does not ban it (DI FP risk). Do not treat that silence as a bug unless a
    `strict_generator_only` option is introduced.
@@ -91,14 +94,14 @@ Verdict key:
   `.when` with non-loading branches; do not blanket-ban every `.when`.
 - **Risk:** type-aware path needs resolved AST; parsed-only path stays weak.
 
-### 3. `riverpod_ref_after_async_gap` — track `state` writes after await
+### 3. `riverpod_ref_after_async_gap` — track `state` writes after await (**shipped**)
 
 - **Pain:** silent FN for the most common post-dispose crash path:
   `await x; state = AsyncData(...)` without `if (!ref.mounted) return;`.
-- **Fix direction:** after an async gap, also report simple `state =` /
+- **Fix (2.x additive):** after an async gap, report simple `state =` /
   `this.state =` assignments unless disposal-guarded (reuse existing mounted
   guard walker). Keep INFO severity.
-- **Out of scope here:** full CFG; private helpers already skipped by design.
+- **Out of scope:** full CFG; private helpers already skipped by design.
 
 Honorable mentions (not top-3): `riverpod_keep_alive` keyword FP (INFO only);
 `riverpod_provider_naming` class-based FN; `presentation_no_data_exceptions`
