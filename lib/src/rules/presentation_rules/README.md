@@ -346,13 +346,15 @@ class TodoPage extends ConsumerWidget {
 ---
 
 ### 7. Riverpod Ref After Async Gap Rule (`riverpod_ref_after_async_gap_rule.dart`)
-**Purpose**: Advises against accessing Riverpod `ref` after an async gap in provider/notifier methods.
+**Purpose**: Advises against accessing Riverpod `ref` or writing `state` after an async gap in provider/notifier methods.
 
 **What it checks**:
 - ❌ `ref.read`, `ref.watch`, `ref.listen`, `ref.invalidate`, `ref.refresh` after `await`
+- ❌ unguarded `state = …` / `this.state = …` after `await` (Riverpod 3 can throw `UnmountedRefException`)
+- ❌ same-statement `state = await …` (store runs after RHS await; preceding `ref.mounted` does not protect it)
 - ✅ Provider/usecase capture before `await`
+- ✅ Post-gap access/assignment guarded by `if (!ref.mounted) return;` or `if (ref.mounted) { … }`
 - ✅ Generated files, tests, non-provider files, and private helper methods are skipped
-- ✅ `state = ...` after `await` is not reported by this advisory rule
 
 **Example**:
 ```dart
@@ -366,6 +368,21 @@ class TodoNotifier extends _$TodoNotifier {
   Future<void> unsafeRefresh() async {
     await saveTodo();
     ref.refresh(todoProvider); // ❌ ref access after async gap
+  }
+
+  Future<void> unsafeLoad() async {
+    final todo = await fetchTodo();
+    state = AsyncData(todo); // ❌ state write after async gap
+  }
+
+  Future<void> unsafeLoadRhsAwait() async {
+    state = await fetchTodo(); // ❌ same-statement RHS await; split then re-guard
+  }
+
+  Future<void> safeLoad() async {
+    final todo = await fetchTodo();
+    if (!ref.mounted) return;
+    state = AsyncData(todo); // ✅ disposal-guarded
   }
 }
 ```
