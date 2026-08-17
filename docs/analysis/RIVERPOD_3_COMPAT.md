@@ -42,10 +42,10 @@
 
 ### D. `widget_ref_read_then_when`
 - 파일: `lib/src/rules/presentation_rules/widget_ref_read_then_when_rule.dart`
-- 의도: 같은 함수에서 `ref.read(...).when()` 패턴 금지
+- 의도: 같은 함수에서 `ref.read` 직후 **AsyncValue 스타일** 분기(`.when` / `.maybeWhen` / `.map` / `.whenOrNull` 등, named arg `data`/`loading`/`error`)를 금지. Freezed/sealed Result snapshot 분기(예: `success`/`failure`)는 허용.
 - 핵심 탐지:
-  - presentation widget/page/screen/view 파일만 검사 (lines 251~260)
-  - `ref.read` 결과 변수에 대해 `.when()` 호출되면 경고 (lines 194~237)
+  - presentation widget/page/screen/view 파일만 검사
+  - `ref.read` 결과(직접 체인 또는 지역 변수)에 AsyncValue lifecycle named-arg 분기가 있으면 경고
 
 ### E. `ref_mounted_usage`
 - 파일: `lib/src/rules/presentation_rules/ref_mounted_usage_rule.dart`
@@ -158,14 +158,16 @@ class Boot extends _$Boot {
 ```
 - side-effect 서비스 호출 read도 경고 가능
 
-3. `widget_ref_read_then_when`: 의도적 스냅샷 분기
+3. `widget_ref_read_then_when`: AsyncValue 스냅샷 분기 vs Freezed Result
 ```dart
 void onTap() {
   final s = ref.read(todoProvider);
-  s.when(data: ..., error: ..., loading: ...);
+  s.when(data: ..., error: ..., loading: ...); // still reported (AsyncValue style)
+  final r = ref.read(resultProvider);
+  r.when(success: ..., failure: ...); // allowed (Freezed/sealed Result snapshot)
 }
 ```
-- UX상 즉시 스냅샷 처리 의도인데 무조건 anti-pattern 처리
+- AsyncValue lifecycle 분기는 anti-pattern 유지; Freezed/sealed Result snapshot은 허용으로 완화됨
 
 4. `ref_mounted_usage`: 취소 불가능 외부 API 보호용 가드
 ```dart
@@ -247,7 +249,7 @@ class Todo extends _$Todo {}
 - ✅ 적용됨: 전면 금지 폐기. 레이어 인식으로 전환해 Notifier 컨텍스트는 면제하고 위젯 컨텍스트만 보고
 - ✅ 적용됨: `riverpod_ref_after_async_gap`이 `if (!ref.mounted) return;` 가드를 인식해 가드 뒤의 `ref` 사용은 보고하지 않음 (단, 가드 이후 다시 `await`가 오면 가드가 무효화되어 계속 보고)
 - 남은 후보: `CancelableOperation`, `ref.onDispose` 사용 시 경고 억제
-- 남은 후보: `state` getter/setter도 `UnmountedRefException`을 던지지만 현재 `riverpod_ref_after_async_gap`은 `ref.*`만 본다 (린트 사각지대)
+- ✅ 적용됨: `riverpod_ref_after_async_gap`이 async gap 이후 unguarded `state =` / `this.state =` 도 추적 (CAL#143). 남은 후보: full CFG / private helper 내부 추적
 
 ### `riverpod_keep_alive` 개선
 - ✅ 적용됨: class 외 함수형 provider(`@Riverpod(keepAlive: true) Future<T> foo(Ref ref)`)도 함수명 heuristic으로 검사한다.

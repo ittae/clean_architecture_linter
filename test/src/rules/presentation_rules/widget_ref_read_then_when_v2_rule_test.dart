@@ -30,7 +30,7 @@ class TodoPage {
           correctionMessage:
               'Use ref.watch() + .when() in build() for UI, ref.listen() '
               'for side effects, or try-catch for one-off operations. '
-              'Freezed/sealed Result .when after a snapshot read is allowed.',
+              'Freezed/sealed Result snapshot branching after a one-shot ref.read is allowed.',
         ),
       ]);
     });
@@ -65,7 +65,7 @@ void build(ref) {
             correctionMessage:
                 'Use ref.watch() + .when() in build() for UI, ref.listen() '
                 'for side effects, or try-catch for one-off operations. '
-                'Freezed/sealed Result .when after a snapshot read is allowed.',
+                'Freezed/sealed Result snapshot branching after a one-shot ref.read is allowed.',
           ),
         ]);
       },
@@ -98,7 +98,7 @@ class TodoPage {
           correctionMessage:
               'Use ref.watch() + .maybeWhen() in build() for UI, ref.listen() '
               'for side effects, or try-catch for one-off operations. '
-              'Freezed/sealed Result .when after a snapshot read is allowed.',
+              'Freezed/sealed Result snapshot branching after a one-shot ref.read is allowed.',
         ),
         const ExpectedV2Diagnostic(
           relativePath: 'lib/features/todo/presentation/pages/todo_page.dart',
@@ -109,7 +109,38 @@ class TodoPage {
           correctionMessage:
               'Use ref.watch() + .map() in build() for UI, ref.listen() '
               'for side effects, or try-catch for one-off operations. '
-              'Freezed/sealed Result .when after a snapshot read is allowed.',
+              'Freezed/sealed Result snapshot branching after a one-shot ref.read is allowed.',
+        ),
+      ]);
+    });
+
+    test('reports AsyncValue whenOrNull(data: …) only after ref.read', () async {
+      final result = await V2RuleHarness(rule: WidgetRefReadThenWhenRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/pages/todo_page.dart': '''
+class TodoPage {
+  void onTap(ref) {
+    final state = ref.read(todoProvider);
+    state.whenOrNull(data: (_) {});
+  }
+}
+''',
+            },
+            definingFile: 'lib/features/todo/presentation/pages/todo_page.dart',
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath: 'lib/features/todo/presentation/pages/todo_page.dart',
+          codeName: 'widget_ref_read_then_when',
+          problemMessage:
+              'Anti-pattern: Using AsyncValue.whenOrNull() after ref.read() '
+              'in the same function',
+          correctionMessage:
+              'Use ref.watch() + .whenOrNull() in build() for UI, ref.listen() '
+              'for side effects, or try-catch for one-off operations. '
+              'Freezed/sealed Result snapshot branching after a one-shot ref.read is allowed.',
         ),
       ]);
     });

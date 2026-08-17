@@ -108,7 +108,7 @@ class _WidgetRefReadThenWhenVisitor extends SimpleAstVisitor<void> {
                 'in the same function',
             'Use ref.watch() + .$method() in build() for UI, ref.listen() '
                 'for side effects, or try-catch for one-off operations. '
-                'Freezed/sealed Result .when after a snapshot read is allowed.',
+                'Freezed/sealed Result snapshot branching after a one-shot ref.read is allowed.',
           ],
         );
       }
