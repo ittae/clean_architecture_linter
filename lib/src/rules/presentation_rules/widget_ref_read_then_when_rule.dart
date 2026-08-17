@@ -6,8 +6,15 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
 import '../../clean_architecture_linter_base.dart';
+import '../../compat/analyzer_ast_compat.dart';
 
-/// Enforces that `ref.read()` should NOT be followed by `.when()`.
+/// Enforces that `ref.read()` should NOT be followed by AsyncValue-style
+/// branching (`.when` / `.maybeWhen` / `.map` / …).
+///
+/// Freezed/sealed Result snapshot handlers after a one-shot `ref.read` are
+/// intentional and are **not** reported: only calls that look like Riverpod
+/// `AsyncValue` lifecycle branching (`data` / `loading` / `error` named args)
+/// are flagged. Parsed-only path — no type resolution required.
 class WidgetRefReadThenWhenRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'widget_ref_read_then_when',
@@ -17,10 +24,24 @@ class WidgetRefReadThenWhenRule extends AnalysisRule {
     uniqueName: 'LintCode.widget_ref_read_then_when',
   );
 
+  /// Riverpod `AsyncValue` branch methods that rebuild-unsafe after `ref.read`.
+  static const Set<String> asyncValueBranchMethods = {
+    'when',
+    'maybeWhen',
+    'map',
+    'maybeMap',
+    'whenOrNull',
+    'mapOrNull',
+  };
+
+  /// Named args that mark an AsyncValue-style branch (vs Freezed case names).
+  static const Set<String> asyncValueBranchArgs = {'data', 'loading', 'error'};
+
   WidgetRefReadThenWhenRule()
     : super(
         name: 'widget_ref_read_then_when',
-        description: 'Prevents .when() on values read via ref.read().',
+        description:
+            'Prevents AsyncValue-style .when/.map after ref.read() in widgets.',
       );
 
   @override
@@ -66,19 +87,28 @@ class _WidgetRefReadThenWhenVisitor extends SimpleAstVisitor<void> {
 
   void _checkFunctionForAntiPattern(AstNode functionBody) {
     final refReadCalls = <MethodInvocation>[];
-    final whenCalls = <MethodInvocation>[];
+    final branchCalls = <MethodInvocation>[];
     final variableAssignments = <String, MethodInvocation>{};
 
-    _collectNodes(functionBody, refReadCalls, whenCalls, variableAssignments);
-    if (refReadCalls.isEmpty || whenCalls.isEmpty) return;
+    _collectNodes(functionBody, refReadCalls, branchCalls, variableAssignments);
+    if (refReadCalls.isEmpty || branchCalls.isEmpty) return;
 
-    for (final whenCall in whenCalls) {
-      if (_isWhenCalledOnRefRead(whenCall, refReadCalls, variableAssignments)) {
+    for (final branchCall in branchCalls) {
+      if (!_isAsyncValueStyleBranch(branchCall)) continue;
+      if (_isBranchCalledOnRefRead(
+        branchCall,
+        refReadCalls,
+        variableAssignments,
+      )) {
+        final method = branchCall.methodName.name;
         rule.reportAtNode(
-          whenCall,
-          arguments: const [
-            'Anti-pattern: Using .when() after ref.read() in the same function',
-            'Use ref.watch() + .when() in build() for UI, ref.listen() for side effects, or try-catch for one-off operations.',
+          branchCall,
+          arguments: [
+            'Anti-pattern: Using AsyncValue.$method() after ref.read() '
+                'in the same function',
+            'Use ref.watch() + .$method() in build() for UI, ref.listen() '
+                'for side effects, or try-catch for one-off operations. '
+                'Freezed/sealed Result snapshot branching after a one-shot ref.read is allowed.',
           ],
         );
       }
@@ -88,7 +118,7 @@ class _WidgetRefReadThenWhenVisitor extends SimpleAstVisitor<void> {
   void _collectNodes(
     AstNode node,
     List<MethodInvocation> refReadCalls,
-    List<MethodInvocation> whenCalls,
+    List<MethodInvocation> branchCalls,
     Map<String, MethodInvocation> variableAssignments,
   ) {
     if (node is MethodInvocation) {
@@ -98,8 +128,10 @@ class _WidgetRefReadThenWhenVisitor extends SimpleAstVisitor<void> {
           refReadCalls.add(node);
         }
       }
-      if (node.methodName.name == 'when') {
-        whenCalls.add(node);
+      if (WidgetRefReadThenWhenRule.asyncValueBranchMethods.contains(
+        node.methodName.name,
+      )) {
+        branchCalls.add(node);
       }
     } else if (node is VariableDeclaration) {
       final initializer = node.initializer;
@@ -117,17 +149,32 @@ class _WidgetRefReadThenWhenVisitor extends SimpleAstVisitor<void> {
 
     for (final child in node.childEntities) {
       if (child is AstNode) {
-        _collectNodes(child, refReadCalls, whenCalls, variableAssignments);
+        _collectNodes(child, refReadCalls, branchCalls, variableAssignments);
       }
     }
   }
 
-  bool _isWhenCalledOnRefRead(
-    MethodInvocation whenCall,
+  /// True when named args look like Riverpod AsyncValue lifecycle branching.
+  ///
+  /// Freezed/sealed Result handlers use custom case names (`success`,
+  /// `failure`, …) and therefore do not match.
+  bool _isAsyncValueStyleBranch(MethodInvocation call) {
+    for (final arg in call.argumentList.arguments) {
+      final name = namedArgumentName(arg);
+      if (name != null &&
+          WidgetRefReadThenWhenRule.asyncValueBranchArgs.contains(name)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool _isBranchCalledOnRefRead(
+    MethodInvocation branchCall,
     List<MethodInvocation> refReadCalls,
     Map<String, MethodInvocation> variableAssignments,
   ) {
-    final target = whenCall.target;
+    final target = branchCall.target;
 
     if (target is MethodInvocation && _isRefRead(target)) return true;
 

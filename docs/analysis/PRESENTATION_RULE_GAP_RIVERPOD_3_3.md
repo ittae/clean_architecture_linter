@@ -43,7 +43,7 @@ Verdict key:
 | `riverpod_ref_usage` | WARNING | **FP** → mitigated | `build()` one-shot DI reads were flagged; UseCase prefix alone too narrow | `riverpod_ref_usage_rule.dart`, tests below |
 | `riverpod_uncancelled_disposable` | WARNING | **pass** | Timer / StreamSubscription / listener + `ref.onDispose` still the 3.3 disposal story | `riverpod_uncancelled_disposable_rule.dart`, `riverpod_uncancelled_disposable_v2_rule_test.dart` |
 | `widget_no_usecase_call` | WARNING | **pass** | Widget→UseCase direct call ban remains CA-correct | `widget_no_usecase_call_rule.dart`, `widget_no_usecase_call_v2_rule_test.dart` |
-| `widget_ref_read_then_when` | WARNING | **FP** | Any `.when` after `ref.read` — collides with Freezed/sealed Result snapshot handlers | `widget_ref_read_then_when_rule.dart`, `widget_ref_read_then_when_v2_rule_test.dart` |
+| `widget_ref_read_then_when` | WARNING | **pass** (residual **FP** on Freezed cases named `data`/`loading`/`error`) | AsyncValue-ish named args only (`data`/`loading`/`error`); Freezed `success`/`failure` snapshot `.when` allowed; also `maybeWhen`/`map`/`maybeMap`/`whenOrNull`/`mapOrNull` | `widget_ref_read_then_when_rule.dart`, `widget_ref_read_then_when_v2_rule_test.dart` |
 
 ---
 
@@ -85,14 +85,19 @@ Verdict key:
   - `*ServiceProvider` / `*ApiProvider` / `*StorageProvider`가 반응형 상태를 감싼
     경우 → 새 FN 가능(이름 휴리스틱 한계). type-aware 전환 전까지 허용 목록 유지.
 
-### 2. `widget_ref_read_then_when` — Freezed/sealed `.when` after snapshot read
+### 2. `widget_ref_read_then_when` — Freezed/sealed `.when` after snapshot read (**shipped**)
 
 - **Pain:** WARNING on intentional event-handler snapshots:
   `final r = ref.read(resultProvider); r.when(success: …, failure: …)`.
-- **Fix direction:** require AsyncValue-ish receiver (type resolve or
-  chained `AsyncValue` construction), or allow freezed-style multi-case
-  `.when` with non-loading branches; do not blanket-ban every `.when`.
-- **Risk:** type-aware path needs resolved AST; parsed-only path stays weak.
+- **Fix (2.x additive, parsed-only):** report only when the branch call uses
+  AsyncValue lifecycle named args (`data` / `loading` / `error`). Freezed /
+  sealed Result case names (`success` / `failure` / …) are allowed. Same gate
+  covers `maybeWhen` / `map` / `maybeMap` / `whenOrNull` / `mapOrNull`.
+- **Evidence:** `widget_ref_read_then_when_rule.dart`
+  `_isAsyncValueStyleBranch`; tests for Freezed allow + AsyncValue
+  maybeWhen/map report.
+- **Residual:** Freezed cases literally named `data` / `loading` / `error` →
+  still flagged (name heuristic). Type-aware receiver check deferred.
 
 ### 3. `riverpod_ref_after_async_gap` — track `state` writes after await (**shipped**)
 
