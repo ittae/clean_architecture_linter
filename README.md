@@ -146,6 +146,16 @@ See `docs/config/RECOMMENDED_SETUP.md` for details.
 
 ## 🧩 Compatibility — analyzer 13 / Riverpod 3+
 
+Verified consumer matrix (2026-08-18, maintainer SDK + flagship `ittae` lockfile):
+
+| Line | Version |
+| --- | --- |
+| Flutter | **3.44.9** (Dart **3.12.2**) |
+| `riverpod` / `flutter_riverpod` | **3.3.2** |
+| `riverpod_generator` / `riverpod_annotation` | **4.0.4** / **4.0.3** |
+
+pub.dev latest Riverpod **3.4.2** is not in this verified set. Analyzer 14 remains out of scope for 2.x.
+
 v2.4 runs on the official `analysis_server_plugin` (`>=0.3.15 <0.3.16`) and supports analyzer `>=13.0.0 <14.0.0`, matching the current `riverpod_lint 3.1.x` analyzer line while avoiding analyzer 14-only plugin-host versions. Consumer smoke keeps the ASP range pinned to `0.3.15` because `0.3.18` still hangs during plugin analysis under analyzer 13.
 
 `riverpod_lint 3.1.x` carries its own analyzer constraints. Keep analyzer plugins out of `dev_dependencies` and enable both tools through top-level `plugins:` when you need them in one consumer project. The analyzer plugin manager resolves all enabled plugins in one synthetic package, so this package keeps its analyzer range aligned with `riverpod_lint`:
