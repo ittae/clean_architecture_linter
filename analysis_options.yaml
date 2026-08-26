@@ -28,8 +28,10 @@ analyzer:
     - "**/*.mocks.dart"
     - poc_v2/**
     - example/**
-  plugins:
-    - custom_lint
+  # Do not add analyzer.plugins (legacy plugin slot). Dart 3.13.2+ reports
+  # that as analysis_options_deprecated_plugins and fails `dart analyze`.
+  # This package is an analysis_server_plugin; consumers enable it with a
+  # top-level plugins: map. See example/analysis_options.yaml.
 
 # For more information about the core and recommended set of lints, see
 # https://dart.dev/go/core-lints

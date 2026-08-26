@@ -5,7 +5,7 @@ self-hosted-runner:
     - ittae
     - ittae-2
 paths:
-  .github/workflows/claude-code-review.yml:
+  .github/workflows/pr-review.yml:
     ignore:
       # GITHUB_OUTPUT / 환경 변수 확장 패턴에서 반복되는 노이즈 (info)
       - 'shellcheck reported issue in this script: SC2086:.*'

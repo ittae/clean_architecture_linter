@@ -2,7 +2,7 @@
 # Regression: HIGH_RISK_PATHS must match light reusable DEFAULT_HIGH_RISK_PATHS_LIGHT.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-WF="$ROOT/.github/workflows/claude-code-review.yml"
+WF="$ROOT/.github/workflows/pr-review.yml"
 EXPECTED='^\.github/workflows/|^\.env|^env/|/secrets?/|secret|secrets|(^|/)auth(/|$)|api[_-]?key|password|scripts/pr-autopilot|dependabot-alerts-sweep|crontab'
 ACTUAL=$(sed -n "s/^  HIGH_RISK_PATHS: '\(.*\)'/\1/p" "$WF" | head -1)
 if [[ -z "$ACTUAL" ]]; then

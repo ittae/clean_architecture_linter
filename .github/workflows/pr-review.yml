@@ -1,4 +1,4 @@
-name: Claude Code Review
+name: PR Review
 
 # Public standalone AI PR review (cannot uses: private ittae/.github reusables).
 # HIGH_RISK_PATHS inherits by lockstep from light reusable SoT:

@@ -52,7 +52,7 @@ Branch protection on `main` is intentionally **checks-only** for pull-request *a
 | No auto-merge | Repo Settings → General → `Allow auto-merge` = off | Manual GitHub setting |
 | Checks-only merge gate | Branch protection (`main`) → required status check `test`; **no** required approving review | GitHub setting (2026-07 owner-lane) |
 | CODEOWNERS file | `.github/CODEOWNERS` for ownership map | File only — **not** a required review gate |
-| Fork / non-owner off self-hosted AI | `.github/workflows/claude-code-review.yml` job `if` + check step `reason=non-owner-author` | Workflow code |
+| Fork / non-owner off self-hosted AI | `.github/workflows/pr-review.yml` job `if` + check step `reason=non-owner-author` | Workflow code |
 | Owner author allowlist | `pull_request.user.login == 'get6'` (PR author, not `github.actor`) | Workflow code |
 | Paths silent-bypass | No workflow-level `paths` on AI review caller | Workflow code |
 
