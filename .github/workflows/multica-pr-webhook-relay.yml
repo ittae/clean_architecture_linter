@@ -11,7 +11,7 @@ jobs:
   relay:
     # Public package trust boundary: never run untrusted fork PR head scripts on
     # self-hosted (local webhook URL file + home dir). Aligns with
-    # claude-code-review.yml same-repo gate; get6-only is not required here
+    # pr-review.yml same-repo gate; get6-only is not required here
     # because this job only forwards metadata and runs a tiny pure-bash helper.
     # Bootstrap note: scripts are not yet on default branch, so we keep head
     # checkout under the same-repo if. After merge, prefer

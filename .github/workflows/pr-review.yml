@@ -1,9 +1,9 @@
-name: Claude Code Review
+name: PR Review
 
 # Public standalone AI PR review (cannot uses: private ittae/.github reusables).
 # HIGH_RISK_PATHS inherits by lockstep from light reusable SoT:
 #   ittae/.github tools/high_risk_policy.py :: DEFAULT_HIGH_RISK_PATHS_LIGHT
-#   == claude-review-light.yml inputs.high_risk_paths default
+#   == pr-review-light.yml inputs.high_risk_paths default
 # Enforced by ittae/.github tools/tests/test_cal_high_risk_lockstep.py
 # Engine/prompt body remains inlined (GitHub blocks public→private reusable).
 # Host SoT (self-hosted Mac mini) — config fail-open:
@@ -261,7 +261,7 @@ jobs:
 
           echo "verdict=proceed" >> $GITHUB_OUTPUT
 
-      # 리뷰 엔진 가용성 + runtime chain (SoT: ittae/.github claude-review-light.yml 2026-07).
+      # 리뷰 엔진 가용성 + runtime chain (SoT: ittae/.github pr-review-light.yml 2026-07).
       # Order fixed: grok → codex → claude. Later engines run only if earlier outcome != success.
       - id: auth
         if: steps.check.outputs.skip != 'true' && steps.classify.outputs.verdict == 'proceed'
