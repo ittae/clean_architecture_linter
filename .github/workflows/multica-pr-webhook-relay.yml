@@ -2,7 +2,7 @@ name: Multica PR Webhook Relay
 
 on:
   pull_request:
-    types: [opened, closed, synchronize, reopened]
+    types: [opened, closed, reopened]
 
 permissions:
   contents: read
@@ -11,19 +11,19 @@ jobs:
   relay:
     # Public package trust boundary: never run untrusted fork PR head scripts on
     # self-hosted (local webhook URL file + home dir). Aligns with
-    # pr-review.yml same-repo gate; get6-only is not required here
-    # because this job only forwards metadata and runs a tiny pure-bash helper.
-    # Bootstrap note: scripts are not yet on default branch, so we keep head
-    # checkout under the same-repo if. After merge, prefer
-    # ref: ${{ github.event.pull_request.base.sha }} so fork metadata can still
-    # relay while execution code is pinned to base.
+    # pr-review.yml same-repo gate. Identical fanout from a private pilot must
+    # not drop this `if`.
     if: github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: self-hosted
+    # 의도 라벨 명시 (bare self-hosted 금지 — 이 PR의 정책 규율). 라벨은 관례일 뿐
+    # 현재 2대 단일 풀에서 스케줄 격리는 아니다 (macmini-gha-runners-ops-pitfalls.md).
+    runs-on: [self-hosted, ittae-2]
     timeout-minutes: 5
-    # 같은 PR의 opened/synchronize/closed를 한 그룹으로 묶되, cancel-in-progress
-    # 는 false — 빠른 synchronize가 진행 중 opened relay를 취소하면 Multica가
-    # 개별 action granularity를 잃을 수 있어 큐잉을 택한다 (최신 state 스냅샷
-    # 전달은 유지, 이벤트 드롭만 막음).
+    # 같은 PR의 opened/closed/reopened를 한 그룹으로 묶되, cancel-in-progress
+    # 는 false — 빠른 closed/reopened 연속 이벤트가 진행 중 opened relay를
+    # 취소하면 Multica가 개별 action granularity를 잃을 수 있어 큐잉을 택한다
+    # (최신 state 스냅샷 전달은 유지, 이벤트 드롭만 막음).
+    # synchronize는 2026-08-27 트리거에서 제거됨 (worker push마다 Hermes 회수
+    # 런이 깨어나 xAI 쿼터를 소진하던 버스트 원인).
     concurrency:
       group: multica-relay-${{ github.event.pull_request.number }}
       cancel-in-progress: false
