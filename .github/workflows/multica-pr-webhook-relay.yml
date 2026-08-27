@@ -1,4 +1,4 @@
-name: Multica PR Webhook Relay (glimpshot pilot)
+name: Multica PR Webhook Relay
 
 on:
   pull_request:
@@ -9,6 +9,11 @@ permissions:
 
 jobs:
   relay:
+    # Public package trust boundary: never run untrusted fork PR head scripts on
+    # self-hosted (local webhook URL file + home dir). Aligns with
+    # pr-review.yml same-repo gate. Identical fanout from a private pilot must
+    # not drop this `if`.
+    if: github.event.pull_request.head.repo.full_name == github.repository
     # 의도 라벨 명시 (bare self-hosted 금지 — 이 PR의 정책 규율). 라벨은 관례일 뿐
     # 현재 2대 단일 풀에서 스케줄 격리는 아니다 (macmini-gha-runners-ops-pitfalls.md).
     runs-on: [self-hosted, ittae-2]
