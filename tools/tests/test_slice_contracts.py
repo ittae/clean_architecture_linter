@@ -81,6 +81,21 @@ class TestSliceContractsManifest(unittest.TestCase):
         )
         self.assertNotEqual(result.returncode, 0)
 
+    def test_print_and_check_flags_are_exclusive(self) -> None:
+        helper = REPO_ROOT / "tools" / "slice_contracts.py"
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(helper),
+                "--print-codes",
+                "--check-manifest",
+            ],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+        )
+        self.assertNotEqual(result.returncode, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

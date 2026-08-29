@@ -136,22 +136,23 @@ def check_manifest(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--contracts", type=Path, default=DEFAULT_CONTRACTS)
-    parser.add_argument(
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument(
         "--check-manifest",
         action="store_true",
         help="require at least one contract per lib/src/rules slice",
     )
-    parser.add_argument(
+    mode.add_argument(
         "--check-analyze",
         action="store_true",
         help="read dart analyze --format=machine output from stdin",
     )
-    parser.add_argument(
+    mode.add_argument(
         "--print-codes",
         action="store_true",
         help="print declared RULE_CODE values, one per line",
     )
-    parser.add_argument(
+    mode.add_argument(
         "--print-fixture",
         action="store_true",
         help="print the declared fixture directory (repo-relative)",
@@ -167,42 +168,29 @@ def main(argv: list[str] | None = None) -> int:
         print(fixture_dir(data))
         return 0
 
-    status = 0
     if args.check_manifest:
         errors = check_manifest(data)
         if errors:
             for error in errors:
                 print(f"CONTRACT FAIL: {error}", file=sys.stderr)
-            status = 1
-        else:
-            codes = ", ".join(expected_codes(data))
-            print(f"CONTRACT OK: all slices declared ({codes})")
+            return 1
+        codes = ", ".join(expected_codes(data))
+        print(f"CONTRACT OK: all slices declared ({codes})")
+        return 0
 
-    if args.check_analyze:
-        machine_output = sys.stdin.read()
-        missing = missing_codes(machine_output, expected_codes(data))
-        if missing:
-            print(
-                "CONTRACT FAIL: dart analyze missing RULE_CODE(s): "
-                + " ".join(missing),
-                file=sys.stderr,
-            )
-            status = 1
-        else:
-            print(
-                "CONTRACT OK: all declared plugin diagnostics present via dart analyze."
-            )
-
-    if (
-        not args.check_manifest
-        and not args.check_analyze
-        and not args.print_codes
-        and not args.print_fixture
-    ):
-        parser.error(
-            "specify --check-manifest, --check-analyze, --print-codes, and/or --print-fixture"
+    machine_output = sys.stdin.read()
+    missing = missing_codes(machine_output, expected_codes(data))
+    if missing:
+        print(
+            "CONTRACT FAIL: dart analyze missing RULE_CODE(s): "
+            + " ".join(missing),
+            file=sys.stderr,
         )
-    return status
+        return 1
+    print(
+        "CONTRACT OK: all declared plugin diagnostics present via dart analyze."
+    )
+    return 0
 
 
 if __name__ == "__main__":
