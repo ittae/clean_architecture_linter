@@ -82,6 +82,19 @@ class TestSliceContractsManifest(unittest.TestCase):
         )
         self.assertNotEqual(result.returncode, 0)
 
+    def test_malformed_entry_fails_closed(self) -> None:
+        data = load_contracts()
+        slices = dict(data["slices"])
+        slices["data_rules"] = [
+            {"code": "REPOSITORY_PASS_THROUGH"},
+            {"codes": "LAYER_DEPENDENCY"},
+        ]
+        data = {**data, "slices": slices}
+        errors = check_manifest(data)
+        self.assertTrue(
+            any("invalid contract entry in data_rules[1]" in error for error in errors)
+        )
+
     def test_absolute_fixture_fails_closed(self) -> None:
         self.assertTrue(fixture_escapes_repo("/tmp/outside"))
         self.assertTrue(fixture_escapes_repo(r"C:\Windows"))

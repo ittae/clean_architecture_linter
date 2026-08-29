@@ -2,8 +2,10 @@
 """Slice pass-contracts for plugin dart-analyze.
 
 Declaration: tools/slice_contracts.json
-Each directory under lib/src/rules/ must have at least one machine-format
-RULE_CODE. tools/verify_analyze_parity.sh uses this helper as the gate.
+Each slice key matching a lib/src/rules/<slice>/ directory must declare
+at least one machine-format RULE_CODE. This helper does not check that
+the code is implemented in that directory; dart analyze on the fixture
+is the emit gate. tools/verify_analyze_parity.sh uses this helper.
 """
 from __future__ import annotations
 
@@ -83,6 +85,30 @@ def extra_slices(data: dict[str, Any], slices: list[str]) -> list[str]:
     return sorted(declared - set(slices))
 
 
+def invalid_entries(data: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    declared = data.get("slices") or {}
+    if not isinstance(declared, dict):
+        return ["slices must be an object"]
+    for slice_id, entries in declared.items():
+        if not isinstance(entries, list):
+            errors.append(f"invalid contract entry in {slice_id}: expected list")
+            continue
+        for index, entry in enumerate(entries):
+            if not isinstance(entry, dict):
+                errors.append(
+                    f"invalid contract entry in {slice_id}[{index}]: expected object"
+                )
+                continue
+            code = entry.get("code")
+            if not isinstance(code, str) or not code:
+                errors.append(
+                    f"invalid contract entry in {slice_id}[{index}]: "
+                    "code must be a non-empty string"
+                )
+    return errors
+
+
 def invalid_codes(codes: list[str]) -> list[str]:
     return [code for code in codes if not MACHINE_CODE.match(code)]
 
@@ -127,6 +153,9 @@ def check_manifest(
     extra = extra_slices(data, slice_ids)
     if extra:
         errors.append("unknown slice id(s): " + ", ".join(extra))
+    malformed = invalid_entries(data)
+    if malformed:
+        errors.extend(malformed)
     codes = expected_codes(data)
     invalid = invalid_codes(codes)
     if invalid:
