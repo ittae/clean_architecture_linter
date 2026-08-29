@@ -54,16 +54,22 @@ def discover_slices(rules_dir: Path | None = None) -> list[str]:
     )
 
 
+def valid_entry(entry: Any) -> bool:
+    return (
+        isinstance(entry, dict)
+        and isinstance(entry.get("code"), str)
+        and bool(entry.get("code"))
+    )
+
+
 def expected_codes(data: dict[str, Any]) -> list[str]:
     codes: list[str] = []
     for entries in (data.get("slices") or {}).values():
         if not isinstance(entries, list):
             continue
         for entry in entries:
-            if isinstance(entry, dict):
-                code = entry.get("code")
-                if isinstance(code, str) and code:
-                    codes.append(code)
+            if valid_entry(entry):
+                codes.append(entry["code"])
     return codes
 
 
@@ -72,10 +78,7 @@ def missing_slices(data: dict[str, Any], slices: list[str]) -> list[str]:
     missing: list[str] = []
     for slice_id in slices:
         entries = declared.get(slice_id)
-        if not isinstance(entries, list) or not any(
-            isinstance(entry, dict) and isinstance(entry.get("code"), str) and entry["code"]
-            for entry in entries
-        ):
+        if not isinstance(entries, list) or not any(valid_entry(entry) for entry in entries):
             missing.append(slice_id)
     return missing
 
@@ -95,13 +98,13 @@ def invalid_entries(data: dict[str, Any]) -> list[str]:
             errors.append(f"invalid contract entry in {slice_id}: expected list")
             continue
         for index, entry in enumerate(entries):
+            if valid_entry(entry):
+                continue
             if not isinstance(entry, dict):
                 errors.append(
                     f"invalid contract entry in {slice_id}[{index}]: expected object"
                 )
-                continue
-            code = entry.get("code")
-            if not isinstance(code, str) or not code:
+            else:
                 errors.append(
                     f"invalid contract entry in {slice_id}[{index}]: "
                     "code must be a non-empty string"

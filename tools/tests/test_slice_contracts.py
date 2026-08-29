@@ -79,8 +79,10 @@ class TestSliceContractsManifest(unittest.TestCase):
             input=machine,
             text=True,
             cwd=REPO_ROOT,
+            capture_output=True,
         )
         self.assertNotEqual(result.returncode, 0)
+        self.assertIn("CONTRACT FAIL", result.stderr)
 
     def test_malformed_entry_fails_closed(self) -> None:
         data = load_contracts()
