@@ -71,6 +71,9 @@ jobs:
       with:
         sdk: 'stable'
 
+    - name: Verify slice contract declarations
+      run: bash tools/verify_analyze_parity.sh --contracts-only
+
     - name: Verify plugin diagnostics via dart analyze
       run: bash tools/verify_analyze_parity.sh
 

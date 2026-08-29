@@ -4,10 +4,11 @@
 # (ITT-1677 / ITT-1836).
 #
 # What this proves:
-#   1. `dart analyze` on the bad fixture reports the analysis_server_plugin
-#      diagnostics (the plugin still loads and produces warnings). This is the
-#      hard regression gate — it fails CI if the plugin ever stops emitting
-#      diagnostics through the recommended consumer path.
+#   1. `tools/slice_contracts.json` declares at least one RULE_CODE per
+#      lib/src/rules/<slice>/, and `dart analyze` on the fixture reports each
+#      of those analysis_server_plugin diagnostics. This is the hard regression
+#      gate — it fails CI if a slice contract stops emitting through the
+#      recommended consumer path.
 #   2. If a Flutter SDK is present, it also runs `flutter analyze` on the same
 #      fixture and reports the diagnostic count. `flutter analyze` is known to
 #      drop these diagnostics (its LSP client stops collecting when the core
@@ -19,26 +20,51 @@
 # enforce clean_architecture_linter. See docs/analysis/FLUTTER_ANALYZE_PLUGIN_LOSS.md.
 #
 # Usage:
-#   tools/verify_analyze_parity.sh [fixture_dir] [--require-parity]
+#   tools/verify_analyze_parity.sh [fixture_dir] [--require-parity] [--contracts-only]
 #
-#   fixture_dir       Package to analyze (default: poc_v2/example).
+#   fixture_dir       Package to analyze (default: poc_v2/example, or
+#                     tools/slice_contracts.json "fixture").
 #   --require-parity  Also fail if `flutter analyze` reports fewer diagnostics
 #                     than `dart analyze` (opt-in; useful to verify an upstream
 #                     Flutter fix once it lands).
+#   --contracts-only  Check tools/slice_contracts.json coverage only (no dart
+#                     analyze). Each lib/src/rules/<slice>/ must declare ≥1
+#                     RULE_CODE.
 
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CONTRACTS_HELPER="$ROOT_DIR/tools/slice_contracts.py"
+CONTRACTS_FILE="${SLICE_CONTRACTS_PATH:-$ROOT_DIR/tools/slice_contracts.json}"
 
 FIXTURE_DIR="poc_v2/example"
 REQUIRE_PARITY=0
+CONTRACTS_ONLY=0
 for arg in "$@"; do
   case "$arg" in
     --require-parity) REQUIRE_PARITY=1 ;;
+    --contracts-only) CONTRACTS_ONLY=1 ;;
     -*) echo "Unknown flag: $arg" >&2; exit 2 ;;
     *) FIXTURE_DIR="$arg" ;;
   esac
 done
+
+if [[ ! -f "$CONTRACTS_HELPER" ]]; then
+  echo "Slice contract helper not found: $CONTRACTS_HELPER" >&2
+  exit 2
+fi
+if [[ ! -f "$CONTRACTS_FILE" ]]; then
+  echo "Slice contract file not found: $CONTRACTS_FILE" >&2
+  exit 2
+fi
+
+echo "==> Slice contracts ($CONTRACTS_FILE)"
+python3 "$CONTRACTS_HELPER" --contracts "$CONTRACTS_FILE" --check-manifest
+
+if [[ "$CONTRACTS_ONLY" -eq 1 ]]; then
+  echo "PASS: slice contract declarations only (skipped dart analyze)."
+  exit 0
+fi
 
 FIXTURE_PATH="$ROOT_DIR/$FIXTURE_DIR"
 if [[ ! -d "$FIXTURE_PATH" ]]; then
@@ -46,13 +72,17 @@ if [[ ! -d "$FIXTURE_PATH" ]]; then
   exit 2
 fi
 
-# Rule codes that MUST appear in `dart analyze` output for the fixture. Keep
-# this list small and stable; it only needs to prove the plugin is loaded and
-# producing diagnostics, not to enumerate every rule.
-EXPECTED_CODES=(
-  "PRESENTATION_NO_THROW"
-  "DOMAIN_PURITY"
-)
+# Rule codes that MUST appear in `dart analyze` output. Declared per slice in
+# tools/slice_contracts.json — one passing diagnostic per rule slice, not full
+# rule coverage.
+EXPECTED_CODES=()
+while IFS= read -r code; do
+  [[ -n "$code" ]] && EXPECTED_CODES+=("$code")
+done < <(python3 "$CONTRACTS_HELPER" --contracts "$CONTRACTS_FILE" --print-codes)
+if [[ ${#EXPECTED_CODES[@]} -eq 0 ]]; then
+  echo "No slice contract RULE_CODE values declared in $CONTRACTS_FILE" >&2
+  exit 1
+fi
 
 echo "==> Resolving plugin package and fixture ($FIXTURE_DIR)"
 (cd "$ROOT_DIR" && dart pub get >/dev/null)

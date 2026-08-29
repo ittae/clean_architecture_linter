@@ -1,0 +1,25 @@
+{
+  "fixture": "poc_v2/example",
+  "slices": {
+    "presentation_rules": [
+      {
+        "code": "PRESENTATION_NO_THROW"
+      }
+    ],
+    "domain_rules": [
+      {
+        "code": "DOMAIN_PURITY"
+      }
+    ],
+    "data_rules": [
+      {
+        "code": "REPOSITORY_PASS_THROUGH"
+      }
+    ],
+    "cross_layer": [
+      {
+        "code": "LAYER_DEPENDENCY"
+      }
+    ]
+  }
+}
