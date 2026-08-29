@@ -201,6 +201,11 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     data = load_contracts(args.contracts)
+    malformed = invalid_entries(data)
+    if malformed:
+        for error in malformed:
+            print(f"CONTRACT FAIL: {error}", file=sys.stderr)
+        return 1
     if args.print_codes:
         for code in expected_codes(data):
             print(code)

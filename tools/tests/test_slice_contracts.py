@@ -118,6 +118,28 @@ class TestSliceContractsManifest(unittest.TestCase):
         self.assertIn("fixture: poc_v2/example", result.stdout)
         self.assertNotIn("fixture: some/dir", result.stdout)
 
+    def test_print_codes_fails_on_malformed_entry(self) -> None:
+        helper = REPO_ROOT / "tools" / "slice_contracts.py"
+        data = load_contracts()
+        slices = dict(data["slices"])
+        slices["data_rules"] = [{"codes": "REPOSITORY_PASS_THROUGH"}]
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "slice_contracts.json"
+            path.write_text(json.dumps({**data, "slices": slices}), encoding="utf-8")
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(helper),
+                    "--contracts",
+                    str(path),
+                    "--print-codes",
+                ],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True,
+            )
+        self.assertNotEqual(result.returncode, 0)
+
     def test_print_and_check_flags_are_exclusive(self) -> None:
         helper = REPO_ROOT / "tools" / "slice_contracts.py"
         result = subprocess.run(
