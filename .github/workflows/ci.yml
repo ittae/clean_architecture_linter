@@ -79,9 +79,9 @@ jobs:
       run: bash tools/verify_analyze_parity.sh
 
   high-risk-lockstep:
-    # 1st-line PR gate when .github/workflows/pr-review.yml exists.
-    # That workflow was removed; the script exits 0 if the file is absent.
-    # 2nd-line (post-merge) guard lives in ittae/.github test_cal_high_risk_lockstep.py.
+    # 1st-line PR gate: fail if a GHA AI-review wait caller (pr-review.yml etc.)
+    # is restored. Wait callers were removed 2026-08-29; AI review is poller-only.
+    # HIGH_RISK_PATHS lockstep against a local wait workflow is obsolete.
     runs-on: ubuntu-latest
 
     steps:
