@@ -22,14 +22,14 @@
 # Usage:
 #   tools/verify_analyze_parity.sh [fixture_dir] [--require-parity] [--contracts-only]
 #
-#   fixture_dir       Package to analyze (default: poc_v2/example, or
-#                     tools/slice_contracts.json "fixture").
+#   fixture_dir       Package to analyze. Default is the `fixture` field in
+#                     tools/slice_contracts.json (or $SLICE_CONTRACTS_PATH).
 #   --require-parity  Also fail if `flutter analyze` reports fewer diagnostics
 #                     than `dart analyze` (opt-in; useful to verify an upstream
 #                     Flutter fix once it lands).
-#   --contracts-only  Check tools/slice_contracts.json coverage only (no dart
-#                     analyze). Each lib/src/rules/<slice>/ must declare ≥1
-#                     RULE_CODE.
+#   --contracts-only  Check the contracts file only (no dart analyze). Each
+#                     lib/src/rules/<slice>/ must declare ≥1 RULE_CODE. A
+#                     positional fixture_dir is ignored in this mode.
 
 set -euo pipefail
 
@@ -69,6 +69,8 @@ if [[ -z "$FIXTURE_DIR" ]]; then
   exit 1
 fi
 
+echo "    fixture: $FIXTURE_DIR"
+
 if [[ "$CONTRACTS_ONLY" -eq 1 ]]; then
   echo "PASS: slice contract declarations only (skipped dart analyze)."
   exit 0
@@ -78,18 +80,6 @@ FIXTURE_PATH="$ROOT_DIR/$FIXTURE_DIR"
 if [[ ! -d "$FIXTURE_PATH" ]]; then
   echo "Fixture directory not found: $FIXTURE_PATH" >&2
   exit 2
-fi
-
-# Rule codes that MUST appear in `dart analyze` output. Declared per slice in
-# tools/slice_contracts.json — one passing diagnostic per rule slice, not full
-# rule coverage.
-EXPECTED_CODES=()
-while IFS= read -r code; do
-  [[ -n "$code" ]] && EXPECTED_CODES+=("$code")
-done < <(python3 "$CONTRACTS_HELPER" --contracts "$CONTRACTS_FILE" --print-codes)
-if [[ ${#EXPECTED_CODES[@]} -eq 0 ]]; then
-  echo "No slice contract RULE_CODE values declared in $CONTRACTS_FILE" >&2
-  exit 1
 fi
 
 echo "==> Resolving plugin package and fixture ($FIXTURE_DIR)"
@@ -106,16 +96,13 @@ set -e
 DART_DIAG_COUNT="$(printf '%s\n' "$DART_OUT" | grep -cE '^[A-Z]+\|[A-Z_]+\|' || true)"
 echo "    dart analyze reported $DART_DIAG_COUNT plugin diagnostic(s)."
 
-MISSING=()
-for code in "${EXPECTED_CODES[@]}"; do
-  if ! printf '%s\n' "$DART_OUT" | grep -qE "^[A-Z]+\|[A-Z_]+\|${code}\|"; then
-    MISSING+=("$code")
-  fi
-done
-
-if [[ ${#MISSING[@]} -gt 0 ]]; then
+set +e
+printf '%s\n' "$DART_OUT" | python3 "$CONTRACTS_HELPER" --contracts "$CONTRACTS_FILE" --check-analyze
+ANALYZE_CONTRACT_STATUS=$?
+set -e
+if [[ "$ANALYZE_CONTRACT_STATUS" -ne 0 ]]; then
   echo "" >&2
-  echo "REGRESSION: dart analyze did not report expected plugin diagnostic(s): ${MISSING[*]}" >&2
+  echo "REGRESSION: dart analyze did not report expected plugin diagnostic(s)." >&2
   echo "The analysis_server_plugin is not producing diagnostics through the" >&2
   echo "recommended consumer path. Investigate plugin loading / analyzer or" >&2
   echo "analysis_server_plugin compatibility before releasing." >&2
@@ -124,8 +111,6 @@ if [[ ${#MISSING[@]} -gt 0 ]]; then
   printf '%s\n' "$DART_OUT" >&2
   exit 1
 fi
-
-echo "    OK: all expected plugin diagnostics present via dart analyze."
 
 # --- Optional flutter analyze parity check (documented known gap) -------------
 if command -v flutter >/dev/null 2>&1; then

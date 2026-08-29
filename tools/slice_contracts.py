@@ -29,9 +29,10 @@ def load_contracts(path: Path | None = None) -> dict[str, Any]:
     slices = data.get("slices")
     if not isinstance(slices, dict) or not slices:
         raise ValueError(f"{contracts_path} must declare a non-empty slices object")
-    fixture = data.get("fixture")
-    if not isinstance(fixture, str) or not fixture.strip():
-        raise ValueError(f"{contracts_path} must declare a non-empty fixture path")
+    try:
+        fixture_dir(data)
+    except ValueError as exc:
+        raise ValueError(f"{contracts_path} must declare a non-empty fixture path") from exc
     return data
 
 

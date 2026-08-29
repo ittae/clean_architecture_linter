@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -68,6 +69,17 @@ class TestSliceContractsManifest(unittest.TestCase):
             path.write_text("[]\n", encoding="utf-8")
             with self.assertRaises(ValueError):
                 load_contracts(path)
+
+    def test_check_analyze_cli_fails_on_missing_code(self) -> None:
+        helper = REPO_ROOT / "tools" / "slice_contracts.py"
+        machine = "WARNING|LINT|PRESENTATION_NO_THROW|lib/a.dart|1|1|1|msg\n"
+        result = subprocess.run(
+            [sys.executable, str(helper), "--check-analyze"],
+            input=machine,
+            text=True,
+            cwd=REPO_ROOT,
+        )
+        self.assertNotEqual(result.returncode, 0)
 
 
 if __name__ == "__main__":
