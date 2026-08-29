@@ -15,6 +15,7 @@ from slice_contracts import (  # noqa: E402
     check_manifest,
     discover_slices,
     expected_codes,
+    fixture_dir,
     load_contracts,
     missing_codes,
 )
@@ -52,6 +53,14 @@ class TestSliceContractsManifest(unittest.TestCase):
         self.assertIsInstance(raw, dict)
         self.assertIn("slices", raw)
         self.assertIsInstance(raw["slices"], dict)
+        self.assertEqual(raw.get("fixture"), fixture_dir(load_contracts()))
+        self.assertTrue((REPO_ROOT / fixture_dir(load_contracts())).is_dir())
+
+    def test_missing_fixture_dir_fails_closed(self) -> None:
+        data = dict(load_contracts())
+        data["fixture"] = "does/not/exist"
+        errors = check_manifest(data)
+        self.assertTrue(any("does/not/exist" in error for error in errors))
 
     def test_invalid_json_shape_raises(self) -> None:
         with tempfile.TemporaryDirectory() as td:

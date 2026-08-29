@@ -37,7 +37,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONTRACTS_HELPER="$ROOT_DIR/tools/slice_contracts.py"
 CONTRACTS_FILE="${SLICE_CONTRACTS_PATH:-$ROOT_DIR/tools/slice_contracts.json}"
 
-FIXTURE_DIR="poc_v2/example"
+FIXTURE_DIR=""
 REQUIRE_PARITY=0
 CONTRACTS_ONLY=0
 for arg in "$@"; do
@@ -60,6 +60,14 @@ fi
 
 echo "==> Slice contracts ($CONTRACTS_FILE)"
 python3 "$CONTRACTS_HELPER" --contracts "$CONTRACTS_FILE" --check-manifest
+
+if [[ -z "$FIXTURE_DIR" ]]; then
+  FIXTURE_DIR="$(python3 "$CONTRACTS_HELPER" --contracts "$CONTRACTS_FILE" --print-fixture)"
+fi
+if [[ -z "$FIXTURE_DIR" ]]; then
+  echo "No fixture directory declared in $CONTRACTS_FILE" >&2
+  exit 1
+fi
 
 if [[ "$CONTRACTS_ONLY" -eq 1 ]]; then
   echo "PASS: slice contract declarations only (skipped dart analyze)."

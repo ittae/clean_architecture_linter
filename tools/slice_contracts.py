@@ -29,7 +29,17 @@ def load_contracts(path: Path | None = None) -> dict[str, Any]:
     slices = data.get("slices")
     if not isinstance(slices, dict) or not slices:
         raise ValueError(f"{contracts_path} must declare a non-empty slices object")
+    fixture = data.get("fixture")
+    if not isinstance(fixture, str) or not fixture.strip():
+        raise ValueError(f"{contracts_path} must declare a non-empty fixture path")
     return data
+
+
+def fixture_dir(data: dict[str, Any]) -> str:
+    fixture = data.get("fixture")
+    if not isinstance(fixture, str) or not fixture.strip():
+        raise ValueError("contracts must declare fixture")
+    return fixture.strip()
 
 
 def discover_slices(rules_dir: Path | None = None) -> list[str]:
@@ -90,8 +100,13 @@ def missing_codes(machine_output: str, codes: list[str]) -> list[str]:
     return [code for code in codes if code not in found]
 
 
-def check_manifest(data: dict[str, Any], slices: list[str] | None = None) -> list[str]:
+def check_manifest(
+    data: dict[str, Any],
+    slices: list[str] | None = None,
+    repo_root: Path | None = None,
+) -> list[str]:
     slice_ids = slices if slices is not None else discover_slices()
+    root = repo_root or REPO_ROOT
     errors: list[str] = []
     missing = missing_slices(data, slice_ids)
     if missing:
@@ -105,6 +120,15 @@ def check_manifest(data: dict[str, Any], slices: list[str] | None = None) -> lis
         errors.append("invalid machine RULE_CODE(s): " + ", ".join(invalid))
     if not codes:
         errors.append("no contract codes declared")
+    try:
+        fixture = fixture_dir(data)
+    except ValueError as exc:
+        errors.append(str(exc))
+    else:
+        if fixture.startswith("/") or ".." in Path(fixture).parts:
+            errors.append(f"fixture must be a relative path inside the repo: {fixture}")
+        elif not (root / fixture).is_dir():
+            errors.append(f"fixture directory not found: {fixture}")
     return errors
 
 
@@ -126,12 +150,20 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="print declared RULE_CODE values, one per line",
     )
+    parser.add_argument(
+        "--print-fixture",
+        action="store_true",
+        help="print the declared fixture directory (repo-relative)",
+    )
     args = parser.parse_args(argv)
 
     data = load_contracts(args.contracts)
     if args.print_codes:
         for code in expected_codes(data):
             print(code)
+        return 0
+    if args.print_fixture:
+        print(fixture_dir(data))
         return 0
 
     status = 0
@@ -160,8 +192,15 @@ def main(argv: list[str] | None = None) -> int:
                 "CONTRACT OK: all declared plugin diagnostics present via dart analyze."
             )
 
-    if not args.check_manifest and not args.check_analyze and not args.print_codes:
-        parser.error("specify --check-manifest, --check-analyze, and/or --print-codes")
+    if (
+        not args.check_manifest
+        and not args.check_analyze
+        and not args.print_codes
+        and not args.print_fixture
+    ):
+        parser.error(
+            "specify --check-manifest, --check-analyze, --print-codes, and/or --print-fixture"
+        )
     return status
 
 
