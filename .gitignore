@@ -35,6 +35,10 @@ node_modules/
 # Flutter/Dart build artifacts
 build/
 
+# Python helper bytecode (tools/slice_contracts.py)
+__pycache__/
+*.pyc
+
 # Task files
 # tasks.json
 # tasks/ 
