@@ -79,7 +79,8 @@ jobs:
       run: bash tools/verify_analyze_parity.sh
 
   high-risk-lockstep:
-    # 1st-line PR gate: HIGH_RISK_PATHS must stay lockstep with light reusable SoT.
+    # 1st-line PR gate when .github/workflows/pr-review.yml exists.
+    # That workflow was removed; the script exits 0 if the file is absent.
     # 2nd-line (post-merge) guard lives in ittae/.github test_cal_high_risk_lockstep.py.
     runs-on: ubuntu-latest
 

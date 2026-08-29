@@ -3,6 +3,12 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WF="$ROOT/.github/workflows/pr-review.yml"
+# origin/main removed the inline GHA PR Review workflow; AI review meta is
+# published by the Mac mini poller. Nothing to lockstep in-repo then.
+if [[ ! -f "$WF" ]]; then
+  echo "LOCKSTEP OK: $WF absent (GHA PR Review workflow removed; 2nd-line guard is ittae/.github test_cal_high_risk_lockstep.py)"
+  exit 0
+fi
 EXPECTED='^\.github/workflows/|^\.env|^env/|/secrets?/|secret|secrets|(^|/)auth(/|$)|api[_-]?key|password|scripts/pr-autopilot|dependabot-alerts-sweep|crontab'
 ACTUAL=$(sed -n "s/^  HIGH_RISK_PATHS: '\(.*\)'/\1/p" "$WF" | head -1)
 if [[ -z "$ACTUAL" ]]; then
