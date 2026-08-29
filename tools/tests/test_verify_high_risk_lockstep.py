@@ -80,6 +80,18 @@ class TestVerifyHighRiskLockstep(unittest.TestCase):
             self.assertNotEqual(proc.returncode, 0)
             self.assertIn("AI-review wait reusable", proc.stderr)
 
+    def test_uses_claude_code_review_reusable_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            _write_workflow(
+                root,
+                "ci.yml",
+                "jobs:\n  review:\n    uses: ittae/.github/.github/workflows/claude-code-review.yml@main\n",
+            )
+            proc = _run(root)
+            self.assertNotEqual(proc.returncode, 0)
+            self.assertIn("AI-review wait reusable", proc.stderr)
+
     def test_comment_mentioning_pr_review_does_not_fail(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)

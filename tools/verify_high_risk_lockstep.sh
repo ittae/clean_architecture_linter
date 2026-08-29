@@ -24,10 +24,20 @@ for name in "${FORBIDDEN_NAMES[@]}"; do
   fi
 done
 
+uses_re=""
+for name in "${FORBIDDEN_NAMES[@]}"; do
+  esc="${name//./\\.}"
+  if [[ -n "$uses_re" ]]; then
+    uses_re+="|"
+  fi
+  uses_re+="$esc"
+done
+USES_RE="^[[:space:]]*uses:[[:space:]].*(${uses_re})"
+
 if [[ -d "$WF_DIR" ]]; then
   shopt -s nullglob
   for wf in "$WF_DIR"/*.yml "$WF_DIR"/*.yaml; do
-    if grep -E '^[[:space:]]*uses:[[:space:]].*pr-review(-(light|flutter))?\.yml' "$wf" >/dev/null 2>&1; then
+    if grep -E "$USES_RE" "$wf" >/dev/null 2>&1; then
       echo "LOCKSTEP FAIL: $wf calls a GHA AI-review wait reusable" >&2
       fail=1
     fi
