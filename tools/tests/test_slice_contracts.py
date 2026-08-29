@@ -17,6 +17,7 @@ from slice_contracts import (  # noqa: E402
     discover_slices,
     expected_codes,
     fixture_dir,
+    fixture_escapes_repo,
     load_contracts,
     missing_codes,
 )
@@ -80,6 +81,29 @@ class TestSliceContractsManifest(unittest.TestCase):
             cwd=REPO_ROOT,
         )
         self.assertNotEqual(result.returncode, 0)
+
+    def test_absolute_fixture_fails_closed(self) -> None:
+        self.assertTrue(fixture_escapes_repo("/tmp/outside"))
+        self.assertTrue(fixture_escapes_repo(r"C:\Windows"))
+        self.assertTrue(fixture_escapes_repo("C:/Windows"))
+        self.assertTrue(fixture_escapes_repo("../outside"))
+        self.assertFalse(fixture_escapes_repo("poc_v2/example"))
+        data = dict(load_contracts())
+        data["fixture"] = "/tmp/outside"
+        errors = check_manifest(data)
+        self.assertTrue(any("relative path" in error for error in errors))
+
+    def test_contracts_only_ignores_positional_fixture_dir(self) -> None:
+        script = REPO_ROOT / "tools" / "verify_analyze_parity.sh"
+        result = subprocess.run(
+            ["bash", str(script), "--contracts-only", "some/dir"],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("fixture: poc_v2/example", result.stdout)
+        self.assertNotIn("fixture: some/dir", result.stdout)
 
     def test_print_and_check_flags_are_exclusive(self) -> None:
         helper = REPO_ROOT / "tools" / "slice_contracts.py"

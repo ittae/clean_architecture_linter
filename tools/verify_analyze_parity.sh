@@ -61,20 +61,22 @@ fi
 echo "==> Slice contracts ($CONTRACTS_FILE)"
 python3 "$CONTRACTS_HELPER" --contracts "$CONTRACTS_FILE" --check-manifest
 
-if [[ -z "$FIXTURE_DIR" ]]; then
-  FIXTURE_DIR="$(python3 "$CONTRACTS_HELPER" --contracts "$CONTRACTS_FILE" --print-fixture)"
-fi
-if [[ -z "$FIXTURE_DIR" ]]; then
+DECLARED_FIXTURE="$(python3 "$CONTRACTS_HELPER" --contracts "$CONTRACTS_FILE" --print-fixture)"
+if [[ -z "$DECLARED_FIXTURE" ]]; then
   echo "No fixture directory declared in $CONTRACTS_FILE" >&2
   exit 1
 fi
 
-echo "    fixture: $FIXTURE_DIR"
-
 if [[ "$CONTRACTS_ONLY" -eq 1 ]]; then
+  echo "    fixture: $DECLARED_FIXTURE"
   echo "PASS: slice contract declarations only (skipped dart analyze)."
   exit 0
 fi
+
+if [[ -z "$FIXTURE_DIR" ]]; then
+  FIXTURE_DIR="$DECLARED_FIXTURE"
+fi
+echo "    fixture: $FIXTURE_DIR"
 
 FIXTURE_PATH="$ROOT_DIR/$FIXTURE_DIR"
 if [[ ! -d "$FIXTURE_PATH" ]]; then

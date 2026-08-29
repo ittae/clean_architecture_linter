@@ -101,6 +101,18 @@ def missing_codes(machine_output: str, codes: list[str]) -> list[str]:
     return [code for code in codes if code not in found]
 
 
+def fixture_escapes_repo(fixture: str) -> bool:
+    """True when fixture is absolute or walks out of the repo.
+
+    Path.is_absolute() is portable. Drive-letter paths (`C:\\...`) are also
+    rejected on POSIX so a Windows-style absolute cannot sneak in as relative.
+    """
+    path = Path(fixture)
+    if path.is_absolute() or ".." in path.parts:
+        return True
+    return len(fixture) >= 2 and fixture[0].isalpha() and fixture[1] == ":"
+
+
 def check_manifest(
     data: dict[str, Any],
     slices: list[str] | None = None,
@@ -126,7 +138,7 @@ def check_manifest(
     except ValueError as exc:
         errors.append(str(exc))
     else:
-        if fixture.startswith("/") or ".." in Path(fixture).parts:
+        if fixture_escapes_repo(fixture):
             errors.append(f"fixture must be a relative path inside the repo: {fixture}")
         elif not (root / fixture).is_dir():
             errors.append(f"fixture directory not found: {fixture}")
