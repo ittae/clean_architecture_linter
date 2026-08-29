@@ -78,10 +78,13 @@ Flutter 앱 CI 예시:
 ## 회귀 가드
 
 - `tools/verify_analyze_parity.sh` — `poc_v2/example` fixture에서 `dart analyze`가
-  플러그인 진단(`presentation_no_throw`, `domain_purity`)을 계속 보고하는지
-  검증합니다. 유실되면 실패합니다. Flutter가 있으면 `flutter analyze` 개수도
-  함께 출력해 이 gap을 가시화하지만, 문서화된 upstream 이슈이므로 기본적으로
-  실패시키지는 않습니다(`--require-parity`로 opt-in).
+  `tools/slice_contracts.json`에 선언한 슬라이스 contract 진단(현재
+  `presentation_no_throw`, `domain_purity`, `repository_pass_through`,
+  `layer_dependency`)을 계속 보고하는지 검증합니다. 유실되면 실패합니다.
+  `--contracts-only`는 선언 파일만 검사합니다. Flutter가 있으면
+  `flutter analyze` 개수도 함께 출력해 이 gap을 가시화하지만, 문서화된
+  upstream 이슈이므로 기본적으로 실패시키지는 않습니다(`--require-parity`로
+  opt-in).
 - `.github/workflows/ci.yml`의 `plugin-diagnostics` 잡이 위 스크립트를 매 PR에서
   실행합니다(Dart-only 러너, `flutter` 스킵).
 
