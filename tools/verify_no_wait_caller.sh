@@ -12,6 +12,7 @@ FORBIDDEN_STEMS=(
   pr-review-light
   pr-review-flutter
   claude-code-review
+  claude-review-light
 )
 
 fail=0

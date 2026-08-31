@@ -123,6 +123,58 @@ class TestVerifyNoWaitCaller(unittest.TestCase):
             self.assertNotEqual(proc.returncode, 0)
             self.assertIn("AI-review wait reusable", proc.stderr)
 
+    def test_restored_claude_review_light_yml_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            _write_workflow(root, "claude-review-light.yml", "name: restored\n")
+            proc = _run(root)
+            self.assertNotEqual(proc.returncode, 0)
+            self.assertIn("wait-caller workflow restored", proc.stderr)
+            self.assertIn("claude-review-light.yml", proc.stderr)
+
+    def test_uses_claude_review_light_reusable_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            uses_line = (
+                "    uses: ittae/.github/.github/workflows/"
+                "claude-review-light.yml@main\n"
+            )
+            _write_workflow(
+                root,
+                "ci.yml",
+                "jobs:\n  review:\n" + uses_line,
+            )
+            proc = _run(root)
+            self.assertNotEqual(proc.returncode, 0)
+            self.assertIn("AI-review wait reusable", proc.stderr)
+            self.assertIn("claude-review-light.yml@main", proc.stderr)
+
+    def test_prefix_foo_pr_review_yml_file_is_ok(self) -> None:
+        """Path-boundary: foo-pr-review.yml is not the forbidden stem pr-review."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            _write_workflow(root, "foo-pr-review.yml", "name: unrelated\n")
+            proc = _run(root)
+            self.assertEqual(proc.returncode, 0, msg=proc.stderr)
+            self.assertIn("LOCKSTEP OK", proc.stdout)
+
+    def test_uses_prefix_foo_pr_review_is_ok(self) -> None:
+        """USES_RE (.*/)? must not treat foo-pr-review.yml as pr-review.yml."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            uses_line = (
+                "    uses: ittae/.github/.github/workflows/"
+                "foo-pr-review.yml@main\n"
+            )
+            _write_workflow(
+                root,
+                "ci.yml",
+                "jobs:\n  review:\n" + uses_line,
+            )
+            proc = _run(root)
+            self.assertEqual(proc.returncode, 0, msg=proc.stderr)
+            self.assertIn("LOCKSTEP OK", proc.stdout)
+
     def test_comment_mentioning_pr_review_does_not_fail(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
