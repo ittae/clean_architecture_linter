@@ -78,18 +78,19 @@ jobs:
     - name: Verify plugin diagnostics via dart analyze
       run: bash tools/verify_analyze_parity.sh
 
-  high-risk-lockstep:
-    # 1st-line PR gate when .github/workflows/pr-review.yml exists.
-    # That workflow was removed; the script exits 0 if the file is absent.
-    # 2nd-line (post-merge) guard lives in ittae/.github test_cal_high_risk_lockstep.py.
+  no-wait-caller:
+    # 1st-line PR gate: fail if a GHA AI-review wait caller
+    # (pr-review.yml / .yaml etc.) is restored. Wait callers were removed
+    # 2026-08-29; AI review is poller-only. Do not revive HIGH_RISK_PATHS
+    # lockstep against a deleted local wait workflow.
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Verify HIGH_RISK_PATHS lockstep
-      run: bash tools/verify_high_risk_lockstep.sh
+    - name: Verify no GHA AI-review wait caller
+      run: bash tools/verify_no_wait_caller.sh
 
 
   host-sot-tools:

@@ -4,14 +4,3 @@ self-hosted-runner:
   labels:
     - ittae
     - ittae-2
-paths:
-  .github/workflows/pr-review.yml:
-    ignore:
-      # GITHUB_OUTPUT / 환경 변수 확장 패턴에서 반복되는 노이즈 (info)
-      - 'shellcheck reported issue in this script: SC2086:.*'
-      # 의도적 single-quote (GH expression 보호) (info)
-      - 'shellcheck reported issue in this script: SC2016:.*'
-      # sed vs ${var//}/ 스타일 제안 (style)
-      - 'shellcheck reported issue in this script: SC2001:.*'
-      # 개별 >> redirect 스타일 제안 (style)
-      - 'shellcheck reported issue in this script: SC2129:.*'
