@@ -70,7 +70,7 @@ for attempt in $(seq 1 "$ATTEMPTS"); do
   SENTINEL_ROWS="$(count_sentinel "$OUT")"
   [ "$SENTINEL_ROWS" -gt 0 ] && break
   echo "::warning::clean_architecture_linter diagnostics missing (attempt $attempt/$ATTEMPTS)"
-  sleep $((attempt * 5))
+  [ "$attempt" -lt "$ATTEMPTS" ] && sleep $((attempt * 5))
 done
 if [ "$SENTINEL_ROWS" -eq 0 ]; then
   # Keep the raw output: a broken plugins: entry, a plugin compile error or a

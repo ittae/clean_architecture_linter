@@ -36,7 +36,7 @@ class ZzLintSentinelException implements Exception {
 @Riverpod(keepAlive: true)
 class ZzLintSentinelTodoListNotifier {
   /// Throws so `presentation_no_throw` reports this line.
-  Future<void> build() async {
+  Future<void> build() {
     throw const ZzLintSentinelException();
   }
 }
