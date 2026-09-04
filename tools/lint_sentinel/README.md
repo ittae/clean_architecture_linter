@@ -52,10 +52,18 @@ Replace a bare `dart analyze --fatal-infos --fatal-warnings` step with:
 
 ```bash
 SENTINEL_DIR=lib/zz_lint_sentinel
+# Plugin rule codes the sentinel file violates. Machine output upper-cases them.
+SENTINEL_CODES='RIVERPOD_KEEP_ALIVE|PRESENTATION_NO_THROW'
 OUT=""; SENTINEL_ROWS=0
+count_sentinel() {
+  printf '%s\n' "$1" | awk -F'|' -v d="/$SENTINEL_DIR/" -v codes="$SENTINEL_CODES" '
+    BEGIN { n = split(codes, c, "|"); for (i = 1; i <= n; i++) want[c[i]] = 1 }
+    ($3 in want) && index($4, d) { hits++ }
+    END { print hits + 0 }'
+}
 for attempt in 1 2 3; do
   OUT="$(dart analyze --format=machine 2>&1 || true)"
-  SENTINEL_ROWS="$(printf '%s\n' "$OUT" | grep -E '^[A-Z]+\|' | grep -c "/$SENTINEL_DIR/" || true)"
+  SENTINEL_ROWS="$(count_sentinel "$OUT")"
   [ "$SENTINEL_ROWS" -gt 0 ] && break
   echo "::warning::clean_architecture_linter diagnostics missing (attempt $attempt)"
 done
@@ -63,7 +71,11 @@ if [ "$SENTINEL_ROWS" -eq 0 ]; then
   echo "::error::clean_architecture_linter plugin diagnostics were not delivered; refusing to treat the tree as clean"
   exit 1
 fi
-REAL="$(printf '%s\n' "$OUT" | grep -E '^[A-Z]+\|' | grep -v "/$SENTINEL_DIR/" || true)"
+# Everything except the sentinel's own plugin rows fails the step. Built-in
+# analyzer diagnostics inside the sentinel file still fail it.
+REAL="$(printf '%s\n' "$OUT" | awk -F'|' -v d="/$SENTINEL_DIR/" -v codes="$SENTINEL_CODES" '
+  BEGIN { n = split(codes, c, "|"); for (i = 1; i <= n; i++) want[c[i]] = 1 }
+  /^[A-Z]+\|/ && !(($3 in want) && index($4, d))')"
 if [ -n "$REAL" ]; then
   printf '%s\n' "$REAL"
   exit 1
@@ -71,13 +83,17 @@ fi
 echo "dart analyze clean (sentinel rows: $SENTINEL_ROWS)"
 ```
 
-Every non-sentinel row fails the step, which is the same policy as
-`--fatal-infos --fatal-warnings`. `--format=machine` rows look like
-`SEVERITY|TYPE|RULE_CODE|path|line|col|len|message`.
+Every row other than the sentinel's two plugin rows fails the step, which is
+the same policy as `--fatal-infos --fatal-warnings`. `--format=machine` rows
+look like `SEVERITY|TYPE|RULE_CODE|path|line|col|len|message`; the count keys
+on `RULE_CODE` **and** the path, because built-in lints (for example
+`public_member_api_docs` under strict lint sets) also emit rows for the
+sentinel file and would otherwise count as "plugin delivered".
 
-If the consumer's `analysis_options.yaml` sets `riverpod_keep_alive: ignore`
-and `presentation_no_throw: ignore`, the sentinel goes silent; keep at least one
-of them enabled or add a violation of a rule the app does enforce.
+`SENTINEL_CODES` must match the rules the consumer actually enables. If
+`analysis_options.yaml` sets `riverpod_keep_alive: ignore` or
+`presentation_no_throw: ignore`, drop that code from the list; if both are
+ignored, add a violation of a rule the app does enforce and list its code.
 
 ## Residual risk
 
