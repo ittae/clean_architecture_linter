@@ -8,6 +8,7 @@ example/
 ├── analysis_options.yaml        # enables the plugin (path dependency on ..)
 └── lib/
     ├── good_examples/            # 0 warnings — Domain/Data pass-through Todo feature
+    │                             #   + iap keepAlive provider (riverpod_keep_alive pass)
     └── bad_examples/             # intentionally violates 2 rules, on purpose
 ```
 
