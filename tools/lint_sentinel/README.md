@@ -22,6 +22,52 @@ loaded machines, which is exactly the CI-runner profile.
 The rule repo's own CI shows the same truncation: `tools/verify_analyze_parity.sh`
 reported 12 of 16 plugin rows in one run and 16 in the neighbouring runs.
 
+## Root cause (measured 2026-09-04)
+
+Driving the analysis server over the legacy protocol and logging
+`server.status` against plugin `analysis.errors` shows two things:
+
+- With `analysis_server_plugin 0.3.15` (the 2.4.x line) the plugin reports
+  *idle* to the server after its first file (priority/changed-file handling)
+  and only then starts its full pass. The server forwards that idle as
+  `isAnalyzing: false`; `dart analyze` stops collecting there. The full pass
+  arrives 10-50 ms later and is discarded. 9 of 10 traces showed the
+  `false -> true -> errors -> false` flip on the 2-row fixture.
+- With `analysis_server_plugin 0.3.22` the plugin status follows its analysis
+  driver (reworked in 0.3.16), the flip is gone, and `dart analyze` delivered
+  every row in 55 of 55 runs on the same fixtures, 15 of them under the same
+  parallel load that lost 15 of 15 on 0.3.15.
+
+So the durable fix for consumers is the analyzer 14 / `analysis_server_plugin
+0.3.22` line of this package. The sentinel gate stays as belt and braces: a
+plugin that fails to start, a future host regression, or the residual ordering
+gap (0.3.22 still sends its idle status a few milliseconds before the last
+error batch, which `dart analyze` currently tolerates) all surface as a loud
+failure instead of a silent pass. The trace script is small enough to inline:
+
+```python
+# legacy_trace.py <package_dir>: prints the server.status / analysis.errors timeline
+import json, os, queue, subprocess, sys, threading, time
+root = os.path.abspath(sys.argv[1])
+p = subprocess.Popen(['dart', 'language-server', '--protocol=analyzer'],
+                     stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, bufsize=1)
+q, t0 = queue.Queue(), time.time()
+threading.Thread(target=lambda: [q.put((time.time() - t0, json.loads(l))) for l in p.stdout if l.startswith('{')], daemon=True).start()
+def send(i, m, params): p.stdin.write(json.dumps({'id': str(i), 'method': m, 'params': params}) + '\n'); p.stdin.flush()
+send(1, 'server.setSubscriptions', {'subscriptions': ['STATUS']})
+send(2, 'analysis.setAnalysisRoots', {'included': [root], 'excluded': []})
+deadline = None
+while deadline is None or time.time() < deadline:
+    try: ts, m = q.get(timeout=0.2)
+    except queue.Empty: continue
+    if m.get('event') == 'server.status':
+        a = m['params']['analysis']['isAnalyzing']; print(f'{ts:6.2f}s status isAnalyzing={a}')
+        if a is False and deadline is None: deadline = time.time() + 5
+    elif m.get('event') == 'analysis.errors' and m['params']['errors']:
+        print(f"{ts:6.2f}s errors {os.path.relpath(m['params']['file'], root)}: {len(m['params']['errors'])}")
+send(3, 'server.shutdown', {})
+```
+
 Upstream: [dart-lang/sdk#63787](https://github.com/dart-lang/sdk/issues/63787)
 tracks the "analysis complete before plugin diagnostics" timing for the language
 server; the merged follow-up (a custom "wait for in-progress analysis" request)
