@@ -145,7 +145,7 @@ warning - lib/bad_examples/features/todo/data/repositories/todo_repository_impl.
 ```yaml
 plugins:
   clean_architecture_linter: ^2.4.0
-  riverpod_lint: ^3.1.7
+  riverpod_lint: ^3.1.9
 ```
 
 > v1 `custom_lint` upstream([invertase/dart_custom_lint](https://github.com/invertase/dart_custom_lint))은 2026년 5월에 archive 처리되었습니다. v2.0은 공식 플러그인으로 완전히 이주했으므로 기존 `pubspec_overrides.yaml` 다리는 더 이상 필요 없습니다 — 업그레이드 시 삭제하세요.

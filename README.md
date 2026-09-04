@@ -164,7 +164,7 @@ The package runs on the official `analysis_server_plugin` (`>=0.3.22 <0.3.23`), 
 ```yaml
 plugins:
   clean_architecture_linter: ^2.4.0
-  riverpod_lint: ^3.1.7
+  riverpod_lint: ^3.1.9
 ```
 
 > The v1 `custom_lint` upstream ([invertase/dart_custom_lint](https://github.com/invertase/dart_custom_lint)) was archived in May 2026. v2.0 moves fully to the official plugin, so the old `pubspec_overrides.yaml` bridge is no longer needed — delete it when upgrading.
