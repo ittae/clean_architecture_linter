@@ -59,7 +59,7 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 30. **Riverpod Ref After Async Gap** - provider method에서 await 이후 ref.read/watch/listen/invalidate/refresh 사용 시 advisory 경고 (직전에 `if (!ref.mounted) return;` 가드가 있으면 보고하지 않음)
 31. **Riverpod Provider Naming** - Provider 함수는 타입 접미사 포함 필수 (repository/usecase/datasource)
 32. **Ref Mounted Usage** - UI 레이어(위젯/페이지)에서만 `ref.mounted` 금지. Notifier 안에서는 권장되는 dispose 가드이므로 보고하지 않음
-33. **Riverpod Keep Alive** - `keepAlive: true`는 앱 전역 상태에만 사용. 이름 휴리스틱은 auth/user/session/settings/preferences/config/theme/locale/cache/analytics/notification/connectivity/permission/account, 앱 수명 startup/bootstrap/listener/manager/storage/timezone, 인프라 접미사, `auth/` 경로 파일을 통과시킴. 일반 명사 전역 캐시(예: `palettes`)는 여전히 보고되므로 `// ignore: clean_architecture_linter/riverpod_keep_alive`와 사유 doc 주석을 유지
+33. **Riverpod Keep Alive** - `keepAlive: true`는 앱 전역·앱 수명 상태(auth, settings, cache, startup, listener 등)에만 사용. 이름/경로 휴리스틱이며 전체 키워드 목록과 일반 명사 캐시의 `// ignore` + 사유 관례는 [doc/EXAMPLES.md §9](doc/EXAMPLES.md#9-keepalive-outside-app-wide-state-riverpod_keep_alive-위반) 참고
 
 ### 🔧 Cross-Layer 규칙 (1개 규칙)
 34. **Allowed Instance Variables** - 무상태 아키텍처 강제 (UseCase/Repository/DataSource)

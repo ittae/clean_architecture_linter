@@ -61,7 +61,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 30. **Riverpod Ref After Async Gap** - Advisory warning for ref.read/watch/listen/invalidate/refresh after await in provider methods (a preceding `if (!ref.mounted) return;` guard suppresses it)
 31. **Riverpod Provider Naming** - Provider functions must include type suffix (repository/usecase/datasource)
 32. **Ref Mounted Usage** - Avoid `ref.mounted` in the UI layer (widgets/pages); inside a Notifier it is the recommended disposal guard and is not reported
-33. **Riverpod Keep Alive** - Only use `keepAlive: true` for app-wide state. Name heuristic passes auth/user/session/settings/preferences/config/theme/locale/cache/analytics/notification/connectivity/permission/account, app-lifetime startup/bootstrap/listener/manager/storage/timezone, infrastructure suffixes, and any file under an `auth/` path; a generic-noun global cache (e.g. `palettes`) is still reported and should keep `// ignore: clean_architecture_linter/riverpod_keep_alive` with a doc comment explaining why
+33. **Riverpod Keep Alive** - Only use `keepAlive: true` for app-wide or app-lifetime state (auth, settings, cache, startup, listener, ...). Name/path heuristic; full keyword list and the `// ignore` + reason convention for generic-noun caches in [doc/EXAMPLES.md §9](doc/EXAMPLES.md#9-keepalive-outside-app-wide-state-riverpod_keep_alive-위반)
 
 ### 🔧 Cross-Layer Rules (1 rule)
 34. **Allowed Instance Variables** - Enforces stateless architecture (UseCase/Repository/DataSource)

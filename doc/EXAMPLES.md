@@ -466,8 +466,9 @@ The rule is a name/path heuristic. It accepts names containing an app-wide
 state keyword (auth, user, session, settings, preferences, config, theme,
 locale, cache, analytics, notification, connectivity, permission, account), an
 app-lifetime keyword (startup, bootstrap, listener, manager, storage,
-timezone), an infrastructure suffix (datasource, repository, usecase, service,
-client, api), or any file under an `auth/` path.
+timezone), an infrastructure keyword (datasource, repository, usecase, service,
+client, api), or any file under an `auth/` path. Matching is a case-insensitive
+substring test on the declaration name, so `apiKey` passes via `api`.
 
 A global cache whose name is a plain noun (for example `palettes`) is still
 reported. Do not rename it to game the heuristic; keep the ignore together with
