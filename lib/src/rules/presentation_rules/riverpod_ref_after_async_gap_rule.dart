@@ -12,8 +12,30 @@ import '../../utils/riverpod_provider_detector.dart';
 const _trackedRefMethods = {'read', 'watch', 'listen', 'invalidate', 'refresh'};
 const _futureContinuationMethods = {'then', 'catchError', 'whenComplete'};
 
-/// Reports Riverpod `ref` usage and unguarded `state` writes after an async gap
-/// in provider classes.
+/// Selects which post-async-gap sites a [RiverpodRefAfterAsyncGapVisitor]
+/// reports.
+///
+/// [RiverpodRefAfterAsyncGapRule] tracks `ref.*` calls only. Unguarded
+/// `state = …` writes after a gap are tracked by the opt-in
+/// `riverpod_state_after_async_gap` rule, which reuses the same visitor with
+/// [stateAssignments] enabled instead.
+class RefGapTracking {
+  const RefGapTracking({
+    required this.refCalls,
+    required this.stateAssignments,
+  });
+
+  /// Report `ref.read/watch/listen/invalidate/refresh` after an async gap.
+  final bool refCalls;
+
+  /// Report simple `state = …` / `this.state = …` after an async gap.
+  final bool stateAssignments;
+}
+
+/// Reports Riverpod `ref` usage after an async gap in provider classes.
+///
+/// Unguarded `state` writes after a gap are intentionally *not* reported here;
+/// see the opt-in `riverpod_state_after_async_gap` rule.
 class RiverpodRefAfterAsyncGapRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'riverpod_ref_after_async_gap',
@@ -27,7 +49,7 @@ class RiverpodRefAfterAsyncGapRule extends AnalysisRule {
     : super(
         name: 'riverpod_ref_after_async_gap',
         description:
-            'Advises against using Riverpod ref or assigning to state after an async gap (await or Future continuations) in provider classes.',
+            'Advises against using Riverpod ref after an async gap (await or Future continuations) in provider classes.',
       );
 
   @override
@@ -41,7 +63,11 @@ class RiverpodRefAfterAsyncGapRule extends AnalysisRule {
     RuleVisitorRegistry registry,
     RuleContext context,
   ) {
-    final visitor = _RiverpodRefAfterAsyncGapVisitor(this, context);
+    final visitor = RiverpodRefAfterAsyncGapVisitor(
+      this,
+      context,
+      tracking: const RefGapTracking(refCalls: true, stateAssignments: false),
+    );
     registry.addClassDeclaration(this, visitor);
     // Notifier helpers are routinely `extension on FooNotifier` (often in a
     // part file). Class-only registration skipped those members entirely.
@@ -49,11 +75,20 @@ class RiverpodRefAfterAsyncGapRule extends AnalysisRule {
   }
 }
 
-class _RiverpodRefAfterAsyncGapVisitor extends SimpleAstVisitor<void> {
-  _RiverpodRefAfterAsyncGapVisitor(this.rule, this.context);
+/// Scans Riverpod notifier classes/extensions under
+/// `lib/**/presentation/**/providers/**` for post-async-gap sites selected by
+/// [tracking]. Shared by `riverpod_ref_after_async_gap` and
+/// `riverpod_state_after_async_gap`.
+class RiverpodRefAfterAsyncGapVisitor extends SimpleAstVisitor<void> {
+  RiverpodRefAfterAsyncGapVisitor(
+    this.rule,
+    this.context, {
+    required this.tracking,
+  });
 
   final AnalysisRule rule;
   final RuleContext context;
+  final RefGapTracking tracking;
 
   String get _filePath =>
       context.currentUnit?.file.path ?? context.definingUnit.file.path;
@@ -83,6 +118,7 @@ class _RiverpodRefAfterAsyncGapVisitor extends SimpleAstVisitor<void> {
       if (member.body.isAsynchronous) {
         _AsyncRefAfterGapScanner(
           rule,
+          tracking: tracking,
           reportedRefCallOffsets: reportedRefCallOffsets,
         ).scan(member.body);
       }
@@ -90,6 +126,7 @@ class _RiverpodRefAfterAsyncGapVisitor extends SimpleAstVisitor<void> {
       member.body.accept(
         _AsyncCallbackScanner(
           rule,
+          tracking: tracking,
           reportedRefCallOffsets: reportedRefCallOffsets,
         ),
       );
@@ -109,10 +146,15 @@ class _RiverpodRefAfterAsyncGapVisitor extends SimpleAstVisitor<void> {
 }
 
 class _AsyncCallbackScanner extends RecursiveAstVisitor<void> {
-  _AsyncCallbackScanner(this.rule, {Set<int>? reportedRefCallOffsets})
-    : _reportedRefCallOffsets = reportedRefCallOffsets ?? {};
+  _AsyncCallbackScanner(
+    this.rule, {
+    required RefGapTracking tracking,
+    Set<int>? reportedRefCallOffsets,
+  }) : _tracking = tracking,
+       _reportedRefCallOffsets = reportedRefCallOffsets ?? {};
 
   final AnalysisRule rule;
+  final RefGapTracking _tracking;
   final Set<int> _reportedRefCallOffsets;
   final Map<String, FunctionDeclaration> _localFunctions = {};
 
@@ -130,6 +172,7 @@ class _AsyncCallbackScanner extends RecursiveAstVisitor<void> {
     if (node.body.isAsynchronous) {
       _AsyncRefAfterGapScanner(
         rule,
+        tracking: _tracking,
         reportedRefCallOffsets: _reportedRefCallOffsets,
       ).scan(node.body);
     }
@@ -146,6 +189,7 @@ class _AsyncCallbackScanner extends RecursiveAstVisitor<void> {
 
         _AsyncRefAfterGapScanner(
           rule,
+          tracking: _tracking,
           hasInheritedAsyncGap: true,
           reportedRefCallOffsets: _reportedRefCallOffsets,
         ).scan(body);
@@ -173,16 +217,19 @@ class _AsyncCallbackScanner extends RecursiveAstVisitor<void> {
 class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
   _AsyncRefAfterGapScanner(
     this.rule, {
+    required RefGapTracking tracking,
     bool hasInheritedAsyncGap = false,
     Map<String, FunctionDeclaration>? localFunctions,
     Set<String>? activeLocalFunctionNames,
     Set<int>? reportedRefCallOffsets,
-  }) : _hasInheritedAsyncGap = hasInheritedAsyncGap,
+  }) : _tracking = tracking,
+       _hasInheritedAsyncGap = hasInheritedAsyncGap,
        _localFunctions = localFunctions ?? {},
        _activeLocalFunctionNames = activeLocalFunctionNames ?? {},
        _reportedRefCallOffsets = reportedRefCallOffsets ?? {};
 
   final AnalysisRule rule;
+  final RefGapTracking _tracking;
   final bool _hasInheritedAsyncGap;
   final Map<String, FunctionDeclaration> _localFunctions;
   final Set<String> _activeLocalFunctionNames;
@@ -195,15 +242,19 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     _scannedBody = body;
     body.accept(this);
 
-    for (final refCall in _refCalls) {
-      if (_shouldReport(refCall)) {
-        _reportRefCall(refCall);
+    if (_tracking.refCalls) {
+      for (final refCall in _refCalls) {
+        if (_shouldReport(refCall)) {
+          _reportRefCall(refCall);
+        }
       }
     }
 
-    for (final assignment in _stateAssignments) {
-      if (_shouldReport(assignment)) {
-        _reportStateAssignment(assignment);
+    if (_tracking.stateAssignments) {
+      for (final assignment in _stateAssignments) {
+        if (_shouldReport(assignment)) {
+          _reportStateAssignment(assignment);
+        }
       }
     }
   }
@@ -247,7 +298,9 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     // Simple `state = …` / `this.state = …` only.
     // Out of scope: compound ops (`??=`, `+=`, …); name-based match may FP on
     // a local `state` variable (file path is limited to presentation/providers).
-    if (node.operator.lexeme == '=' && _isStateTarget(node.leftHandSide)) {
+    if (_tracking.stateAssignments &&
+        node.operator.lexeme == '=' &&
+        _isStateTarget(node.leftHandSide)) {
       _stateAssignments.add(node);
     }
 
@@ -483,6 +536,7 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     try {
       _AsyncRefAfterGapScanner(
         rule,
+        tracking: _tracking,
         hasInheritedAsyncGap: true,
         localFunctions: _localFunctions,
         activeLocalFunctionNames: _activeLocalFunctionNames,
@@ -508,8 +562,8 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     rule.reportAtNode(
       assignment,
       arguments: [
-        'Avoid assigning to state after an async gap in Riverpod providers.',
-        'Guard the post-gap state assignment with "if (!ref.mounted) return;" before writing to state.',
+        'Avoid assigning to state after an async gap in Riverpod providers (Riverpod 3 throws UnmountedRefException once the provider is disposed).',
+        'Await into a local first, then guard: "final next = await …; if (!ref.mounted) return; state = next;".',
       ],
     );
   }

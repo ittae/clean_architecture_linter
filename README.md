@@ -66,6 +66,17 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 ### 🔧 Cross-Layer Rules (1 rule)
 34. **Allowed Instance Variables** - Enforces stateless architecture (UseCase/Repository/DataSource)
 
+### 🔕 Opt-in: Riverpod State After Async Gap
+**Riverpod State After Async Gap** (`riverpod_state_after_async_gap`) - Reports an unguarded `state = …` after an `await` in provider methods, including `state = await …`. Riverpod 3 throws `UnmountedRefException` when `state` is written after the provider is disposed, so the fix is `final next = await …; if (!ref.mounted) return; state = next;`. **Disabled by default** because the `state = await` idiom is common in existing apps; enable it per project:
+
+```yaml
+# analysis_options.yaml
+plugins:
+  clean_architecture_linter:
+    diagnostics:
+      riverpod_state_after_async_gap: true
+```
+
 ### 🧪 Optional: Test Coverage Rule
 **Test Coverage** - Enforces test files for UseCases, Repositories, DataSources, and Notifiers (disabled by default)
 
@@ -111,7 +122,7 @@ dart pub get
 dart analyze        # Flutter projects too — use `dart analyze`, NOT `flutter analyze`
 ```
 
-That's it! The 34 rules are reported directly in your `dart analyze` output.
+That's it! The 34 default rules are reported directly in your `dart analyze` output (plus the opt-in `riverpod_state_after_async_gap`, see the rule list above).
 
 > ⚠️ **Use `dart analyze`, not `flutter analyze`.** `flutter analyze` silently
 > drops `analysis_server_plugin` diagnostics (it stops collecting before the

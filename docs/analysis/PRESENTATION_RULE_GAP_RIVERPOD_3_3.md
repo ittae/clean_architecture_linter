@@ -99,7 +99,16 @@ Verdict key:
 - **Residual:** Freezed cases literally named `data` / `loading` / `error` →
   still flagged (name heuristic). Type-aware receiver check deferred.
 
-### 3. `riverpod_ref_after_async_gap` — track `state` writes after await (**shipped**)
+### 3. `riverpod_ref_after_async_gap` — track `state` writes after await (**shipped, then split to opt-in**)
+
+- **Post-merge follow-up:** the `state` write check moved into its own opt-in
+  rule `riverpod_state_after_async_gap` (`registerLintRule`, enable via
+  `plugins: clean_architecture_linter: diagnostics:`). Consumer simulation on
+  five ittae apps surfaced 125+ existing `state = await …` /
+  `await x; state = …` sites, all true positives under Riverpod 3 but a
+  default-on INFO would have broken every `--fatal-infos` CI on the next
+  package upgrade. `riverpod_ref_after_async_gap` stays default-on for
+  `ref.*` only.
 
 - **Pain:** silent FN for the most common post-dispose crash path:
   `await x; state = AsyncData(...)` without `if (!ref.mounted) return;`.
