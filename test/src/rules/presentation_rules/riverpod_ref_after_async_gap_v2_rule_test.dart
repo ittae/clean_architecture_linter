@@ -1238,73 +1238,10 @@ extension CounterChangeNotifierHelpers on CounterChangeNotifier {
       },
     );
 
-    test('reports unguarded state assignment after await', () async {
-      final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
-          .analyze(
-            files: {
-              'lib/features/todo/presentation/providers/todo_notifier.dart': '''
-abstract class _\$TodoNotifier {}
-
-class TodoNotifier extends _\$TodoNotifier {
-  Future<void> load() async {
-    await fetchTodo();
-    state = AsyncData(todo);
-  }
-}
-''',
-            },
-            definingFile:
-                'lib/features/todo/presentation/providers/todo_notifier.dart',
-          );
-
-      result.expectDiagnostics([
-        const ExpectedV2Diagnostic(
-          relativePath:
-              'lib/features/todo/presentation/providers/todo_notifier.dart',
-          codeName: 'riverpod_ref_after_async_gap',
-          problemMessage:
-              'Avoid assigning to state after an async gap in Riverpod providers.',
-          correctionMessage:
-              'Guard the post-gap state assignment with "if (!ref.mounted) return;" before writing to state.',
-        ),
-      ]);
-    });
-
-    test('reports unguarded this.state assignment after await', () async {
-      final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
-          .analyze(
-            files: {
-              'lib/features/todo/presentation/providers/todo_notifier.dart': '''
-abstract class _\$TodoNotifier {}
-
-class TodoNotifier extends _\$TodoNotifier {
-  Future<void> load() async {
-    await fetchTodo();
-    this.state = AsyncData(todo);
-  }
-}
-''',
-            },
-            definingFile:
-                'lib/features/todo/presentation/providers/todo_notifier.dart',
-          );
-
-      result.expectDiagnostics([
-        const ExpectedV2Diagnostic(
-          relativePath:
-              'lib/features/todo/presentation/providers/todo_notifier.dart',
-          codeName: 'riverpod_ref_after_async_gap',
-          problemMessage:
-              'Avoid assigning to state after an async gap in Riverpod providers.',
-          correctionMessage:
-              'Guard the post-gap state assignment with "if (!ref.mounted) return;" before writing to state.',
-        ),
-      ]);
-    });
-
     test(
-      'does not report state assignment guarded by ref.mounted after await',
+      'does not report state assignment after await (opt-in rule)',
       () async {
+        // `state = …` after a gap belongs to riverpod_state_after_async_gap.
         final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
             .analyze(
               files: {
@@ -1315,8 +1252,11 @@ abstract class _\$TodoNotifier {}
 class TodoNotifier extends _\$TodoNotifier {
   Future<void> load() async {
     await fetchTodo();
-    if (!ref.mounted) return;
-    state = AsyncData(todo);
+    state = 1;
+  }
+
+  Future<void> loadRhs() async {
+    state = await fetchTodo();
   }
 }
 ''',
@@ -1328,156 +1268,5 @@ class TodoNotifier extends _\$TodoNotifier {
         result.expectNoDiagnostics();
       },
     );
-
-    test(
-      'does not report state assignment inside if (ref.mounted) after await',
-      () async {
-        final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
-            .analyze(
-              files: {
-                'lib/features/todo/presentation/providers/todo_notifier.dart':
-                    '''
-abstract class _\$TodoNotifier {}
-
-class TodoNotifier extends _\$TodoNotifier {
-  Future<void> load() async {
-    await fetchTodo();
-    if (ref.mounted) {
-      state = AsyncData(todo);
-    }
-  }
-}
-''',
-              },
-              definingFile:
-                  'lib/features/todo/presentation/providers/todo_notifier.dart',
-            );
-
-        result.expectNoDiagnostics();
-      },
-    );
-
-    test(
-      'still reports state assignment when a later await invalidates an earlier guard',
-      () async {
-        final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
-            .analyze(
-              files: {
-                'lib/features/todo/presentation/providers/todo_notifier.dart':
-                    '''
-abstract class _\$TodoNotifier {}
-
-class TodoNotifier extends _\$TodoNotifier {
-  Future<void> load() async {
-    await fetchTodo();
-    if (!ref.mounted) return;
-    await fetchMore();
-    state = AsyncData(todo);
-  }
-}
-''',
-              },
-              definingFile:
-                  'lib/features/todo/presentation/providers/todo_notifier.dart',
-            );
-
-        result.expectDiagnostics([
-          const ExpectedV2Diagnostic(
-            relativePath:
-                'lib/features/todo/presentation/providers/todo_notifier.dart',
-            codeName: 'riverpod_ref_after_async_gap',
-            problemMessage:
-                'Avoid assigning to state after an async gap in Riverpod providers.',
-            correctionMessage:
-                'Guard the post-gap state assignment with "if (!ref.mounted) return;" before writing to state.',
-          ),
-        ]);
-      },
-    );
-
-    test('does not report state assignment before await', () async {
-      final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
-          .analyze(
-            files: {
-              'lib/features/todo/presentation/providers/todo_notifier.dart': '''
-abstract class _\$TodoNotifier {}
-
-class TodoNotifier extends _\$TodoNotifier {
-  Future<void> load() async {
-    state = const AsyncLoading();
-    await fetchTodo();
-  }
-}
-''',
-            },
-            definingFile:
-                'lib/features/todo/presentation/providers/todo_notifier.dart',
-          );
-
-      result.expectNoDiagnostics();
-    });
-
-    test('reports state assignment whose RHS contains await', () async {
-      final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
-          .analyze(
-            files: {
-              'lib/features/todo/presentation/providers/todo_notifier.dart': '''
-abstract class _\$TodoNotifier {}
-
-class TodoNotifier extends _\$TodoNotifier {
-  Future<void> load() async {
-    state = await fetchTodo();
-  }
-}
-''',
-            },
-            definingFile:
-                'lib/features/todo/presentation/providers/todo_notifier.dart',
-          );
-
-      result.expectDiagnostics([
-        const ExpectedV2Diagnostic(
-          relativePath:
-              'lib/features/todo/presentation/providers/todo_notifier.dart',
-          codeName: 'riverpod_ref_after_async_gap',
-          problemMessage:
-              'Avoid assigning to state after an async gap in Riverpod providers.',
-          correctionMessage:
-              'Guard the post-gap state assignment with "if (!ref.mounted) return;" before writing to state.',
-        ),
-      ]);
-    });
-
-    test('still reports state = await after a preceding mounted guard', () async {
-      final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
-          .analyze(
-            files: {
-              'lib/features/todo/presentation/providers/todo_notifier.dart': '''
-abstract class _\$TodoNotifier {}
-
-class TodoNotifier extends _\$TodoNotifier {
-  Future<void> load() async {
-    if (!ref.mounted) return;
-    state = await fetchTodo();
-  }
-}
-''',
-            },
-            definingFile:
-                'lib/features/todo/presentation/providers/todo_notifier.dart',
-          );
-
-      result.expectDiagnostics([
-        const ExpectedV2Diagnostic(
-          relativePath:
-              'lib/features/todo/presentation/providers/todo_notifier.dart',
-          codeName: 'riverpod_ref_after_async_gap',
-          problemMessage:
-              'Avoid assigning to state after an async gap in Riverpod providers.',
-          correctionMessage:
-              'Guard the post-gap state assignment with "if (!ref.mounted) return;" before writing to state.',
-        ),
-      ]);
-    });
   });
 }
