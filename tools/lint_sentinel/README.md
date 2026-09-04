@@ -68,6 +68,11 @@ for attempt in 1 2 3; do
   echo "::warning::clean_architecture_linter diagnostics missing (attempt $attempt)"
 done
 if [ "$SENTINEL_ROWS" -eq 0 ]; then
+  # Keep the raw output: a broken plugins: entry, a plugin compile error or a
+  # pub resolution failure looks identical to the race without it.
+  echo "::group::dart analyze output (last attempt)"
+  printf '%s\n' "$OUT"
+  echo "::endgroup::"
   echo "::error::clean_architecture_linter plugin diagnostics were not delivered; refusing to treat the tree as clean"
   exit 1
 fi

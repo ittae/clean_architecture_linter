@@ -117,7 +117,7 @@ dart analyze        # Flutter 프로젝트도 flutter analyze가 아니라 dart 
 > `dart analyze`로 검사해야 합니다. 원인과 회귀 가드:
 > [docs/analysis/FLUTTER_ANALYZE_PLUGIN_LOSS.md](docs/analysis/FLUTTER_ANALYZE_PLUGIN_LOSS.md).
 >
-> `dart analyze`(Dart 3.13.2)에도 같은 경합의 약한 형태가 있습니다. 플러그인 격리가
+> `dart analyze`(Dart 3.13.2)에도 같은 경합의 약한 형태가 있습니다. 플러그인 isolate가
 > 진단을 발행하기 전에 반환할 수 있어 단일 `No issues found!`는 증거가 아닙니다.
 > CI에서는 항상 보고돼야 하는 sentinel 위반으로 게이트하세요:
 > [tools/lint_sentinel/README.md](https://github.com/ittae/clean_architecture_linter/blob/main/tools/lint_sentinel/README.md).
