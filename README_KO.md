@@ -59,10 +59,21 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 30. **Riverpod Ref After Async Gap** - provider method에서 await 이후 ref.read/watch/listen/invalidate/refresh 사용 시 advisory 경고 (직전에 `if (!ref.mounted) return;` 가드가 있으면 보고하지 않음)
 31. **Riverpod Provider Naming** - Provider 함수는 타입 접미사 포함 필수 (repository/usecase/datasource)
 32. **Ref Mounted Usage** - UI 레이어(위젯/페이지)에서만 `ref.mounted` 금지. Notifier 안에서는 권장되는 dispose 가드이므로 보고하지 않음
-33. **Riverpod Keep Alive** - `keepAlive: true`는 전역 상태에만 사용 (auth, settings, cache)
+33. **Riverpod Keep Alive** - `keepAlive: true`는 앱 전역·앱 수명 상태(auth, settings, cache, startup, listener 등)에만 사용. 이름/경로 휴리스틱이며 전체 키워드 목록과 일반 명사 캐시의 `// ignore` + 사유 관례는 [doc/EXAMPLES.md §9](doc/EXAMPLES.md#9-keepalive-outside-app-wide-state-riverpod_keep_alive-위반) 참고
 
 ### 🔧 Cross-Layer 규칙 (1개 규칙)
 34. **Allowed Instance Variables** - 무상태 아키텍처 강제 (UseCase/Repository/DataSource)
+
+### 🔕 Opt-in: Riverpod State After Async Gap
+**Riverpod State After Async Gap** (`riverpod_state_after_async_gap`) - provider method에서 `await` 이후 가드 없는 `state = …` 대입(`state = await …` 포함)을 보고합니다. Riverpod 3는 provider가 dispose된 뒤 `state`에 쓰면 `UnmountedRefException`을 던지므로 `final next = await …; if (!ref.mounted) return; state = next;`로 고치세요. 기존 앱에 `state = await` 관용구가 흔해 **기본 비활성**이며 프로젝트별로 켭니다:
+
+```yaml
+# analysis_options.yaml
+plugins:
+  clean_architecture_linter:
+    diagnostics:
+      riverpod_state_after_async_gap: true
+```
 
 ### 🧪 선택사항: 테스트 커버리지 규칙
 **Test Coverage** - UseCase, Repository, DataSource, Notifier에 대한 테스트 파일 강제 (기본값: 비활성화)
@@ -109,7 +120,8 @@ dart pub get
 dart analyze        # Flutter 프로젝트도 flutter analyze가 아니라 dart analyze를 쓰세요
 ```
 
-로컬에서는 `dart analyze` 결과에 34개 규칙이 직접 포함됩니다. CI에서는 단일
+로컬에서는 `dart analyze` 결과에 기본 34개 규칙이 직접 포함됩니다 (opt-in
+`riverpod_state_after_async_gap`은 위 규칙 목록 참고). CI에서는 단일
 `No issues found!`를 플러그인이 응답했다는 증거로 쓰지 말고, 아래 경고의
 sentinel 레시피로 게이트하세요.
 

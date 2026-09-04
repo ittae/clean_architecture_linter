@@ -61,10 +61,21 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 30. **Riverpod Ref After Async Gap** - Advisory warning for ref.read/watch/listen/invalidate/refresh after await in provider methods (a preceding `if (!ref.mounted) return;` guard suppresses it)
 31. **Riverpod Provider Naming** - Provider functions must include type suffix (repository/usecase/datasource)
 32. **Ref Mounted Usage** - Avoid `ref.mounted` in the UI layer (widgets/pages); inside a Notifier it is the recommended disposal guard and is not reported
-33. **Riverpod Keep Alive** - Only use `keepAlive: true` for global state (auth, settings, cache)
+33. **Riverpod Keep Alive** - Only use `keepAlive: true` for app-wide or app-lifetime state (auth, settings, cache, startup, listener, ...). Name/path heuristic; full keyword list and the `// ignore` + reason convention for generic-noun caches in [doc/EXAMPLES.md §9](doc/EXAMPLES.md#9-keepalive-outside-app-wide-state-riverpod_keep_alive-위반)
 
 ### 🔧 Cross-Layer Rules (1 rule)
 34. **Allowed Instance Variables** - Enforces stateless architecture (UseCase/Repository/DataSource)
+
+### 🔕 Opt-in: Riverpod State After Async Gap
+**Riverpod State After Async Gap** (`riverpod_state_after_async_gap`) - Reports an unguarded `state = …` after an `await` in provider methods, including `state = await …`. Riverpod 3 throws `UnmountedRefException` when `state` is written after the provider is disposed, so the fix is `final next = await …; if (!ref.mounted) return; state = next;`. **Disabled by default** because the `state = await` idiom is common in existing apps; enable it per project:
+
+```yaml
+# analysis_options.yaml
+plugins:
+  clean_architecture_linter:
+    diagnostics:
+      riverpod_state_after_async_gap: true
+```
 
 ### 🧪 Optional: Test Coverage Rule
 **Test Coverage** - Enforces test files for UseCases, Repositories, DataSources, and Notifiers (disabled by default)
@@ -111,9 +122,10 @@ dart pub get
 dart analyze        # Flutter projects too — use `dart analyze`, NOT `flutter analyze`
 ```
 
-Locally, `dart analyze` reports the 34 rules in its output. In CI, a single
-`No issues found!` is not proof the plugin answered — use the sentinel gate
-in the warning below.
+Locally, `dart analyze` reports the 34 default rules in its output (plus the
+opt-in `riverpod_state_after_async_gap`, see the rule list above). In CI, a
+single `No issues found!` is not proof the plugin answered — use the sentinel
+gate in the warning below.
 
 > ⚠️ **Use `dart analyze`, not `flutter analyze`.** `flutter analyze` silently
 > drops `analysis_server_plugin` diagnostics (it stops collecting before the

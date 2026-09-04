@@ -1,4 +1,7 @@
 plugins:
   clean_architecture_linter:
     path: ../..
+    diagnostics:
+      # Opt-in rule smoke: state_gap_notifier.dart must yield exactly one row.
+      riverpod_state_after_async_gap: true
   riverpod_lint: ^3.1.7
