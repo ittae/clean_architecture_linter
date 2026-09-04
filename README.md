@@ -79,7 +79,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 
 ### 📋 Requirements
 
-- **Dart SDK**: 3.11.0+ (analyzer 14.1.0); 3.13.0+ when `riverpod_lint` is enabled alongside
+- **Dart SDK**: 3.11.0+ (analyzer 14.3.0); 3.13.0+ when `riverpod_lint` is enabled alongside
 - **Flutter**: 3.0+ (optional, for Flutter projects)
 - **Riverpod**: Required for presentation layer rules (riverpod_generator recommended)
 
@@ -157,7 +157,7 @@ Verified consumer matrix (2026-09-04, maintainer SDK + flagship `ittae` lockfile
 
 pub.dev latest Riverpod **3.4.2** is not in this verified set.
 
-The package runs on the official `analysis_server_plugin` (`>=0.3.20 <0.3.21`), which pins analyzer **14.1.0**; the declared analyzer range `>=14.1.0 <15.0.0` therefore resolves to 14.1.0 today and is kept open for the next ASP bump. `analysis_server_plugin 0.3.20` fixed the "dart analyze could spin indefinitely" hang that kept 2.4.x on `0.3.15` / analyzer 13. Coexistence with `riverpod_lint` in one plugin synthetic package requires `riverpod_lint 3.1.9` (analyzer `>=13.0.0 <15.0.0`, Dart `>=3.13.0`); on Dart 3.12.x no `riverpod_lint 3.1.x` solves next to this line and pub falls back to `clean_architecture_linter 2.4.0`. Verified 2026-09-04 on Dart 3.13.2: the flagship `ittae` tree (with `riverpod_lint ^3.1.3`) analyzes in 19–31 s, same as 2.4.0, with no hang across three consecutive runs.
+The package runs on the official `analysis_server_plugin` (`>=0.3.22 <0.3.23`), which pins analyzer **14.3.0**; the declared analyzer range `>=14.3.0 <15.0.0` therefore resolves to 14.3.0 today and is kept open for the next ASP bump. `analysis_server_plugin 0.3.20` fixed the "dart analyze could spin indefinitely" hang that kept 2.4.x on `0.3.15` / analyzer 13. Coexistence with `riverpod_lint` in one plugin synthetic package requires `riverpod_lint 3.1.9` (analyzer `>=13.0.0 <15.0.0`, Dart `>=3.13.0`); on Dart 3.12.x no `riverpod_lint 3.1.x` solves next to this line and pub falls back to `clean_architecture_linter 2.4.0`. Verified 2026-09-04 on Dart 3.13.2: the flagship `ittae` tree (with `riverpod_lint ^3.1.3`) analyzes in 29–40 s (2.4.0: 20–38 s) with no hang across three consecutive runs.
 
 `riverpod_lint 3.1.x` carries its own analyzer constraints. Keep analyzer plugins out of `dev_dependencies` and enable both tools through top-level `plugins:` when you need them in one consumer project. The analyzer plugin manager resolves all enabled plugins in one synthetic package, so this package keeps its analyzer range aligned with `riverpod_lint`:
 
