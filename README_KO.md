@@ -64,6 +64,17 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 ### 🔧 Cross-Layer 규칙 (1개 규칙)
 34. **Allowed Instance Variables** - 무상태 아키텍처 강제 (UseCase/Repository/DataSource)
 
+### 🔕 Opt-in: Riverpod State After Async Gap
+**Riverpod State After Async Gap** (`riverpod_state_after_async_gap`) - provider method에서 `await` 이후 가드 없는 `state = …` 대입(`state = await …` 포함)을 보고합니다. Riverpod 3는 provider가 dispose된 뒤 `state`에 쓰면 `UnmountedRefException`을 던지므로 `final next = await …; if (!ref.mounted) return; state = next;`로 고치세요. 기존 앱에 `state = await` 관용구가 흔해 **기본 비활성**이며 프로젝트별로 켭니다:
+
+```yaml
+# analysis_options.yaml
+plugins:
+  clean_architecture_linter:
+    diagnostics:
+      riverpod_state_after_async_gap: true
+```
+
 ### 🧪 선택사항: 테스트 커버리지 규칙
 **Test Coverage** - UseCase, Repository, DataSource, Notifier에 대한 테스트 파일 강제 (기본값: 비활성화)
 
@@ -109,7 +120,7 @@ dart pub get
 dart analyze        # Flutter 프로젝트도 flutter analyze가 아니라 dart analyze를 쓰세요
 ```
 
-완료되었습니다! 34개 규칙이 `dart analyze` 결과에 직접 포함됩니다.
+완료되었습니다! 기본 34개 규칙이 `dart analyze` 결과에 직접 포함됩니다 (opt-in `riverpod_state_after_async_gap`은 위 규칙 목록 참고).
 
 > ⚠️ **`flutter analyze`가 아니라 `dart analyze`를 사용하세요.** `flutter analyze`는
 > `analysis_server_plugin` 진단을 조용히 유실합니다(플러그인이 결과를 내보내기 전에

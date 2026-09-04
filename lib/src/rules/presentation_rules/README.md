@@ -346,14 +346,12 @@ class TodoPage extends ConsumerWidget {
 ---
 
 ### 7. Riverpod Ref After Async Gap Rule (`riverpod_ref_after_async_gap_rule.dart`)
-**Purpose**: Advises against accessing Riverpod `ref` or writing `state` after an async gap in provider/notifier methods.
+**Purpose**: Advises against accessing Riverpod `ref` after an async gap in provider/notifier methods. Unguarded `state` writes are handled by the opt-in rule 7b below.
 
 **What it checks**:
 - ❌ `ref.read`, `ref.watch`, `ref.listen`, `ref.invalidate`, `ref.refresh` after `await`
-- ❌ unguarded `state = …` / `this.state = …` after `await` (Riverpod 3 can throw `UnmountedRefException`)
-- ❌ same-statement `state = await …` (store runs after RHS await; preceding `ref.mounted` does not protect it)
 - ✅ Provider/usecase capture before `await`
-- ✅ Post-gap access/assignment guarded by `if (!ref.mounted) return;` or `if (ref.mounted) { … }`
+- ✅ Post-gap access guarded by `if (!ref.mounted) return;` or `if (ref.mounted) { … }`
 - ✅ Generated files, tests, non-provider files, and private helper methods are skipped
 
 **Example**:
@@ -369,14 +367,38 @@ class TodoNotifier extends _$TodoNotifier {
     await saveTodo();
     ref.refresh(todoProvider); // ❌ ref access after async gap
   }
+}
+```
 
+### 7b. Riverpod State After Async Gap Rule (`riverpod_state_after_async_gap_rule.dart`, opt-in)
+**Purpose**: Advises against writing `state` after an async gap in provider/notifier methods. Riverpod 3 throws `UnmountedRefException` when `state` is written after disposal.
+
+**Opt-in**: registered with `registerLintRule`, so it is off until enabled:
+
+```yaml
+plugins:
+  clean_architecture_linter:
+    diagnostics:
+      riverpod_state_after_async_gap: true
+```
+
+**What it checks**:
+- ❌ unguarded `state = …` / `this.state = …` after `await`
+- ❌ same-statement `state = await …` (store runs after RHS await; a preceding `ref.mounted` guard does not protect it)
+- ✅ Assignment guarded by `if (!ref.mounted) return;` or `if (ref.mounted) { … }`
+- ✅ Generated files, tests, non-provider files, and private helper methods are skipped
+
+**Example**:
+```dart
+@riverpod
+class TodoNotifier extends _$TodoNotifier {
   Future<void> unsafeLoad() async {
     final todo = await fetchTodo();
     state = AsyncData(todo); // ❌ state write after async gap
   }
 
   Future<void> unsafeLoadRhsAwait() async {
-    state = await fetchTodo(); // ❌ same-statement RHS await; split then re-guard
+    state = await fetchTodo(); // ❌ same-statement RHS await; split then guard
   }
 
   Future<void> safeLoad() async {
