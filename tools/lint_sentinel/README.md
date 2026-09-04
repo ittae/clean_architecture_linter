@@ -54,18 +54,23 @@ Replace a bare `dart analyze --fatal-infos --fatal-warnings` step with:
 SENTINEL_DIR=lib/zz_lint_sentinel
 # Plugin rule codes the sentinel file violates. Machine output upper-cases them.
 SENTINEL_CODES='RIVERPOD_KEEP_ALIVE|PRESENTATION_NO_THROW'
+# Attempts and back-off: the race is load-sensitive, so a busy runner needs
+# more tries and a pause between them (see "Expected miss rate" below).
+ATTEMPTS="${SENTINEL_ATTEMPTS:-5}"
 OUT=""; SENTINEL_ROWS=0
 count_sentinel() {
   printf '%s\n' "$1" | awk -F'|' -v d="/$SENTINEL_DIR/" -v codes="$SENTINEL_CODES" '
     BEGIN { n = split(codes, c, "|"); for (i = 1; i <= n; i++) want[c[i]] = 1 }
+    { gsub(/\\/, "/", $4) }
     ($3 in want) && index($4, d) { hits++ }
     END { print hits + 0 }'
 }
-for attempt in 1 2 3; do
+for attempt in $(seq 1 "$ATTEMPTS"); do
   OUT="$(dart analyze --format=machine 2>&1 || true)"
   SENTINEL_ROWS="$(count_sentinel "$OUT")"
   [ "$SENTINEL_ROWS" -gt 0 ] && break
-  echo "::warning::clean_architecture_linter diagnostics missing (attempt $attempt)"
+  echo "::warning::clean_architecture_linter diagnostics missing (attempt $attempt/$ATTEMPTS)"
+  sleep $((attempt * 5))
 done
 if [ "$SENTINEL_ROWS" -eq 0 ]; then
   # Keep the raw output: a broken plugins: entry, a plugin compile error or a
@@ -80,7 +85,8 @@ fi
 # analyzer diagnostics inside the sentinel file still fail it.
 REAL="$(printf '%s\n' "$OUT" | awk -F'|' -v d="/$SENTINEL_DIR/" -v codes="$SENTINEL_CODES" '
   BEGIN { n = split(codes, c, "|"); for (i = 1; i <= n; i++) want[c[i]] = 1 }
-  /^[A-Z]+\|/ && !(($3 in want) && index($4, d))')"
+  { p = $4; gsub(/\\/, "/", p) }
+  /^[A-Z]+\|/ && !(($3 in want) && index(p, d))')"
 if [ -n "$REAL" ]; then
   printf '%s\n' "$REAL"
   exit 1
@@ -95,10 +101,30 @@ on `RULE_CODE` **and** the path, because built-in lints (for example
 `public_member_api_docs` under strict lint sets) also emit rows for the
 sentinel file and would otherwise count as "plugin delivered".
 
+**Expected miss rate.** From the table above, a single attempt on a clean tree
+missed 11 of 20 runs on a 2-row fixture, 7 of 10 on a 16-row fixture, and
+15 of 15 while another analysis loaded the machine. Real consumer apps
+(30-40 s of analysis) delivered on the first attempt in every sequential run,
+so the fixture numbers are a worst case; even at a 55% single-run miss rate,
+five attempts leave about a 5% false failure. A shared runner should raise
+`SENTINEL_ATTEMPTS` or serialize analyze jobs. The recipe is fail-closed, so a
+miss is a loud failure, never a silent pass.
+
+The `gsub` in both awk programs normalises Windows `\` paths so the sentinel
+directory still matches on a Windows runner.
+
 `SENTINEL_CODES` must match the rules the consumer actually enables. If
 `analysis_options.yaml` sets `riverpod_keep_alive: ignore` or
 `presentation_no_throw: ignore`, drop that code from the list; if both are
 ignored, add a violation of a rule the app does enforce and list its code.
+
+## Regression contract
+
+`test/tools/lint_sentinel_test.dart` runs the shipped sentinel file through
+both rules with the package's rule harness and asserts exactly one
+`riverpod_keep_alive` and one `presentation_no_throw` diagnostic at the
+documented consumer path. A heuristic change that silences either rule fails
+the package's own `dart test` before it can break consumer gates.
 
 ## Residual risk
 
