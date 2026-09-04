@@ -13,22 +13,22 @@
 | `analysis_options.yaml` | `analyzer: plugins: - custom_lint` | top-level `plugins: clean_architecture_linter: <version>` |
 | `pubspec.yaml` dev_dependency | `clean_architecture_linter` + `custom_lint` | `clean_architecture_linter` (단독, `custom_lint` 제거) |
 | 실행 CLI | `dart run custom_lint` | `dart analyze` (Flutter 프로젝트도 동일 — `flutter analyze` 사용 금지) |
-| Dart SDK 최소 | `^3.6.0` | `^3.10.0` |
+| Dart SDK 최소 | `^3.6.0` | `^3.11.0` (2.4.x까지는 `^3.10.0`; `riverpod_lint` 공존 시 `^3.13.0`) |
 | `pubspec_overrides.yaml` 워크어라운드 | 필요 (analyzer 9 / Riverpod 3+ 충돌) | **불필요** — `custom_lint*` 체인 자체가 사라짐 |
 | Rule 개수 / 이름 / 진단 메시지 | 33개 | 33개 (동일, 진단 메시지 동등) |
 
-> `analysis_server_plugin`은 Dart 3.10부터 지원된다. SDK가 `^3.10.0` 미만이면 v2.0을 쓸 수 없으므로 v1.x에 머물러야 한다.
+> `analysis_server_plugin`은 Dart 3.10부터 지원된다. SDK가 `^3.10.0` 미만이면 v2.0을 쓸 수 없으므로 v1.x에 머물러야 한다. 최신 라인(analyzer 14.3 / asp 0.3.22)은 `^3.11.0`을 요구하며, Dart 3.10에 머물면 pub이 2.4.0으로 조용히 되돌린다. `riverpod_lint`를 함께 켜려면 `^3.13.0`이 필요하다(README 호환성 절 참고).
 
 ## 마이그레이션 절차
 
 ### 1. Dart SDK 확인
 
-`pubspec.yaml`의 `environment` SDK 하한을 `^3.10.0` 이상으로 올린다.
+`pubspec.yaml`의 `environment` SDK 하한을 `^3.11.0` 이상으로 올린다(`riverpod_lint` 공존 시 `^3.13.0`).
 
 ```yaml
 # pubspec.yaml
 environment:
-  sdk: ^3.10.0
+  sdk: ^3.11.0
 ```
 
 ### 2. 의존성 교체

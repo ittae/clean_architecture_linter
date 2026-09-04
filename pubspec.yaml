@@ -14,7 +14,7 @@ topics:
   - static-analysis
 
 environment:
-  sdk: '^3.10.0'
+  sdk: '^3.11.0'
 
 platforms:
   linux:
@@ -22,10 +22,15 @@ platforms:
   windows:
 
 dependencies:
-  # Keep CAL on the analyzer 13 plugin-host line so it can coexist with
-  # riverpod_lint 3.1.x in the analyzer plugin synthetic package.
-  analyzer: ">=13.0.0 <14.0.0"
-  analysis_server_plugin: ">=0.3.15 <0.3.16"
+  # analyzer 14 plugin-host line. analysis_server_plugin 0.3.20 fixed the
+  # "dart analyze could spin indefinitely" hang that kept 2.4.x on 0.3.15.
+  # 0.3.22 pins analyzer 14.3.0 exactly, so the analyzer range below resolves
+  # to 14.3.0 today and is kept open only for the next ASP bump. riverpod_lint
+  # coexistence in the plugin synthetic package needs riverpod_lint 3.1.9
+  # (analyzer >=13 <15, Dart >=3.13.0); older 3.1.x cap analyzer below 14
+  # (3.1.8 pins ^13.0.0, 3.1.4 ^12.0.0, 3.1.3 ^9.0.0).
+  analyzer: ">=14.3.0 <15.0.0"
+  analysis_server_plugin: ">=0.3.22 <0.3.23"
   path: ^1.9.1
 
 dev_dependencies:

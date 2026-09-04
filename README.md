@@ -90,7 +90,7 @@ plugins:
 
 ### 📋 Requirements
 
-- **Dart SDK**: 3.10.0+
+- **Dart SDK**: 3.11.0+ (analyzer 14.3.0); 3.13.0+ when `riverpod_lint` is enabled alongside
 - **Flutter**: 3.0+ (optional, for Flutter projects)
 - **Riverpod**: Required for presentation layer rules (riverpod_generator recommended)
 
@@ -163,26 +163,29 @@ warning - lib/bad_examples/features/todo/data/repositories/todo_repository_impl.
 
 See `docs/config/RECOMMENDED_SETUP.md` for details.
 
-## 🧩 Compatibility — analyzer 13 / Riverpod 3+
+## 🧩 Compatibility — analyzer 14 / Riverpod 3+
 
-Verified consumer matrix (2026-08-18, maintainer SDK + flagship `ittae` lockfile):
+Verified consumer matrix (2026-09-04, maintainer SDK + flagship `ittae` lockfile):
 
 | Line | Version |
 | --- | --- |
-| Flutter | **3.44.9** (Dart **3.12.2**) |
+| Flutter | **3.47.2** (Dart **3.13.2**) |
 | `riverpod` / `flutter_riverpod` | **3.3.2** |
 | `riverpod_generator` / `riverpod_annotation` | **4.0.4** / **4.0.3** |
+| `riverpod_lint` (resolved in the plugin host from `^3.1.3`) | **3.1.9** |
 
-pub.dev latest Riverpod **3.4.2** is not in this verified set. Analyzer 14 remains out of scope for 2.x.
+pub.dev latest Riverpod **3.4.2** is not in this verified set.
 
-v2.4 runs on the official `analysis_server_plugin` (`>=0.3.15 <0.3.16`) and supports analyzer `>=13.0.0 <14.0.0`, matching the current `riverpod_lint 3.1.x` analyzer line while avoiding analyzer 14-only plugin-host versions. Consumer smoke keeps the ASP range pinned to `0.3.15` because `0.3.18` still hangs during plugin analysis under analyzer 13.
+The package runs on the official `analysis_server_plugin` (`>=0.3.22 <0.3.23`), which pins analyzer **14.3.0**; the declared analyzer range `>=14.3.0 <15.0.0` therefore resolves to 14.3.0 today and is kept open for the next ASP bump. `analysis_server_plugin 0.3.20` fixed the "dart analyze could spin indefinitely" hang that kept 2.4.x on `0.3.15` / analyzer 13. Coexistence with `riverpod_lint` in one plugin synthetic package requires `riverpod_lint 3.1.9` (analyzer `>=13.0.0 <15.0.0`, Dart `>=3.13.0`); on Dart 3.12.x a consumer whose `riverpod_lint` constraint still admits 3.1.8 or older (for example `^3.1.3`) is silently resolved back to `clean_architecture_linter 2.4.0`, while `^3.1.9` fails to solve outright below Dart 3.13 because of its SDK bound. Verified 2026-09-04 on Dart 3.13.2: the flagship `ittae` tree (with `riverpod_lint ^3.1.3`) analyzes in 29–40 s (2.4.0: 20–38 s) with no hang across three consecutive runs.
+
+This line also closes a silent-loss bug in the 2.4.x line. With `analysis_server_plugin 0.3.15` the plugin reported *idle* to the analysis server between its first file and its full pass, so `dart analyze` (which stops collecting at the first idle status) returned with zero or partial plugin diagnostics and exit code 0: on this package's fixtures 11 of 20 runs (2-row fixture) and 7 of 10 runs (16-row fixture) lost rows, and 15 of 15 did under parallel load. `analysis_server_plugin 0.3.16` reworked the plugin server so its status follows the analysis driver; on 0.3.22 the same fixtures delivered every row in 55 of 55 `dart analyze` runs, including 15 under the same load. See `tools/verify_analyze_parity.sh` for the CI guard that still verifies delivery.
 
 `riverpod_lint 3.1.x` carries its own analyzer constraints. Keep analyzer plugins out of `dev_dependencies` and enable both tools through top-level `plugins:` when you need them in one consumer project. The analyzer plugin manager resolves all enabled plugins in one synthetic package, so this package keeps its analyzer range aligned with `riverpod_lint`:
 
 ```yaml
 plugins:
   clean_architecture_linter: ^2.4.0
-  riverpod_lint: ^3.1.7
+  riverpod_lint: ^3.1.9
 ```
 
 > The v1 `custom_lint` upstream ([invertase/dart_custom_lint](https://github.com/invertase/dart_custom_lint)) was archived in May 2026. v2.0 moves fully to the official plugin, so the old `pubspec_overrides.yaml` bridge is no longer needed — delete it when upgrading.

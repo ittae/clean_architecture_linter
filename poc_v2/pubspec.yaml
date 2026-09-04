@@ -3,6 +3,10 @@ description: PoC package for the analysis_server_plugin based v2 implementation.
 version: 2.0.0-dev.0
 publish_to: none
 
+# Historical analyzer 13 proof-of-concept, kept as-is on purpose. It is not a
+# consumer of the package and is outside the verification gates; the shipped
+# package and its fixtures (poc_v2/example, poc_v2/consumer_riverpod_lint,
+# example/) are on the analyzer 14 line.
 environment:
   sdk: ^3.10.0
 

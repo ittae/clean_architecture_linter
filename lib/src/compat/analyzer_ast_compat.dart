@@ -1,9 +1,12 @@
 import 'package:analyzer/dart/ast/ast.dart';
 
-/// AST API compatibility shims for analyzer 13.
+/// AST API compatibility shims for the analyzer 14 line (minimum 14.3.0).
 ///
 /// These helpers keep rule code insulated from analyzer AST surface changes.
-/// Re-check this module before widening the analyzer upper bound.
+/// Re-check this module before widening the analyzer range in either
+/// direction. Branches for older analyzers are kept on purpose: every lookup
+/// is reflective, so they cost nothing at runtime and document the surface
+/// that changed.
 String? formalParameterName(FormalParameter parameter) {
   final base = _baseFormalParameter(parameter);
   final Object? name = _readProperty(base, #name);
@@ -36,7 +39,8 @@ bool methodDeclarationHasImplementation(MethodDeclaration method) {
   final Object? isComplete = _readProperty(method, #isComplete);
   if (isComplete is bool) return isComplete;
 
-  // analyzer 13.0: MethodDeclaration has isAbstract, not isComplete.
+  // analyzer 13.0 had isAbstract instead of isComplete. Unreachable on the
+  // supported 14.x line; retained as the documented reflective fallback.
   final Object? isAbstract = _readProperty(method, #isAbstract);
   if (isAbstract is bool) return !isAbstract;
 
