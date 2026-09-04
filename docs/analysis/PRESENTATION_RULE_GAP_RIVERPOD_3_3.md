@@ -39,7 +39,8 @@ Verdict key:
 | `riverpod_generator` | INFO | **pass** (residual **FN** on bare `Provider`) | Notifier/Async/Stream(+AutoDispose/family) covered; bare DI `Provider` left out by design | `riverpod_generator_rule.dart`, `riverpod_provider_detector.dart`, `riverpod_generator_v2_rule_test.dart` |
 | `riverpod_keep_alive` | INFO | **FP** | Name/path keyword allowlist misses real global stores (`TokenStore`, `WalletBalance`, …) | `riverpod_keep_alive_rule.dart` `_validKeepAlivePatterns`, `riverpod_keep_alive_v2_rule_test.dart` |
 | `riverpod_provider_naming` | WARNING | **FN** | Function `@riverpod` only; class-based notifiers + `Future<T>` unwrap not covered | `riverpod_provider_naming_rule.dart`, `riverpod_provider_naming_v2_rule_test.dart` |
-| `riverpod_ref_after_async_gap` | INFO | **fixed (state write; same-statement RHS await)** | Path-sensitive `ref.*` + unguarded `state =` / `this.state =` after await (incl. `state = await …`); `ref.mounted` guards shared; RHS-await skips disposal-guard suppress | `riverpod_ref_after_async_gap_rule.dart`; `riverpod_ref_after_async_gap_v2_rule_test.dart` |
+| `riverpod_ref_after_async_gap` | INFO | **pass** | Path-sensitive `ref.read/watch/listen/invalidate/refresh` after await; `ref.mounted` guards suppress | `riverpod_ref_after_async_gap_rule.dart`; `riverpod_ref_after_async_gap_v2_rule_test.dart` |
+| `riverpod_state_after_async_gap` | INFO (opt-in) | **fixed** | Unguarded `state =` / `this.state =` after await (incl. `state = await …`); disabled by default — enable via `diagnostics:` | `riverpod_state_after_async_gap_rule.dart`; `riverpod_state_after_async_gap_v2_rule_test.dart` |
 | `riverpod_ref_usage` | WARNING | **FP** → mitigated | `build()` one-shot DI reads were flagged; UseCase prefix alone too narrow | `riverpod_ref_usage_rule.dart`, tests below |
 | `riverpod_uncancelled_disposable` | WARNING | **pass** | Timer / StreamSubscription / listener + `ref.onDispose` still the 3.3 disposal story | `riverpod_uncancelled_disposable_rule.dart`, `riverpod_uncancelled_disposable_v2_rule_test.dart` |
 | `widget_no_usecase_call` | WARNING | **pass** | Widget→UseCase direct call ban remains CA-correct | `widget_no_usecase_call_rule.dart`, `widget_no_usecase_call_v2_rule_test.dart` |
@@ -55,12 +56,12 @@ Verdict key:
    like `@riverpod` classes for ref-usage / async-gap / generator / mounted.
 2. **`ref.mounted` is the documented post-gap guard** on the state layer.
    `ref_mounted_usage` correctly exempts Notifiers; `riverpod_ref_after_async_gap`
-   suppresses guarded `ref.*` and unguarded `state =` / `this.state =` (and
-   invalidates the guard after a later `await`).
+   suppresses guarded `ref.*` (and invalidates the guard after a later `await`).
 3. **`state =` after dispose still throws** in Riverpod 3 — tracked as INFO by
-   `riverpod_ref_after_async_gap` when unguarded after an async gap, including
-   same-statement `state = await …` (RHS await; preceding `ref.mounted` does
-   not protect the store — split then re-guard).
+   the opt-in `riverpod_state_after_async_gap` when unguarded after an async
+   gap, including same-statement `state = await …` (RHS await; preceding
+   `ref.mounted` does not protect the store — split then re-guard). Default-off
+   because `state = await` is common in existing codebases.
 4. **Bare `Provider` for DI stays legal.** `riverpod_generator` intentionally
    does not ban it (DI FP risk). Do not treat that silence as a bug unless a
    `strict_generator_only` option is introduced.
