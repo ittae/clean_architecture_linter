@@ -41,7 +41,7 @@ class TodoListNotifier {}
       );
     });
 
-    test('detects method implementations on analyzer 13 nodes', () {
+    test('detects method implementations on parsed method nodes', () {
       final unit = parseString(
         content: '''
 abstract class TodoRepository {

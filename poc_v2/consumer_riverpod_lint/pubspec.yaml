@@ -2,4 +2,4 @@ name: clean_architecture_linter_consumer_riverpod_lint
 publish_to: none
 
 environment:
-  sdk: ^3.10.0
+  sdk: ^3.13.0

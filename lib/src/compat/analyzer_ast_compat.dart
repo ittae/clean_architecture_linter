@@ -1,6 +1,6 @@
 import 'package:analyzer/dart/ast/ast.dart';
 
-/// AST API compatibility shims for the analyzer 14 line (minimum 14.1.0).
+/// AST API compatibility shims for the analyzer 14 line (minimum 14.3.0).
 ///
 /// These helpers keep rule code insulated from analyzer AST surface changes.
 /// Re-check this module before widening the analyzer range in either
