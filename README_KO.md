@@ -109,7 +109,9 @@ dart pub get
 dart analyze        # Flutter 프로젝트도 flutter analyze가 아니라 dart analyze를 쓰세요
 ```
 
-완료되었습니다! 34개 규칙이 `dart analyze` 결과에 직접 포함됩니다.
+로컬에서는 `dart analyze` 결과에 34개 규칙이 직접 포함됩니다. CI에서는 단일
+`No issues found!`를 플러그인이 응답했다는 증거로 쓰지 말고, 아래 경고의
+sentinel 레시피로 게이트하세요.
 
 > ⚠️ **`flutter analyze`가 아니라 `dart analyze`를 사용하세요.** `flutter analyze`는
 > `analysis_server_plugin` 진단을 조용히 유실합니다(플러그인이 결과를 내보내기 전에

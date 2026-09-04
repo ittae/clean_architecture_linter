@@ -104,3 +104,6 @@ Flutter 앱 CI 예시(최소형, 조기 반환 경합에는 취약):
 그전까지 소비자 권장 경로는 `dart analyze`로 유지합니다.
 
 analyzer / `analysis_server_plugin` upper-bound는 이 이슈로 인해 변경하지 않습니다.
+2.4.x는 `analysis_server_plugin: ">=0.3.15 <0.3.16"` / analyzer 13에 남습니다.
+호스트에서 0.3.22를 돌리면 idle-flip이 사라지는 것은 실측이지만, 그 라인은 이
+패키지가 아직 내보내지 않으므로 소비자 CI 게이트는 sentinel입니다.

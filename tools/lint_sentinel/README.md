@@ -38,12 +38,20 @@ Driving the analysis server over the legacy protocol and logging
   every row in 55 of 55 runs on the same fixtures, 15 of them under the same
   parallel load that lost 15 of 15 on 0.3.15.
 
-So the durable fix for consumers is the analyzer 14 / `analysis_server_plugin
-0.3.22` line of this package. The sentinel gate stays as belt and braces: a
-plugin that fails to start, a future host regression, or the residual ordering
-gap (0.3.22 still sends its idle status a few milliseconds before the last
-error batch, which `dart analyze` currently tolerates) all surface as a loud
-failure instead of a silent pass. The trace script is small enough to inline:
+Those 0.3.22 numbers are a host-side measurement, not a line this package
+ships. 2.4.x still pins `analysis_server_plugin: ">=0.3.15 <0.3.16"` and
+`analyzer: ">=13.0.0 <14.0.0"` so it can coexist with `riverpod_lint` 3.1.x
+(see `pubspec.yaml`). 0.3.22 needs analyzer 14.3.0, which this package cannot
+open yet — `docs/analysis/FLUTTER_ANALYZE_PLUGIN_LOSS.md` keeps that
+upper-bound in place. Upgrading `clean_architecture_linter` therefore does
+not give consumers 0.3.22.
+
+For 2.4.x consumers the sentinel recipe below is the **required CI gate**,
+not a backup. A plugin that fails to start, a future host regression, or
+the residual ordering gap (even 0.3.22 still sends idle a few milliseconds
+before the last error batch, which `dart analyze` currently tolerates)
+all surface as a loud failure instead of a silent pass. The trace script is
+small enough to inline:
 
 ```python
 # legacy_trace.py <package_dir>: prints the server.status / analysis.errors timeline

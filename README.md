@@ -111,7 +111,9 @@ dart pub get
 dart analyze        # Flutter projects too — use `dart analyze`, NOT `flutter analyze`
 ```
 
-That's it! The 34 rules are reported directly in your `dart analyze` output.
+Locally, `dart analyze` reports the 34 rules in its output. In CI, a single
+`No issues found!` is not proof the plugin answered — use the sentinel gate
+in the warning below.
 
 > ⚠️ **Use `dart analyze`, not `flutter analyze`.** `flutter analyze` silently
 > drops `analysis_server_plugin` diagnostics (it stops collecting before the
