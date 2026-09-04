@@ -22,10 +22,12 @@ platforms:
   windows:
 
 dependencies:
-  # Keep CAL on the analyzer 13 plugin-host line so it can coexist with
-  # riverpod_lint 3.1.x in the analyzer plugin synthetic package.
-  analyzer: ">=13.0.0 <14.0.0"
-  analysis_server_plugin: ">=0.3.15 <0.3.16"
+  # analyzer 14 plugin-host line. analysis_server_plugin 0.3.20 fixed the
+  # "dart analyze could spin indefinitely" hang that kept 2.4.x on 0.3.15, and
+  # riverpod_lint 3.1.9 allows analyzer >=13.0.0 <15.0.0, so both can share the
+  # analyzer plugin synthetic package.
+  analyzer: ">=14.1.0 <15.0.0"
+  analysis_server_plugin: ">=0.3.20 <0.3.21"
   path: ^1.9.1
 
 dev_dependencies:
