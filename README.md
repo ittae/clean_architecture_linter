@@ -122,13 +122,21 @@ dart pub get
 dart analyze        # Flutter projects too — use `dart analyze`, NOT `flutter analyze`
 ```
 
-That's it! The 34 default rules are reported directly in your `dart analyze` output (plus the opt-in `riverpod_state_after_async_gap`, see the rule list above).
+Locally, `dart analyze` reports the 34 default rules in its output (plus the
+opt-in `riverpod_state_after_async_gap`, see the rule list above). In CI, a
+single `No issues found!` is not proof the plugin answered — use the sentinel
+gate in the warning below.
 
 > ⚠️ **Use `dart analyze`, not `flutter analyze`.** `flutter analyze` silently
 > drops `analysis_server_plugin` diagnostics (it stops collecting before the
 > plugin publishes its results) and prints `No issues found!` even when
 > violations exist. This applies to CI and local runs alike. Root cause and a
 > regression guard: [docs/analysis/FLUTTER_ANALYZE_PLUGIN_LOSS.md](docs/analysis/FLUTTER_ANALYZE_PLUGIN_LOSS.md).
+>
+> `dart analyze` (Dart 3.13.2) has a milder form of the same race: it can
+> return before the plugin isolate publishes, so a single `No issues found!`
+> is not proof. For CI, gate on a sentinel violation that must always be
+> reported: [tools/lint_sentinel/README.md](https://github.com/ittae/clean_architecture_linter/blob/main/tools/lint_sentinel/README.md).
 
 ### 3. See it in action
 
