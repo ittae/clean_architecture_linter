@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0](https://github.com/ittae/clean_architecture_linter/compare/v2.4.0...v2.5.0) (2026-09-04)
+
+
+### Features
+
+* analyzer 14.3 / analysis_server_plugin 0.3.22 라인으로 올린다 ([#154](https://github.com/ittae/clean_architecture_linter/issues/154)) ([e66767a](https://github.com/ittae/clean_architecture_linter/commit/e66767a3f25039c029c0f29053fabbde1e6cd94b))
+* await 이후 state 대입 검출을 opt-in 규칙 riverpod_state_after_async_gap으로 분리한다 ([#156](https://github.com/ittae/clean_architecture_linter/issues/156)) ([8228c76](https://github.com/ittae/clean_architecture_linter/commit/8228c76b5a68c019919916abc400154fc4ee4e6c))
+* riverpod_keep_alive가 앱 수명 provider 이름(startup, bootstrap, listener, manager, storage, timezone)을 허용한다 ([#152](https://github.com/ittae/clean_architecture_linter/issues/152)) ([67dea73](https://github.com/ittae/clean_architecture_linter/commit/67dea73bcb6c79c8bc806c5cbfab7d6d91593a00))
+
+
+### Bug Fixes
+
+* AI 리뷰 finding 카운트 추출이 PR review 코멘트를 놓치는 문제 수정 ([#121](https://github.com/ittae/clean_architecture_linter/issues/121)) ([cc8391d](https://github.com/ittae/clean_architecture_linter/commit/cc8391da9dd08ea1fec89583bb413e707a79c1d7))
+* AI 리뷰 host engine order resolve helper를 추가한다 ([#141](https://github.com/ittae/clean_architecture_linter/issues/141)) ([59ff494](https://github.com/ittae/clean_architecture_linter/commit/59ff4948f76ce5fc5afdd7bfe0e6804bfeb01e55))
+* AI 리뷰 host SoT 파서·model resolve와 검증 unit을 추가한다 ([#139](https://github.com/ittae/clean_architecture_linter/issues/139)) ([0934da6](https://github.com/ittae/clean_architecture_linter/commit/0934da6b7ce825cfb0596ee22e28f605d14370a4))
+* AI 리뷰 meta에 reviewer_engine inject helper를 추가한다 ([#140](https://github.com/ittae/clean_architecture_linter/issues/140)) ([96d6ea7](https://github.com/ittae/clean_architecture_linter/commit/96d6ea782da3dc2bec286f6f4a075559bf6f001d))
+* body lint가 주석 문법 인용 본문을 오탐 reject하지 않게 한다 ([#126](https://github.com/ittae/clean_architecture_linter/issues/126)) ([1fbc090](https://github.com/ittae/clean_architecture_linter/commit/1fbc090b57dbac7d6de7c52761a01a403043203e))
+* extension 멤버 미스캔으로 진단이 누락되던 FN을 고친다 ([#135](https://github.com/ittae/clean_architecture_linter/issues/135)) ([5a81c78](https://github.com/ittae/clean_architecture_linter/commit/5a81c7825c1393d1d71c7df986d072375c26e4ad))
+* ITT-2464 product relay sparse-checkout을 full checkout으로 맞춘다 ([c680729](https://github.com/ittae/clean_architecture_linter/commit/c680729d49f18fc64d99f351a0f40a1367b5d32d))
+* ITT-2464 relay sparse-checkout 제거 (full clean checkout) ([d874300](https://github.com/ittae/clean_architecture_linter/commit/d874300544024dff016a73ad75ecfd389ff41e3f))
+* presentation_use_async_value uiEffect 부분 실패 오탐을 없앤다 ([#136](https://github.com/ittae/clean_architecture_linter/issues/136)) ([98e7ab5](https://github.com/ittae/clean_architecture_linter/commit/98e7ab527e3e3e5c0ddfac6ba5cb0edbc120ec7b))
+* presentation_use_async_value 필드명 부분일치 오탐을 없앤다 ([#137](https://github.com/ittae/clean_architecture_linter/issues/137)) ([79979c1](https://github.com/ittae/clean_architecture_linter/commit/79979c163a1bfda1417e0f011e6d9857334f17c4))
+* Riverpod 3.3 presentation 규칙 갭을 정리하고 DI read 오탐을 줄인다 ([#142](https://github.com/ittae/clean_architecture_linter/issues/142)) ([d439bf7](https://github.com/ittae/clean_architecture_linter/commit/d439bf78d51b93f8f38ee5171f3ea59a249b3189))
+* riverpod_ref_after_async_gap이 await 이후 state 대입을 추적한다 ([#143](https://github.com/ittae/clean_architecture_linter/issues/143)) ([7a4e169](https://github.com/ittae/clean_architecture_linter/commit/7a4e1698406c1b5562593f7f8bcdbfa50976372f))
+* this.ref UseCase provider 직접 호출을 감지한다 ([#134](https://github.com/ittae/clean_architecture_linter/issues/134)) ([06b70ea](https://github.com/ittae/clean_architecture_linter/commit/06b70ea7a98950853e6a5fdb5b03df24163611b2))
+* widget_ref_read_then_when이 Freezed Result snapshot .when을 허용한다 ([#144](https://github.com/ittae/clean_architecture_linter/issues/144)) ([c977e7a](https://github.com/ittae/clean_architecture_linter/commit/c977e7aa9b3c32b4c51159a94e77fcae9abd1bfb))
+
 ## [2.4.0](https://github.com/ittae/clean_architecture_linter/compare/v2.3.1...v2.4.0) (2026-07-30)
 
 ### Changed
