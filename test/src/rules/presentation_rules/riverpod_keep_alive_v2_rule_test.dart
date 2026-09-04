@@ -166,5 +166,74 @@ Future<Object> todoList(Object ref) async {
         result.expectNoDiagnostics();
       },
     );
+
+    test('allows app-lifetime provider names (startup, bootstrap, listener, '
+        'manager, storage, timezone) outside auth paths', () async {
+      final result = await V2RuleHarness(rule: RiverpodKeepAliveRule()).analyze(
+        files: {
+          'lib/core/providers/app_lifetime_providers.dart': '''
+class Riverpod {
+  const Riverpod({required bool keepAlive});
+}
+
+@Riverpod(keepAlive: true)
+Future<void> adStartup(Object ref) async {}
+
+@Riverpod(keepAlive: true)
+Future<void> homeWidgetBootstrap(Object ref) async {}
+
+@Riverpod(keepAlive: true)
+void purchaseStreamListener(Object ref) {}
+
+@Riverpod(keepAlive: true)
+Object premiumStatusManager(Object ref) => Object();
+
+@Riverpod(keepAlive: true)
+Future<Object> initializedPremiumStatusManager(Object ref) async => Object();
+
+@Riverpod(keepAlive: true)
+Object secureStorage(Object ref) => Object();
+
+@Riverpod(keepAlive: true)
+Future<String> localTimezone(Object ref) async => 'UTC';
+''',
+        },
+        definingFile: 'lib/core/providers/app_lifetime_providers.dart',
+      );
+
+      result.expectNoDiagnostics();
+    });
+
+    test('still reports generic-noun global caches such as palettes '
+        '(documented ignore-with-reason boundary)', () async {
+      final result = await V2RuleHarness(rule: RiverpodKeepAliveRule()).analyze(
+        files: {
+          'lib/core/providers/palette_providers.dart': '''
+class Riverpod {
+  const Riverpod({required bool keepAlive});
+}
+
+@Riverpod(keepAlive: true)
+Future<List<Object>> palettes(Object ref) async => [];
+''',
+        },
+        definingFile: 'lib/core/providers/palette_providers.dart',
+      );
+
+      // A name like `palettes` carries no lifetime signal, so the heuristic
+      // cannot (and should not) special-case it. Consumers keep
+      // `// ignore: clean_architecture_linter/riverpod_keep_alive` plus a
+      // doc comment explaining why the cache must outlive the screen.
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath: 'lib/core/providers/palette_providers.dart',
+          codeName: 'riverpod_keep_alive',
+          problemMessage:
+              'Verify that "keepAlive: true" is necessary. Only use for app-wide persistent state.',
+          correctionMessage:
+              'Valid uses: auth state, app settings, global cache. Invalid: avoiding dispose errors (fix async flow instead).',
+        ),
+      ]);
+    });
   });
 }
