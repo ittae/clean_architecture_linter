@@ -54,8 +54,11 @@ flutter_tools와 동일한 LSP 요청을 재현해 `publishDiagnostics`와 progr
 progress `end`는 1.64s에 오는데 플러그인 진단은 2.05s / 2.08s에 **그 이후**
 도착합니다. `flutter analyze`가 "ran in 0.7s"로 빠르게 끝나는 것도 같은 이유입니다.
 
-- `dart analyze`(analyzer CLI)는 플러그인 결과를 **기다렸다가** 출력하므로 진단이
-  포함됩니다.
+- `dart analyze`(analyzer CLI)는 대부분 플러그인 결과를 기다렸다가 출력하지만,
+  Dart SDK 3.13.2 기준으로 조기 반환이 관측됩니다(작은 fixture·부하 높은 머신에서
+  진단이 통째로 또는 일부만 실림). 단일 `No issues found!`를 증거로 삼지 말고
+  [tools/lint_sentinel/README.md](../../tools/lint_sentinel/README.md)의 sentinel
+  게이트를 쓰세요.
 - LSP를 직접 몰아 충분히 대기하면(ITT-1677, ITT-1836 probe) 진단이 수신됩니다.
 
 ## 소비자 권장 경로 (CI에서 무엇을 실행할 것인가)
@@ -63,15 +66,20 @@ progress `end`는 1.64s에 오는데 플러그인 진단은 2.05s / 2.08s에 **�
 **`clean_architecture_linter`를 강제하려면 `dart analyze`를 사용하세요.**
 `flutter analyze`에만 의존하면 아키텍처 위반이 CI를 조용히 통과합니다.
 
-Flutter 앱 CI 예시:
+Flutter 앱 CI 예시(최소형, 조기 반환 경합에는 취약):
 
 ```yaml
 - name: Analyze (clean_architecture_linter 강제)
   run: dart analyze          # flutter analyze 아님
 ```
 
+> ⚠️ bare `dart analyze`는 플러그인 isolate가 진단을 발행하기 전에 반환할 수 있어
+> 위반이 있는 트리도 통과할 수 있습니다. CI 게이트로 쓸 때는
+> [tools/lint_sentinel/README.md](../../tools/lint_sentinel/README.md)의 레시피처럼
+> 항상 보고돼야 하는 sentinel 위반이 실제로 수신됐는지 확인하세요.
+
 - `dart analyze`는 Flutter 번들 Dart SDK로도 동작하며 top-level `plugins:`로 켠
-  플러그인을 로딩하고 그 진단을 기다립니다.
+  플러그인을 로딩합니다.
 - `--fatal-warnings`(기본값)로 warning을 CI 실패로 승격할 수 있습니다.
 - 실제 위반이 없는지 로컬에서도 `flutter analyze` 대신 `dart analyze`로 확인하세요.
 
@@ -96,3 +104,6 @@ Flutter 앱 CI 예시:
 그전까지 소비자 권장 경로는 `dart analyze`로 유지합니다.
 
 analyzer / `analysis_server_plugin` upper-bound는 이 이슈로 인해 변경하지 않습니다.
+2.4.x는 `analysis_server_plugin: ">=0.3.15 <0.3.16"` / analyzer 13에 남습니다.
+호스트에서 0.3.22를 돌리면 idle-flip이 사라지는 것은 실측이지만, 그 라인은 이
+패키지가 아직 내보내지 않으므로 소비자 CI 게이트는 sentinel입니다.

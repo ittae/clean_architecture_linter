@@ -120,13 +120,21 @@ dart pub get
 dart analyze        # Flutter 프로젝트도 flutter analyze가 아니라 dart analyze를 쓰세요
 ```
 
-완료되었습니다! 기본 34개 규칙이 `dart analyze` 결과에 직접 포함됩니다 (opt-in `riverpod_state_after_async_gap`은 위 규칙 목록 참고).
+로컬에서는 `dart analyze` 결과에 기본 34개 규칙이 직접 포함됩니다 (opt-in
+`riverpod_state_after_async_gap`은 위 규칙 목록 참고). CI에서는 단일
+`No issues found!`를 플러그인이 응답했다는 증거로 쓰지 말고, 아래 경고의
+sentinel 레시피로 게이트하세요.
 
 > ⚠️ **`flutter analyze`가 아니라 `dart analyze`를 사용하세요.** `flutter analyze`는
 > `analysis_server_plugin` 진단을 조용히 유실합니다(플러그인이 결과를 내보내기 전에
 > 수집을 멈춤). 위반이 있어도 `No issues found!`로 통과하므로 CI·로컬 모두
 > `dart analyze`로 검사해야 합니다. 원인과 회귀 가드:
 > [docs/analysis/FLUTTER_ANALYZE_PLUGIN_LOSS.md](docs/analysis/FLUTTER_ANALYZE_PLUGIN_LOSS.md).
+>
+> `dart analyze`(Dart 3.13.2)에도 같은 경합의 약한 형태가 있습니다. 플러그인 isolate가
+> 진단을 발행하기 전에 반환할 수 있어 단일 `No issues found!`는 증거가 아닙니다.
+> CI에서는 항상 보고돼야 하는 sentinel 위반으로 게이트하세요:
+> [tools/lint_sentinel/README.md](https://github.com/ittae/clean_architecture_linter/blob/main/tools/lint_sentinel/README.md).
 
 ### 3. 실제 동작 확인
 
