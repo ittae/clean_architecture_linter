@@ -9,6 +9,27 @@ import '../../compat/analyzer_ast_compat.dart';
 import '../../clean_architecture_linter_base.dart';
 
 /// Warns against unnecessary usage of `@Riverpod(keepAlive: true)`.
+///
+/// The check is a name/path heuristic (severity INFO). A provider passes when
+/// any of the following holds:
+///
+/// - its name contains an app-wide state keyword
+///   (`_validKeepAlivePatterns`: auth, user, session, settings, preferences,
+///   config, theme, locale, cache, analytics, notification, connectivity,
+///   permission, account) or an app-lifetime keyword (startup, bootstrap,
+///   listener, manager, storage, timezone);
+/// - its name contains an infrastructure keyword
+///   (`_infrastructurePatterns`: datasource, repository, usecase, service,
+///   client, api);
+/// - its file lives under an auth path (`_validPathPatterns`).
+///
+/// Providers whose name carries no lifetime signal (for example a global asset
+/// cache called `palettes`) are reported on purpose: the heuristic cannot tell
+/// them apart from a feature-scoped provider. Keep
+/// `// ignore: clean_architecture_linter/riverpod_keep_alive` on that line
+/// together with a doc comment explaining why the state must outlive the
+/// screen. Rules do not read doc comments, so the reason stays reviewable
+/// without turning prose into lint input.
 class RiverpodKeepAliveRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'riverpod_keep_alive',
@@ -40,6 +61,14 @@ class RiverpodKeepAliveRule extends AnalysisRule {
     'connectivity',
     'permission',
     'account',
+    // App-lifetime providers: one-shot startup work watched from main.dart,
+    // app-wide stream subscriptions, singleton managers and platform handles.
+    'startup',
+    'bootstrap',
+    'listener',
+    'manager',
+    'storage',
+    'timezone',
   ];
 
   static const _validPathPatterns = [

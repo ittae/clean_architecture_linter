@@ -447,6 +447,42 @@ class GetUserUseCase {
 }
 ```
 
+### 9. keepAlive Outside App-Wide State (riverpod_keep_alive 위반)
+
+```dart
+// ❌ lib/features/todo/presentation/providers/todo_provider.dart
+@Riverpod(keepAlive: true) // ❌ Feature-scoped list kept alive "to avoid dispose errors"
+Future<List<Todo>> todoList(Ref ref) => ref.watch(getTodosUseCaseProvider)();
+```
+
+```dart
+// ✅ lib/features/iap/presentation/providers/iap_providers.dart
+/// 구매 스트림 구독은 앱 세션에 정확히 1개여야 하므로 화면 수명과 분리한다.
+@Riverpod(keepAlive: true) // ✅ Name carries an app-lifetime keyword ("listener")
+void purchaseStreamListener(Ref ref) { /* subscribe once, cancel in onDispose */ }
+```
+
+The rule is a name/path heuristic. It accepts names containing an app-wide
+state keyword (auth, user, session, settings, preferences, config, theme,
+locale, cache, analytics, notification, connectivity, permission, account), an
+app-lifetime keyword (startup, bootstrap, listener, manager, storage,
+timezone), an infrastructure suffix (datasource, repository, usecase, service,
+client, api), or any file under an `auth/` path.
+
+A global cache whose name is a plain noun (for example `palettes`) is still
+reported. Do not rename it to game the heuristic; keep the ignore together with
+the reason so reviewers can challenge it:
+
+```dart
+// ✅ lib/core/providers/palette_providers.dart
+/// 에셋 팔레트는 앱 전역 캐시라 세션 동안 1회만 로드해 유지한다.
+// ignore: clean_architecture_linter/riverpod_keep_alive
+@Riverpod(keepAlive: true)
+Future<List<Palette>> palettes(Ref ref) => loadPalettes();
+```
+
+Runnable counterpart: `example/lib/good_examples/features/iap/presentation/providers/purchase_stream_listener_provider.dart`.
+
 ## 📋 Common Issues and Solutions
 
 | Issue | Problem | Solution | Related Rule |
