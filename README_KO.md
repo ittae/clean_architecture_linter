@@ -77,7 +77,7 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 
 ### 📋 요구사항
 
-- **Dart SDK**: 3.10.0+
+- **Dart SDK**: 3.11.0+ (analyzer 14.1.0); `riverpod_lint`를 함께 켜면 3.13.0+
 - **Flutter**: 3.0+ (Flutter 프로젝트의 경우 선택사항)
 - **Riverpod**: 프레젠테이션 계층 규칙에 필수 (riverpod_generator 권장)
 
@@ -138,7 +138,7 @@ warning - lib/bad_examples/features/todo/data/repositories/todo_repository_impl.
 
 ## 🧩 호환성 — analyzer 14 / Riverpod 3+
 
-이 패키지는 공식 `analysis_server_plugin`(`>=0.3.20 <0.3.21`) 위에서 동작하며, analyzer `>=14.1.0 <15.0.0`을 지원합니다. `analysis_server_plugin 0.3.20`이 2.4.x를 `0.3.15`/analyzer 13에 묶어 두었던 "dart analyze 무한 spinning" hang을 고쳤고, `riverpod_lint 3.1.9`가 analyzer `>=13.0.0 <15.0.0`을 허용하므로 두 플러그인이 여전히 하나의 synthetic package로 resolve됩니다. 2026-09-04 Dart 3.13.2에서 확인: `riverpod_lint ^3.1.3`을 함께 켠 flagship `ittae` 트리가 2.4.0과 같은 19~31초에 분석을 마치며 3회 연속 hang 없음.
+이 패키지는 공식 `analysis_server_plugin`(`>=0.3.20 <0.3.21`) 위에서 동작하며, 이 버전은 analyzer **14.1.0**을 고정합니다. 선언된 analyzer 범위 `>=14.1.0 <15.0.0`은 현재 14.1.0으로만 resolve되고 다음 ASP bump를 위해 열어 둔 것입니다. `analysis_server_plugin 0.3.20`이 2.4.x를 `0.3.15`/analyzer 13에 묶어 두었던 "dart analyze 무한 spinning" hang을 고쳤습니다. `riverpod_lint`와 하나의 plugin synthetic package에서 공존하려면 `riverpod_lint 3.1.9`(analyzer `>=13.0.0 <15.0.0`, Dart `>=3.13.0`)가 필요하며, Dart 3.12.x에서는 이 라인 옆에서 풀리는 `riverpod_lint 3.1.x`가 없어 pub이 `clean_architecture_linter 2.4.0`으로 되돌아갑니다. 2026-09-04 Dart 3.13.2에서 확인: `riverpod_lint ^3.1.3`을 함께 켠 flagship `ittae` 트리(resolve 결과 3.1.9)가 2.4.0과 같은 19~31초에 분석을 마치며 3회 연속 hang 없음.
 
 `riverpod_lint 3.1.x`는 자체 analyzer constraint를 가집니다. 한 consumer 프로젝트에서 두 도구를 함께 써야 하면 analyzer plugin은 `dev_dependencies`에서 제외하고 둘 다 top-level `plugins:`로 활성화하세요. analyzer plugin manager는 활성화된 plugin들을 하나의 synthetic package에서 함께 resolve하므로, 이 패키지는 `riverpod_lint`와 같은 solve를 공유할 수 있도록 analyzer 범위를 맞춥니다:
 

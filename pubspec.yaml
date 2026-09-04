@@ -14,7 +14,7 @@ topics:
   - static-analysis
 
 environment:
-  sdk: '^3.10.0'
+  sdk: '^3.11.0'
 
 platforms:
   linux:
@@ -23,9 +23,11 @@ platforms:
 
 dependencies:
   # analyzer 14 plugin-host line. analysis_server_plugin 0.3.20 fixed the
-  # "dart analyze could spin indefinitely" hang that kept 2.4.x on 0.3.15, and
-  # riverpod_lint 3.1.9 allows analyzer >=13.0.0 <15.0.0, so both can share the
-  # analyzer plugin synthetic package.
+  # "dart analyze could spin indefinitely" hang that kept 2.4.x on 0.3.15.
+  # 0.3.20 pins analyzer 14.1.0 exactly, so the analyzer range below resolves
+  # to 14.1.0 today and is kept open only for the next ASP bump. riverpod_lint
+  # coexistence in the plugin synthetic package needs riverpod_lint 3.1.9
+  # (analyzer >=13 <15, Dart >=3.13.0); older 3.1.x pin analyzer 13.
   analyzer: ">=14.1.0 <15.0.0"
   analysis_server_plugin: ">=0.3.20 <0.3.21"
   path: ^1.9.1
