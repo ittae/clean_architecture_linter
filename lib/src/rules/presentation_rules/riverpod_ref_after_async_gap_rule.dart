@@ -330,11 +330,14 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
   @override
   void visitAssignmentExpression(AssignmentExpression node) {
     // Simple `state = …` / `this.state = …` only.
-    // Out of scope: compound ops (`??=`, `+=`, …); name-based match may FP on
-    // a local `state` variable (file path is limited to presentation/providers).
+    // Out of scope: compound ops (`??=`, `+=`, …). A bare `state` target that
+    // is shadowed by a local/parameter/loop variable named `state` is not the
+    // notifier setter (same parsed-AST shadowing as reads).
+    final target = node.leftHandSide;
     if (_tracking.stateAssignments &&
         node.operator.lexeme == '=' &&
-        _isStateTarget(node.leftHandSide)) {
+        _isStateTarget(target) &&
+        !(target is SimpleIdentifier && _isShadowedState(target))) {
       _stateAssignments.add(node);
     }
 
@@ -466,24 +469,30 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
         final parts = current is ForStatement
             ? current.forLoopParts
             : (current as ForElement).forLoopParts;
+        // A loop variable is in scope in the body (and, for C-style loops,
+        // in the condition/updaters), not in its own initializer or the
+        // iterable: `for (final state in state.items)` and
+        // `for (var state = state.session; …)` read the getter first.
         if (parts is ForEachPartsWithDeclaration &&
-            parts.loopVariable.name.lexeme == 'state') {
+            parts.loopVariable.name.lexeme == 'state' &&
+            node.offset >= parts.end) {
           return true;
         }
         if (parts is ForEachPartsWithPattern &&
+            node.offset >= parts.end &&
             _patternDeclaresState(parts.pattern)) {
           return true;
         }
         if (parts is ForPartsWithDeclarations) {
           for (final variable in parts.variables.variables) {
             if (variable.name.lexeme == 'state' &&
-                variable.offset < node.offset) {
+                node.offset >= variable.end) {
               return true;
             }
           }
         }
         if (parts is ForPartsWithPattern &&
-            parts.variables.offset < node.offset &&
+            node.offset >= parts.variables.end &&
             _patternDeclaresState(parts.variables.pattern)) {
           return true;
         }
@@ -697,7 +706,37 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     }
     if (parent is SwitchExpression) {
       if (identical(child, parent.expression)) return const [];
-      return [parent.expression];
+      // Cases are tried in order: an earlier case's `when` guard may have
+      // awaited before this case is reached.
+      return [
+        parent.expression,
+        for (final earlier in _priorNodes(parent.cases, child))
+          if (earlier is SwitchExpressionCase)
+            ?_whenExpression(earlier.guardedPattern),
+      ];
+    }
+    if (parent is ForParts) {
+      // Header order: declarations/initializer → condition → updaters.
+      if (identical(child, parent.condition)) {
+        return [
+          if (parent is ForPartsWithDeclarations) parent.variables,
+          if (parent is ForPartsWithPattern) parent.variables,
+          if (parent is ForPartsWithExpression) ?parent.initialization,
+        ];
+      }
+      if (parent.updaters.any((u) => identical(u, child))) {
+        return [
+          if (parent is ForPartsWithDeclarations) parent.variables,
+          if (parent is ForPartsWithPattern) parent.variables,
+          if (parent is ForPartsWithExpression) ?parent.initialization,
+          ?parent.condition,
+          ..._priorNodes(parent.updaters, child),
+        ];
+      }
+      return const [];
+    }
+    if (parent is VariableDeclarationList) {
+      return _priorNodes(parent.variables, child);
     }
     if (parent is SwitchExpressionCase) {
       // `case final x when await pred(x) => state.foo` — the guard awaits

@@ -387,6 +387,7 @@ plugins:
 - ❌ same-statement `state = await …` (store runs after RHS await; a preceding `ref.mounted` guard does not protect it)
 - ❌ unguarded `state.foo` / `this.state` reads after `await` (one finding per statement; `state = state.copyWith(…)` is reported once as the write)
 - ❌ same-statement reads after an earlier `await` in evaluation order (`await foo() ?? state`, `use(await foo(), state)`). `state.foo(await x)` and `await foo(state)` are not reported — the getter runs first
+- ❌ reads in a body that runs after a control-flow await: `await for (…) { state… }`, `if (await …) { state… }`, `while (await …)`, `for (… in await list())`, a pattern `when` guard that awaits, and a preceding `await for` statement. A `ref.mounted` guard inside that body still applies
 - ✅ Access guarded by `if (!ref.mounted) return;` or `if (ref.mounted) { … }` placed right after the await
 - ✅ Locals / lambda parameters named `state` are not the notifier getter; `this.state` is still reported
 - ⚠️ Calls to private helpers that touch `state` are not followed (issue #158)
