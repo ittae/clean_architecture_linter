@@ -30,7 +30,10 @@ import 'riverpod_ref_after_async_gap_rule.dart';
 /// ```
 ///
 /// `state = state.copyWith(…)` after a gap is one finding (the write); a
-/// statement with several reads is one finding. Calls to private helpers that
+/// statement with several reads is one finding. Same-statement reads that
+/// evaluate after an `await` (`await foo() ?? state`) are reported;
+/// receiver-first `state.foo(await x)` is not. Locals and parameters named
+/// `state` are ignored; `this.state` is not. Calls to private helpers that
 /// touch `state` are not followed.
 ///
 /// This rule is **opt-in** (registered as a lint rule, disabled by default).

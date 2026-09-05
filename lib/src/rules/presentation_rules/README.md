@@ -386,7 +386,9 @@ plugins:
 - ❌ unguarded `state = …` / `this.state = …` after `await`
 - ❌ same-statement `state = await …` (store runs after RHS await; a preceding `ref.mounted` guard does not protect it)
 - ❌ unguarded `state.foo` / `this.state` reads after `await` (one finding per statement; `state = state.copyWith(…)` is reported once as the write)
+- ❌ same-statement reads after an earlier `await` in evaluation order (`await foo() ?? state`, `use(await foo(), state)`). `state.foo(await x)` and `await foo(state)` are not reported — the getter runs first
 - ✅ Access guarded by `if (!ref.mounted) return;` or `if (ref.mounted) { … }` placed right after the await
+- ✅ Locals / lambda parameters named `state` are not the notifier getter; `this.state` is still reported
 - ⚠️ Calls to private helpers that touch `state` are not followed (issue #158)
 - ✅ Generated files, tests, non-provider files, and private helper methods are skipped
 

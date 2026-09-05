@@ -65,7 +65,7 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 34. **Allowed Instance Variables** - 무상태 아키텍처 강제 (UseCase/Repository/DataSource)
 
 ### 🔕 Opt-in: Riverpod State After Async Gap
-**Riverpod State After Async Gap** (`riverpod_state_after_async_gap`) - provider method에서 `await` 이후 가드 없는 `state = …` 대입(`state = await …` 포함)과 `state` 읽기를 보고합니다. Riverpod 3는 provider가 dispose된 뒤 `state`를 읽거나 쓰면 `UnmountedRefException`을 던지므로 가드는 await 직후에 두세요: `await …; if (!ref.mounted) return;` (또는 `final next = await …; if (!ref.mounted) return; state = next;`). 기존 앱에 `state = await` 관용구가 흔해 **기본 비활성**이며 프로젝트별로 켭니다:
+**Riverpod State After Async Gap** (`riverpod_state_after_async_gap`) - provider method에서 `await` 이후 가드 없는 `state = …` 대입(`state = await …` 포함)과 `state` 읽기를 보고합니다. 같은 문장에서 평가 순서상 `await` 뒤에 오는 읽기(`await foo() ?? state`)도 포함합니다. receiver가 먼저 평가되는 `state.foo(await x)`와 로컬/파라미터 `state`는 보고하지 않고, `this.state`는 보고합니다. Riverpod 3는 provider가 dispose된 뒤 `state`를 읽거나 쓰면 `UnmountedRefException`을 던지므로 가드는 await 직후에 두세요: `await …; if (!ref.mounted) return;` (또는 `final next = await …; if (!ref.mounted) return; state = next;`). 기존 앱에 `state = await` 관용구가 흔해 **기본 비활성**이며 프로젝트별로 켭니다:
 
 ```yaml
 # analysis_options.yaml
