@@ -131,7 +131,7 @@ void main() {
 
   test('counts an escaped Windows path as a sentinel row', () async {
     // `dart analyze --format=machine` escapes backslashes in the path field.
-    final windowsRow = sentinelRow.replace(
+    final windowsRow = sentinelRow.replaceFirst(
       '/w/lib/zz_lint_sentinel/',
       r'C:\\w\\lib\\zz_lint_sentinel\\',
     );

@@ -139,7 +139,7 @@ fi
 # analyzer diagnostics inside the sentinel file still fail it.
 REAL="$(printf '%s\n' "$OUT" | awk -F'|' -v d="/$SENTINEL_DIR/" -v codes="$SENTINEL_CODES" '
   BEGIN { n = split(codes, c, "|"); for (i = 1; i <= n; i++) want[c[i]] = 1 }
-  { p = $4; gsub(/\\/, "/", p) }
+  { p = $4; gsub(/\\+/, "/", p) }
   /^[A-Z]+\|/ && !(($3 in want) && index(p, d))')"
 if [ -n "$REAL" ]; then
   printf '%s\n' "$REAL"
