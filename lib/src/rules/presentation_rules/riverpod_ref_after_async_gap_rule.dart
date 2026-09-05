@@ -371,7 +371,7 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
       return false;
     }
     if (parent is PropertyAccess && parent.propertyName == node) {
-      if (parent.target is! ThisExpression) return false;
+      if (!_isSelfTarget(parent.target)) return false;
       final grandParent = parent.parent;
       if (grandParent is AssignmentExpression &&
           grandParent.leftHandSide == parent) {
@@ -384,11 +384,20 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     return true;
   }
 
+  /// `this.state`, `super.state`, `(this).state` — all the notifier getter.
   bool _isThisStateAccess(SimpleIdentifier node) {
     final parent = node.parent;
     return parent is PropertyAccess &&
         parent.propertyName == node &&
-        parent.target is ThisExpression;
+        _isSelfTarget(parent.target);
+  }
+
+  bool _isSelfTarget(Expression? target) {
+    var current = target;
+    while (current is ParenthesizedExpression) {
+      current = current.expression;
+    }
+    return current is ThisExpression || current is SuperExpression;
   }
 
   /// Parsed-AST shadowing: a local, parameter, or catch variable named
@@ -690,10 +699,20 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
       if (identical(child, parent.expression)) return const [];
       return [parent.expression];
     }
+    if (parent is SwitchExpressionCase) {
+      // `case final x when await pred(x) => state.foo` — the guard awaits
+      // before the case body evaluates.
+      final when = _whenExpression(parent.guardedPattern);
+      if (when != null && identical(child, parent.expression)) return [when];
+      return const [];
+    }
     if (parent is IfElement) {
       if (identical(child, parent.thenElement) ||
           identical(child, parent.elseElement)) {
-        return [parent.expression];
+        return [
+          parent.expression,
+          ?_whenExpression(parent.caseClause?.guardedPattern),
+        ];
       }
       return const [];
     }
@@ -733,12 +752,32 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
   /// [parent] contain an `await` that runs before the body.
   bool _bodyFollowsControlAwait(AstNode parent, AstNode child) {
     if (parent is SwitchStatement) {
-      return !identical(child, parent.expression) &&
-          _subtreeHasAwait(parent.expression);
+      if (identical(child, parent.expression)) return false;
+      if (_subtreeHasAwait(parent.expression)) return true;
+      // Cases are tried in order, so a `when` guard on this or an earlier
+      // pattern case may have awaited before this case's body runs.
+      for (final member in parent.members) {
+        if (member is SwitchPatternCase) {
+          final when = _whenExpression(member.guardedPattern);
+          if (when != null && _subtreeHasAwait(when)) return true;
+        }
+        if (identical(member, child)) break;
+      }
+      return false;
     }
     if (parent is IfStatement) {
-      return !identical(child, parent.expression) &&
-          _subtreeHasAwait(parent.expression);
+      if (identical(child, parent.expression) ||
+          identical(child, parent.caseClause)) {
+        return false;
+      }
+      if (_subtreeHasAwait(parent.expression)) return true;
+      // `if (v case final x when await pred(x)) {…}` — the guard awaits
+      // before either branch runs.
+      final when = _whenExpression(parent.caseClause?.guardedPattern);
+      return when != null && _subtreeHasAwait(when);
+    }
+    if (parent is ForElement) {
+      return identical(child, parent.body) && parent.awaitKeyword != null;
     }
     if (parent is WhileStatement) {
       return identical(child, parent.body) &&
@@ -750,8 +789,11 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
           _subtreeHasAwait(parent.condition);
     }
     if (parent is ForStatement) {
+      // `await for` suspends before every body run even though the keyword
+      // is not an AwaitExpression.
       return identical(child, parent.body) &&
-          _forPartsAwaitSources(parent.forLoopParts).any(_subtreeHasAwait);
+          (parent.awaitKeyword != null ||
+              _forPartsAwaitSources(parent.forLoopParts).any(_subtreeHasAwait));
     }
     return false;
   }
@@ -760,10 +802,14 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
   /// nested function bodies (their awaits do not sequentially precede code in
   /// the enclosing scope).
   bool _subtreeHasAwait(AstNode node) {
-    final finder = _AwaitFinder();
+    final finder = _AwaitFinder(includeAwaitFor: _tracking.stateReads);
     node.accept(finder);
     return finder.found;
   }
+
+  /// The `when` guard expression of a pattern case, if any.
+  Expression? _whenExpression(GuardedPattern? guarded) =>
+      guarded?.whenClause?.expression;
 
   bool _shouldReport(AstNode node) {
     // `state = await expr` — the store runs after the await. A preceding
@@ -1023,11 +1069,29 @@ class _DeclaredStateFinder extends RecursiveAstVisitor<void> {
 
 /// Detects an `await` within a subtree, stopping at nested function boundaries.
 class _AwaitFinder extends RecursiveAstVisitor<void> {
+  _AwaitFinder({required this.includeAwaitFor});
+
+  /// Whether `await for (…)` counts as a gap. Opt-in (state reads) only, so
+  /// the default-on ref rule's diagnostics stay unchanged.
+  final bool includeAwaitFor;
+
   bool found = false;
 
   @override
   void visitAwaitExpression(AwaitExpression node) {
     found = true;
+  }
+
+  @override
+  void visitForStatement(ForStatement node) {
+    if (includeAwaitFor && node.awaitKeyword != null) found = true;
+    super.visitForStatement(node);
+  }
+
+  @override
+  void visitForElement(ForElement node) {
+    if (includeAwaitFor && node.awaitKeyword != null) found = true;
+    super.visitForElement(node);
   }
 
   @override

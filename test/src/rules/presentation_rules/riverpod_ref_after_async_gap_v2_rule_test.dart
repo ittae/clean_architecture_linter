@@ -1278,6 +1278,14 @@ class TodoNotifier extends _\$TodoNotifier {
         break;
     }
   }
+
+  Future<void> awaitFor(Stream<int> stream) async {
+    // `await for` counts as a gap only for the opt-in state rule.
+    await for (final item in stream) {
+      use(item);
+    }
+    ref.invalidate(todoProvider);
+  }
 }
 ''',
               },
