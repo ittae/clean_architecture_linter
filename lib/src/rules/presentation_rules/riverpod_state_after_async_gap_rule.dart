@@ -5,22 +5,36 @@ import 'package:analyzer/error/error.dart';
 
 import 'riverpod_ref_after_async_gap_rule.dart';
 
-/// Reports unguarded `state = …` writes after an async gap in Riverpod
-/// provider classes.
+/// Reports unguarded `state = …` writes and `state` reads after an async gap
+/// in Riverpod provider classes.
 ///
-/// Riverpod 3 throws `UnmountedRefException` when `state` is written after
-/// the provider was disposed, so every `await` before a `state` write is a
-/// crash path unless guarded:
+/// Riverpod 3 checks `_throwIfInvalidUsage()` in both the `state` setter and
+/// getter, so once the provider is disposed every `state` access after an
+/// `await` throws `UnmountedRefException`. The guard therefore belongs right
+/// after the await, before the first `state` access:
 ///
 /// ```dart
 /// // Reported: the notifier may be disposed while awaiting.
 /// state = await AsyncValue.guard(() => repository.load());
 ///
-/// // Fixed: await into a local, then guard before writing.
+/// // Reported: the read throws too, and this guard arrives too late.
+/// await repository.save(next);
+/// final current = state.session;
+/// if (!ref.mounted) return;
+/// state = state.copyWith(session: next);
+///
+/// // Fixed: await into a local, guard, then touch state.
 /// final next = await AsyncValue.guard(() => repository.load());
 /// if (!ref.mounted) return;
 /// state = next;
 /// ```
+///
+/// `state = state.copyWith(…)` after a gap is one finding (the write); a
+/// statement with several reads is one finding. Same-statement reads that
+/// evaluate after an `await` (`await foo() ?? state`) are reported;
+/// receiver-first `state.foo(await x)` is not. Locals and parameters named
+/// `state` are ignored; `this.state` is not. Calls to private helpers that
+/// touch `state` are not followed.
 ///
 /// This rule is **opt-in** (registered as a lint rule, disabled by default).
 /// The `state = await …` idiom is widespread in existing apps, and enabling
@@ -50,7 +64,7 @@ class RiverpodStateAfterAsyncGapRule extends AnalysisRule {
     : super(
         name: 'riverpod_state_after_async_gap',
         description:
-            'Advises against assigning to state after an async gap (await or Future continuations) in Riverpod provider classes. Opt-in.',
+            'Advises against assigning to or reading state after an async gap (await or Future continuations) in Riverpod provider classes. Opt-in.',
       );
 
   @override
@@ -67,7 +81,11 @@ class RiverpodStateAfterAsyncGapRule extends AnalysisRule {
     final visitor = RiverpodRefAfterAsyncGapVisitor(
       this,
       context,
-      tracking: const RefGapTracking(refCalls: false, stateAssignments: true),
+      tracking: const RefGapTracking(
+        refCalls: false,
+        stateAssignments: true,
+        stateReads: true,
+      ),
     );
     registry.addClassDeclaration(this, visitor);
     registry.addExtensionDeclaration(this, visitor);
