@@ -1767,5 +1767,73 @@ class TodoNotifier extends _\$TodoNotifier {
         result.expectNoDiagnostics();
       },
     );
+    test('reports a when-guard read after an awaited if-case scrutinee', () async {
+      final result = await V2RuleHarness(rule: RiverpodStateAfterAsyncGapRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/providers/todo_notifier.dart': '''
+abstract class _\$TodoNotifier {}
+
+class TodoNotifier extends _\$TodoNotifier {
+  Future<void> load() async {
+    if (await getValue() case final x when state.ready) {
+      use(x);
+    }
+  }
+}
+''',
+            },
+            definingFile:
+                'lib/features/todo/presentation/providers/todo_notifier.dart',
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/presentation/providers/todo_notifier.dart',
+          codeName: 'riverpod_state_after_async_gap',
+          problemMessage:
+              'Avoid reading state after an async gap in Riverpod providers (the state getter throws UnmountedRefException once the provider is disposed).',
+          correctionMessage:
+              'Guard right after the await ("await …; if (!ref.mounted) return;"), or capture the needed state values before the await.',
+        ),
+      ]);
+    });
+
+    test(
+      'reports a when-guard read after an awaited if-element scrutinee',
+      () async {
+        final result =
+            await V2RuleHarness(rule: RiverpodStateAfterAsyncGapRule()).analyze(
+              files: {
+                'lib/features/todo/presentation/providers/todo_notifier.dart':
+                    '''
+abstract class _\$TodoNotifier {}
+
+class TodoNotifier extends _\$TodoNotifier {
+  Future<void> load() async {
+    final xs = [if (await getValue() case final x when state.ready) x];
+    use(xs);
+  }
+}
+''',
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/todo_notifier.dart',
+            );
+
+        result.expectDiagnostics([
+          const ExpectedV2Diagnostic(
+            relativePath:
+                'lib/features/todo/presentation/providers/todo_notifier.dart',
+            codeName: 'riverpod_state_after_async_gap',
+            problemMessage:
+                'Avoid reading state after an async gap in Riverpod providers (the state getter throws UnmountedRefException once the provider is disposed).',
+            correctionMessage:
+                'Guard right after the await ("await …; if (!ref.mounted) return;"), or capture the needed state values before the await.',
+          ),
+        ]);
+      },
+    );
   });
 }

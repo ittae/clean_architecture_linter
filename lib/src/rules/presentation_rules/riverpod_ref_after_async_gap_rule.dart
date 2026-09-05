@@ -714,6 +714,8 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
           ?_whenExpression(parent.caseClause?.guardedPattern),
         ];
       }
+      // The scrutinee is evaluated before the case clause's `when` guard.
+      if (identical(child, parent.caseClause)) return [parent.expression];
       return const [];
     }
     if (parent is ForElement && identical(child, parent.body)) {
@@ -766,11 +768,11 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
       return false;
     }
     if (parent is IfStatement) {
-      if (identical(child, parent.expression) ||
-          identical(child, parent.caseClause)) {
-        return false;
-      }
+      if (identical(child, parent.expression)) return false;
+      // The scrutinee is evaluated before the case clause's `when` guard,
+      // and before either branch.
       if (_subtreeHasAwait(parent.expression)) return true;
+      if (identical(child, parent.caseClause)) return false;
       // `if (v case final x when await pred(x)) {…}` — the guard awaits
       // before either branch runs.
       final when = _whenExpression(parent.caseClause?.guardedPattern);
