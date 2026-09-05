@@ -19,6 +19,8 @@ void main() {
     required bool sentinelPresent,
     required String dartOut,
     int dartRc = 0,
+    String? firstAttemptOut,
+    String attempts = '1',
   }) async {
     final tmp = await Directory.systemTemp.createTemp('sentinel_check_');
     try {
@@ -31,14 +33,23 @@ void main() {
       final log = p.join(tmp.path, 'dart.log');
       final outFile = File(p.join(tmp.path, 'dart.out'))
         ..writeAsStringSync(dartOut);
+      // With [firstAttemptOut] the shim prints that text on its first call and
+      // [dartOut] afterwards, which exercises the retry loop.
+      final firstFile = File(p.join(tmp.path, 'dart.first'))
+        ..writeAsStringSync(firstAttemptOut ?? '');
       final shim = File(p.join(bin.path, 'dart'))
         ..writeAsStringSync(
-          '#!/bin/sh\necho "\$@" >> "$log"\ncat "${outFile.path}"\nexit $dartRc\n',
+          '#!/bin/sh\n'
+          'echo "\$@" >> "$log"\n'
+          'n=\$(wc -l < "$log")\n'
+          'if [ "\$n" -eq 1 ] && [ -s "${firstFile.path}" ]; then cat "${firstFile.path}"; else cat "${outFile.path}"; fi\n'
+          'exit $dartRc\n',
         );
       await Process.run('chmod', ['+x', shim.path]);
       final env = Map<String, String>.from(Platform.environment)
         ..['PATH'] = '${bin.path}:${Platform.environment['PATH']}'
-        ..['SENTINEL_ATTEMPTS'] = '1';
+        ..['SENTINEL_ATTEMPTS'] = attempts
+        ..['SENTINEL_BACKOFF'] = '0';
       final result = await Process.run(
         'bash',
         [script],
@@ -92,6 +103,30 @@ void main() {
     expect(r.code, 1);
     expect(r.out, contains('were not delivered'));
     expect(r.out, contains('No issues found!'));
+  });
+
+  test('retries when the first attempt has no sentinel rows', () async {
+    final r = await run(
+      sentinelPresent: true,
+      firstAttemptOut: 'No issues found!\n',
+      dartOut: '$sentinelRow\n$sentinelRow2\n',
+      attempts: '3',
+    );
+    expect(r.code, 0, reason: r.out);
+    expect(r.calls, ['analyze --format=machine', 'analyze --format=machine']);
+    expect(r.out, contains('diagnostics missing (attempt 1/3)'));
+    expect(r.out, contains('sentinel rows received: 2'));
+  });
+
+  test('gives up after SENTINEL_ATTEMPTS without sentinel rows', () async {
+    final r = await run(
+      sentinelPresent: true,
+      dartOut: 'No issues found!\n',
+      attempts: '2',
+    );
+    expect(r.code, 1);
+    expect(r.calls.length, 2);
+    expect(r.out, contains('(attempt 2/2)'));
   });
 
   test('fails on a real finding even with the sentinel rows', () async {

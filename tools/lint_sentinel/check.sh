@@ -14,12 +14,15 @@
 #     server plugin can publish late; then fail on every other row (same
 #     policy as --fatal-infos --fatal-warnings).
 #
-# Env overrides: SENTINEL_DIR, SENTINEL_CODES, SENTINEL_ATTEMPTS, FALLBACK_ARGS.
+# Env overrides: SENTINEL_DIR, SENTINEL_CODES, SENTINEL_ATTEMPTS (default 5, as in
+# the README recipe; CI uses 3 to stay inside its step timeout), SENTINEL_BACKOFF
+# (seconds multiplier between attempts, default 5), FALLBACK_ARGS.
 set -euo pipefail
 
 SENTINEL_DIR="${SENTINEL_DIR:-lib/zz_lint_sentinel}"
 SENTINEL_CODES="${SENTINEL_CODES:-RIVERPOD_KEEP_ALIVE|PRESENTATION_NO_THROW}"
-SENTINEL_ATTEMPTS="${SENTINEL_ATTEMPTS:-3}"
+SENTINEL_ATTEMPTS="${SENTINEL_ATTEMPTS:-5}"
+SENTINEL_BACKOFF="${SENTINEL_BACKOFF:-5}"
 FALLBACK_ARGS="${FALLBACK_ARGS:---fatal-infos --fatal-warnings}"
 
 if [ ! -d "$SENTINEL_DIR" ]; then
@@ -50,7 +53,7 @@ for attempt in $(seq 1 "$SENTINEL_ATTEMPTS"); do
   ROWS="$(sentinel_filter count "$OUT")"
   if [ "$ROWS" -gt 0 ]; then break; fi
   echo "lint sentinel: clean_architecture_linter diagnostics missing (attempt $attempt/$SENTINEL_ATTEMPTS)"
-  if [ "$attempt" -lt "$SENTINEL_ATTEMPTS" ]; then sleep $((attempt * 5)); fi
+  if [ "$attempt" -lt "$SENTINEL_ATTEMPTS" ]; then sleep $((attempt * SENTINEL_BACKOFF)); fi
 done
 
 if [ "$ROWS" -eq 0 ]; then

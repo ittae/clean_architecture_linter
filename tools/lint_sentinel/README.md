@@ -190,8 +190,11 @@ bash scripts/analyze.sh
 
 Without `lib/zz_lint_sentinel/` it falls back to `dart analyze
 --fatal-infos --fatal-warnings` (override with `FALLBACK_ARGS`), so the same
-script is safe to land before the sentinel file. `SENTINEL_DIR`,
-`SENTINEL_CODES` and `SENTINEL_ATTEMPTS` mirror the CI step.
+script is safe to land before the sentinel file. `SENTINEL_DIR` and
+`SENTINEL_CODES` mirror the CI step. `SENTINEL_ATTEMPTS` defaults to 5 like
+the recipe above (the "Expected miss rate" figures assume 5); the CI step
+itself uses 3 to stay inside its 15-minute timeout. `SENTINEL_BACKOFF`
+(default 5) is the seconds multiplier between attempts.
 
 ## Regression contract
 
