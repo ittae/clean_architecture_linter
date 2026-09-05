@@ -115,7 +115,7 @@ OUT=""; SENTINEL_ROWS=0
 count_sentinel() {
   printf '%s\n' "$1" | awk -F'|' -v d="/$SENTINEL_DIR/" -v codes="$SENTINEL_CODES" '
     BEGIN { n = split(codes, c, "|"); for (i = 1; i <= n; i++) want[c[i]] = 1 }
-    { gsub(/\\/, "/", $4) }
+    { gsub(/\\+/, "/", $4) }
     ($3 in want) && index($4, d) { hits++ }
     END { print hits + 0 }'
 }
@@ -139,7 +139,7 @@ fi
 # analyzer diagnostics inside the sentinel file still fail it.
 REAL="$(printf '%s\n' "$OUT" | awk -F'|' -v d="/$SENTINEL_DIR/" -v codes="$SENTINEL_CODES" '
   BEGIN { n = split(codes, c, "|"); for (i = 1; i <= n; i++) want[c[i]] = 1 }
-  { p = $4; gsub(/\\/, "/", p) }
+  { p = $4; gsub(/\\+/, "/", p) }
   /^[A-Z]+\|/ && !(($3 in want) && index(p, d))')"
 if [ -n "$REAL" ]; then
   printf '%s\n' "$REAL"
@@ -171,6 +171,30 @@ directory still matches on a Windows runner.
 `analysis_options.yaml` sets `riverpod_keep_alive: ignore` or
 `presentation_no_throw: ignore`, drop that code from the list; if both are
 ignored, add a violation of a rule the app does enforce and list its code.
+
+## Local gates (derry `check`, pre-commit, verify.sh)
+
+Plain `dart analyze` exits 2 as soon as the sentinel is in the tree, because
+the sentinel deliberately carries a WARNING row (`presentation_no_throw`).
+Every local gate that used to run `dart analyze` (with or without
+`--fatal-*`) therefore needs the same sentinel-aware check as CI.
+
+`check.sh` next to this file is a copy-and-go version of the CI recipe:
+
+```bash
+cp <clean_architecture_linter>/tools/lint_sentinel/check.sh scripts/analyze.sh
+chmod +x scripts/analyze.sh
+# derry / pre-commit / verify.sh: replace `dart analyze …` with
+bash scripts/analyze.sh
+```
+
+Without `lib/zz_lint_sentinel/` it falls back to `dart analyze
+--fatal-infos --fatal-warnings` (override with `FALLBACK_ARGS`), so the same
+script is safe to land before the sentinel file. `SENTINEL_DIR` and
+`SENTINEL_CODES` mirror the CI step. `SENTINEL_ATTEMPTS` defaults to 5 like
+the recipe above (the "Expected miss rate" figures assume 5); the CI step
+itself uses 3 to stay inside its 15-minute timeout. `SENTINEL_BACKOFF`
+(default 5) is the seconds multiplier between attempts.
 
 ## Regression contract
 
