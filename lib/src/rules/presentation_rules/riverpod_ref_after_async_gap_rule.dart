@@ -545,8 +545,14 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     while (parent != null) {
       if (identical(child, _scannedBody)) break;
 
-      if (parent is Block) {
-        for (final statement in parent.statements) {
+      if (parent is Block || (parent is SwitchMember && _tracking.stateReads)) {
+        // Unbraced `case` bodies keep their statements on the SwitchMember.
+        // Opt-in rule only for SwitchMember, so the default-on ref rule's
+        // output is unchanged.
+        final statements = parent is Block
+            ? parent.statements
+            : (parent as SwitchMember).statements;
+        for (final statement in statements) {
           if (identical(statement, child)) break;
           if (_subtreeHasAwait(statement)) return true;
         }
@@ -676,10 +682,23 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
       return const [];
     }
     if (parent is ForElement && identical(child, parent.body)) {
-      final parts = parent.forLoopParts;
-      if (parts is ForEachParts) return [parts.iterable];
-      if (parts is ForParts) return [?parts.condition];
-      return const [];
+      return _forPartsAwaitSources(parent.forLoopParts);
+    }
+    return const [];
+  }
+
+  /// The parts of a `for` header that run before the body on the first
+  /// iteration (iterable, initializer/declarations, condition) plus the
+  /// updaters, which run before every later iteration.
+  List<AstNode> _forPartsAwaitSources(ForLoopParts parts) {
+    if (parts is ForEachParts) return [parts.iterable];
+    if (parts is ForParts) {
+      return [
+        if (parts is ForPartsWithDeclarations) parts.variables,
+        if (parts is ForPartsWithExpression) ?parts.initialization,
+        ?parts.condition,
+        ...parts.updaters,
+      ];
     }
     return const [];
   }
@@ -714,24 +733,8 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
           _subtreeHasAwait(parent.condition);
     }
     if (parent is ForStatement) {
-      if (!identical(child, parent.body)) return false;
-      final parts = parent.forLoopParts;
-      if (parts is ForEachParts) return _subtreeHasAwait(parts.iterable);
-      if (parts is ForParts) {
-        final condition = parts.condition;
-        if (condition != null && _subtreeHasAwait(condition)) return true;
-        if (parts is ForPartsWithDeclarations &&
-            _subtreeHasAwait(parts.variables)) {
-          return true;
-        }
-        if (parts is ForPartsWithExpression) {
-          final initialization = parts.initialization;
-          if (initialization != null && _subtreeHasAwait(initialization)) {
-            return true;
-          }
-        }
-        return parts.updaters.any(_subtreeHasAwait);
-      }
+      return identical(child, parent.body) &&
+          _forPartsAwaitSources(parent.forLoopParts).any(_subtreeHasAwait);
     }
     return false;
   }
