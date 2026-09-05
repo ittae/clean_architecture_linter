@@ -419,21 +419,45 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
         if (_statementsDeclareStateBefore(current.statements, node)) {
           return true;
         }
-      }
-      if (current is Block) {
-        for (final statement in current.statements) {
-          if (statement.offset >= node.offset) break;
-          if (statement is VariableDeclarationStatement) {
-            for (final variable in statement.variables.variables) {
-              if (variable.name.lexeme == 'state') return true;
-            }
-          }
+        if (current is SwitchPatternCase &&
+            _patternDeclaresState(current.guardedPattern.pattern)) {
+          return true;
         }
       }
-      if (current is ForStatement) {
-        final parts = current.forLoopParts;
+      if (current is SwitchExpressionCase &&
+          _patternDeclaresState(current.guardedPattern.pattern)) {
+        return true;
+      }
+      if (current is IfStatement) {
+        final caseClause = current.caseClause;
+        if (caseClause != null &&
+            node.offset > caseClause.offset &&
+            _patternDeclaresState(caseClause.guardedPattern.pattern)) {
+          return true;
+        }
+      }
+      if (current is IfElement) {
+        final caseClause = current.caseClause;
+        if (caseClause != null &&
+            node.offset > caseClause.offset &&
+            _patternDeclaresState(caseClause.guardedPattern.pattern)) {
+          return true;
+        }
+      }
+      if (current is Block &&
+          _statementsDeclareStateBefore(current.statements, node)) {
+        return true;
+      }
+      if (current is ForStatement || current is ForElement) {
+        final parts = current is ForStatement
+            ? current.forLoopParts
+            : (current as ForElement).forLoopParts;
         if (parts is ForEachPartsWithDeclaration &&
             parts.loopVariable.name.lexeme == 'state') {
+          return true;
+        }
+        if (parts is ForEachPartsWithPattern &&
+            _patternDeclaresState(parts.pattern)) {
           return true;
         }
         if (parts is ForPartsWithDeclarations) {
@@ -463,8 +487,21 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
           if (variable.name.lexeme == 'state') return true;
         }
       }
+      if (statement is PatternVariableDeclarationStatement &&
+          _patternDeclaresState(statement.declaration.pattern)) {
+        return true;
+      }
     }
     return false;
+  }
+
+  /// Whether [pattern] binds a variable named `state` (Dart 3 patterns:
+  /// `case Foo(:final state)`, `if (x case final state)`,
+  /// `var (a, state) = …`, `for (final (state, _) in …)`).
+  bool _patternDeclaresState(DartPattern pattern) {
+    final finder = _DeclaredStateFinder();
+    pattern.accept(finder);
+    return finder.found;
   }
 
   bool _parametersDeclareState(FormalParameterList? parameters) {
@@ -624,6 +661,26 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     if (parent is StringInterpolation) {
       return _priorNodes(parent.elements, child);
     }
+    if (parent is RecordLiteral) {
+      return _priorNodes(parent.fields, child);
+    }
+    if (parent is SwitchExpression) {
+      if (identical(child, parent.expression)) return const [];
+      return [parent.expression];
+    }
+    if (parent is IfElement) {
+      if (identical(child, parent.thenElement) ||
+          identical(child, parent.elseElement)) {
+        return [parent.expression];
+      }
+      return const [];
+    }
+    if (parent is ForElement && identical(child, parent.body)) {
+      final parts = parent.forLoopParts;
+      if (parts is ForEachParts) return [parts.iterable];
+      if (parts is ForParts) return [?parts.condition];
+      return const [];
+    }
     return const [];
   }
 
@@ -636,12 +693,13 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     return prior;
   }
 
-  /// Whether [node]'s subtree contains an `await`, without descending into
-  /// nested function bodies (their awaits do not sequentially precede code in
-  /// the enclosing scope).
   /// Whether [child] is a branch/loop body whose control expression(s) in
   /// [parent] contain an `await` that runs before the body.
   bool _bodyFollowsControlAwait(AstNode parent, AstNode child) {
+    if (parent is SwitchStatement) {
+      return !identical(child, parent.expression) &&
+          _subtreeHasAwait(parent.expression);
+    }
     if (parent is IfStatement) {
       return !identical(child, parent.expression) &&
           _subtreeHasAwait(parent.expression);
@@ -678,6 +736,9 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     return false;
   }
 
+  /// Whether [node]'s subtree contains an `await`, without descending into
+  /// nested function bodies (their awaits do not sequentially precede code in
+  /// the enclosing scope).
   bool _subtreeHasAwait(AstNode node) {
     final finder = _AwaitFinder();
     node.accept(finder);
@@ -910,6 +971,17 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
         'Guard right after the await ("await …; if (!ref.mounted) return;"), or capture the needed state values before the await.',
       ],
     );
+  }
+}
+
+/// Finds a `DeclaredVariablePattern` named `state` inside a pattern.
+class _DeclaredStateFinder extends RecursiveAstVisitor<void> {
+  bool found = false;
+
+  @override
+  void visitDeclaredVariablePattern(DeclaredVariablePattern node) {
+    if (node.name.lexeme == 'state') found = true;
+    super.visitDeclaredVariablePattern(node);
   }
 }
 
