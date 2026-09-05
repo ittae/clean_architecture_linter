@@ -67,7 +67,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 34. **Allowed Instance Variables** - Enforces stateless architecture (UseCase/Repository/DataSource)
 
 ### 🔕 Opt-in: Riverpod State After Async Gap
-**Riverpod State After Async Gap** (`riverpod_state_after_async_gap`) - Reports an unguarded `state = …` after an `await` in provider methods, including `state = await …`. Riverpod 3 throws `UnmountedRefException` when `state` is written after the provider is disposed, so the fix is `final next = await …; if (!ref.mounted) return; state = next;`. **Disabled by default** because the `state = await` idiom is common in existing apps; enable it per project:
+**Riverpod State After Async Gap** (`riverpod_state_after_async_gap`) - Reports an unguarded `state = …` write or `state` read after an `await` in provider methods, including `state = await …`. Riverpod 3 throws `UnmountedRefException` from both the `state` setter and getter once the provider is disposed, so the guard belongs right after the await: `await …; if (!ref.mounted) return;` (or `final next = await …; if (!ref.mounted) return; state = next;`). **Disabled by default** because the `state = await` idiom is common in existing apps; enable it per project:
 
 ```yaml
 # analysis_options.yaml

@@ -371,7 +371,7 @@ class TodoNotifier extends _$TodoNotifier {
 ```
 
 ### 7b. Riverpod State After Async Gap Rule (`riverpod_state_after_async_gap_rule.dart`, opt-in)
-**Purpose**: Advises against writing `state` after an async gap in provider/notifier methods. Riverpod 3 throws `UnmountedRefException` when `state` is written after disposal.
+**Purpose**: Advises against writing or reading `state` after an async gap in provider/notifier methods. Riverpod 3 throws `UnmountedRefException` from both the `state` setter and getter after disposal, so the guard belongs right after the await.
 
 **Opt-in**: registered with `registerLintRule`, so it is off until enabled:
 
@@ -385,7 +385,9 @@ plugins:
 **What it checks**:
 - ❌ unguarded `state = …` / `this.state = …` after `await`
 - ❌ same-statement `state = await …` (store runs after RHS await; a preceding `ref.mounted` guard does not protect it)
-- ✅ Assignment guarded by `if (!ref.mounted) return;` or `if (ref.mounted) { … }`
+- ❌ unguarded `state.foo` / `this.state` reads after `await` (one finding per statement; `state = state.copyWith(…)` is reported once as the write)
+- ✅ Access guarded by `if (!ref.mounted) return;` or `if (ref.mounted) { … }` placed right after the await
+- ⚠️ Calls to private helpers that touch `state` are not followed (issue #158)
 - ✅ Generated files, tests, non-provider files, and private helper methods are skipped
 
 **Example**:

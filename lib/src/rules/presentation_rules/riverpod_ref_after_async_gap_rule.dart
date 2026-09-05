@@ -16,13 +16,14 @@ const _futureContinuationMethods = {'then', 'catchError', 'whenComplete'};
 /// reports.
 ///
 /// [RiverpodRefAfterAsyncGapRule] tracks `ref.*` calls only. Unguarded
-/// `state = …` writes after a gap are tracked by the opt-in
+/// `state = …` writes and `state` reads after a gap are tracked by the opt-in
 /// `riverpod_state_after_async_gap` rule, which reuses the same visitor with
-/// [stateAssignments] enabled instead.
+/// [stateAssignments] and [stateReads] enabled instead.
 class RefGapTracking {
   const RefGapTracking({
     required this.refCalls,
     required this.stateAssignments,
+    required this.stateReads,
   });
 
   /// Report `ref.read/watch/listen/invalidate/refresh` after an async gap.
@@ -30,6 +31,10 @@ class RefGapTracking {
 
   /// Report simple `state = …` / `this.state = …` after an async gap.
   final bool stateAssignments;
+
+  /// Report `state` / `this.state` reads (the getter also throws once the
+  /// provider is disposed) after an async gap.
+  final bool stateReads;
 }
 
 /// Reports Riverpod `ref` usage after an async gap in provider classes.
@@ -66,7 +71,11 @@ class RiverpodRefAfterAsyncGapRule extends AnalysisRule {
     final visitor = RiverpodRefAfterAsyncGapVisitor(
       this,
       context,
-      tracking: const RefGapTracking(refCalls: true, stateAssignments: false),
+      tracking: const RefGapTracking(
+        refCalls: true,
+        stateAssignments: false,
+        stateReads: false,
+      ),
     );
     registry.addClassDeclaration(this, visitor);
     // Notifier helpers are routinely `extension on FooNotifier` (often in a
@@ -236,6 +245,9 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
   final Set<int> _reportedRefCallOffsets;
   final List<MethodInvocation> _refCalls = [];
   final List<AssignmentExpression> _stateAssignments = [];
+  final List<SimpleIdentifier> _stateReads = [];
+  final List<AssignmentExpression> _reportedAssignments = [];
+  final Set<int> _reportedReadStatementOffsets = {};
   FunctionBody? _scannedBody;
 
   void scan(FunctionBody body) {
@@ -253,11 +265,33 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     if (_tracking.stateAssignments) {
       for (final assignment in _stateAssignments) {
         if (_shouldReport(assignment)) {
+          _reportedAssignments.add(assignment);
           _reportStateAssignment(assignment);
         }
       }
     }
+
+    if (_tracking.stateReads) {
+      for (final read in _stateReads) {
+        // `state = state.copyWith(…)` is one finding, not two.
+        if (_isInsideReportedAssignment(read)) continue;
+        if (!_shouldReport(read)) continue;
+        // One finding per statement; `state.a + state.b` is a single site.
+        final statement = read.thisOrAncestorOfType<Statement>();
+        if (!_reportedReadStatementOffsets.add(
+          statement?.offset ?? read.offset,
+        )) {
+          continue;
+        }
+        _reportStateRead(read);
+      }
+    }
   }
+
+  bool _isInsideReportedAssignment(AstNode node) => _reportedAssignments.any(
+    (assignment) =>
+        node.offset >= assignment.offset && node.end <= assignment.end,
+  );
 
   @override
   void visitFunctionDeclaration(FunctionDeclaration node) {
@@ -305,6 +339,40 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     }
 
     super.visitAssignmentExpression(node);
+  }
+
+  @override
+  void visitSimpleIdentifier(SimpleIdentifier node) {
+    if (_tracking.stateReads && _isStateRead(node)) {
+      _stateReads.add(node);
+    }
+
+    super.visitSimpleIdentifier(node);
+  }
+
+  /// `state` / `this.state` used as a value. Excludes assignment targets
+  /// (tracked separately), declarations, named-argument labels, method names,
+  /// and `other.state` properties of some other object.
+  bool _isStateRead(SimpleIdentifier node) {
+    if (node.name != 'state' || node.inDeclarationContext()) return false;
+
+    final parent = node.parent;
+    if (parent is Label) return false;
+    if (parent is MethodInvocation && parent.methodName == node) return false;
+    if (parent is AssignmentExpression && parent.leftHandSide == node) {
+      return false;
+    }
+    if (parent is PrefixedIdentifier && parent.identifier == node) return false;
+    if (parent is PropertyAccess && parent.propertyName == node) {
+      if (parent.target is! ThisExpression) return false;
+      final grandParent = parent.parent;
+      if (grandParent is AssignmentExpression &&
+          grandParent.leftHandSide == parent) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   bool _isRefTarget(Expression? target) {
@@ -563,7 +631,17 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
       assignment,
       arguments: [
         'Avoid assigning to state after an async gap in Riverpod providers (Riverpod 3 throws UnmountedRefException once the provider is disposed).',
-        'Await into a local first, then guard: "final next = await …; if (!ref.mounted) return; state = next;".',
+        'Guard right after the await ("await …; if (!ref.mounted) return;"), or await into a local first: "final next = await …; if (!ref.mounted) return; state = next;".',
+      ],
+    );
+  }
+
+  void _reportStateRead(SimpleIdentifier read) {
+    rule.reportAtNode(
+      read,
+      arguments: [
+        'Avoid reading state after an async gap in Riverpod providers (the state getter throws UnmountedRefException once the provider is disposed).',
+        'Guard right after the await ("await …; if (!ref.mounted) return;"), or capture the needed state values before the await.',
       ],
     );
   }
