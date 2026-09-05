@@ -518,13 +518,13 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
         // execute after the try body (including after an await that threw).
         if (_subtreeHasAwait(parent.body)) return true;
       } else if (_tracking.stateReads &&
-          parent is IfStatement &&
-          !identical(child, parent.expression)) {
-        // `if (await check()) { use(state); }` — the branch runs after the
-        // condition's await. A `ref.mounted` guard inside the branch still
-        // applies (checked by _isDisposalGuarded). Opt-in rule only, so the
-        // default-on ref rule's output is unchanged.
-        if (_subtreeHasAwait(parent.expression)) return true;
+          _bodyFollowsControlAwait(parent, child)) {
+        // `if (await check()) { use(state); }`, `while (await more()) {…}`,
+        // `for (final x in await list()) {…}` — the body runs after the
+        // control expression's await. A `ref.mounted` guard inside the body
+        // still applies (checked by _isDisposalGuarded). Opt-in rule only, so
+        // the default-on ref rule's output is unchanged.
+        return true;
       }
 
       child = parent;
@@ -639,6 +639,45 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
   /// Whether [node]'s subtree contains an `await`, without descending into
   /// nested function bodies (their awaits do not sequentially precede code in
   /// the enclosing scope).
+  /// Whether [child] is a branch/loop body whose control expression(s) in
+  /// [parent] contain an `await` that runs before the body.
+  bool _bodyFollowsControlAwait(AstNode parent, AstNode child) {
+    if (parent is IfStatement) {
+      return !identical(child, parent.expression) &&
+          _subtreeHasAwait(parent.expression);
+    }
+    if (parent is WhileStatement) {
+      return identical(child, parent.body) &&
+          _subtreeHasAwait(parent.condition);
+    }
+    if (parent is DoStatement) {
+      // The body re-runs after the condition from the second iteration on.
+      return identical(child, parent.body) &&
+          _subtreeHasAwait(parent.condition);
+    }
+    if (parent is ForStatement) {
+      if (!identical(child, parent.body)) return false;
+      final parts = parent.forLoopParts;
+      if (parts is ForEachParts) return _subtreeHasAwait(parts.iterable);
+      if (parts is ForParts) {
+        final condition = parts.condition;
+        if (condition != null && _subtreeHasAwait(condition)) return true;
+        if (parts is ForPartsWithDeclarations &&
+            _subtreeHasAwait(parts.variables)) {
+          return true;
+        }
+        if (parts is ForPartsWithExpression) {
+          final initialization = parts.initialization;
+          if (initialization != null && _subtreeHasAwait(initialization)) {
+            return true;
+          }
+        }
+        return parts.updaters.any(_subtreeHasAwait);
+      }
+    }
+    return false;
+  }
+
   bool _subtreeHasAwait(AstNode node) {
     final finder = _AwaitFinder();
     node.accept(finder);
