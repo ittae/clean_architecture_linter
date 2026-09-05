@@ -415,6 +415,11 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
         if (current.exceptionParameter?.name.lexeme == 'state') return true;
         if (current.stackTraceParameter?.name.lexeme == 'state') return true;
       }
+      if (current is SwitchMember) {
+        if (_statementsDeclareStateBefore(current.statements, node)) {
+          return true;
+        }
+      }
       if (current is Block) {
         for (final statement in current.statements) {
           if (statement.offset >= node.offset) break;
@@ -441,6 +446,23 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
         }
       }
       current = current.parent;
+    }
+    return false;
+  }
+
+  /// Unbraced `case` bodies keep their statements on the [SwitchMember],
+  /// not in a [Block].
+  bool _statementsDeclareStateBefore(
+    NodeList<Statement> statements,
+    AstNode node,
+  ) {
+    for (final statement in statements) {
+      if (statement.offset >= node.offset) break;
+      if (statement is VariableDeclarationStatement) {
+        for (final variable in statement.variables.variables) {
+          if (variable.name.lexeme == 'state') return true;
+        }
+      }
     }
     return false;
   }
@@ -535,8 +557,11 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
       return const [];
     }
     if (parent is AssignmentExpression) {
-      if (identical(child, parent.leftHandSide)) {
-        return [parent.rightHandSide];
+      // Dart evaluates the assignment target (receiver/index) before the
+      // right-hand side: `items[state.i] = await f()` reads `state` first,
+      // while `(await g()).value = state` reads it after the gap.
+      if (identical(child, parent.rightHandSide)) {
+        return [parent.leftHandSide];
       }
       return const [];
     }
