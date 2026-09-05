@@ -172,6 +172,27 @@ directory still matches on a Windows runner.
 `presentation_no_throw: ignore`, drop that code from the list; if both are
 ignored, add a violation of a rule the app does enforce and list its code.
 
+## Local gates (derry `check`, pre-commit, verify.sh)
+
+Plain `dart analyze` exits 2 as soon as the sentinel is in the tree, because
+the sentinel deliberately carries a WARNING row (`presentation_no_throw`).
+Every local gate that used to run `dart analyze` (with or without
+`--fatal-*`) therefore needs the same sentinel-aware check as CI.
+
+`check.sh` next to this file is a copy-and-go version of the CI recipe:
+
+```bash
+cp <clean_architecture_linter>/tools/lint_sentinel/check.sh scripts/analyze.sh
+chmod +x scripts/analyze.sh
+# derry / pre-commit / verify.sh: replace `dart analyze …` with
+bash scripts/analyze.sh
+```
+
+Without `lib/zz_lint_sentinel/` it falls back to `dart analyze
+--fatal-infos --fatal-warnings` (override with `FALLBACK_ARGS`), so the same
+script is safe to land before the sentinel file. `SENTINEL_DIR`,
+`SENTINEL_CODES` and `SENTINEL_ATTEMPTS` mirror the CI step.
+
 ## Regression contract
 
 `test/tools/lint_sentinel_test.dart` runs the shipped sentinel file through
