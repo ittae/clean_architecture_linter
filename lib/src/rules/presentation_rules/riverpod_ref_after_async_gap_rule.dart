@@ -517,6 +517,14 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
         // The node lives in a catch clause or finally block, both of which
         // execute after the try body (including after an await that threw).
         if (_subtreeHasAwait(parent.body)) return true;
+      } else if (_tracking.stateReads &&
+          parent is IfStatement &&
+          !identical(child, parent.expression)) {
+        // `if (await check()) { use(state); }` — the branch runs after the
+        // condition's await. A `ref.mounted` guard inside the branch still
+        // applies (checked by _isDisposalGuarded). Opt-in rule only, so the
+        // default-on ref rule's output is unchanged.
+        if (_subtreeHasAwait(parent.expression)) return true;
       }
 
       child = parent;
@@ -536,7 +544,10 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     AstNode? parent = child.parent;
     while (parent != null) {
       if (identical(child, _scannedBody)) break;
-      if (parent is FunctionBody) break;
+      // Statement boundary: `if (await …) { … }` is a prior-gap question
+      // for _hasPriorAsyncGap (which respects a `ref.mounted` guard), not a
+      // same-expression one.
+      if (parent is FunctionBody || parent is Statement) break;
       if (_priorEvalSiblingsHaveAwait(parent, child)) return true;
       child = parent;
       parent = child.parent;
@@ -612,13 +623,6 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     }
     if (parent is StringInterpolation) {
       return _priorNodes(parent.elements, child);
-    }
-    if (parent is IfStatement) {
-      if (identical(child, parent.thenStatement) ||
-          identical(child, parent.elseStatement)) {
-        return [parent.expression];
-      }
-      return const [];
     }
     return const [];
   }

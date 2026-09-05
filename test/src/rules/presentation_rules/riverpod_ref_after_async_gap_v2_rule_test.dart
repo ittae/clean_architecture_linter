@@ -1263,6 +1263,10 @@ class TodoNotifier extends _\$TodoNotifier {
     await fetchTodo();
     use(state.session);
   }
+
+  Future<void> branch() async {
+    if (await fetchTodo()) use(state.session);
+  }
 }
 ''',
               },
