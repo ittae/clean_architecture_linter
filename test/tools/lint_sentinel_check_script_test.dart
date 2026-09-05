@@ -129,6 +129,28 @@ void main() {
     expect(r.out, contains('(attempt 2/2)'));
   });
 
+  test('counts an escaped Windows path as a sentinel row', () async {
+    // `dart analyze --format=machine` escapes backslashes in the path field.
+    final windowsRow = sentinelRow.replace(
+      '/w/lib/zz_lint_sentinel/',
+      r'C:\\w\\lib\\zz_lint_sentinel\\',
+    );
+    final r = await run(sentinelPresent: true, dartOut: '$windowsRow\n');
+    expect(r.code, 0, reason: r.out);
+    expect(r.out, contains('sentinel rows received: 1'));
+  });
+
+  test('a built-in diagnostic inside the sentinel file still fails', () async {
+    const builtin =
+        'INFO|LINT|UNUSED_IMPORT|/w/lib/zz_lint_sentinel/presentation/providers/zz.dart|1|1|5|m';
+    final r = await run(
+      sentinelPresent: true,
+      dartOut: '$sentinelRow\n$builtin\n',
+    );
+    expect(r.code, 1);
+    expect(r.out, contains('UNUSED_IMPORT'));
+  });
+
   test('fails on a real finding even with the sentinel rows', () async {
     final r = await run(
       sentinelPresent: true,

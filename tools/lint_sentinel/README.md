@@ -115,7 +115,7 @@ OUT=""; SENTINEL_ROWS=0
 count_sentinel() {
   printf '%s\n' "$1" | awk -F'|' -v d="/$SENTINEL_DIR/" -v codes="$SENTINEL_CODES" '
     BEGIN { n = split(codes, c, "|"); for (i = 1; i <= n; i++) want[c[i]] = 1 }
-    { gsub(/\\/, "/", $4) }
+    { gsub(/\\+/, "/", $4) }
     ($3 in want) && index($4, d) { hits++ }
     END { print hits + 0 }'
 }
