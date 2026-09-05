@@ -1258,6 +1258,11 @@ class TodoNotifier extends _\$TodoNotifier {
   Future<void> loadRhs() async {
     state = await fetchTodo();
   }
+
+  Future<void> read() async {
+    await fetchTodo();
+    use(state.session);
+  }
 }
 ''',
               },
