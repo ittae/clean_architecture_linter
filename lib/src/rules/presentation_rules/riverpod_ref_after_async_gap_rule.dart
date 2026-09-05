@@ -395,6 +395,7 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
   /// `state` is not the notifier getter. Resolution is unavailable because
   /// this rule uses parsed results.
   bool _isShadowedState(SimpleIdentifier node) {
+    AstNode child = node;
     AstNode? current = node.parent;
     while (current != null &&
         current is! ClassDeclaration &&
@@ -428,10 +429,13 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
           _patternDeclaresState(current.guardedPattern.pattern)) {
         return true;
       }
+      // An if-case pattern variable is only in scope in the `when` guard and
+      // the then branch; an `else` branch still sees the notifier getter.
       if (current is IfStatement) {
         final caseClause = current.caseClause;
         if (caseClause != null &&
-            node.offset > caseClause.offset &&
+            (identical(child, caseClause) ||
+                identical(child, current.thenStatement)) &&
             _patternDeclaresState(caseClause.guardedPattern.pattern)) {
           return true;
         }
@@ -439,7 +443,8 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
       if (current is IfElement) {
         final caseClause = current.caseClause;
         if (caseClause != null &&
-            node.offset > caseClause.offset &&
+            (identical(child, caseClause) ||
+                identical(child, current.thenElement)) &&
             _patternDeclaresState(caseClause.guardedPattern.pattern)) {
           return true;
         }
@@ -468,7 +473,13 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
             }
           }
         }
+        if (parts is ForPartsWithPattern &&
+            parts.variables.offset < node.offset &&
+            _patternDeclaresState(parts.variables.pattern)) {
+          return true;
+        }
       }
+      child = current;
       current = current.parent;
     }
     return false;
@@ -664,6 +675,11 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     if (parent is SetOrMapLiteral) {
       return _priorNodes(parent.elements, child);
     }
+    if (parent is MapLiteralEntry) {
+      // `{await k: state}` evaluates the key before the value.
+      if (identical(child, parent.value)) return [parent.key];
+      return const [];
+    }
     if (parent is StringInterpolation) {
       return _priorNodes(parent.elements, child);
     }
@@ -695,6 +711,7 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     if (parts is ForParts) {
       return [
         if (parts is ForPartsWithDeclarations) parts.variables,
+        if (parts is ForPartsWithPattern) parts.variables,
         if (parts is ForPartsWithExpression) ?parts.initialization,
         ?parts.condition,
         ...parts.updaters,
@@ -809,22 +826,14 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
       if (identical(child, _scannedBody)) break;
 
       if (parent is Block) {
-        var guarded = false;
-        var awaitAfterGuard = false;
-        for (final statement in parent.statements) {
-          if (identical(statement, child)) break;
-          if (_isRefMountedEarlyReturnGuard(statement)) {
-            guarded = true;
-            awaitAfterGuard = false;
-          } else if (_subtreeHasAwait(statement)) {
-            guarded = false;
-            awaitAfterGuard = true;
-          }
-        }
-        if (guarded) return true;
-        // An await at this level runs after any guard in an enclosing scope,
-        // so no outer guard can still be protecting the suspect node.
-        if (awaitAfterGuard) return false;
+        final verdict = _siblingGuardVerdict(parent.statements, child);
+        if (verdict != null) return verdict;
+      } else if (parent is SwitchMember) {
+        // Unbraced `case` bodies keep their statements on the SwitchMember,
+        // so `case 1: await f(); if (!ref.mounted) return; use(state);` is
+        // guarded exactly like the braced form.
+        final verdict = _siblingGuardVerdict(parent.statements, child);
+        if (verdict != null) return verdict;
       } else if (parent is IfStatement) {
         // `if (ref.mounted) { <node> }`
         if (identical(child, parent.thenStatement) &&
@@ -853,6 +862,30 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     }
 
     return false;
+  }
+
+  /// Scans the [statements] that precede [child] in one statement list.
+  ///
+  /// Returns `true` when a `ref.mounted` early-return guard is the last
+  /// relevant sibling, `false` when an `await` runs after any such guard (so
+  /// no outer guard can still protect the node), and `null` when the list is
+  /// inconclusive and the walk should continue outward.
+  bool? _siblingGuardVerdict(NodeList<Statement> statements, AstNode child) {
+    var guarded = false;
+    var awaitAfterGuard = false;
+    for (final statement in statements) {
+      if (identical(statement, child)) break;
+      if (_isRefMountedEarlyReturnGuard(statement)) {
+        guarded = true;
+        awaitAfterGuard = false;
+      } else if (_subtreeHasAwait(statement)) {
+        guarded = false;
+        awaitAfterGuard = true;
+      }
+    }
+    if (guarded) return true;
+    if (awaitAfterGuard) return false;
+    return null;
   }
 
   /// Whether [child] is the body of a loop whose body contains an `await`.
