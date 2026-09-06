@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0](https://github.com/ittae/clean_architecture_linter/compare/v2.5.0...v2.6.0) (2026-09-06)
+
+
+### Features
+
+* riverpod_state_after_async_gap이 await 이후 state 읽기와 super.state 쓰기를 보고한다 ([#162](https://github.com/ittae/clean_architecture_linter/issues/162)) ([764eb4c](https://github.com/ittae/clean_architecture_linter/commit/764eb4c0182259cdbc9b12ce2c054ff351ee6036)), closes [#161](https://github.com/ittae/clean_architecture_linter/issues/161)
+
 ## [2.5.0](https://github.com/ittae/clean_architecture_linter/compare/v2.4.0...v2.5.0) (2026-09-04)
 
 
