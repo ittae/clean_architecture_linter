@@ -549,11 +549,13 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
         target.propertyName.name == 'ref';
   }
 
+  /// `state = …`, `this.state = …`, `super.state = …`, `(this).state = …` —
+  /// the same self targets [_isThisStateAccess] accepts for reads.
   bool _isStateTarget(Expression target) {
     if (target is SimpleIdentifier) return target.name == 'state';
 
     return target is PropertyAccess &&
-        target.target is ThisExpression &&
+        _isSelfTarget(target.target) &&
         target.propertyName.name == 'state';
   }
 
