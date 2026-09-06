@@ -190,11 +190,22 @@ bash scripts/analyze.sh
 
 Without `lib/zz_lint_sentinel/` it falls back to `dart analyze
 --fatal-infos --fatal-warnings` (override with `FALLBACK_ARGS`), so the same
-script is safe to land before the sentinel file. `SENTINEL_DIR` and
-`SENTINEL_CODES` mirror the CI step. `SENTINEL_ATTEMPTS` defaults to 5 like
-the recipe above (the "Expected miss rate" figures assume 5); the CI step
-itself uses 3 to stay inside its 15-minute timeout. `SENTINEL_BACKOFF`
-(default 5) is the seconds multiplier between attempts.
+script is safe to land before the sentinel file.
+
+| Env var | Default | Effect |
+|---|---|---|
+| `SENTINEL_DIR` | `lib/zz_lint_sentinel` | Directory a sentinel row's path must fall under (mirrors the CI step). |
+| `SENTINEL_CODES` | `RIVERPOD_KEEP_ALIVE\|PRESENTATION_NO_THROW` | `\|`-separated rule codes that count as sentinel rows (mirrors the CI step). |
+| `SENTINEL_ATTEMPTS` | `5` | Retries before giving up (the "Expected miss rate" figures above assume 5; the CI step itself uses 3 to stay inside its 15-minute timeout). |
+| `SENTINEL_BACKOFF` | `5` | Seconds multiplier between attempts. |
+| `FALLBACK_ARGS` | `--fatal-infos --fatal-warnings` | Args passed to `dart analyze` when `SENTINEL_DIR` is absent. |
+| `SENTINEL_REQUIRE_ALL` | unset (`0`) | `1` requires every code in `SENTINEL_CODES` to appear at least once among the sentinel rows, not just one of them; a still-missing code retries like a zero-row run and then fails, naming the code(s) that never showed up. |
+| `SENTINEL_FILE` | unset | A file path (normalised `\` → `/`; either the full absolute path `dart analyze --format=machine` prints, or a shorter relative suffix in the `SENTINEL_DIR` style, e.g. `lib/zz_lint_sentinel/.../zz_lint_sentinel_provider.dart`). When set, only a row at that exact path counts as sentinel — anywhere else under `SENTINEL_DIR`, the same rule codes are treated as a real finding and fail the gate. Leave unset to match anywhere under `SENTINEL_DIR`, as before. |
+
+`check.sh` is copied byte-for-byte into consumer apps and pinned there by
+md5, so `SENTINEL_REQUIRE_ALL` and `SENTINEL_FILE` only take effect once a
+consumer re-copies this file — the defaults above keep every existing pinned
+copy behaving exactly as it does today.
 
 ## Regression contract
 
