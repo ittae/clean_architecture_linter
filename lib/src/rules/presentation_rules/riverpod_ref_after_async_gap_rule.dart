@@ -613,6 +613,12 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
   /// `use(await foo(), state)` read `state` after the gap; `state.foo(await x)`
   /// and `await foo(state)` evaluate `state` first and must not report.
   /// Nested function bodies are ignored by [_subtreeHasAwait].
+  ///
+  /// One exception crosses an iteration boundary rather than staying within a
+  /// single evaluation pass: a `for` loop condition is also treated as
+  /// running after the *previous* iteration's updaters (see the `ForParts`
+  /// case in [_evalPredecessors]), since from the second iteration on the
+  /// condition genuinely does run after them.
   bool _hasExpressionPriorAwait(AstNode node) {
     AstNode child = node;
     AstNode? parent = child.parent;
@@ -718,12 +724,19 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
       ];
     }
     if (parent is ForParts) {
-      // Header order: declarations/initializer → condition → updaters.
+      // Header order: declarations/initializer → condition → updaters. From
+      // the second iteration on, the condition runs after the previous
+      // iteration's updaters, so treat them as predecessors too — a
+      // conservative over-approximation, since on the very first evaluation
+      // of the condition no updater has actually run yet (the same kind of
+      // first-iteration slack _forPartsAwaitSources accepts below for the
+      // loop body).
       if (identical(child, parent.condition)) {
         return [
           if (parent is ForPartsWithDeclarations) parent.variables,
           if (parent is ForPartsWithPattern) parent.variables,
           if (parent is ForPartsWithExpression) ?parent.initialization,
+          ...parent.updaters,
         ];
       }
       if (parent.updaters.any((u) => identical(u, child))) {
@@ -828,8 +841,17 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     }
     if (parent is DoStatement) {
       // The body re-runs after the condition from the second iteration on.
-      return identical(child, parent.body) &&
-          _subtreeHasAwait(parent.condition);
+      if (identical(child, parent.body)) {
+        return _subtreeHasAwait(parent.condition);
+      }
+      // The `while (…)` condition always runs after the body, on every
+      // iteration including the first, so an await in the body makes the
+      // condition a post-gap read (still subject to a `ref.mounted` guard
+      // inside the body via _isDisposalGuarded).
+      if (identical(child, parent.condition)) {
+        return _subtreeHasAwait(parent.body);
+      }
+      return false;
     }
     if (parent is ForStatement) {
       // `await for` suspends before every body run even though the keyword
@@ -940,6 +962,13 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
         // the try body — including after an await in it that threw. Any guard
         // outside the try is therefore stale.
         if (_subtreeHasAwait(parent.body)) return false;
+      } else if (parent is DoStatement && identical(child, parent.condition)) {
+        // `do { await f(); if (!ref.mounted) return; } while (state…);` — a
+        // guard as the body's last relevant statement still protects the
+        // condition check that runs right after it, exactly like a guard
+        // protecting the statement that follows it in a Block.
+        final verdict = _doWhileBodyGuardVerdict(parent);
+        if (verdict != null) return verdict;
       } else if (_awaitingLoopBody(parent, child)) {
         // On the second and later iterations the loop body's own await has
         // already run, so a guard outside the loop no longer holds.
@@ -955,11 +984,16 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
 
   /// Scans the [statements] that precede [child] in one statement list.
   ///
+  /// When [child] is not itself a member of [statements] (as when a
+  /// do-while's `parent.condition` is passed in), the `break` never fires and
+  /// the entire list is scanned — the intended behavior there, since the
+  /// condition runs after every statement in the body.
+  ///
   /// Returns `true` when a `ref.mounted` early-return guard is the last
   /// relevant sibling, `false` when an `await` runs after any such guard (so
   /// no outer guard can still protect the node), and `null` when the list is
   /// inconclusive and the walk should continue outward.
-  bool? _siblingGuardVerdict(NodeList<Statement> statements, AstNode child) {
+  bool? _siblingGuardVerdict(List<Statement> statements, AstNode child) {
     var guarded = false;
     var awaitAfterGuard = false;
     for (final statement in statements) {
@@ -975,6 +1009,56 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     if (guarded) return true;
     if (awaitAfterGuard) return false;
     return null;
+  }
+
+  /// Whether a `ref.mounted` guard as [stmt]'s body's last relevant statement
+  /// still protects [stmt]'s own `while (…)` condition.
+  ///
+  /// Used only for that condition, not for whatever statement follows [stmt]
+  /// as a sibling: a nested do-while is deliberately *not* recognized as a
+  /// guard by [_siblingGuardVerdict] for a following sibling or an outer
+  /// do-while's condition — see the README's `riverpod_state_after_async_gap`
+  /// section for that documented, conservative (false-positive-direction)
+  /// limitation.
+  ///
+  /// A `break`/`continue` anywhere in the body can reach the condition (via
+  /// `continue`, which in a do-while jumps straight to the condition check)
+  /// or skip past the loop entirely (via `break`) without ever running
+  /// through a guard placed after it in the same statement list — so any
+  /// jump statement in the body makes the tail guard untrustworthy: `false`
+  /// when the body still has its own `await` (a jump-free path runs it with
+  /// nothing of its own protecting the condition, and any guard preceding
+  /// this do-while entirely is stale against it too), `null` only when the
+  /// body has no `await` at all to be stale against. This is deliberately
+  /// coarse (it does not distinguish a jump that targets this loop from one
+  /// that targets an inner loop nested in the body, or check whether the
+  /// jump is actually positioned before the guard), matching this file's
+  /// "when unsure, don't suppress" philosophy elsewhere (e.g. the try/catch
+  /// and loop-body-await branches in [_isDisposalGuarded]).
+  ///
+  /// Same tri-state contract as [_siblingGuardVerdict]: `true` when guarded,
+  /// `false` when an await follows the last guard, `null` when inconclusive.
+  bool? _doWhileBodyGuardVerdict(DoStatement stmt) {
+    final body = stmt.body;
+    if (_containsJumpStatement(body)) {
+      // Returning `null` here would let _isDisposalGuarded's walk continue
+      // outward and potentially trust a guard that precedes this do-while
+      // entirely — stale, since a body `await` on the jump-free path still
+      // runs after it with nothing of its own protecting the condition. Only
+      // truly answer "inconclusive" when the body has no await at all to be
+      // stale against.
+      return _subtreeHasAwait(body) ? false : null;
+    }
+    final statements = body is Block ? body.statements : [body];
+    return _siblingGuardVerdict(statements, stmt.condition);
+  }
+
+  /// Whether [node]'s subtree contains a `break` or `continue`, without
+  /// descending into nested function bodies.
+  bool _containsJumpStatement(AstNode node) {
+    final finder = _JumpStatementFinder();
+    node.accept(finder);
+    return finder.found;
   }
 
   /// Whether [child] is the body of a loop whose body contains an `await`.
@@ -1141,6 +1225,58 @@ class _AwaitFinder extends RecursiveAstVisitor<void> {
   void visitFunctionExpression(FunctionExpression node) {
     // Nested closures are a separate execution scope; their awaits do not
     // sequentially precede code in the enclosing scope.
+  }
+
+  @override
+  void visitFunctionDeclarationStatement(FunctionDeclarationStatement node) {
+    // Local function declarations are likewise a separate scope.
+  }
+}
+
+/// Detects a `continue`, or a `break` that isn't scoped to a nested
+/// `switch`, within a subtree, stopping at nested function boundaries. Used
+/// by [_AsyncRefAfterGapScanner._doWhileBodyGuardVerdict] to conservatively
+/// refuse to trust a do-while's tail guard when a jump statement anywhere in
+/// the body could reach the condition (or skip past the loop) without
+/// running through it. An unlabeled `break` inside a nested `switch` only
+/// terminates that switch, not a loop, so it is not counted. A labeled
+/// `break` is counted conservatively even though a label can name an
+/// enclosing `switch` rather than a loop (`break` targeting a labeled
+/// `switch` also only exits that switch) — this only ever costs a spurious
+/// non-suppression, never a missed report, so it's left unresolved. Any
+/// `continue` is always loop-scoped (an unlabeled `continue` requires an
+/// enclosing loop, and a labeled one can only target a loop) and is counted
+/// regardless of an intervening `switch`.
+class _JumpStatementFinder extends RecursiveAstVisitor<void> {
+  bool found = false;
+
+  /// Nesting depth of `switch` statements between the root and the node
+  /// currently being visited. An *unlabeled* `break` inside a `switch`
+  /// terminates the switch, not an enclosing loop, so it can't reach the
+  /// do-while's condition or skip past the loop — unlike `continue`, which
+  /// is always loop-scoped regardless of an intervening `switch`.
+  var _switchDepth = 0;
+
+  @override
+  void visitSwitchStatement(SwitchStatement node) {
+    _switchDepth++;
+    super.visitSwitchStatement(node);
+    _switchDepth--;
+  }
+
+  @override
+  void visitBreakStatement(BreakStatement node) {
+    if (node.label != null || _switchDepth == 0) found = true;
+  }
+
+  @override
+  void visitContinueStatement(ContinueStatement node) {
+    found = true;
+  }
+
+  @override
+  void visitFunctionExpression(FunctionExpression node) {
+    // Nested closures are a separate execution scope.
   }
 
   @override

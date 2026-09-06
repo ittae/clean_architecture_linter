@@ -1286,6 +1286,20 @@ class TodoNotifier extends _\$TodoNotifier {
     }
     ref.invalidate(todoProvider);
   }
+
+  Future<void> loopUpdater() async {
+    // A for-loop condition read after an awaited updater is a gap only for
+    // the opt-in state rule.
+    for (var i = 0; i < state.n; i += await step()) {}
+  }
+
+  Future<void> doWhileBody() async {
+    // A do-while condition read after an awaited body is a gap only for the
+    // opt-in state rule.
+    do {
+      await fetchTodo();
+    } while (state.ready);
+  }
 }
 ''',
               },
