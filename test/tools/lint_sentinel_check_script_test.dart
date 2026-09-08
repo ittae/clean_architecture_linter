@@ -14,6 +14,9 @@ void main() {
       'WARNING|STATIC_WARNING|PRESENTATION_NO_THROW|/w/lib/zz_lint_sentinel/presentation/providers/zz.dart|12|5|9|m';
   const realRow =
       'INFO|STATIC_WARNING|RIVERPOD_KEEP_ALIVE|/w/lib/features/a/presentation/providers/a.dart|3|1|5|m';
+  const siblingRow =
+      'INFO|STATIC_WARNING|RIVERPOD_KEEP_ALIVE|/w/lib/zz_lint_sentinel/presentation/providers/other.dart|3|1|5|m';
+  const sentinelFile = '/w/lib/zz_lint_sentinel/presentation/providers/zz.dart';
 
   Future<({int code, String out, List<String> calls})> run({
     required bool sentinelPresent,
@@ -21,6 +24,7 @@ void main() {
     int dartRc = 0,
     String? firstAttemptOut,
     String attempts = '1',
+    Map<String, String> extraEnv = const {},
   }) async {
     final tmp = await Directory.systemTemp.createTemp('sentinel_check_');
     try {
@@ -49,7 +53,8 @@ void main() {
       final env = Map<String, String>.from(Platform.environment)
         ..['PATH'] = '${bin.path}:${Platform.environment['PATH']}'
         ..['SENTINEL_ATTEMPTS'] = attempts
-        ..['SENTINEL_BACKOFF'] = '0';
+        ..['SENTINEL_BACKOFF'] = '0'
+        ..addAll(extraEnv);
       final result = await Process.run(
         'bash',
         [script],
@@ -160,4 +165,132 @@ void main() {
     expect(r.out, contains('reported 1 diagnostic(s)'));
     expect(r.out, contains('/lib/features/a/presentation/providers/a.dart'));
   });
+
+  test('SENTINEL_REQUIRE_ALL passes when every code is delivered', () async {
+    final r = await run(
+      sentinelPresent: true,
+      dartOut: '$sentinelRow\n$sentinelRow2\n',
+      extraEnv: {'SENTINEL_REQUIRE_ALL': '1'},
+    );
+    expect(r.code, 0, reason: r.out);
+    expect(r.out, contains('sentinel rows received: 2'));
+  });
+
+  test(
+    'SENTINEL_REQUIRE_ALL retries then fails when a code never arrives',
+    () async {
+      final r = await run(
+        sentinelPresent: true,
+        // Only RIVERPOD_KEEP_ALIVE ever shows up; PRESENTATION_NO_THROW
+        // never does, on every attempt.
+        dartOut: '$sentinelRow\n',
+        attempts: '2',
+        extraEnv: {'SENTINEL_REQUIRE_ALL': '1'},
+      );
+      expect(r.code, 1);
+      expect(r.calls.length, 2, reason: r.out);
+      expect(r.out, contains('PRESENTATION_NO_THROW'));
+      expect(r.out, contains('(attempt 1/2)'));
+    },
+  );
+
+  test(
+    'SENTINEL_FILE still passes an ordinary run at the exact path',
+    () async {
+      final r = await run(
+        sentinelPresent: true,
+        dartOut: '$sentinelRow\n$sentinelRow2\n',
+        extraEnv: {'SENTINEL_FILE': sentinelFile},
+      );
+      expect(r.code, 0, reason: r.out);
+      expect(r.out, contains('sentinel rows received: 2'));
+    },
+  );
+
+  test(
+    'SENTINEL_FILE fails when a same-code row comes from a sibling file',
+    () async {
+      final r = await run(
+        sentinelPresent: true,
+        dartOut: '$sentinelRow\n$siblingRow\n',
+        extraEnv: {'SENTINEL_FILE': sentinelFile},
+      );
+      expect(r.code, 1);
+      expect(r.out, contains('other.dart'));
+    },
+  );
+
+  test(
+    'SENTINEL_FILE also matches a shorter SENTINEL_DIR-style relative path',
+    () async {
+      final r = await run(
+        sentinelPresent: true,
+        dartOut: '$sentinelRow\n$sentinelRow2\n',
+        extraEnv: {
+          'SENTINEL_FILE':
+              'lib/zz_lint_sentinel/presentation/providers/zz.dart',
+        },
+      );
+      expect(r.code, 0, reason: r.out);
+      expect(r.out, contains('sentinel rows received: 2'));
+    },
+  );
+
+  test('SENTINEL_FILE matches a single-backslash Windows path against an '
+      'escaped machine-format row', () async {
+    // `dart analyze --format=machine` escapes the row's own backslashes
+    // (doubled), but a Windows SENTINEL_FILE value would naturally arrive
+    // with single backslashes; both must normalise to the same thing.
+    final windowsRow = sentinelRow.replaceFirst(
+      '/w/lib/zz_lint_sentinel/',
+      r'C:\\w\\lib\\zz_lint_sentinel\\',
+    );
+    final r = await run(
+      sentinelPresent: true,
+      dartOut: '$windowsRow\n',
+      extraEnv: {
+        'SENTINEL_FILE':
+            r'C:\w\lib\zz_lint_sentinel\presentation\providers\zz.dart',
+      },
+    );
+    expect(r.code, 0, reason: r.out);
+    expect(r.out, contains('sentinel rows received: 1'));
+  });
+
+  test('SENTINEL_FILE matches a literal copy-paste of the doubled-backslash '
+      'machine-format path', () async {
+    // A user who copies SENTINEL_FILE straight out of `dart analyze
+    // --format=machine` output gets the doubled-backslash form the CLI
+    // itself prints, not a single-backslash path. Both the row and
+    // SENTINEL_FILE must normalise identically regardless of how many
+    // backslashes either one started with.
+    const windowsPath =
+        r'C:\\w\\lib\\zz_lint_sentinel\\presentation\\providers\\zz.dart';
+    final windowsRow = sentinelRow.replaceFirst(
+      '/w/lib/zz_lint_sentinel/presentation/providers/zz.dart',
+      windowsPath,
+    );
+    final r = await run(
+      sentinelPresent: true,
+      dartOut: '$windowsRow\n',
+      extraEnv: {'SENTINEL_FILE': windowsPath},
+    );
+    expect(r.code, 0, reason: r.out);
+    expect(r.out, contains('sentinel rows received: 1'));
+  });
+
+  test(
+    'SENTINEL_REQUIRE_ALL and SENTINEL_FILE compose: both codes at the exact '
+    'file pass require-all, but a sibling decoy still fails as a real finding',
+    () async {
+      final r = await run(
+        sentinelPresent: true,
+        dartOut: '$sentinelRow\n$sentinelRow2\n$siblingRow\n',
+        extraEnv: {'SENTINEL_REQUIRE_ALL': '1', 'SENTINEL_FILE': sentinelFile},
+      );
+      expect(r.code, 1);
+      expect(r.out, contains('sentinel rows received: 2'));
+      expect(r.out, contains('other.dart'));
+    },
+  );
 }
