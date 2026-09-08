@@ -33,8 +33,9 @@ import 'riverpod_ref_after_async_gap_rule.dart';
 /// statement with several reads is one finding. Same-statement reads that
 /// evaluate after an `await` (`await foo() ?? state`) are reported;
 /// receiver-first `state.foo(await x)` is not. Locals and parameters named
-/// `state` are ignored; `this.state` is not. Calls to private helpers that
-/// touch `state` are not followed.
+/// `state` are ignored; `this.state`, `super.state`, and `(this).state` are
+/// not, for both reads and writes. Calls to private helpers that touch
+/// `state` are not followed.
 ///
 /// This rule is **opt-in** (registered as a lint rule, disabled by default).
 /// The `state = await …` idiom is widespread in existing apps, and enabling

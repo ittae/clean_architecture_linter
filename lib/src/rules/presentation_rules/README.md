@@ -388,9 +388,11 @@ plugins:
 - ❌ unguarded `state.foo` / `this.state` reads after `await` (one finding per statement; `state = state.copyWith(…)` is reported once as the write)
 - ❌ same-statement reads after an earlier `await` in evaluation order (`await foo() ?? state`, `use(await foo(), state)`). `state.foo(await x)` and `await foo(state)` are not reported — the getter runs first
 - ❌ reads in a body that runs after a control-flow await: `await for (…) { state… }`, `if (await …) { state… }`, `while (await …)`, `for (… in await list())`, a pattern `when` guard that awaits, and a preceding `await for` statement. A `ref.mounted` guard inside that body still applies
+- ❌ loop re-entry reads: a `do { … } while (state…)` condition after a body `await` (the condition genuinely runs after the body on every pass, including the first; a `ref.mounted` guard as the body's last statement still applies), and a `for (…; state…; … await …)` condition after an updater `await` (treated as after-gap even on the first pass, conservatively — the updater has not actually run yet then)
 - ✅ Access guarded by `if (!ref.mounted) return;` or `if (ref.mounted) { … }` placed right after the await
 - ✅ Locals / lambda parameters named `state` are not the notifier getter; `this.state` and `super.state` are still reported
 - ⚠️ Calls to private helpers that touch `state` are not followed (issue #158)
+- ⚠️ A `ref.mounted` guard at the end of a nested `do-while`'s body is not recognized as guarding a statement that follows the nested loop, or an outer loop's condition after it — only the nested do-while's *own* condition is checked. This is conservative (may over-report, never under-reports)
 - ✅ Generated files, tests, non-provider files, and private helper methods are skipped
 
 **Example**:
