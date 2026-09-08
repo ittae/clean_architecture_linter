@@ -2621,5 +2621,34 @@ class TodoNotifier extends _\$TodoNotifier {
         result.expectNoDiagnostics();
       },
     );
+    test(
+      'does not report a do-while condition read when a jump bypasses a no-await body but an outer guard still holds',
+      () async {
+        final result =
+            await V2RuleHarness(rule: RiverpodStateAfterAsyncGapRule()).analyze(
+              files: {
+                'lib/features/todo/presentation/providers/todo_notifier.dart':
+                    '''
+abstract class _\$TodoNotifier {}
+
+class TodoNotifier extends _\$TodoNotifier {
+  Future<void> load(bool x) async {
+    await fetchTodo();
+    if (!ref.mounted) return;
+    do {
+      if (x) break;
+      use(1);
+    } while (state.ready);
+  }
+}
+''',
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/todo_notifier.dart',
+            );
+
+        result.expectNoDiagnostics();
+      },
+    );
   });
 }
