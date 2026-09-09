@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0](https://github.com/ittae/clean_architecture_linter/compare/v2.6.0...v2.7.0) (2026-09-08)
+
+
+### Features
+
+* sentinel 게이트에 SENTINEL_REQUIRE_ALL·SENTINEL_FILE 옵트인 스위치를 추가한다 ([#164](https://github.com/ittae/clean_architecture_linter/issues/164)) ([22f01e3](https://github.com/ittae/clean_architecture_linter/commit/22f01e3a2404301c8c4aebe20c80349a42298bca))
+
+
+### Bug Fixes
+
+* riverpod_state_after_async_gap이 루프 재진입 시점의 state 읽기 gap을 보고한다 ([#166](https://github.com/ittae/clean_architecture_linter/issues/166)) ([89f5ca1](https://github.com/ittae/clean_architecture_linter/commit/89f5ca13c283a29ef0f20e2bf00f970ca0719d00))
+
 ## [2.6.0](https://github.com/ittae/clean_architecture_linter/compare/v2.5.0...v2.6.0) (2026-09-06)
 
 
