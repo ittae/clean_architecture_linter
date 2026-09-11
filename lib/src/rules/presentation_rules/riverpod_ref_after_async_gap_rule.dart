@@ -277,7 +277,7 @@ class _AsyncCallbackScanner extends RecursiveAstVisitor<void> {
   /// run, covering both inline closures and tear-offs of a local function
   /// declared earlier in the same method (e.g. `fetchTodo().then(onDone)`).
   FunctionBody? _resolveCallbackBody(AstNode argument) {
-    final expression = callbackArgumentExpression(argument);
+    final expression = _unwrapParens(callbackArgumentExpression(argument));
     if (expression is FunctionExpression) return expression.body;
     if (expression is SimpleIdentifier) {
       return _localFunctions[expression.name]?.functionExpression.body;
