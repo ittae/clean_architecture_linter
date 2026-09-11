@@ -350,8 +350,10 @@ class TodoPage extends ConsumerWidget {
 
 **What it checks**:
 - ❌ `ref.read`, `ref.watch`, `ref.listen`, `ref.invalidate`, `ref.refresh` after `await`
+- ❌ The same `ref.*` calls inside `Future.then`/`catchError`/`whenComplete`, `Stream.listen`, `Timer`/`Timer.periodic`/`Timer.run`, and `addListener` callbacks (including in a sync method)
 - ✅ Provider/usecase capture before `await`
 - ✅ Post-gap access guarded by `if (!ref.mounted) return;` or `if (ref.mounted) { … }`
+- ✅ `ref.listen` callbacks (Riverpod owns that subscription)
 - ✅ Generated files, tests, non-provider files, and private helper methods are skipped
 
 **Example**:
@@ -384,6 +386,7 @@ plugins:
 
 **What it checks**:
 - ❌ unguarded `state = …` / `this.state = …` / `super.state = …` after `await`
+- ❌ The same unguarded `state` writes/reads inside `Future.then`/`catchError`/`whenComplete`, `Stream.listen`, `Timer`/`Timer.periodic`/`Timer.run`, and `addListener` callbacks (including in a sync method). `ref.listen` callbacks are not reported (Riverpod owns that subscription)
 - ❌ same-statement `state = await …` (store runs after RHS await; a preceding `ref.mounted` guard does not protect it)
 - ❌ unguarded `state.foo` / `this.state` reads after `await` (one finding per statement; `state = state.copyWith(…)` is reported once as the write)
 - ❌ same-statement reads after an earlier `await` in evaluation order (`await foo() ?? state`, `use(await foo(), state)`). `state.foo(await x)` and `await foo(state)` are not reported — the getter runs first
