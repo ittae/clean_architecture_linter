@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.2](https://github.com/ittae/clean_architecture_linter/compare/v2.7.1...v2.7.2) (2026-09-11)
+
+
+### Bug Fixes
+
+* riverpod_ref_after_async_gap이 캐스케이드·괄호 ref 접근을 보고한다 ([#169](https://github.com/ittae/clean_architecture_linter/issues/169)) ([33e1c6f](https://github.com/ittae/clean_architecture_linter/commit/33e1c6f95a40abeeb80b77d8d35ebb5fe66894cc))
+
 ## [2.7.1](https://github.com/ittae/clean_architecture_linter/compare/v2.7.0...v2.7.1) (2026-09-11)
 
 
