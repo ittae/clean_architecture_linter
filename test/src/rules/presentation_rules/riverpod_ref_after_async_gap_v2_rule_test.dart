@@ -641,6 +641,127 @@ class TodoNotifier {
       ]);
     });
 
+    test('reports super.ref.read after await', () async {
+      final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/providers/todo_notifier.dart': '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class TodoNotifier {
+  Future<void> createTodo() async {
+    await saveTodo();
+    super.ref.read(todoProvider);
+  }
+}
+''',
+            },
+            definingFile:
+                'lib/features/todo/presentation/providers/todo_notifier.dart',
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/presentation/providers/todo_notifier.dart',
+          codeName: 'riverpod_ref_after_async_gap',
+          problemMessage:
+              'Avoid ref.read() after an async gap in Riverpod providers.',
+          correctionMessage:
+              'Capture provider/usecase dependencies before the async gap, or guard the post-gap access with "if (!ref.mounted) return;".',
+        ),
+      ]);
+    });
+
+    test('reports cascade and parenthesized ref.read after await', () async {
+      final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/providers/todo_notifier.dart': '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class TodoNotifier {
+  Future<void> createTodo() async {
+    await saveTodo();
+    ref
+      ..read(todoProvider);
+    (ref).read(todoProvider);
+    (this).ref.read(todoProvider);
+  }
+}
+''',
+            },
+            definingFile:
+                'lib/features/todo/presentation/providers/todo_notifier.dart',
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/presentation/providers/todo_notifier.dart',
+          codeName: 'riverpod_ref_after_async_gap',
+          problemMessage:
+              'Avoid ref.read() after an async gap in Riverpod providers.',
+          correctionMessage:
+              'Capture provider/usecase dependencies before the async gap, or guard the post-gap access with "if (!ref.mounted) return;".',
+        ),
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/presentation/providers/todo_notifier.dart',
+          codeName: 'riverpod_ref_after_async_gap',
+          problemMessage:
+              'Avoid ref.read() after an async gap in Riverpod providers.',
+          correctionMessage:
+              'Capture provider/usecase dependencies before the async gap, or guard the post-gap access with "if (!ref.mounted) return;".',
+        ),
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/presentation/providers/todo_notifier.dart',
+          codeName: 'riverpod_ref_after_async_gap',
+          problemMessage:
+              'Avoid ref.read() after an async gap in Riverpod providers.',
+          correctionMessage:
+              'Capture provider/usecase dependencies before the async gap, or guard the post-gap access with "if (!ref.mounted) return;".',
+        ),
+      ]);
+    });
+
+    test(
+      'does not report cascade read on a non-ref receiver after await',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
+            .analyze(
+              files: {
+                'lib/features/todo/presentation/providers/todo_notifier.dart':
+                    '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class TodoNotifier {
+  Future<void> createTodo() async {
+    await saveTodo();
+    cache
+      ..read(todoProvider);
+  }
+}
+''',
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/todo_notifier.dart',
+            );
+
+        result.expectDiagnostics([]);
+      },
+    );
+
     test(
       'reports ref.invalidate after await inside invoked synchronous local helper',
       () async {
