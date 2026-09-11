@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.1](https://github.com/ittae/clean_architecture_linter/compare/v2.7.0...v2.7.1) (2026-09-11)
+
+
+### Bug Fixes
+
+* riverpod_ref_after_async_gap이 Stream.listen·Timer 콜백의 ref 접근을 보고한다 ([#167](https://github.com/ittae/clean_architecture_linter/issues/167)) ([811dbdb](https://github.com/ittae/clean_architecture_linter/commit/811dbdb07a0b624ec190356aabfe913387a0d573))
+
 ## [2.7.0](https://github.com/ittae/clean_architecture_linter/compare/v2.6.0...v2.7.0) (2026-09-08)
 
 
