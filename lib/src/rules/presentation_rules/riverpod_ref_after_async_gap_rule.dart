@@ -229,7 +229,12 @@ class _AsyncCallbackScanner extends RecursiveAstVisitor<void> {
     final name = node.methodName.name;
     if (_futureContinuationMethods.contains(name)) return true;
     if (name == 'addListener') return true;
-    if (name == 'listen') return !_isRefListen(node);
+    if (name == 'listen') {
+      if (_isRefListen(node)) return false;
+      // Receiverless `listen(...)` is a local/inherited helper, not
+      // `Stream.listen`. Cascade `stream..listen` still has `realTarget`.
+      return (node.realTarget ?? node.target) != null;
+    }
     return _isTimerConstructorInvocation(node);
   }
 

@@ -391,6 +391,10 @@ class TodoNotifier {
     (ref).listen(todoProvider, (prev, next) {
       ref.read(otherProvider);
     });
+
+    listen(() {
+      ref.read(todoProvider);
+    });
   }
 }
 ''',
