@@ -188,7 +188,12 @@ class _AsyncCallbackScanner extends RecursiveAstVisitor<void> {
 
   @override
   void visitFunctionExpression(FunctionExpression node) {
-    if (node.body.isAsynchronous) {
+    // Deferred callbacks (`then`/`listen`/`Timer`/…) are scanned with
+    // `hasInheritedAsyncGap` from visitMethodInvocation / instance creation.
+    // Scanning them again here would duplicate opt-in state findings:
+    // assignment offsets live in the first scanner, so a second pass can
+    // still report the `state` read inside `state = state.copyWith(…)`.
+    if (node.body.isAsynchronous && !_isArgumentOfDeferredCallback(node)) {
       _AsyncRefAfterGapScanner(
         rule,
         tracking: _tracking,
@@ -226,6 +231,27 @@ class _AsyncCallbackScanner extends RecursiveAstVisitor<void> {
     if (name == 'addListener') return true;
     if (name == 'listen') return !_isRefListen(node);
     return _isTimerConstructorInvocation(node);
+  }
+
+  /// Whether [node] is an inline argument of a deferred callback invocation
+  /// already scanned by [_scanInheritedGapArguments].
+  bool _isArgumentOfDeferredCallback(FunctionExpression node) {
+    AstNode? current = node.parent;
+    while (current is ParenthesizedExpression) {
+      current = current.parent;
+    }
+    if (current != null && namedArgumentName(current) != null) {
+      current = current.parent;
+    }
+    if (current is! ArgumentList) return false;
+    final parent = current.parent;
+    if (parent is MethodInvocation) {
+      return _isDeferredCallbackInvocation(parent);
+    }
+    if (parent is InstanceCreationExpression) {
+      return _isTimerInstanceCreation(parent);
+    }
+    return false;
   }
 
   void _scanInheritedGapArguments(Iterable<AstNode> arguments) {
