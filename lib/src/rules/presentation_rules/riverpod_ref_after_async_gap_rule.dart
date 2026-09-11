@@ -14,12 +14,19 @@ const _futureContinuationMethods = {'then', 'catchError', 'whenComplete'};
 const _timerTypeName = 'Timer';
 const _timerNamedConstructors = {'periodic', 'run'};
 
-/// `ref` or `this.ref` on parsed AST (no types).
+/// `ref`, `(ref)`, `this.ref`, `(this).ref`, `super.ref` on parsed AST (no types).
+/// Cascade `ref..read` is recognized via [MethodInvocation.realTarget].
 bool _isRefReceiver(Expression? target) {
-  if (target is SimpleIdentifier) return target.name == 'ref';
-  return target is PropertyAccess &&
-      target.target is ThisExpression &&
-      target.propertyName.name == 'ref';
+  final current = _unwrapParens(target);
+  if (current is SimpleIdentifier) return current.name == 'ref';
+  return current is PropertyAccess &&
+      _isThisOrSuperReceiver(current.target) &&
+      current.propertyName.name == 'ref';
+}
+
+bool _isThisOrSuperReceiver(Expression? target) {
+  final current = _unwrapParens(target);
+  return current is ThisExpression || current is SuperExpression;
 }
 
 /// Selects which post-async-gap sites a [RiverpodRefAfterAsyncGapVisitor]
@@ -416,7 +423,8 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
 
   @override
   void visitMethodInvocation(MethodInvocation node) {
-    final target = node.target;
+    // Cascade `ref..read(...)` has a null `target`; `realTarget` is `ref`.
+    final target = node.realTarget ?? node.target;
     final methodName = node.methodName.name;
 
     if (_isRefTarget(target) && _trackedRefMethods.contains(methodName)) {
@@ -496,13 +504,7 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
         _isSelfTarget(parent.target);
   }
 
-  bool _isSelfTarget(Expression? target) {
-    var current = target;
-    while (current is ParenthesizedExpression) {
-      current = current.expression;
-    }
-    return current is ThisExpression || current is SuperExpression;
-  }
+  bool _isSelfTarget(Expression? target) => _isThisOrSuperReceiver(target);
 
   /// Parsed-AST shadowing: a local, parameter, or catch variable named
   /// `state` is not the notifier getter. Resolution is unavailable because
