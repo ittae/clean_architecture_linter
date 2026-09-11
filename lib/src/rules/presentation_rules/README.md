@@ -350,8 +350,10 @@ class TodoPage extends ConsumerWidget {
 
 **What it checks**:
 - ❌ `ref.read`, `ref.watch`, `ref.listen`, `ref.invalidate`, `ref.refresh` after `await`
+- ❌ The same `ref.*` calls inside `Future.then`/`catchError`/`whenComplete`, `Stream.listen`, `Timer`/`Timer.periodic`/`Timer.run`, and `addListener` callbacks (including in a sync method)
 - ✅ Provider/usecase capture before `await`
 - ✅ Post-gap access guarded by `if (!ref.mounted) return;` or `if (ref.mounted) { … }`
+- ✅ `ref.listen` callbacks (Riverpod owns that subscription)
 - ✅ Generated files, tests, non-provider files, and private helper methods are skipped
 
 **Example**:

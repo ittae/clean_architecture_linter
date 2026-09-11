@@ -253,6 +253,157 @@ class TodoNotifier {
     );
 
     test(
+      'reports ref access inside Stream.listen, Timer, and addListener callbacks',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
+            .analyze(
+              files: {
+                'lib/features/todo/presentation/providers/todo_notifier.dart':
+                    '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class TodoNotifier {
+  void subscribe(Stream<int> todos) {
+    todos.listen((_) {
+      ref.read(todoProvider);
+    });
+
+    todos.listen((_) {}, onError: (error) {
+      ref.invalidate(todoProvider);
+    }, onDone: () {
+      ref.refresh(todoProvider);
+    });
+
+    Timer(Duration.zero, () {
+      ref.watch(todoProvider);
+    });
+
+    new Timer.periodic(const Duration(seconds: 1), (_) {
+      ref.read(todoProvider);
+    });
+
+    controller.addListener(() {
+      ref.read(todoProvider);
+    });
+  }
+}
+''',
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/todo_notifier.dart',
+            );
+
+        result.expectDiagnostics([
+          const ExpectedV2Diagnostic(
+            relativePath:
+                'lib/features/todo/presentation/providers/todo_notifier.dart',
+            codeName: 'riverpod_ref_after_async_gap',
+            problemMessage:
+                'Avoid ref.read() after an async gap in Riverpod providers.',
+            correctionMessage:
+                'Capture provider/usecase dependencies before the async gap, or guard the post-gap access with "if (!ref.mounted) return;".',
+          ),
+          const ExpectedV2Diagnostic(
+            relativePath:
+                'lib/features/todo/presentation/providers/todo_notifier.dart',
+            codeName: 'riverpod_ref_after_async_gap',
+            problemMessage:
+                'Avoid ref.invalidate() after an async gap in Riverpod providers.',
+            correctionMessage:
+                'Capture provider/usecase dependencies before the async gap, or guard the post-gap access with "if (!ref.mounted) return;".',
+          ),
+          const ExpectedV2Diagnostic(
+            relativePath:
+                'lib/features/todo/presentation/providers/todo_notifier.dart',
+            codeName: 'riverpod_ref_after_async_gap',
+            problemMessage:
+                'Avoid ref.refresh() after an async gap in Riverpod providers.',
+            correctionMessage:
+                'Capture provider/usecase dependencies before the async gap, or guard the post-gap access with "if (!ref.mounted) return;".',
+          ),
+          const ExpectedV2Diagnostic(
+            relativePath:
+                'lib/features/todo/presentation/providers/todo_notifier.dart',
+            codeName: 'riverpod_ref_after_async_gap',
+            problemMessage:
+                'Avoid ref.watch() after an async gap in Riverpod providers.',
+            correctionMessage:
+                'Capture provider/usecase dependencies before the async gap, or guard the post-gap access with "if (!ref.mounted) return;".',
+          ),
+          const ExpectedV2Diagnostic(
+            relativePath:
+                'lib/features/todo/presentation/providers/todo_notifier.dart',
+            codeName: 'riverpod_ref_after_async_gap',
+            problemMessage:
+                'Avoid ref.read() after an async gap in Riverpod providers.',
+            correctionMessage:
+                'Capture provider/usecase dependencies before the async gap, or guard the post-gap access with "if (!ref.mounted) return;".',
+          ),
+          const ExpectedV2Diagnostic(
+            relativePath:
+                'lib/features/todo/presentation/providers/todo_notifier.dart',
+            codeName: 'riverpod_ref_after_async_gap',
+            problemMessage:
+                'Avoid ref.read() after an async gap in Riverpod providers.',
+            correctionMessage:
+                'Capture provider/usecase dependencies before the async gap, or guard the post-gap access with "if (!ref.mounted) return;".',
+          ),
+        ]);
+      },
+    );
+
+    test(
+      'does not report ref.listen callbacks or mounted-guarded stream callbacks',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())
+            .analyze(
+              files: {
+                'lib/features/todo/presentation/providers/todo_notifier.dart':
+                    '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class TodoNotifier {
+  void subscribe(Stream<int> todos) {
+    ref.listen(todoProvider, (prev, next) {
+      ref.read(otherProvider);
+    });
+
+    todos.listen((_) {
+      if (!ref.mounted) return;
+      ref.read(todoProvider);
+    });
+
+    Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!ref.mounted) return;
+      ref.invalidate(todoProvider);
+    });
+
+    ref..listen(todoProvider, (prev, next) {
+      ref.read(otherProvider);
+    });
+
+    (ref).listen(todoProvider, (prev, next) {
+      ref.read(otherProvider);
+    });
+  }
+}
+''',
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/todo_notifier.dart',
+            );
+
+        result.expectNoDiagnostics();
+      },
+    );
+
+    test(
       'does not duplicate Future continuation callback diagnostics in async methods',
       () async {
         final result = await V2RuleHarness(rule: RiverpodRefAfterAsyncGapRule())

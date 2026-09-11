@@ -11,6 +11,16 @@ import '../../utils/riverpod_provider_detector.dart';
 
 const _trackedRefMethods = {'read', 'watch', 'listen', 'invalidate', 'refresh'};
 const _futureContinuationMethods = {'then', 'catchError', 'whenComplete'};
+const _timerTypeName = 'Timer';
+const _timerNamedConstructors = {'periodic', 'run'};
+
+/// `ref` or `this.ref` on parsed AST (no types).
+bool _isRefReceiver(Expression? target) {
+  if (target is SimpleIdentifier) return target.name == 'ref';
+  return target is PropertyAccess &&
+      target.target is ThisExpression &&
+      target.propertyName.name == 'ref';
+}
 
 /// Selects which post-async-gap sites a [RiverpodRefAfterAsyncGapVisitor]
 /// reports.
@@ -54,7 +64,7 @@ class RiverpodRefAfterAsyncGapRule extends AnalysisRule {
     : super(
         name: 'riverpod_ref_after_async_gap',
         description:
-            'Advises against using Riverpod ref after an async gap (await or Future continuations) in provider classes.',
+            'Advises against using Riverpod ref after an async gap (await, Future continuations, Stream.listen, Timer, or addListener callbacks) in provider classes.',
       );
 
   @override
@@ -191,27 +201,50 @@ class _AsyncCallbackScanner extends RecursiveAstVisitor<void> {
 
   @override
   void visitMethodInvocation(MethodInvocation node) {
-    if (_futureContinuationMethods.contains(node.methodName.name)) {
-      for (final argument in node.argumentList.arguments) {
-        final body = _resolveCallbackBody(argument);
-        if (body == null) continue;
-
-        _AsyncRefAfterGapScanner(
-          rule,
-          tracking: _tracking,
-          hasInheritedAsyncGap: true,
-          reportedRefCallOffsets: _reportedRefCallOffsets,
-        ).scan(body);
-      }
+    if (_isDeferredCallbackInvocation(node)) {
+      _scanInheritedGapArguments(node.argumentList.arguments);
     }
 
     super.visitMethodInvocation(node);
   }
 
-  /// Resolves a `then`/`catchError`/`whenComplete` argument to the
-  /// [FunctionBody] it will run, covering both inline closures and
-  /// tear-offs of a local function declared earlier in the same method
-  /// (e.g. `fetchTodo().then(onDone)`).
+  @override
+  void visitInstanceCreationExpression(InstanceCreationExpression node) {
+    if (_isTimerInstanceCreation(node)) {
+      _scanInheritedGapArguments(node.argumentList.arguments);
+    }
+
+    super.visitInstanceCreationExpression(node);
+  }
+
+  /// `then`/`catchError`/`whenComplete`, `Stream.listen` (not `ref.listen`),
+  /// `addListener`, and `Timer` constructors all resume later — the callback
+  /// itself is the async gap, even in a sync enclosing method.
+  bool _isDeferredCallbackInvocation(MethodInvocation node) {
+    final name = node.methodName.name;
+    if (_futureContinuationMethods.contains(name)) return true;
+    if (name == 'addListener') return true;
+    if (name == 'listen') return !_isRefListen(node);
+    return _isTimerConstructorInvocation(node);
+  }
+
+  void _scanInheritedGapArguments(Iterable<AstNode> arguments) {
+    for (final argument in arguments) {
+      final body = _resolveCallbackBody(argument);
+      if (body == null) continue;
+
+      _AsyncRefAfterGapScanner(
+        rule,
+        tracking: _tracking,
+        hasInheritedAsyncGap: true,
+        reportedRefCallOffsets: _reportedRefCallOffsets,
+      ).scan(body);
+    }
+  }
+
+  /// Resolves a deferred-callback argument to the [FunctionBody] it will
+  /// run, covering both inline closures and tear-offs of a local function
+  /// declared earlier in the same method (e.g. `fetchTodo().then(onDone)`).
   FunctionBody? _resolveCallbackBody(AstNode argument) {
     final expression = callbackArgumentExpression(argument);
     if (expression is FunctionExpression) return expression.body;
@@ -221,6 +254,43 @@ class _AsyncCallbackScanner extends RecursiveAstVisitor<void> {
 
     return null;
   }
+}
+
+bool _isRefListen(MethodInvocation node) {
+  // Cascade `ref..listen(...)` has a null `target`; `realTarget` is `ref`.
+  return _isRefReceiver(_unwrapParens(node.realTarget ?? node.target));
+}
+
+Expression? _unwrapParens(Expression? expression) {
+  var current = expression;
+  while (current is ParenthesizedExpression) {
+    current = current.expression;
+  }
+  return current;
+}
+
+bool _isTimerConstructorInvocation(MethodInvocation node) {
+  if (node.methodName.name == _timerTypeName && node.target == null) {
+    return true;
+  }
+  return _timerTypeNameFrom(node.target) == _timerTypeName &&
+      _timerNamedConstructors.contains(node.methodName.name);
+}
+
+bool _isTimerInstanceCreation(InstanceCreationExpression node) {
+  final type = node.constructorName.type;
+  if (type.name.lexeme == _timerTypeName) return true;
+  // `new Timer.periodic(...)` parses NamedType as prefix=Timer, name=periodic.
+  return type.importPrefix?.name.lexeme == _timerTypeName &&
+      _timerNamedConstructors.contains(type.name.lexeme);
+}
+
+String? _timerTypeNameFrom(Expression? target) {
+  final current = _unwrapParens(target);
+  if (current is SimpleIdentifier) return current.name;
+  if (current is PrefixedIdentifier) return current.identifier.name;
+  if (current is PropertyAccess) return current.propertyName.name;
+  return null;
 }
 
 class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
@@ -541,13 +611,7 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     return false;
   }
 
-  bool _isRefTarget(Expression? target) {
-    if (target is SimpleIdentifier) return target.name == 'ref';
-
-    return target is PropertyAccess &&
-        target.target is ThisExpression &&
-        target.propertyName.name == 'ref';
-  }
+  bool _isRefTarget(Expression? target) => _isRefReceiver(target);
 
   /// `state = …`, `this.state = …`, `super.state = …`, `(this).state = …` —
   /// the same self targets [_isThisStateAccess] accepts for reads.

@@ -65,7 +65,7 @@ class RiverpodStateAfterAsyncGapRule extends AnalysisRule {
     : super(
         name: 'riverpod_state_after_async_gap',
         description:
-            'Advises against assigning to or reading state after an async gap (await or Future continuations) in Riverpod provider classes. Opt-in.',
+            'Advises against assigning to or reading state after an async gap (await, Future continuations, Stream.listen, Timer, or addListener callbacks) in Riverpod provider classes. Opt-in.',
       );
 
   @override
