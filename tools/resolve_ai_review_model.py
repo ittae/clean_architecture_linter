@@ -111,7 +111,7 @@ def load_models(
             source = "default" if source_kind != "unified" else "unified"
         elif source_kind == "unified":
             source = "unified"
-        elif len(from_file) == 3:
+        elif len(from_file) == len(ALLOWED):
             source = source_kind if source_kind in ("file", "text") else "file"
         else:
             source = "mixed"

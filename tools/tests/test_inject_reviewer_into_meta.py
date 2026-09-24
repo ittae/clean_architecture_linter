@@ -78,7 +78,7 @@ class TestInjectReviewerFields(unittest.TestCase):
             run_id="99",
         )
         self.assertEqual(out["run_id"], "99")
-        self.assertEqual(out["run_attempt"], 9)
+        self.assertEqual(out["run_attempt"], 1)
         self.assertEqual(out["review_run"], "99-1")
 
     def test_u2_overwrite_existing_engine(self) -> None:

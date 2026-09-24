@@ -84,8 +84,9 @@ def inject_reviewer_fields(
         out["job"] = job.strip()
     # ITT-3019: iterate_limit groups a GHA job (or local host run) as one round.
     if run_id is not None:
-        attempt_for_run = out["run_attempt"] if run_attempt is not None else 1
-        out["review_run"] = f"{out['run_id']}-{attempt_for_run}"
+        if run_attempt is None:
+            out["run_attempt"] = 1
+        out["review_run"] = f"{out['run_id']}-{out['run_attempt']}"
     return out
 
 
