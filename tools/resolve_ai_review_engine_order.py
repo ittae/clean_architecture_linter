@@ -6,9 +6,9 @@ Preferred SoT (ITT-2477):
   First data line: engine[:model] CSV (models ignored here; see resolve_ai_review_model).
 
 Legacy fallback:
-  ~/.config/ittae/ai-review-engine-order — CSV of {grok,codex,claude}
+  ~/.config/ittae/ai-review-engine-order — CSV of {grok,cursor,claude,codex}
 
-Default when missing/unreadable/invalid: grok,codex,claude
+Default when missing/unreadable/invalid: grok,cursor,claude,codex
 
 Config errors fail open to default (do not kill the review job).
 Engine execution failures remain fail-closed in the workflow Require step.
@@ -27,19 +27,43 @@ from pathlib import Path
 try:
     from ai_review_sot import (  # type: ignore
         ALLOWED,
+        DEFAULT_MODELS,
         DEFAULT_ORDER,
         default_order_path,
         default_unified_path,
         load_unified,
+        overlay_models,
         parse_unified_text,
+        resolve_engine_timeout,
     )
 except ImportError:  # pragma: no cover - flat embed without sibling module
     from pathlib import Path as _P
     import os as _os
     import re as _re
 
-    ALLOWED = ("grok", "codex", "claude")
-    DEFAULT_ORDER = ("grok", "codex", "claude")
+    ALLOWED = ("grok", "cursor", "claude", "codex")
+    DEFAULT_ORDER = ("grok", "cursor", "claude", "codex")
+    DEFAULT_MODELS = {
+        "grok": "grok-4.5-build",
+        "cursor": "composer-2.5",
+        "codex": "gpt-5.5",
+        "claude": "claude-opus-4-8",
+    }
+
+    def resolve_engine_timeout(env=None) -> int:
+        raw = (env if env is not None else _os.environ).get("ITTAE_AI_REVIEW_ENGINE_TIMEOUT")
+        try:
+            val = int(str(raw).strip()) if raw is not None and str(raw).strip() else 900
+        except ValueError:
+            return 900
+        return val if val > 0 else 900
+
+    def overlay_models(partial):
+        models = dict(DEFAULT_MODELS)
+        for eng, model in (partial or {}).items():
+            if eng in ALLOWED and model:
+                models[eng] = model
+        return models
     _MODEL_RE = _re.compile(r"^[A-Za-z0-9._:-]+$")
 
     def default_order_path() -> _P:
@@ -70,7 +94,7 @@ except ImportError:  # pragma: no cover - flat embed without sibling module
             model = model.strip()
             if eng not in ALLOWED or eng in seen:
                 return None, {}, "bad"
-            if ":" in tok and (not model or not _MODEL_RE.match(model)):
+            if model and not _MODEL_RE.match(model):
                 return None, {}, f"bad-model:{eng}"
             seen.add(eng)
             order.append(eng)
@@ -130,7 +154,7 @@ def parse_order_text(text: str) -> tuple[list[str] | None, str | None]:
             return None, f"duplicate:{t}"
         seen.add(t)
         order.append(t)
-    # GHA engine steps are fixed grok→codex→claude; only DEFAULT_ORDER
+    # Engine steps are fixed grok→cursor→claude→codex; only DEFAULT_ORDER
     # subsequences support true fallthrough without dual-run / stage wipe.
     rank = {name: i for i, name in enumerate(DEFAULT_ORDER)}
     if any(rank[order[i]] > rank[order[i + 1]] for i in range(len(order) - 1)):
@@ -273,6 +297,20 @@ def load_order(
     }
 
 
+def resolve_models(*, text: str | None = None, unified_path=None) -> dict[str, str]:
+    """Per-engine models: DEFAULT_MODELS overlaid with unified pins (or --text pins)."""
+    partial: dict[str, str] = {}
+    if text is not None:
+        _order, models, err = parse_unified_text(text)
+        if not err:
+            partial = dict(models or {})
+    else:
+        unified = load_unified(unified_path)
+        if unified and unified.get("order"):
+            partial = dict(unified.get("models_partial") or {})
+    return overlay_models(partial)
+
+
 def precedence_flags(order: list[str]) -> dict[str, str]:
     """Boolean matrix for GHA step if: need_X_before_Y."""
     out: dict[str, str] = {}
@@ -330,7 +368,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument(
         "--path",
         default=None,
-        help=f"legacy order file only; omit to resolve unified SoT then {DEFAULT_PATH}",
+        help=f"config path (default: {DEFAULT_PATH})",
     )
     p.add_argument(
         "--text",
@@ -352,6 +390,7 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="1/0 for primary selection",
     )
+    p.add_argument("--live-cursor", default=None)
     p.add_argument("--live-codex", default=None)
     p.add_argument("--live-claude", default=None)
     args = p.parse_args(argv)
@@ -365,6 +404,7 @@ def main(argv: list[str] | None = None) -> int:
 
     live = {
         "grok": str(args.live_grok or "0") in ("1", "true", "yes"),
+        "cursor": str(args.live_cursor or "0") in ("1", "true", "yes"),
         "codex": str(args.live_codex or "0") in ("1", "true", "yes"),
         "claude": str(args.live_claude or "0") in ("1", "true", "yes"),
     }
@@ -374,16 +414,23 @@ def main(argv: list[str] | None = None) -> int:
             **result,
             "primary": pick_primary(result["order"], live),
             "flags": precedence_flags(result["order"]),
+            # Consumer contract (workspace scripts/git/pre-pr-review.sh reads
+            # these; keep them in sync with ai_review_sot): every engine any
+            # consumer may run, the org default order, the model per engine
+            # after unified pins, and the shared per-engine timeout.
+            "allowed": list(ALLOWED),
+            "default_order": list(DEFAULT_ORDER),
+            "models": resolve_models(text=text, unified_path=None),
+            "engine_timeout_sec": resolve_engine_timeout(),
         }
         json.dump(payload, sys.stdout, ensure_ascii=False, indent=2)
         sys.stdout.write("\n")
         return 0
 
-    warn = str(result.get("warning") or "").replace("\n", " ").replace("\r", " ")
-    if warn and result["source"] == "default":
-        print(f"::warning::ai-review engine order: {warn} — using default {result['order_csv']}", file=sys.stderr)
-    elif warn:
-        print(f"::warning::ai-review engine order: {warn}", file=sys.stderr)
+    if result.get("warning") and result["source"] == "default":
+        print(f"::warning::ai-review engine order: {result['warning']} — using default {result['order_csv']}", file=sys.stderr)
+    elif result.get("warning"):
+        print(f"::warning::ai-review engine order: {result['warning']}", file=sys.stderr)
         print(f"::notice::ai-review engine order={result['order_csv']} source={result['source']} path={result['path']}", file=sys.stderr)
     elif result["source"] in ("file", "unified"):
         print(f"::notice::ai-review engine order={result['order_csv']} source={result['source']} path={result['path']}", file=sys.stderr)

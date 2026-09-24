@@ -31,9 +31,10 @@ try:
         load_unified,
     )
 except ImportError:  # pragma: no cover
-    ALLOWED = ("grok", "codex", "claude")
+    ALLOWED = ("grok", "cursor", "claude", "codex")
     DEFAULT_MODELS = {
         "grok": "grok-4.5-build",
+        "cursor": "composer-2.5",
         "codex": "gpt-5.5",
         "claude": "claude-opus-4-8",
     }

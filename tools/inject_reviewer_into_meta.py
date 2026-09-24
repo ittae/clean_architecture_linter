@@ -2,8 +2,8 @@
 """Inject producer-side reviewer identity into ittae-ai-review-meta.
 
 LLM output must not be the sole source of reviewer_engine / reviewer_model.
-Workflows overwrite those fields from steps.review_engine before publish (full)
-or via post-hoc comment patch (light). Invalid engines fail closed.
+Workflows overwrite those fields from steps.review_engine before staged publish
+(full and light). Invalid engines fail closed.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ import re
 import sys
 from typing import Any, Mapping
 
-ALLOWED_ENGINES = frozenset({"grok", "codex", "claude"})
+ALLOWED_ENGINES = frozenset({"grok", "cursor", "claude", "codex"})
 MODEL_RE = re.compile(r"^[A-Za-z0-9._:-]+$")
 
 META_BLOCK_RE = re.compile(
@@ -82,6 +82,10 @@ def inject_reviewer_fields(
         if not isinstance(job, str) or not job.strip():
             raise InjectError("job must be a non-empty string when provided")
         out["job"] = job.strip()
+    # ITT-3019: iterate_limit groups a GHA job (or local host run) as one round.
+    if run_id is not None:
+        attempt_for_run = out["run_attempt"] if run_attempt is not None else 1
+        out["review_run"] = f"{out['run_id']}-{attempt_for_run}"
     return out
 
 
@@ -147,6 +151,7 @@ def inject_into_body(
         run_attempt=run_attempt,
         job=job,
     )
+    require_reviewer_engine(updated)
     return rewrite_meta_block_in_body(body, updated)
 
 
@@ -162,7 +167,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--meta-json",
         help="Inline meta JSON object (mutually exclusive with --body-file for write modes)",
     )
-    parser.add_argument("--engine", default=None, help="reviewer_engine (grok|codex|claude)")
+    parser.add_argument("--engine", default=None, help="reviewer_engine (grok|cursor|claude|codex)")
     parser.add_argument("--model", default=None, help="reviewer_model id")
     parser.add_argument("--run-id", default=None)
     parser.add_argument("--run-attempt", default=None)
@@ -203,7 +208,7 @@ def main(argv: list[str] | None = None) -> int:
                     raise InjectError("meta JSON must be an object")
             else:
                 raise InjectError("--require-only needs --body-file or --meta-json")
-            # Validate reviewer_engine/model already present in the parsed meta.
+            # Still apply allowlist via provided engine when present in meta only.
             require_reviewer_engine(meta)
             if args.print_meta:
                 sys.stdout.write(json.dumps(meta, ensure_ascii=False, separators=(",", ":")))
@@ -225,6 +230,7 @@ def main(argv: list[str] | None = None) -> int:
                 job=args.job,
             )
             meta = extract_meta_json(new_body)
+            require_reviewer_engine(meta)
             if args.in_place:
                 with open(args.body_file, "w", encoding="utf-8") as handle:
                     handle.write(new_body)

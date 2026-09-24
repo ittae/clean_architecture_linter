@@ -5,8 +5,8 @@ Unified file (preferred):
   ~/.config/ittae/ai-review-engines
   First non-comment line: engine[:model][,engine[:model]...]
   Examples:
-    codex:gpt-5.5,claude:claude-opus-4-8
-    codex,claude
+    grok:grok-4.6,cursor:composer-2.5,claude:claude-opus-4-8,codex:gpt-5.5
+    cursor,claude
 
 Legacy (fallback):
   ~/.config/ittae/ai-review-engine-order  — CSV engines only
@@ -20,14 +20,44 @@ import os
 import re
 from pathlib import Path
 
-ALLOWED = ("grok", "codex", "claude")
-DEFAULT_ORDER = ("grok", "codex", "claude")
+# 2026-09-24 owner: cursor takes codex's slot; codex moves last (reverses ITT-3026
+# "drop codex from review lane" — codex is now the final fallback, not dropped).
+ALLOWED = ("grok", "cursor", "claude", "codex")
+DEFAULT_ORDER = ("grok", "cursor", "claude", "codex")
 DEFAULT_MODELS = {
     "grok": "grok-4.5-build",
+    "cursor": "composer-2.5",
     "codex": "gpt-5.5",
     "claude": "claude-opus-4-8",
 }
 MODEL_RE = re.compile(r"^[A-Za-z0-9._:-]+$")
+# One per-engine timeout for every consumer (poller runner + workspace local
+# gate). Override: ITTAE_AI_REVIEW_ENGINE_TIMEOUT (seconds, > 0). Measured
+# 2026-09-24 on a 6-line diff: cursor-agent 134s, grok 225s — anything near
+# 120s silently drops those engines and the chain degrades to the fastest one.
+ENGINE_TIMEOUT_SEC = 900
+ENGINE_TIMEOUT_ENV = "ITTAE_AI_REVIEW_ENGINE_TIMEOUT"
+
+
+def resolve_engine_timeout(env: dict | None = None) -> int:
+    """Return the per-engine timeout in seconds (env override, else default)."""
+    raw = (env if env is not None else os.environ).get(ENGINE_TIMEOUT_ENV)
+    if raw is None or not str(raw).strip():
+        return ENGINE_TIMEOUT_SEC
+    try:
+        val = int(str(raw).strip())
+    except ValueError:
+        return ENGINE_TIMEOUT_SEC
+    return val if val > 0 else ENGINE_TIMEOUT_SEC
+
+
+def overlay_models(partial: dict | None) -> dict:
+    """DEFAULT_MODELS with unified pins applied (the single overlay rule)."""
+    models = dict(DEFAULT_MODELS)
+    for eng, model in (partial or {}).items():
+        if eng in ALLOWED and model:
+            models[eng] = model
+    return models
 
 UNIFIED_NAME = "ai-review-engines"
 ORDER_NAME = "ai-review-engine-order"
@@ -130,9 +160,9 @@ def read_text_file(path: Path) -> tuple[str | None, str | None]:
 def load_unified(
     path: Path | None = None,
 ) -> dict | None:
-    """Load unified file. None if missing; dict with error if unreadable/invalid.
+    """Load unified file. None if missing/invalid (caller falls back).
 
-    Success dict: order, models_partial, path, error=None.
+    Returns dict: order, models_partial, path, warning(optional)
     """
     cfg = path if path is not None else default_unified_path()
     text, err = read_text_file(cfg)
