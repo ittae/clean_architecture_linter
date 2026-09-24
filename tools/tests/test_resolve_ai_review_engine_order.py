@@ -179,6 +179,46 @@ class TestCliSmoke(unittest.TestCase):
         self.assertEqual(payload["order"], list(DEFAULT_ORDER))
         self.assertTrue(str(payload["warning"]).startswith("invalid-"))
 
+    def test_stderr_warning_sanitizes_newlines(self) -> None:
+        import contextlib
+        import io
+
+        import resolve_ai_review_engine_order as mod
+
+        # unreadable warning can carry exception text with newlines
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "order"
+            path.write_bytes(b"\xff\xfe")
+            out = io.StringIO()
+            err = io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["--path", str(path)])
+            self.assertEqual(rc, 0)
+            err_text = err.getvalue()
+            warning_lines = [
+                ln for ln in err_text.splitlines() if ln.startswith("::warning::")
+            ]
+            self.assertEqual(len(warning_lines), 1)
+            # workflow command must be a single line (no embedded newline split)
+            self.assertNotIn("\n", warning_lines[0])
+            self.assertIn("unreadable:", warning_lines[0])
+            self.assertEqual(err_text.count("\n"), 1)
+
+    def test_path_help_mentions_legacy_only(self) -> None:
+        import contextlib
+        import io
+
+        import resolve_ai_review_engine_order as mod
+
+        help_buf = io.StringIO()
+        with self.assertRaises(SystemExit) as cm:
+            with contextlib.redirect_stdout(help_buf):
+                mod.main(["--help"])
+        self.assertEqual(cm.exception.code, 0)
+        help_text = help_buf.getvalue()
+        self.assertIn("legacy order file only", help_text)
+        self.assertNotIn("config path (default:", help_text)
+
 
 class TestUnifiedOrderSoT(unittest.TestCase):
     def test_parse_unified_via_text_with_models(self) -> None:

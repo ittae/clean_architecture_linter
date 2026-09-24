@@ -277,6 +277,18 @@ class TestCli(unittest.TestCase):
                 "--in-place",
             )
             self.assertNotEqual(proc.returncode, 0)
+            self.assertNotIn("reviewer_engine", path.read_text(encoding="utf-8"))
+
+    def test_cli_require_only_missing_engine_nonzero(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "review-result.md"
+            path.write_text(_body({"high": 0, "verdict": "PASS"}), encoding="utf-8")
+            proc = self._run(
+                "--body-file",
+                str(path),
+                "--require-only",
+            )
+            self.assertNotEqual(proc.returncode, 0)
 
 
 if __name__ == "__main__":
