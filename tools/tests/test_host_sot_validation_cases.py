@@ -176,8 +176,8 @@ class TestGithubEnvMappingContract(unittest.TestCase):
     """Document mapping resolve_ai_review_model outputs → GITHUB_ENV keys."""
 
     def test_emit_gha_writes_model_output_keys(self) -> None:
-        # Workflow (#138) maps: grok_model→GROK_MODEL, codex_model→CODEX_MODEL,
-        # claude_model→MODEL (historical CLAUDE env name).
+        # Workflow maps: grok_model→GROK_MODEL, cursor_model→CURSOR_MODEL,
+        # codex_model→CODEX_MODEL, claude_model→MODEL (historical CLAUDE env name).
         from io import StringIO
         from unittest.mock import patch
         from resolve_ai_review_model import emit_gha
@@ -189,6 +189,7 @@ class TestGithubEnvMappingContract(unittest.TestCase):
         out = buf.getvalue()
         self.assertIn("codex_model=gpt-5.5", out)
         self.assertIn("grok_model=", out)
+        self.assertIn("cursor_model=", out)
         self.assertIn("claude_model=", out)
         for eng in ("grok", "cursor", "codex", "claude"):
             self.assertIn(eng, DEFAULT_MODELS)

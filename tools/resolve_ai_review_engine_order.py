@@ -89,17 +89,23 @@ except ImportError:  # pragma: no cover - flat embed without sibling module
         order, models = [], {}
         seen = set()
         for tok in [t.strip() for t in line.split(",") if t.strip()]:
-            eng, _, model = tok.partition(":")
-            eng = eng.strip().lower()
-            model = model.strip()
-            if eng not in ALLOWED or eng in seen:
-                return None, {}, "bad"
-            if model and not _MODEL_RE.match(model):
-                return None, {}, f"bad-model:{eng}"
-            seen.add(eng)
-            order.append(eng)
-            if model:
+            if ":" in tok:
+                eng, _, model = tok.partition(":")
+                eng = eng.strip().lower()
+                model = model.strip()
+                if eng not in ALLOWED or eng in seen:
+                    return None, {}, "bad"
+                if not model or not _MODEL_RE.match(model):
+                    return None, {}, f"bad-model:{eng}"
+                seen.add(eng)
+                order.append(eng)
                 models[eng] = model
+            else:
+                eng = tok.strip().lower()
+                if eng not in ALLOWED or eng in seen:
+                    return None, {}, "bad"
+                seen.add(eng)
+                order.append(eng)
         rank = {n: i for i, n in enumerate(DEFAULT_ORDER)}
         if any(rank[order[i]] > rank[order[i + 1]] for i in range(len(order) - 1)):
             return None, {}, "non-monotonic-order"

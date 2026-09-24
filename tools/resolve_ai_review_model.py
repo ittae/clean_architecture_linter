@@ -194,6 +194,7 @@ def emit_gha(result: dict) -> None:
     models = result["models"]
     lines = [
         f"grok_model={models['grok']}",
+        f"cursor_model={models['cursor']}",
         f"codex_model={models['codex']}",
         f"claude_model={models['claude']}",
         f"source={result['source']}",

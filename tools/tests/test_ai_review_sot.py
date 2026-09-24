@@ -48,6 +48,11 @@ class TestParseUnified(unittest.TestCase):
         self.assertIsNone(order)
         self.assertTrue(str(err).startswith("bad-model:"))
 
+    def test_empty_model_pin_rejected(self) -> None:
+        order, models, err = parse_unified_line("cursor:,claude")
+        self.assertIsNone(order)
+        self.assertEqual(err, "bad-model:cursor")
+
     def test_model_internal_space_rejected(self) -> None:
         """Spaces inside model IDs must not be stripped into a valid pin (M1)."""
         order, models, err = parse_unified_line("cursor:gpt 5.5")
