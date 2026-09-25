@@ -91,11 +91,11 @@ class TestPartialKeys(unittest.TestCase):
     """H4 — some engines pinned, others order-only → models_partial + DEFAULT fill."""
 
     def test_h4_parse_partial_pin(self) -> None:
-        # codex pinned, claude order-only (no model in unified token)
-        order, models, err = parse_unified_line("codex:gpt-5.5,claude")
+        # cursor pinned, claude order-only (no model in unified token)
+        order, models, err = parse_unified_line("cursor:composer-2.5,claude")
         self.assertIsNone(err)
-        self.assertEqual(order, ["codex", "claude"])
-        self.assertEqual(models, {"codex": "gpt-5.5"})
+        self.assertEqual(order, ["cursor", "claude"])
+        self.assertEqual(models, {"cursor": "composer-2.5"})
         self.assertNotIn("claude", models)
         self.assertNotIn("grok", models)
 
@@ -103,16 +103,16 @@ class TestPartialKeys(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             engines = root / "ai-review-engines"
-            # valid unified with only codex model pin
-            engines.write_text("codex:gpt-5.5,claude\n", encoding="utf-8")
+            # valid unified with only cursor model pin
+            engines.write_text("cursor:composer-2.5,claude\n", encoding="utf-8")
             # path=None → default host resolution uses unified_path then legacy.
             r = load_models(unified_path=engines)
             self.assertEqual(r["source"], "unified")
-            self.assertEqual(r["models"]["codex"], "gpt-5.5")
+            self.assertEqual(r["models"]["cursor"], "composer-2.5")
             # unpinned engines come from DEFAULT_MODELS
             self.assertEqual(r["models"]["claude"], DEFAULT_MODELS["claude"])
             self.assertEqual(r["models"]["grok"], DEFAULT_MODELS["grok"])
-            self.assertEqual(r["from_file"], ["codex"])
+            self.assertEqual(r["from_file"], ["cursor"])
 
     def test_h4_legacy_model_file_partial_is_mixed(self) -> None:
         with tempfile.TemporaryDirectory() as td:
@@ -132,7 +132,9 @@ class TestValidAndMonotonic(unittest.TestCase):
     """H5 valid full pin · H6 non-monotonic."""
 
     def test_h5_valid_full_live_style(self) -> None:
-        line = "grok:grok-4.5,codex:gpt-5.5,claude:claude-opus-4-8"
+        line = (
+            "grok:grok-4.5,cursor:composer-2.5,claude:claude-opus-4-8,codex:gpt-5.5"
+        )
         order, models, err = parse_unified_line(line)
         self.assertIsNone(err)
         self.assertEqual(order, list(DEFAULT_ORDER))
@@ -140,6 +142,7 @@ class TestValidAndMonotonic(unittest.TestCase):
             models,
             {
                 "grok": "grok-4.5",
+                "cursor": "composer-2.5",
                 "codex": "gpt-5.5",
                 "claude": "claude-opus-4-8",
             },
@@ -153,11 +156,13 @@ class TestValidAndMonotonic(unittest.TestCase):
             self.assertEqual(r["order"], list(DEFAULT_ORDER))
             rm = load_models(unified_path=p)
             self.assertEqual(rm["source"], "unified")
-            self.assertEqual(sorted(rm["from_file"]), ["claude", "codex", "grok"])
+            self.assertEqual(
+                sorted(rm["from_file"]), ["claude", "codex", "cursor", "grok"]
+            )
             self.assertEqual(rm["models"]["grok"], "grok-4.5")
 
     def test_h6_non_monotonic_rejected(self) -> None:
-        order, models, err = parse_unified_line("claude,codex")
+        order, models, err = parse_unified_line("claude,grok")
         self.assertIsNone(order)
         self.assertEqual(err, "non-monotonic-order")
 
@@ -171,8 +176,8 @@ class TestGithubEnvMappingContract(unittest.TestCase):
     """Document mapping resolve_ai_review_model outputs → GITHUB_ENV keys."""
 
     def test_emit_gha_writes_model_output_keys(self) -> None:
-        # Workflow (#138) maps: grok_model→GROK_MODEL, codex_model→CODEX_MODEL,
-        # claude_model→MODEL (historical CLAUDE env name).
+        # Workflow maps: grok_model→GROK_MODEL, cursor_model→CURSOR_MODEL,
+        # codex_model→CODEX_MODEL, claude_model→MODEL (historical CLAUDE env name).
         from io import StringIO
         from unittest.mock import patch
         from resolve_ai_review_model import emit_gha
@@ -184,8 +189,9 @@ class TestGithubEnvMappingContract(unittest.TestCase):
         out = buf.getvalue()
         self.assertIn("codex_model=gpt-5.5", out)
         self.assertIn("grok_model=", out)
+        self.assertIn("cursor_model=", out)
         self.assertIn("claude_model=", out)
-        for eng in ("grok", "codex", "claude"):
+        for eng in ("grok", "cursor", "codex", "claude"):
             self.assertIn(eng, DEFAULT_MODELS)
 
 

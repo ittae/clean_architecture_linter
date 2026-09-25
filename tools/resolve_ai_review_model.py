@@ -26,18 +26,27 @@ try:
         ALLOWED,
         DEFAULT_MODELS,
         MODEL_RE,
+        overlay_models,
         default_model_path,
         default_unified_path,
         load_unified,
     )
 except ImportError:  # pragma: no cover
-    ALLOWED = ("grok", "codex", "claude")
+    ALLOWED = ("grok", "cursor", "claude", "codex")
     DEFAULT_MODELS = {
         "grok": "grok-4.5-build",
+        "cursor": "composer-2.5",
         "codex": "gpt-5.5",
         "claude": "claude-opus-4-8",
     }
     MODEL_RE = re.compile(r"^[A-Za-z0-9._:-]+$")
+
+    def overlay_models(partial):
+        models = dict(DEFAULT_MODELS)
+        for eng, model in (partial or {}).items():
+            if eng in ALLOWED and model:
+                models[eng] = model
+        return models
 
     def default_model_path() -> Path:
         home = os.environ.get("HOME") or str(Path.home())
@@ -101,16 +110,15 @@ def load_models(
     """
 
     def _finalize(partial: dict[str, str], source_kind: str, path_s: str, warnings: list[str]) -> dict:
-        models = dict(DEFAULT_MODELS)
-        from_file: list[str] = []
-        for eng, model in partial.items():
-            models[eng] = model
-            from_file.append(eng)
+        # Single overlay rule (ai_review_sot.overlay_models): unified pins over
+        # DEFAULT_MODELS, ALLOWED engines with a truthy model only.
+        models = overlay_models(partial)
+        from_file: list[str] = [eng for eng in partial if eng in ALLOWED and partial[eng]]
         if not from_file:
             source = "default" if source_kind != "unified" else "unified"
         elif source_kind == "unified":
             source = "unified"
-        elif len(from_file) == 3:
+        elif len(from_file) == len(ALLOWED):
             source = source_kind if source_kind in ("file", "text") else "file"
         else:
             source = "mixed"
@@ -193,6 +201,7 @@ def emit_gha(result: dict) -> None:
     models = result["models"]
     lines = [
         f"grok_model={models['grok']}",
+        f"cursor_model={models['cursor']}",
         f"codex_model={models['codex']}",
         f"claude_model={models['claude']}",
         f"source={result['source']}",

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Unit tests for tools/inject_reviewer_into_meta.py."""
+"""Unit tests for tools/inject_reviewer_into_meta.py (ITT-2553 / ITT-2554)."""
 
 from __future__ import annotations
 
@@ -54,6 +54,31 @@ class TestInjectReviewerFields(unittest.TestCase):
         self.assertEqual(out["medium"], 1)
         self.assertEqual(out["verdict"], "FAIL")
         self.assertEqual(out["categories"], ["Architecture"])
+        self.assertNotIn("review_run", out)
+
+    def test_inject_review_run_from_run_id_attempt(self) -> None:
+        out = inject_reviewer_fields(
+            {"high": 0},
+            reviewer_engine="codex",
+            reviewer_model="gpt-5.5",
+            run_id="32453247477",
+            run_attempt=2,
+        )
+        self.assertEqual(out["run_id"], "32453247477")
+        self.assertEqual(out["run_attempt"], 2)
+        self.assertEqual(out["review_run"], "32453247477-2")
+
+    def test_review_run_ignores_stale_meta_attempt_when_arg_omitted(self) -> None:
+        """run_attempt 인자가 없으면 입력 meta의 stale attempt를 review_run에 쓰지 않는다."""
+        out = inject_reviewer_fields(
+            {"high": 0, "run_attempt": 9},
+            reviewer_engine="codex",
+            reviewer_model="gpt-5.5",
+            run_id="99",
+        )
+        self.assertEqual(out["run_id"], "99")
+        self.assertEqual(out["run_attempt"], 1)
+        self.assertEqual(out["review_run"], "99-1")
 
     def test_u2_overwrite_existing_engine(self) -> None:
         meta = {"high": 0, "reviewer_engine": "codex", "reviewer_model": "gpt-5.5"}
@@ -97,6 +122,7 @@ class TestInjectReviewerFields(unittest.TestCase):
         self.assertEqual(out["run_id"], "123")
         self.assertEqual(out["run_attempt"], 2)
         self.assertEqual(out["job"], "review")
+        self.assertEqual(out["review_run"], "123-2")
 
     def test_u9_idempotent(self) -> None:
         meta = {"high": 0, "medium": 0, "verdict": "PASS"}
@@ -221,6 +247,7 @@ class TestCli(unittest.TestCase):
             out_meta = json.loads(proc.stdout)
             self.assertEqual(out_meta["reviewer_engine"], "codex")
             self.assertEqual(out_meta["run_id"], "99")
+            self.assertEqual(out_meta["review_run"], "99-1")
             body = path.read_text(encoding="utf-8")
             self.assertIn('"reviewer_engine":"codex"', body.replace(" ", ""))
 
