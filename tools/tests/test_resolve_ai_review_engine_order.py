@@ -2,7 +2,6 @@
 """Unit tests for tools/resolve_ai_review_engine_order.py (ITT-2301)."""
 from __future__ import annotations
 
-import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -230,17 +229,10 @@ class TestUnifiedOrderSoT(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             uni = root / "ai-review-engines"
-            legacy = root / "ai-review-engine-order"
             uni.write_text("cursor:composer-2.5,claude:claude-opus-4-8\n", encoding="utf-8")
-            legacy.write_text("grok,claude\n", encoding="utf-8")
+            # Unified is tried first; a valid unified file wins regardless of
+            # any legacy order file (host or fixture), so none is written here.
             r = load_order(path=None, unified_path=uni)
-            # when path is None, legacy uses default_order_path() under real HOME —
-            # pass skip by monkeypatch: use only unified via explicit load
-            # load_order(path=None) still reads real legacy; inject by writing only unified
-            # and skip_unified false with unified_path; legacy may still exist on host.
-            # Safer: use load_order with path=legacy would skip unified.
-            # Call internal: path=None, unified_path=uni — if host has order file it may win after unified.
-            # Unified is tried first; if uni valid, returns unified regardless of host legacy.
             self.assertEqual(r["source"], "unified")
             self.assertEqual(r["order"], ["cursor", "claude"])
             self.assertEqual(r["path"], str(uni))
@@ -248,7 +240,6 @@ class TestUnifiedOrderSoT(unittest.TestCase):
     def test_legacy_order_when_unified_missing(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            uni = root / "missing-unified"
             legacy = root / "ai-review-engine-order"
             legacy.write_text("cursor,claude\n", encoding="utf-8")
             # Explicit legacy path still works (path=legacy skips unified)
