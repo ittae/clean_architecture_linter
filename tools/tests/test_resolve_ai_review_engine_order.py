@@ -65,9 +65,11 @@ class TestParseOrderText(unittest.TestCase):
         self.assertEqual(err, "duplicate:grok")
 
     def test_too_many(self) -> None:
-        order, err = parse_order_text("grok,cursor,claude,grok")
+        # Five tokens > len(ALLOWED)=4 → the length guard fires before any
+        # duplicate check (duplicates are covered by test_duplicate).
+        order, err = parse_order_text("grok,cursor,claude,codex,grok")
         self.assertIsNone(order)
-        self.assertIn(err, ("too-many", "duplicate:grok"))
+        self.assertEqual(err, "too-many")
 
 
 class TestLoadOrder(unittest.TestCase):

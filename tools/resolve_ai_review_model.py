@@ -26,6 +26,7 @@ try:
         ALLOWED,
         DEFAULT_MODELS,
         MODEL_RE,
+        overlay_models,
         default_model_path,
         default_unified_path,
         load_unified,
@@ -39,6 +40,13 @@ except ImportError:  # pragma: no cover
         "claude": "claude-opus-4-8",
     }
     MODEL_RE = re.compile(r"^[A-Za-z0-9._:-]+$")
+
+    def overlay_models(partial):
+        models = dict(DEFAULT_MODELS)
+        for eng, model in (partial or {}).items():
+            if eng in ALLOWED and model:
+                models[eng] = model
+        return models
 
     def default_model_path() -> Path:
         home = os.environ.get("HOME") or str(Path.home())
@@ -102,11 +110,10 @@ def load_models(
     """
 
     def _finalize(partial: dict[str, str], source_kind: str, path_s: str, warnings: list[str]) -> dict:
-        models = dict(DEFAULT_MODELS)
-        from_file: list[str] = []
-        for eng, model in partial.items():
-            models[eng] = model
-            from_file.append(eng)
+        # Single overlay rule (ai_review_sot.overlay_models): unified pins over
+        # DEFAULT_MODELS, ALLOWED engines with a truthy model only.
+        models = overlay_models(partial)
+        from_file: list[str] = [eng for eng in partial if eng in ALLOWED and partial[eng]]
         if not from_file:
             source = "default" if source_kind != "unified" else "unified"
         elif source_kind == "unified":
