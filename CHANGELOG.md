@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.3](https://github.com/ittae/clean_architecture_linter/compare/v2.7.2...v2.7.3) (2026-09-25)
+
+
+### Bug Fixes
+
+* public inline reviewer_engine allowlist에 cursor를 추가한다 ([#172](https://github.com/ittae/clean_architecture_linter/issues/172)) ([5f9f605](https://github.com/ittae/clean_architecture_linter/commit/5f9f605ade78c75ea06d6f5373baf377d548461b))
+
 ## [2.7.2](https://github.com/ittae/clean_architecture_linter/compare/v2.7.1...v2.7.2) (2026-09-11)
 
 
