@@ -34,8 +34,11 @@ import 'riverpod_ref_after_async_gap_rule.dart';
 /// evaluate after an `await` (`await foo() ?? state`) are reported;
 /// receiver-first `state.foo(await x)` is not. Locals and parameters named
 /// `state` are ignored; `this.state`, `super.state`, and `(this).state` are
-/// not, for both reads and writes. Calls to private helpers that touch
-/// `state` are not followed.
+/// not, for both reads and writes. Private methods are scanned with the same
+/// guard rules. A call to a sync private method that reads or writes `state`
+/// in its own body (not inside a nested function) is reported at the call
+/// site. A call to an async private method is not a finding by itself; the
+/// gap inside that method is.
 ///
 /// This rule is **opt-in** (registered as a lint rule, disabled by default).
 /// The `state = await …` idiom is widespread in existing apps, and enabling
