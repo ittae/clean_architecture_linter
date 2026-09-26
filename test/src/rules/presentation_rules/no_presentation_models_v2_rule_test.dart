@@ -160,7 +160,7 @@ class PlaybackController extends ChangeNotifier {}
     });
 
     test(
-      'reports a ViewModel outside presentation without ChangeNotifier',
+      'reports a ViewModel that extends ChangeNotifier outside presentation',
       () async {
         final result = await V2RuleHarness(rule: NoPresentationModelsRule())
             .analyze(
@@ -168,6 +168,31 @@ class PlaybackController extends ChangeNotifier {}
                 'lib/features/todo/data/models/cart_viewmodel.dart': '''
 class ChangeNotifier {}
 class CartViewModel extends ChangeNotifier {}
+''',
+              },
+              definingFile: 'lib/features/todo/data/models/cart_viewmodel.dart',
+            );
+
+        result.expectDiagnostics([
+          const ExpectedV2Diagnostic(
+            relativePath: 'lib/features/todo/data/models/cart_viewmodel.dart',
+            codeName: 'no_presentation_models',
+            problemMessage: 'ViewModel pattern is not allowed: CartViewModel',
+            correctionMessage:
+                'Use Freezed State with riverpod_generator (@riverpod annotation) instead.',
+          ),
+        ]);
+      },
+    );
+
+    test(
+      'reports a ViewModel outside presentation without ChangeNotifier',
+      () async {
+        final result = await V2RuleHarness(rule: NoPresentationModelsRule())
+            .analyze(
+              files: {
+                'lib/features/todo/data/models/cart_viewmodel.dart': '''
+class CartViewModel {}
 ''',
               },
               definingFile: 'lib/features/todo/data/models/cart_viewmodel.dart',
