@@ -87,6 +87,120 @@ class TodoNotifier extends ChangeNotifier {}
       ]);
     });
 
+    test('reports ChangeNotifier in a presentation widget file', () async {
+      final result = await V2RuleHarness(rule: NoPresentationModelsRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/widgets/player_controller.dart':
+                  '''
+class ChangeNotifier {}
+class PlayerController extends ChangeNotifier {}
+''',
+            },
+            definingFile:
+                'lib/features/todo/presentation/widgets/player_controller.dart',
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/presentation/widgets/player_controller.dart',
+          codeName: 'no_presentation_models',
+          problemMessage: 'ChangeNotifier pattern is not allowed',
+        ),
+      ]);
+    });
+
+    test('reports ChangeNotifier under a widgets directory', () async {
+      final result = await V2RuleHarness(rule: NoPresentationModelsRule())
+          .analyze(
+            files: {
+              'lib/core/widgets/player_controller.dart': '''
+class ChangeNotifier {}
+class PlayerController extends ChangeNotifier {}
+''',
+            },
+            definingFile: 'lib/core/widgets/player_controller.dart',
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath: 'lib/core/widgets/player_controller.dart',
+          codeName: 'no_presentation_models',
+          problemMessage: 'ChangeNotifier pattern is not allowed',
+        ),
+      ]);
+    });
+
+    test('does not report ChangeNotifier outside presentation', () async {
+      final result = await V2RuleHarness(rule: NoPresentationModelsRule())
+          .analyze(
+            files: {
+              'lib/features/todo/data/models/cart_model.dart': '''
+class ChangeNotifier {}
+class CartModel extends ChangeNotifier {}
+''',
+              'lib/features/todo/domain/entities/cart.dart': '''
+class ChangeNotifier {}
+class Cart extends ChangeNotifier {}
+''',
+              'lib/core/services/playback_controller.dart': '''
+class ChangeNotifier {}
+class PlaybackController extends ChangeNotifier {}
+''',
+            },
+            definingFile: 'lib/features/todo/data/models/cart_model.dart',
+            additionalDefiningFiles: [
+              'lib/features/todo/domain/entities/cart.dart',
+              'lib/core/services/playback_controller.dart',
+            ],
+          );
+
+      result.expectNoDiagnostics();
+    });
+
+    test(
+      'reports a ViewModel outside presentation without ChangeNotifier',
+      () async {
+        final result = await V2RuleHarness(rule: NoPresentationModelsRule())
+            .analyze(
+              files: {
+                'lib/features/todo/data/models/cart_viewmodel.dart': '''
+class ChangeNotifier {}
+class CartViewModel extends ChangeNotifier {}
+''',
+              },
+              definingFile: 'lib/features/todo/data/models/cart_viewmodel.dart',
+            );
+
+        result.expectDiagnostics([
+          const ExpectedV2Diagnostic(
+            relativePath: 'lib/features/todo/data/models/cart_viewmodel.dart',
+            codeName: 'no_presentation_models',
+            problemMessage: 'ViewModel pattern is not allowed: CartViewModel',
+            correctionMessage:
+                'Use Freezed State with riverpod_generator (@riverpod annotation) instead.',
+          ),
+        ]);
+      },
+    );
+
+    test('does not report a class that only contains the name', () async {
+      final result = await V2RuleHarness(rule: NoPresentationModelsRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/providers/counter.dart': '''
+class CounterChangeNotifier {}
+class Counter extends CounterChangeNotifier {}
+''',
+            },
+            definingFile:
+                'lib/features/todo/presentation/providers/counter.dart',
+          );
+
+      result.expectNoDiagnostics();
+    });
+
     test('skips generated files', () async {
       final result = await V2RuleHarness(rule: NoPresentationModelsRule())
           .analyze(
