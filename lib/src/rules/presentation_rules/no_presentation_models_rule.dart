@@ -9,6 +9,10 @@ import '../../clean_architecture_linter_base.dart';
 import '../../compat/analyzer_ast_compat.dart';
 
 /// Enforces NO Presentation Models or ViewModels pattern.
+///
+/// `extends ChangeNotifier` is reported only in presentation files.
+/// `*ViewModel` classes and forbidden presentation directories are reported
+/// in any layer.
 class NoPresentationModelsRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'no_presentation_models',
@@ -93,18 +97,19 @@ class _NoPresentationModelsVisitor extends SimpleAstVisitor<void> {
       );
     }
 
+    // Screen state lives in presentation. Other layers are not this rule's job.
+    if (!CleanArchitectureUtils.isPresentationFile(_filePath)) return;
+
     final extendsClause = node.extendsClause;
     if (extendsClause == null) return;
+    if (extendsClause.superclass.name.lexeme != 'ChangeNotifier') return;
 
-    final superclass = extendsClause.superclass.toString();
-    if (superclass.contains('ChangeNotifier')) {
-      rule.reportAtNode(
-        extendsClause,
-        arguments: const [
-          'ChangeNotifier pattern is not allowed',
-          'Use Freezed State with Riverpod instead. Define state with @freezed and notifier with @riverpod.',
-        ],
-      );
-    }
+    rule.reportAtNode(
+      extendsClause,
+      arguments: const [
+        'ChangeNotifier pattern is not allowed',
+        'Use Freezed State with Riverpod instead. Define state with @freezed and notifier with @riverpod.',
+      ],
+    );
   }
 }
