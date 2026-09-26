@@ -25,6 +25,7 @@
 <!-- BEGIN agent-verify-discipline (managed) -->
 - 코드 작성/수정 직후 정적 분석을 **테스트보다 먼저** 돌린다. 통과 후에만 필요한 테스트를 타겟 실행.
   - **Dart/Flutter (`analysis_options.yaml`에 `plugins:` 있는 repo):** 게이트는 VS Code/Cursor **Problems**와 동일 소스인 `dart analyze`다 (`riverpod_lint`, `clean_architecture_linter` 등). **`flutter analyze`만으로 통과 선언·PR 금지** — 플러그인 진단을 놓쳐 Problems가 남은 채로 CI green이 된다. Multica/Codex/Cursor 에이전트도 동일. SoT는 repo 종류로 갈린다. **sentinel 없는 repo:** `dart analyze --fatal-infos`(또는 그것을 호출하는 `./scripts/verify.sh` / `--quick`). **lint sentinel(`lib/zz_lint_sentinel/`)이 있는 repo:** 통과 증거는 `bash scripts/analyze.sh`의 exit 0뿐이고, `verify.sh`는 그 래퍼를 호출할 때만 인정한다. `scripts/analyze.sh`는 clean_architecture_linter `tools/lint_sentinel/check.sh`의 사본이며, 래퍼가 아직 없으면 그 파일을 `scripts/analyze.sh`로 복사한 뒤 호출한다. 단독 `dart analyze`는 통과 증거가 아니다: 플러그인이 전달되면 sentinel 2행(`riverpod_keep_alive`·`presentation_no_throw`, 경로 `lib/zz_lint_sentinel/`)만 허용 진단이고 그 외는 0건이어야 하며, 0행·exit 0은 깨끗함이 아니라 플러그인 미수신(실패, 재시도는 래퍼가 수행)이다.
+  - **Dart/Flutter (`plugins:` 없는 repo):** 플러그인 진단이 없으므로 게이트는 `dart analyze --fatal-infos`(또는 그것을 호출하는 `./scripts/verify.sh`) exit 0. `flutter analyze`도 같은 analyzer지만 INFO를 통과시키므로 `--fatal-infos` 없는 결과를 통과 증거로 쓰지 않는다.
   - TS/Node: `tsc --noEmit` + eslint · Python: `ruff`+`mypy`
 - analyze 이슈(Problems)는 test 전에 **0건**(sentinel repo는 위 2행 제외). "flutter analyze OK"만 증거로 쓰지 않는다.
 - 실행 검증도 전체가 아니라 바뀐 부분만 타겟한다.
