@@ -136,9 +136,18 @@ class RiverpodRefAfterAsyncGapVisitor extends SimpleAstVisitor<void> {
   }
 
   void _scanMembers(Iterable<AstNode> members) {
-    for (final member in members) {
-      if (member is! MethodDeclaration) continue;
-      if (_isPrivate(member.name.lexeme)) continue;
+    final methods = [
+      for (final member in members)
+        if (member is MethodDeclaration) member,
+    ];
+    // Opt-in state tracking follows private methods. The default-on ref rule
+    // still skips them.
+    final syncPrivateStateTouches = _tracksState
+        ? _syncPrivateStateTouches(methods)
+        : const <String, _SyncPrivateStateTouch>{};
+
+    for (final member in methods) {
+      if (!_tracksState && _isPrivate(member.name.lexeme)) continue;
 
       final reportedRefCallOffsets = <int>{};
       if (member.body.isAsynchronous) {
@@ -146,6 +155,7 @@ class RiverpodRefAfterAsyncGapVisitor extends SimpleAstVisitor<void> {
           rule,
           tracking: tracking,
           reportedRefCallOffsets: reportedRefCallOffsets,
+          syncPrivateStateTouches: syncPrivateStateTouches,
         ).scan(member.body);
       }
 
@@ -154,9 +164,38 @@ class RiverpodRefAfterAsyncGapVisitor extends SimpleAstVisitor<void> {
           rule,
           tracking: tracking,
           reportedRefCallOffsets: reportedRefCallOffsets,
+          syncPrivateStateTouches: syncPrivateStateTouches,
         ),
       );
     }
+  }
+
+  bool get _tracksState => tracking.stateAssignments || tracking.stateReads;
+
+  /// Sync private methods whose own body reads or writes notifier `state`
+  /// outside a `ref.mounted` guard. Nested functions are ignored: a `Timer`
+  /// callback is reported when the private method itself is scanned, not
+  /// again at every call. A helper that guards every direct access is absent,
+  /// same as a public method whose body scan sees only guarded touches.
+  Map<String, _SyncPrivateStateTouch> _syncPrivateStateTouches(
+    List<MethodDeclaration> methods,
+  ) {
+    final probe = _AsyncRefAfterGapScanner(rule, tracking: tracking);
+    final touches = <String, _SyncPrivateStateTouch>{};
+    for (final method in methods) {
+      if (!_isPrivate(method.name.lexeme)) continue;
+      if (method.isGetter || method.isSetter || method.isOperator) continue;
+      if (method.body.isAsynchronous) continue;
+
+      probe._scannedBody = method.body;
+      final finder = _DirectStateTouchFinder(probe);
+      method.body.accept(finder);
+      if (!finder.unguardedReads && !finder.unguardedWrites) continue;
+      touches[method.name.lexeme] = _SyncPrivateStateTouch(
+        writes: finder.unguardedWrites,
+      );
+    }
+    return touches;
   }
 
   bool _shouldCheckFile(String filePath) {
@@ -176,12 +215,14 @@ class _AsyncCallbackScanner extends RecursiveAstVisitor<void> {
     this.rule, {
     required RefGapTracking tracking,
     Set<int>? reportedRefCallOffsets,
+    this.syncPrivateStateTouches = const {},
   }) : _tracking = tracking,
        _reportedRefCallOffsets = reportedRefCallOffsets ?? {};
 
   final AnalysisRule rule;
   final RefGapTracking _tracking;
   final Set<int> _reportedRefCallOffsets;
+  final Map<String, _SyncPrivateStateTouch> syncPrivateStateTouches;
   final Map<String, FunctionDeclaration> _localFunctions = {};
 
   @override
@@ -205,6 +246,7 @@ class _AsyncCallbackScanner extends RecursiveAstVisitor<void> {
         rule,
         tracking: _tracking,
         reportedRefCallOffsets: _reportedRefCallOffsets,
+        syncPrivateStateTouches: syncPrivateStateTouches,
       ).scan(node.body);
     }
 
@@ -276,6 +318,7 @@ class _AsyncCallbackScanner extends RecursiveAstVisitor<void> {
         tracking: _tracking,
         hasInheritedAsyncGap: true,
         reportedRefCallOffsets: _reportedRefCallOffsets,
+        syncPrivateStateTouches: syncPrivateStateTouches,
       ).scan(body);
     }
   }
@@ -331,6 +374,14 @@ String? _timerTypeNameFrom(Expression? target) {
   return null;
 }
 
+class _SyncPrivateStateTouch {
+  const _SyncPrivateStateTouch({required this.writes});
+
+  /// True when the method's own body assigns notifier `state`. A read-only
+  /// body keeps this false so the call is reported as a read.
+  final bool writes;
+}
+
 class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
   _AsyncRefAfterGapScanner(
     this.rule, {
@@ -339,6 +390,7 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     Map<String, FunctionDeclaration>? localFunctions,
     Set<String>? activeLocalFunctionNames,
     Set<int>? reportedRefCallOffsets,
+    this.syncPrivateStateTouches = const {},
   }) : _tracking = tracking,
        _hasInheritedAsyncGap = hasInheritedAsyncGap,
        _localFunctions = localFunctions ?? {},
@@ -351,9 +403,11 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
   final Map<String, FunctionDeclaration> _localFunctions;
   final Set<String> _activeLocalFunctionNames;
   final Set<int> _reportedRefCallOffsets;
+  final Map<String, _SyncPrivateStateTouch> syncPrivateStateTouches;
   final List<MethodInvocation> _refCalls = [];
   final List<AssignmentExpression> _stateAssignments = [];
   final List<SimpleIdentifier> _stateReads = [];
+  final List<MethodInvocation> _syncPrivateCalls = [];
   final List<AssignmentExpression> _reportedAssignments = [];
   final Set<int> _reportedReadStatementOffsets = {};
   FunctionBody? _scannedBody;
@@ -394,6 +448,22 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
         _reportStateRead(read);
       }
     }
+
+    if (syncPrivateStateTouches.isNotEmpty) {
+      for (final call in _syncPrivateCalls) {
+        // `state = _apply()` is the assignment finding. The helper call inside
+        // that RHS is the same site.
+        if (_isInsideReportedAssignment(call)) continue;
+        if (!_shouldReport(call)) continue;
+        final touch = syncPrivateStateTouches[call.methodName.name];
+        if (touch == null) continue;
+        if (touch.writes) {
+          _reportStateAssignment(call);
+        } else {
+          _reportStateRead(call);
+        }
+      }
+    }
   }
 
   bool _isInsideReportedAssignment(AstNode node) => _reportedAssignments.any(
@@ -432,8 +502,32 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     }
 
     _scanLocalFunctionInvocation(node);
+    _considerSyncPrivateStateCall(node);
 
     super.visitMethodInvocation(node);
+  }
+
+  /// `_apply()` / `this._apply()` after a gap, when that method is a sync
+  /// private method that touches notifier `state` in its own body outside a
+  /// `ref.mounted` guard. Async helpers, and sync helpers whose every direct
+  /// touch is guarded, are absent from [syncPrivateStateTouches]; async
+  /// bodies are scanned instead.
+  void _considerSyncPrivateStateCall(MethodInvocation node) {
+    if (syncPrivateStateTouches.isEmpty) return;
+    if (!_isImplicitThisCall(node)) return;
+    final name = node.methodName.name;
+    if (_localFunctions.containsKey(name)) return;
+    if (!syncPrivateStateTouches.containsKey(name)) return;
+    _syncPrivateCalls.add(node);
+  }
+
+  bool _isImplicitThisCall(MethodInvocation node) {
+    final target = _unwrapParens(node.target);
+    if (target == null) {
+      final real = _unwrapParens(node.realTarget);
+      return real == null || real is ThisExpression;
+    }
+    return target is ThisExpression;
   }
 
   @override
@@ -709,6 +803,10 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
   /// Dart evaluates left-to-right. `await foo() ?? state` and
   /// `use(await foo(), state)` read `state` after the gap; `state.foo(await x)`
   /// and `await foo(state)` evaluate `state` first and must not report.
+  /// An await inside the argument list of the call being reported
+  /// (`_apply(await fetch())`) is a descendant of that call, not a prior
+  /// sibling; [_shouldReport] treats it like an assignment RHS. A later
+  /// sibling (`use(_apply(), await fetch())`) stays quiet.
   /// Nested function bodies are ignored by [_subtreeHasAwait].
   ///
   /// One exception crosses an iteration boundary rather than staying within a
@@ -979,21 +1077,36 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     // await is always an unguardable gap for state assignments.
     final hasRhsAwait =
         node is AssignmentExpression && _subtreeHasAwait(node.rightHandSide);
+    // Arguments evaluate before the callee body. `_apply(await fetch())`
+    // touches state after that gap; `use(_apply(), await fetch())` does not,
+    // because the await is a later sibling rather than this call's arguments.
+    // A preceding `ref.mounted` guard cannot cover an await inside the
+    // argument list. Gated on state tracking so the default-on ref rule's
+    // diagnostics stay unchanged.
+    final hasArgumentAwait =
+        _tracking.stateReads &&
+        node is MethodInvocation &&
+        _subtreeHasAwait(node.argumentList);
     // Same-statement reads: `await foo() ?? state` is a gap; the default-on
     // ref rule does not use this path, so its diagnostics stay unchanged.
     final hasExpressionPriorAwait =
         _tracking.stateReads &&
-        node is SimpleIdentifier &&
+        (node is SimpleIdentifier || node is MethodInvocation) &&
         _hasExpressionPriorAwait(node);
     if (!_hasInheritedAsyncGap &&
         !hasRhsAwait &&
+        !hasArgumentAwait &&
         !hasExpressionPriorAwait &&
         !_hasPriorAsyncGap(node)) {
       return false;
     }
     // A preceding `ref.mounted` guard cannot protect a getter that runs
-    // after an await in the same expression (`await foo() ?? state`).
-    if (!hasRhsAwait && !hasExpressionPriorAwait && _isDisposalGuarded(node)) {
+    // after an await in the same expression (`await foo() ?? state`), nor a
+    // private call whose arguments await before the body runs.
+    if (!hasRhsAwait &&
+        !hasArgumentAwait &&
+        !hasExpressionPriorAwait &&
+        _isDisposalGuarded(node)) {
       return false;
     }
 
@@ -1242,6 +1355,7 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
         localFunctions: _localFunctions,
         activeLocalFunctionNames: _activeLocalFunctionNames,
         reportedRefCallOffsets: _reportedRefCallOffsets,
+        syncPrivateStateTouches: syncPrivateStateTouches,
       ).scan(body);
     } finally {
       _activeLocalFunctionNames.remove(functionName);
@@ -1259,7 +1373,7 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     );
   }
 
-  void _reportStateAssignment(AssignmentExpression assignment) {
+  void _reportStateAssignment(AstNode assignment) {
     rule.reportAtNode(
       assignment,
       arguments: [
@@ -1269,7 +1383,7 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     );
   }
 
-  void _reportStateRead(SimpleIdentifier read) {
+  void _reportStateRead(AstNode read) {
     rule.reportAtNode(
       read,
       arguments: [
@@ -1277,6 +1391,42 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
         'Guard right after the await ("await …; if (!ref.mounted) return;"), or capture the needed state values before the await.',
       ],
     );
+  }
+}
+
+/// Notifier `state` reads and writes in a method body, skipping nested
+/// functions. Used to decide whether a sync private call is itself a finding.
+/// A touch dominated by `ref.mounted` does not index the call.
+class _DirectStateTouchFinder extends RecursiveAstVisitor<void> {
+  _DirectStateTouchFinder(this._scanner);
+
+  final _AsyncRefAfterGapScanner _scanner;
+  bool unguardedReads = false;
+  bool unguardedWrites = false;
+
+  @override
+  void visitFunctionExpression(FunctionExpression node) {}
+
+  @override
+  void visitFunctionDeclaration(FunctionDeclaration node) {}
+
+  @override
+  void visitAssignmentExpression(AssignmentExpression node) {
+    final target = node.leftHandSide;
+    if (node.operator.lexeme == '=' &&
+        _scanner._isStateTarget(target) &&
+        !(target is SimpleIdentifier && _scanner._isShadowedState(target))) {
+      if (!_scanner._isDisposalGuarded(node)) unguardedWrites = true;
+    }
+    super.visitAssignmentExpression(node);
+  }
+
+  @override
+  void visitSimpleIdentifier(SimpleIdentifier node) {
+    if (_scanner._isStateRead(node) && !_scanner._isDisposalGuarded(node)) {
+      unguardedReads = true;
+    }
+    super.visitSimpleIdentifier(node);
   }
 }
 

@@ -392,11 +392,12 @@ plugins:
 - ❌ same-statement reads after an earlier `await` in evaluation order (`await foo() ?? state`, `use(await foo(), state)`). `state.foo(await x)` and `await foo(state)` are not reported — the getter runs first
 - ❌ reads in a body that runs after a control-flow await: `await for (…) { state… }`, `if (await …) { state… }`, `while (await …)`, `for (… in await list())`, a pattern `when` guard that awaits, and a preceding `await for` statement. A `ref.mounted` guard inside that body still applies
 - ❌ loop re-entry reads: a `do { … } while (state…)` condition after a body `await` (the condition genuinely runs after the body on every pass, including the first; a `ref.mounted` guard as the body's last statement still applies), and a `for (…; state…; … await …)` condition after an updater `await` (treated as after-gap even on the first pass, conservatively — the updater has not actually run yet then)
+- ❌ the same unguarded `state` reads and writes inside a private method, including after that method's own `await` and inside its `Timer` / `then` callbacks
+- ❌ an unguarded call to a sync private method whose own body reads or writes `state` outside a `ref.mounted` guard (one hop). The finding is the call. Arguments run before the body, so `_apply(await fetch())` is reported and a preceding `ref.mounted` guard does not cover that await; `use(_apply(), await fetch())` stays quiet because the await is a later argument. `await fetch(); _apply();` stays quiet when `_apply` guards every direct `state` access (`if (!ref.mounted) return;` or `if (ref.mounted) { … }`). A method that only calls another private method is not indexed, so `await fetch(); _outer();` stays quiet when only `_inner()` writes `state`. State access that exists only inside a nested function does not make the call a finding; a call to an async private method is not a finding at the call site
 - ✅ Access guarded by `if (!ref.mounted) return;` or `if (ref.mounted) { … }` placed right after the await
 - ✅ Locals / lambda parameters named `state` are not the notifier getter; `this.state` and `super.state` are still reported
-- ⚠️ Calls to private helpers that touch `state` are not followed (issue #158)
 - ⚠️ A `ref.mounted` guard at the end of a nested `do-while`'s body is not recognized as guarding a statement that follows the nested loop, or an outer loop's condition after it — only the nested do-while's *own* condition is checked. This is conservative (may over-report, never under-reports)
-- ✅ Generated files, tests, non-provider files, and private helper methods are skipped
+- ✅ Generated files, tests, and non-provider files are skipped
 
 **Example**:
 ```dart
