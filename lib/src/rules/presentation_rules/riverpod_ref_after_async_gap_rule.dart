@@ -803,6 +803,10 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
   /// Dart evaluates left-to-right. `await foo() ?? state` and
   /// `use(await foo(), state)` read `state` after the gap; `state.foo(await x)`
   /// and `await foo(state)` evaluate `state` first and must not report.
+  /// An await inside the argument list of the call being reported
+  /// (`_apply(await fetch())`) is a descendant of that call, not a prior
+  /// sibling; [_shouldReport] treats it like an assignment RHS. A later
+  /// sibling (`use(_apply(), await fetch())`) stays quiet.
   /// Nested function bodies are ignored by [_subtreeHasAwait].
   ///
   /// One exception crosses an iteration boundary rather than staying within a
@@ -1073,6 +1077,16 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
     // await is always an unguardable gap for state assignments.
     final hasRhsAwait =
         node is AssignmentExpression && _subtreeHasAwait(node.rightHandSide);
+    // Arguments evaluate before the callee body. `_apply(await fetch())`
+    // touches state after that gap; `use(_apply(), await fetch())` does not,
+    // because the await is a later sibling rather than this call's arguments.
+    // A preceding `ref.mounted` guard cannot cover an await inside the
+    // argument list. Gated on state tracking so the default-on ref rule's
+    // diagnostics stay unchanged.
+    final hasArgumentAwait =
+        _tracking.stateReads &&
+        node is MethodInvocation &&
+        _subtreeHasAwait(node.argumentList);
     // Same-statement reads: `await foo() ?? state` is a gap; the default-on
     // ref rule does not use this path, so its diagnostics stay unchanged.
     final hasExpressionPriorAwait =
@@ -1081,13 +1095,18 @@ class _AsyncRefAfterGapScanner extends RecursiveAstVisitor<void> {
         _hasExpressionPriorAwait(node);
     if (!_hasInheritedAsyncGap &&
         !hasRhsAwait &&
+        !hasArgumentAwait &&
         !hasExpressionPriorAwait &&
         !_hasPriorAsyncGap(node)) {
       return false;
     }
     // A preceding `ref.mounted` guard cannot protect a getter that runs
-    // after an await in the same expression (`await foo() ?? state`).
-    if (!hasRhsAwait && !hasExpressionPriorAwait && _isDisposalGuarded(node)) {
+    // after an await in the same expression (`await foo() ?? state`), nor a
+    // private call whose arguments await before the body runs.
+    if (!hasRhsAwait &&
+        !hasArgumentAwait &&
+        !hasExpressionPriorAwait &&
+        _isDisposalGuarded(node)) {
       return false;
     }
 

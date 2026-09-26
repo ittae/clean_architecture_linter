@@ -38,6 +38,9 @@ import 'riverpod_ref_after_async_gap_rule.dart';
 /// guard rules. A call to a sync private method is reported at the call site
 /// when its own body reads or writes `state` outside a `ref.mounted` guard
 /// (not inside a nested function, and not only by calling another method).
+/// Arguments run before that body, so `_apply(await fetch())` is a gap and
+/// `use(_apply(), await fetch())` is not. A preceding `ref.mounted` guard
+/// does not cover an await inside the argument list.
 /// A call to an async private method is not a finding at the call site; the
 /// method body is scanned for its own async gap.
 ///
