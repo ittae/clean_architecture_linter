@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.4](https://github.com/ittae/clean_architecture_linter/compare/v2.7.3...v2.7.4) (2026-09-26)
+
+
+### Bug Fixes
+
+* no_presentation_models가 presentation 파일에서만 ChangeNotifier를 보고한다 ([#175](https://github.com/ittae/clean_architecture_linter/issues/175)) ([6cb1414](https://github.com/ittae/clean_architecture_linter/commit/6cb14146d5c07f7b207c964e7242ffaa85890982))
+* riverpod_state_after_async_gap이 private 메서드의 await 뒤 state 접근을 보고한다 ([#177](https://github.com/ittae/clean_architecture_linter/issues/177)) ([bf65af4](https://github.com/ittae/clean_architecture_linter/commit/bf65af44bc627caa8d54abff31b9e65bfa1e9eca))
+
 ## [2.7.3](https://github.com/ittae/clean_architecture_linter/compare/v2.7.2...v2.7.3) (2026-09-25)
 
 
