@@ -2911,6 +2911,36 @@ class TodoNotifier extends _\$TodoNotifier {
       ]);
     });
 
+    test('does not report a two-hop sync private call', () async {
+      final result = await V2RuleHarness(rule: RiverpodStateAfterAsyncGapRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/providers/todo_notifier.dart': '''
+abstract class _\$TodoNotifier {}
+
+class TodoNotifier extends _\$TodoNotifier {
+  Future<void> start() async {
+    await fetch();
+    _outer();
+  }
+
+  void _outer() {
+    _inner();
+  }
+
+  void _inner() {
+    state = next;
+  }
+}
+''',
+            },
+            definingFile:
+                'lib/features/todo/presentation/providers/todo_notifier.dart',
+          );
+
+      result.expectNoDiagnostics();
+    });
+
     test('reports this._apply() after await at the call site', () async {
       final result = await V2RuleHarness(rule: RiverpodStateAfterAsyncGapRule())
           .analyze(
