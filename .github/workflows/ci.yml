@@ -134,14 +134,9 @@ jobs:
     - name: Convert coverage to LCOV
       run: dart pub global run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info --report-on=lib
 
-    # v3의 Node 업로더 다운로드가 ubuntu-latest에서 TLS handshake
-    # (SSL alert 40)로 실패한다. v7은 curl로 올린다. v7은 fail_ci_if_error
-    # 기본값이 false라, 업로드 실패가 잡을 통과하지 않게 true로 둔다.
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v7
+      uses: codecov/codecov-action@v3
       with:
-        disable_search: true
-        fail_ci_if_error: true
-        files: coverage/lcov.info
+        file: coverage/lcov.info
         flags: unittests
         name: codecov-umbrella
