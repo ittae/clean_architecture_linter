@@ -135,8 +135,13 @@ jobs:
       run: dart pub global run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info --report-on=lib
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v5
       with:
-        file: coverage/lcov.info
+        files: coverage/lcov.info
         flags: unittests
         name: codecov-umbrella
+        token: ${{ secrets.CODECOV_TOKEN }}
+        # v4+ rejects the v3 Node uploader, and tokenless upload is only for
+        # public-repo PRs from forks. A missing token or a Codecov-side outage
+        # must not fail this job; test and LCOV generation above still do.
+        fail_ci_if_error: false
