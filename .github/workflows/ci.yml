@@ -144,4 +144,7 @@ jobs:
         # v4+ rejects the v3 Node uploader, and tokenless upload is only for
         # public-repo PRs from forks. A missing token or a Codecov-side outage
         # must not fail this job; test and LCOV generation above still do.
+        # Targets and ignore paths live in codecov.yml and apply only after
+        # Codecov accepts an upload. A red codecov/patch status is a review
+        # signal, not a failure of this step.
         fail_ci_if_error: false

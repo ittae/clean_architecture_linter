@@ -1,0 +1,55 @@
+# Usage layer for the coverage upload in .github/workflows/ci.yml.
+# Codecov reads this file only after it accepts an upload. That workflow keeps
+# fail_ci_if_error: false, so a missing CODECOV_TOKEN or a Codecov outage does
+# not fail CI.
+#
+# Once an upload is accepted, codecov/patch is the review signal: 80% of
+# changed lines. A red patch means add tests for the changed production code
+# or document an exception. Treat that status as a warning until branch
+# protection requires codecov/patch. codecov/project compares to the base and
+# allows about a 1% drop.
+#
+# Folder ignore entries are paths. Codecov anchors them (^example/.*), so
+# "test/" does not drop lib/src/rules/cross_layer/test_coverage_rule.dart.
+# Production code stays measured: lib/main.dart (plugin registration),
+# lib/clean_architecture_linter.dart, and lib/src/**. The job already limits
+# LCOV with --report-on=lib.
+
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+    patch:
+      default:
+        target: 80%
+
+ignore:
+  # Not the published library. example/ is fixture input for lint semantics.
+  # poc_v2/ is a separate coexistence package (its own lib/).
+  - "example/"
+  - "poc_v2/"
+  # Tests, maintainer scripts, and docs. test/, tools/, doc/, and docs/ exist.
+  # integration_test/ does not; the linter already skips that path.
+  - "test/"
+  - "integration_test/"
+  - "tools/"
+  - "doc/"
+  - "docs/"
+  # Generated and build artifacts. Same suffixes and directories
+  # CleanArchitectureUtils excludes from lint analysis. Codecov compiles a
+  # pattern that contains `$` as a regex and matches it from the start of the
+  # path, so `\.g\.dart$` only hits a path that is exactly `.g.dart`. The
+  # `.*` prefix excludes generated files under `lib/`. No *.g.dart,
+  # *.freezed.dart, or *.mocks.dart files are in the tree today.
+  - '.*\.g\.dart$'
+  - '.*\.freezed\.dart$'
+  - '.*\.mocks\.dart$'
+  - '.*\.config\.dart$'
+  - '.*\.gr\.dart$'
+  - '.*\.localizely\.dart$'
+  - '.*\.pb\.dart$'
+  - "build/"
+  # Leading dot must stay a regex so Codecov does not treat it as "any char".
+  - '^\.dart_tool/'
