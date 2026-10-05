@@ -134,9 +134,14 @@ jobs:
     - name: Convert coverage to LCOV
       run: dart pub global run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info --report-on=lib
 
+    # v1–v3 download the legacy Node uploader. That host rejects the TLS
+    # handshake (SSL alert 40) and the action exits 1 before
+    # fail_ci_if_error can apply. v4+ uses the Codecov CLI.
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v7
       with:
-        file: coverage/lcov.info
+        files: coverage/lcov.info
+        disable_search: true
         flags: unittests
         name: codecov-umbrella
+        fail_ci_if_error: true
