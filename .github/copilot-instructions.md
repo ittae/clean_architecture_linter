@@ -48,8 +48,8 @@
 ## PR 작성 규율 (public package)
 <!-- BEGIN agent-pr-discipline (managed) -->
 - `clean_architecture_linter`는 public package다. branch, commit, PR title/body/comment, release note 등 public GitHub metadata에 private Multica `ITT-*` key를 넣지 않는다.
-- PR 본문은 org template를 사용하고 workspace `pr-fetch-template-ittae.sh` → validate → `pr-create-ittae.sh --body-file` 경로로 생성한다. private issue 연결란은 `해당 없음`으로 명시한다.
-- 실제 검증 명령·결과와 미검증 범위, public API/lint semantics risk, rollback을 본문에 기록한다.
+- PR 본문은 org template를 사용하고 workspace `pr-fetch-template-ittae.sh` → validate → `pr-create-ittae.sh --body-file` 경로로 생성한다. 렌더되는 본문 섹션은 요약, 목표 / 이유, 실제 동작 증거, 범위 밖이다. 그 외 섹션은 해당하지 않으면 지우고, "미확인" 또는 "해당 없음"으로 빈칸을 채우지 않는다.
+- 실제 검증 명령, 관측한 결과, 검증하지 않은 영역은 실제 동작 증거에 기록한다. 위험을 적어야 하면 범위 밖 또는 실제 동작 증거에 한 줄이면 된다.
 - PR은 ready까지 전환하되 agent가 merge, approve, force-push, protection 변경을 하지 않는다. 이 package는 human merge only다.
 <!-- END agent-pr-discipline -->
 
