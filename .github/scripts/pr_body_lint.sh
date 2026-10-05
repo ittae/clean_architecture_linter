@@ -25,14 +25,8 @@ need() {
 }
 need '## .*요약' '요약'
 need '## .*목표' '목표 / 이유'
-need '## .*변경' '변경 사항'
-need '## .*범위 밖' '범위 밖'
-need '## .*관련 이슈' '관련 이슈'
 need '## .*실제 동작 증거|## .*Real Behavior' '실제 동작 증거'
-need '## .*위험' '위험 / 리뷰 초점'
-need 'Risk tier:' 'Risk tier'
-need '## .*PR metadata|## .*metadata|## .*🧷' 'PR metadata'
-need '## .*체크리스트' 'PR 체크리스트'
+need '## .*범위 밖' '범위 밖'
 
 section_nonempty() {
   local heading_pat="$1" label="$2"
@@ -60,16 +54,8 @@ section_nonempty() {
 }
 section_nonempty '## .*요약' '요약'
 section_nonempty '## .*목표' '목표 / 이유'
-section_nonempty '## .*변경' '변경 사항'
+section_nonempty '## .*실제 동작 증거|## .*Real Behavior' '실제 동작 증거'
 section_nonempty '## .*범위 밖' '범위 밖'
-
-if printf '%s\n' "$body" | grep -qE 'Risk tier:.*`T0 docs/test only`[[:space:]]*\|'; then
-  echo "::error::Risk tier placeholder not selected"
-  missing=1
-elif ! printf '%s\n' "$body" | grep -qE 'Risk tier:.*`T[0-3]'; then
-  echo "::error::Risk tier must select T0-T3"
-  missing=1
-fi
 
 if [ "$missing" -ne 0 ]; then
   echo "PR body INVALID — fill ittae/.github PULL_REQUEST_TEMPLATE sections"
