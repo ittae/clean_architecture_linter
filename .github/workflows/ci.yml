@@ -12,7 +12,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Setup Dart SDK
       uses: dart-lang/setup-dart@v1
@@ -64,7 +64,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     # Dart-less fast-fail: missing/unknown slices fail before dart-lang/setup-dart.
     - name: Verify slice contract declarations
@@ -87,7 +87,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Verify no GHA AI-review wait caller
       run: bash tools/verify_no_wait_caller.sh
@@ -100,7 +100,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Run host SoT helper units
       run: |
@@ -115,7 +115,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Setup Dart SDK
       uses: dart-lang/setup-dart@v1
