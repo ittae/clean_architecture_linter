@@ -267,6 +267,12 @@ class _LayerDependencyVisitor extends SimpleAstVisitor<void> {
   bool _isDependencyInjectionFile(String filePath) {
     final normalizedPath = filePath.replaceAll('\\', '/').toLowerCase();
 
+    // Match the entrypoint file name exactly. A bare `main.dart` substring
+    // also matches `remain.dart` and `domain_main.dart` (`endsWith` /
+    // `contains`), which then skip layer checks.
+    final fileName = normalizedPath.split('/').last;
+    if (fileName == 'main.dart') return true;
+
     const diPatterns = [
       '/providers.dart',
       '/provider.dart',
@@ -279,7 +285,6 @@ class _LayerDependencyVisitor extends SimpleAstVisitor<void> {
       '/get_it.dart',
       '/locator.dart',
       '/service_locator.dart',
-      'main.dart',
     ];
 
     return diPatterns.any(
