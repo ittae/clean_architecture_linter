@@ -81,6 +81,94 @@ class TodoModel {}
       result.expectNoDiagnostics();
     });
 
+    test(
+      'reports layer violations when the file name only contains main.dart',
+      () async {
+        final result = await V2RuleHarness(rule: LayerDependencyRule()).analyze(
+          files: {
+            'lib/features/todo/presentation/pages/remain.dart': '''
+import '../../data/repositories/todo_repository_impl.dart';
+
+class RemainPage {}
+''',
+            'lib/features/todo/presentation/pages/domain_main.dart': '''
+import '../../data/repositories/todo_repository_impl.dart';
+
+class DomainMainPage {}
+''',
+            'lib/features/todo/data/repositories/todo_repository_impl.dart': '''
+class TodoRepositoryImpl {}
+''',
+          },
+          definingFile: 'lib/features/todo/presentation/pages/remain.dart',
+          additionalDefiningFiles: [
+            'lib/features/todo/presentation/pages/domain_main.dart',
+          ],
+        );
+
+        result.expectDiagnostics([
+          const ExpectedV2Diagnostic(
+            relativePath: 'lib/features/todo/presentation/pages/remain.dart',
+            codeName: 'layer_dependency',
+            line: 1,
+            problemMessage:
+                'Layer dependency violation: Presentation layer should not directly depend on Data layer. Found import: ../../data/repositories/todo_repository_impl.dart',
+          ),
+          const ExpectedV2Diagnostic(
+            relativePath:
+                'lib/features/todo/presentation/pages/domain_main.dart',
+            codeName: 'layer_dependency',
+            line: 1,
+            problemMessage:
+                'Layer dependency violation: Presentation layer should not directly depend on Data layer. Found import: ../../data/repositories/todo_repository_impl.dart',
+          ),
+        ]);
+      },
+    );
+
+    test('still treats lib/main.dart as a DI entrypoint', () async {
+      final allowed = await V2RuleHarness(rule: LayerDependencyRule()).analyze(
+        files: {
+          'lib/main.dart': '''
+import 'features/todo/data/repositories/todo_repository_impl.dart';
+
+void main() {}
+''',
+          'lib/features/todo/data/repositories/todo_repository_impl.dart': '''
+class TodoRepositoryImpl {}
+''',
+        },
+        definingFile: 'lib/main.dart',
+      );
+
+      allowed.expectNoDiagnostics();
+
+      final modelImport = await V2RuleHarness(rule: LayerDependencyRule())
+          .analyze(
+            files: {
+              'lib/main.dart': '''
+import 'features/todo/data/models/todo_model.dart';
+
+void main() {}
+''',
+              'lib/features/todo/data/models/todo_model.dart': '''
+class TodoModel {}
+''',
+            },
+            definingFile: 'lib/main.dart',
+          );
+
+      modelImport.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath: 'lib/main.dart',
+          codeName: 'layer_dependency',
+          line: 1,
+          problemMessage:
+              'Layer dependency violation: Data Models should not be imported even in DI/Provider files. Found import: features/todo/data/models/todo_model.dart',
+        ),
+      ]);
+    });
+
     test('ignores cross-cutting dart imports', () async {
       final result = await V2RuleHarness(rule: LayerDependencyRule()).analyze(
         files: {
