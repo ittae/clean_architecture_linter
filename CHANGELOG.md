@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0](https://github.com/ittae/clean_architecture_linter/compare/v2.7.5...v2.8.0) (2026-10-08)
+
+
+### Features
+
+* 확장 @Dependencies가 notifier 런타임 스코프를 벗어나면 보고한다 ([#188](https://github.com/ittae/clean_architecture_linter/issues/188)) ([0073892](https://github.com/ittae/clean_architecture_linter/commit/0073892bf04e1f94d26b75bdaa1c92733853d810))
+
 ## [2.7.5](https://github.com/ittae/clean_architecture_linter/compare/v2.7.4...v2.7.5) (2026-10-07)
 
 
