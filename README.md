@@ -165,18 +165,18 @@ See `docs/config/RECOMMENDED_SETUP.md` for details.
 
 ## 🧩 Compatibility — analyzer 14 / Riverpod 3+
 
-Verified consumer matrix (2026-09-04, maintainer SDK + flagship `ittae` lockfile):
+Verified in this repo on 2026-10-08. The Dart fixture [`poc_v2/consumer_riverpod_lint`](poc_v2/consumer_riverpod_lint) (Dart SDK 3.13.5) still reported only `presentation_no_throw` and `riverpod_state_after_async_gap`, and `ref.watch(provider.listenable)` in `build()` added no `riverpod_ref_usage` diagnostic. The Flutter fixture [`poc_v2/consumer_flutter_riverpod`](poc_v2/consumer_flutter_riverpod) (Flutter **3.47.6**, Dart **3.13.5**) depends on `flutter_riverpod` **3.4.3**. `dart analyze` reported one `riverpod_ref_usage` on `ref.read` inside a notifier `build()`, and the `ConsumerWidget` that uses `ref.watch` in `build()` stayed clean.
 
 | Line | Version |
 | --- | --- |
-| Flutter | **3.47.2** (Dart **3.13.2**) |
-| `riverpod` / `flutter_riverpod` | **3.3.2** |
-| `riverpod_generator` / `riverpod_annotation` | **4.0.4** / **4.0.3** |
-| `riverpod_lint` (resolved in the plugin host from `^3.1.3`) | **3.1.9** |
+| `riverpod` | **3.4.3** |
+| `flutter_riverpod` | **3.4.3** (Flutter **3.47.6** / Dart **3.13.5**, 2026-10-08) |
+| `riverpod_annotation` / `riverpod_generator` | **4.0.7** / **4.0.9** |
+| `riverpod_lint` (plugin host, from `^3.1.9`) | **3.1.9** (depends on `riverpod` 3.4.3) |
+| analyzer / `analysis_server_plugin` (plugin host) | **14.5.0** / **0.3.24** |
+| flagship `ittae` lockfile (2026-09-04, not re-checked here) | `riverpod` / `flutter_riverpod` **3.3.2**, `riverpod_generator` / `riverpod_annotation` **4.0.4** / **4.0.3**, Flutter **3.47.2** (Dart **3.13.2**) |
 
-pub.dev latest Riverpod **3.4.2** is not in this verified set.
-
-The package runs on the official `analysis_server_plugin` (`>=0.3.22 <0.3.23`), which pins analyzer **14.3.0**; the declared analyzer range `>=14.3.0 <15.0.0` therefore resolves to 14.3.0 today and is kept open for the next ASP bump. `analysis_server_plugin 0.3.20` fixed the "dart analyze could spin indefinitely" hang that kept 2.4.x on `0.3.15` / analyzer 13. Coexistence with `riverpod_lint` in one plugin synthetic package requires `riverpod_lint 3.1.9` (analyzer `>=13.0.0 <15.0.0`, Dart `>=3.13.0`); on Dart 3.12.x a consumer whose `riverpod_lint` constraint still admits 3.1.8 or older (for example `^3.1.3`) is silently resolved back to `clean_architecture_linter 2.4.0`, while `^3.1.9` fails to solve outright below Dart 3.13 because of its SDK bound. Verified 2026-09-04 on Dart 3.13.2: the flagship `ittae` tree (with `riverpod_lint ^3.1.3`) analyzes in 29–40 s (2.4.0: 20–38 s) with no hang across three consecutive runs.
+The package depends on `analysis_server_plugin: ^0.3.23` and `analyzer: >=14.3.0 <15.0.0`. The 2026-10-08 consumer run above resolved `analysis_server_plugin` **0.3.24** and analyzer **14.5.0**. `analysis_server_plugin 0.3.20` fixed the "dart analyze could spin indefinitely" hang that kept 2.4.x on `0.3.15` / analyzer 13. Coexistence with `riverpod_lint` in one plugin synthetic package requires `riverpod_lint 3.1.9` (analyzer `>=13.0.0 <15.0.0`, Dart `>=3.13.0`); on Dart 3.12.x a consumer whose `riverpod_lint` constraint still admits 3.1.8 or older (for example `^3.1.3`) is silently resolved back to `clean_architecture_linter 2.4.0`, while `^3.1.9` fails to solve outright below Dart 3.13 because of its SDK bound. Verified 2026-09-04 on Dart 3.13.2: the flagship `ittae` tree (with `riverpod_lint ^3.1.3`) analyzes in 29–40 s (2.4.0: 20–38 s) with no hang across three consecutive runs.
 
 This line also closes a silent-loss bug in the 2.4.x line. With `analysis_server_plugin 0.3.15` the plugin reported *idle* to the analysis server between its first file and its full pass, so `dart analyze` (which stops collecting at the first idle status) returned with zero or partial plugin diagnostics and exit code 0: on this package's fixtures 11 of 20 runs (2-row fixture) and 7 of 10 runs (16-row fixture) lost rows, and 15 of 15 did under parallel load. `analysis_server_plugin 0.3.16` reworked the plugin server so its status follows the analysis driver; on 0.3.22 the same fixtures delivered every row in 55 of 55 `dart analyze` runs, including 15 under the same load. See `tools/verify_analyze_parity.sh` for the CI guard that still verifies delivery.
 

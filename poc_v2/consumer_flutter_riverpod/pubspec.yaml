@@ -1,0 +1,15 @@
+name: clean_architecture_linter_consumer_flutter_riverpod
+publish_to: none
+description: Small Flutter consumer that checks flutter_riverpod 3.4.3 with the plugin.
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: 3.4.3
+  riverpod_annotation: 4.0.7
+
+dev_dependencies:
+  riverpod_generator: 4.0.9
