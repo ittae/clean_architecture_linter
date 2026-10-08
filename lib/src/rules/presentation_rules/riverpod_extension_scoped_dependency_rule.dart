@@ -98,10 +98,7 @@ class RiverpodExtensionScopedDependencyRule extends AnalysisRule {
     RuleVisitorRegistry registry,
     RuleContext context,
   ) {
-    registry.addExtensionDeclaration(
-      this,
-      _Visitor(this, context),
-    );
+    registry.addExtensionDeclaration(this, _Visitor(this, context));
   }
 }
 
@@ -180,7 +177,9 @@ class _Visitor extends SimpleAstVisitor<void> {
   /// The `@Dependencies(...)` annotation in [metadata], or `null`.
   Annotation? _dependenciesAnnotation(Iterable<Annotation> metadata) {
     for (final annotation in metadata) {
-      if (_annotationSimpleName(annotation) == 'Dependencies') return annotation;
+      if (_annotationSimpleName(annotation) == 'Dependencies') {
+        return annotation;
+      }
     }
     return null;
   }

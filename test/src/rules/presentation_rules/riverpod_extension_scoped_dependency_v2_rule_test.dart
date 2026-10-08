@@ -29,11 +29,12 @@ void main() {
       'reports when a part extension @Dependencies is not in the notifier scope',
       () async {
         final result =
-            await V2RuleHarness(rule: RiverpodExtensionScopedDependencyRule())
-                .analyze(
-                  files: {
-                    'lib/features/todo/presentation/providers/pomodoro_notifier.dart':
-                        '''
+            await V2RuleHarness(
+              rule: RiverpodExtensionScopedDependencyRule(),
+            ).analyze(
+              files: {
+                'lib/features/todo/presentation/providers/pomodoro_notifier.dart':
+                    '''
 $_fakes
 
 part 'pomodoro_notifier_helpers.dart';
@@ -41,17 +42,17 @@ part 'pomodoro_notifier_helpers.dart';
 @Riverpod(dependencies: [toggleTodo])
 class PomodoroNotifier {}
 ''',
-                    'lib/features/todo/presentation/providers/pomodoro_notifier_helpers.dart':
-                        '''
+                'lib/features/todo/presentation/providers/pomodoro_notifier_helpers.dart':
+                    '''
 part of 'pomodoro_notifier.dart';
 
 @Dependencies([executeRoutine, manageReminder])
 extension PomodoroNotifierHelpers on PomodoroNotifier {}
 ''',
-                  },
-                  definingFile:
-                      'lib/features/todo/presentation/providers/pomodoro_notifier.dart',
-                );
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/pomodoro_notifier.dart',
+            );
 
         result.expectDiagnostics([
           const ExpectedV2Diagnostic(
@@ -77,11 +78,12 @@ extension PomodoroNotifierHelpers on PomodoroNotifier {}
 
     test('does not report when the extension deps are a subset', () async {
       final result =
-          await V2RuleHarness(rule: RiverpodExtensionScopedDependencyRule())
-              .analyze(
-                files: {
-                  'lib/features/todo/presentation/providers/pomodoro_notifier.dart':
-                      '''
+          await V2RuleHarness(
+            rule: RiverpodExtensionScopedDependencyRule(),
+          ).analyze(
+            files: {
+              'lib/features/todo/presentation/providers/pomodoro_notifier.dart':
+                  '''
 $_fakes
 
 part 'pomodoro_notifier_helpers.dart';
@@ -89,31 +91,30 @@ part 'pomodoro_notifier_helpers.dart';
 @Riverpod(dependencies: [executeRoutine, manageReminder, toggleTodo])
 class PomodoroNotifier {}
 ''',
-                  'lib/features/todo/presentation/providers/pomodoro_notifier_helpers.dart':
-                      '''
+              'lib/features/todo/presentation/providers/pomodoro_notifier_helpers.dart':
+                  '''
 part of 'pomodoro_notifier.dart';
 
 @Dependencies([executeRoutine, manageReminder])
 extension PomodoroNotifierHelpers on PomodoroNotifier {}
 ''',
-                },
-                definingFile:
-                    'lib/features/todo/presentation/providers/pomodoro_notifier.dart',
-              );
+            },
+            definingFile:
+                'lib/features/todo/presentation/providers/pomodoro_notifier.dart',
+          );
 
       result.expectNoDiagnostics();
     });
 
-    test(
-      'does not report when the notifier has no dependencies argument '
-      '(not scoped)',
-      () async {
-        final result =
-            await V2RuleHarness(rule: RiverpodExtensionScopedDependencyRule())
-                .analyze(
-                  files: {
-                    'lib/features/todo/presentation/providers/pomodoro_notifier.dart':
-                        '''
+    test('does not report when the notifier has no dependencies argument '
+        '(not scoped)', () async {
+      final result =
+          await V2RuleHarness(
+            rule: RiverpodExtensionScopedDependencyRule(),
+          ).analyze(
+            files: {
+              'lib/features/todo/presentation/providers/pomodoro_notifier.dart':
+                  '''
 $_fakes
 
 part 'pomodoro_notifier_helpers.dart';
@@ -121,32 +122,30 @@ part 'pomodoro_notifier_helpers.dart';
 @Riverpod()
 class PomodoroNotifier {}
 ''',
-                    'lib/features/todo/presentation/providers/pomodoro_notifier_helpers.dart':
-                        '''
+              'lib/features/todo/presentation/providers/pomodoro_notifier_helpers.dart':
+                  '''
 part of 'pomodoro_notifier.dart';
 
 @Dependencies([executeRoutine])
 extension PomodoroNotifierHelpers on PomodoroNotifier {}
 ''',
-                  },
-                  definingFile:
-                      'lib/features/todo/presentation/providers/pomodoro_notifier.dart',
-                );
+            },
+            definingFile:
+                'lib/features/todo/presentation/providers/pomodoro_notifier.dart',
+          );
 
-        result.expectNoDiagnostics();
-      },
-    );
+      result.expectNoDiagnostics();
+    });
 
-    test(
-      'does not report when the notifier only specifies keepAlive '
-      '(no dependencies argument)',
-      () async {
-        final result =
-            await V2RuleHarness(rule: RiverpodExtensionScopedDependencyRule())
-                .analyze(
-                  files: {
-                    'lib/features/todo/presentation/providers/pomodoro_notifier.dart':
-                        '''
+    test('does not report when the notifier only specifies keepAlive '
+        '(no dependencies argument)', () async {
+      final result =
+          await V2RuleHarness(
+            rule: RiverpodExtensionScopedDependencyRule(),
+          ).analyze(
+            files: {
+              'lib/features/todo/presentation/providers/pomodoro_notifier.dart':
+                  '''
 $_fakes
 
 part 'pomodoro_notifier_helpers.dart';
@@ -154,30 +153,31 @@ part 'pomodoro_notifier_helpers.dart';
 @Riverpod(keepAlive: true)
 class PomodoroNotifier {}
 ''',
-                    'lib/features/todo/presentation/providers/pomodoro_notifier_helpers.dart':
-                        '''
+              'lib/features/todo/presentation/providers/pomodoro_notifier_helpers.dart':
+                  '''
 part of 'pomodoro_notifier.dart';
 
 @Dependencies([executeRoutine])
 extension PomodoroNotifierHelpers on PomodoroNotifier {}
 ''',
-                  },
-                  definingFile:
-                      'lib/features/todo/presentation/providers/pomodoro_notifier.dart',
-                );
+            },
+            definingFile:
+                'lib/features/todo/presentation/providers/pomodoro_notifier.dart',
+          );
 
-        result.expectNoDiagnostics();
-      },
-    );
+      result.expectNoDiagnostics();
+    });
 
-    test('reports a same-file extension (cross-unit lookup covers same unit)',
-        () async {
-      final result =
-          await V2RuleHarness(rule: RiverpodExtensionScopedDependencyRule())
-              .analyze(
-                files: {
-                  'lib/features/todo/presentation/providers/pomodoro_notifier.dart':
-                      '''
+    test(
+      'reports a same-file extension (cross-unit lookup covers same unit)',
+      () async {
+        final result =
+            await V2RuleHarness(
+              rule: RiverpodExtensionScopedDependencyRule(),
+            ).analyze(
+              files: {
+                'lib/features/todo/presentation/providers/pomodoro_notifier.dart':
+                    '''
 $_fakes
 
 @Riverpod(dependencies: [toggleTodo])
@@ -186,42 +186,10 @@ class PomodoroNotifier {}
 @Dependencies([executeRoutine])
 extension PomodoroNotifierHelpers on PomodoroNotifier {}
 ''',
-                },
-                definingFile:
-                    'lib/features/todo/presentation/providers/pomodoro_notifier.dart',
-              );
-
-      result.expectDiagnostics([
-        const ExpectedV2Diagnostic(
-          relativePath:
-              'lib/features/todo/presentation/providers/pomodoro_notifier.dart',
-          codeName: 'riverpod_extension_scoped_dependency',
-        ),
-      ]);
-    });
-
-    test(
-      'reports against an empty but present dependencies list '
-      '(empty scope is still scoped)',
-      () async {
-        final result =
-            await V2RuleHarness(rule: RiverpodExtensionScopedDependencyRule())
-                .analyze(
-                  files: {
-                    'lib/features/todo/presentation/providers/pomodoro_notifier.dart':
-                        '''
-$_fakes
-
-@Riverpod(dependencies: [])
-class PomodoroNotifier {}
-
-@Dependencies([executeRoutine])
-extension PomodoroNotifierHelpers on PomodoroNotifier {}
-''',
-                  },
-                  definingFile:
-                      'lib/features/todo/presentation/providers/pomodoro_notifier.dart',
-                );
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/pomodoro_notifier.dart',
+            );
 
         result.expectDiagnostics([
           const ExpectedV2Diagnostic(
@@ -233,14 +201,47 @@ extension PomodoroNotifierHelpers on PomodoroNotifier {}
       },
     );
 
-    test('does not report when the extended class has no @Riverpod annotation',
-        () async {
+    test('reports against an empty but present dependencies list '
+        '(empty scope is still scoped)', () async {
       final result =
-          await V2RuleHarness(rule: RiverpodExtensionScopedDependencyRule())
-              .analyze(
-                files: {
-                  'lib/features/todo/presentation/providers/pomodoro_notifier_helpers.dart':
-                      '''
+          await V2RuleHarness(
+            rule: RiverpodExtensionScopedDependencyRule(),
+          ).analyze(
+            files: {
+              'lib/features/todo/presentation/providers/pomodoro_notifier.dart':
+                  '''
+$_fakes
+
+@Riverpod(dependencies: [])
+class PomodoroNotifier {}
+
+@Dependencies([executeRoutine])
+extension PomodoroNotifierHelpers on PomodoroNotifier {}
+''',
+            },
+            definingFile:
+                'lib/features/todo/presentation/providers/pomodoro_notifier.dart',
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath:
+              'lib/features/todo/presentation/providers/pomodoro_notifier.dart',
+          codeName: 'riverpod_extension_scoped_dependency',
+        ),
+      ]);
+    });
+
+    test(
+      'does not report when the extended class has no @Riverpod annotation',
+      () async {
+        final result =
+            await V2RuleHarness(
+              rule: RiverpodExtensionScopedDependencyRule(),
+            ).analyze(
+              files: {
+                'lib/features/todo/presentation/providers/pomodoro_notifier_helpers.dart':
+                    '''
 $_fakes
 
 @Dependencies([executeRoutine])
@@ -248,14 +249,15 @@ extension PomodoroNotifierHelpers on PomodoroNotifier {}
 
 class PomodoroNotifier {}
 ''',
-                },
-                definingFile:
-                    'lib/features/todo/presentation/providers/pomodoro_notifier_helpers.dart',
-              );
+              },
+              definingFile:
+                  'lib/features/todo/presentation/providers/pomodoro_notifier_helpers.dart',
+            );
 
-      // PomodoroNotifier has no @Riverpod annotation at all -> not scoped, so
-      // there is no runtime scope list to compare against.
-      result.expectNoDiagnostics();
-    });
+        // PomodoroNotifier has no @Riverpod annotation at all -> not scoped, so
+        // there is no runtime scope list to compare against.
+        result.expectNoDiagnostics();
+      },
+    );
   });
 }
