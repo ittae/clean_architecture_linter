@@ -357,6 +357,189 @@ class PomodoroNotifier {
       },
     );
 
+    test(
+      'does not flag a timer cancelled through this.ref.onDispose',
+      () async {
+        final result =
+            await V2RuleHarness(
+              rule: RiverpodUncancelledDisposableRule(),
+            ).analyze(
+              files: {
+                _path: '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class PomodoroNotifier {
+  Future<void> build() async {
+    final timer = Timer.periodic(const Duration(seconds: 1), (_) {});
+    this.ref.onDispose(() {
+      timer.cancel();
+    });
+  }
+}
+''',
+              },
+              definingFile: _path,
+            );
+
+        result.expectNoDiagnostics();
+      },
+    );
+
+    test('does not flag this.timer.cancel inside onDispose', () async {
+      final result =
+          await V2RuleHarness(
+            rule: RiverpodUncancelledDisposableRule(),
+          ).analyze(
+            files: {
+              _path: '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class PomodoroNotifier {
+  Timer? timer;
+
+  Future<void> build() async {
+    timer = Timer.periodic(const Duration(seconds: 1), (_) {});
+    ref.onDispose(() {
+      this.timer.cancel();
+    });
+  }
+}
+''',
+            },
+            definingFile: _path,
+          );
+
+      result.expectNoDiagnostics();
+    });
+
+    test('flags timer.start with a positional callback', () async {
+      final result =
+          await V2RuleHarness(
+            rule: RiverpodUncancelledDisposableRule(),
+          ).analyze(
+            files: {
+              _path: '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class PomodoroNotifier {
+  Future<void> build() async {
+    final timer = ref.watch(timerServiceProvider);
+    timer.start(() {});
+  }
+}
+''',
+            },
+            definingFile: _path,
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath: _path,
+          codeName: 'riverpod_uncancelled_disposable',
+          problemMessage:
+              'Timer/resource "timer" is started but not cancelled in ref.onDispose.',
+        ),
+      ]);
+    });
+
+    test('flags an unassigned Timer constructor call', () async {
+      final result =
+          await V2RuleHarness(
+            rule: RiverpodUncancelledDisposableRule(),
+          ).analyze(
+            files: {
+              _path: '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class PomodoroNotifier {
+  Future<void> build() async {
+    Timer(const Duration(seconds: 1), () {});
+  }
+}
+''',
+            },
+            definingFile: _path,
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath: _path,
+          codeName: 'riverpod_uncancelled_disposable',
+          problemMessage:
+              'Timer/resource is started but not cancelled in ref.onDispose.',
+        ),
+      ]);
+    });
+
+    test(
+      'flags a resolved Timer constructor that build does not cancel',
+      () async {
+        final result =
+            await V2RuleHarness(
+              rule: RiverpodUncancelledDisposableRule(),
+            ).analyze(
+              files: {
+                _path: '''
+class riverpod {
+  const riverpod();
+}
+
+class Timer {
+  Timer(Duration duration, void Function() callback);
+  Timer.periodic(Duration duration, void Function(Object tick) callback);
+  void cancel() {}
+}
+
+class Duration {
+  const Duration({this.seconds = 0});
+  final int seconds;
+}
+
+@riverpod
+class PomodoroNotifier {
+  Future<void> build() async {
+    final timer = Timer.periodic(const Duration(seconds: 1), (_) {});
+    final kept = Timer.periodic(const Duration(seconds: 1), (_) {});
+    Timer(const Duration(seconds: 1), () {});
+    ref.onDispose(() {
+      timer.cancel();
+    });
+  }
+}
+''',
+              },
+              definingFile: _path,
+            );
+
+        result.expectDiagnostics([
+          const ExpectedV2Diagnostic(
+            relativePath: _path,
+            codeName: 'riverpod_uncancelled_disposable',
+            problemMessage:
+                'Timer/resource "kept" is started but not cancelled in ref.onDispose.',
+          ),
+          const ExpectedV2Diagnostic(
+            relativePath: _path,
+            codeName: 'riverpod_uncancelled_disposable',
+            problemMessage:
+                'Timer/resource is started but not cancelled in ref.onDispose.',
+          ),
+        ]);
+      },
+    );
+
     test('skips non-provider files', () async {
       const widgetPath =
           'lib/features/pomodoro/presentation/widgets/pomodoro_widget.dart';

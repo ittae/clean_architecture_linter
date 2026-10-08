@@ -186,5 +186,82 @@ class TodoRepositoryImpl {}
 
       result.expectNoDiagnostics();
     });
+
+    test('reports direct models, repository implementations, and sqflite', () async {
+      const repo = 'lib/features/todo/domain/repositories/todo_repository.dart';
+      final result = await V2RuleHarness(rule: RepositoryInterfaceRule())
+          .analyze(
+            files: {
+              repo: '''
+import 'package:sqflite/sqflite.dart';
+
+abstract class TodoRepository {
+  UserModel getUser();
+  void save(UserModel user);
+}
+
+class GetTodoUseCase {
+  final TodoRepositoryImpl repository;
+  GetTodoUseCase(TodoRepositoryImpl other);
+}
+
+class UserModel {}
+class TodoRepositoryImpl {}
+''',
+            },
+            definingFile: repo,
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath: repo,
+          codeName: 'repository_interface',
+          problemMessage:
+              'Direct infrastructure dependency detected in domain repository',
+          correctionMessage:
+              'Use repository abstractions instead of direct infrastructure dependencies.',
+        ),
+        const ExpectedV2Diagnostic(
+          relativePath: repo,
+          codeName: 'repository_interface',
+          problemMessage:
+              'Repository method returns data layer model: UserModel',
+          correctionMessage:
+              'Repository methods should return domain entities, not data models.',
+        ),
+        const ExpectedV2Diagnostic(
+          relativePath: repo,
+          codeName: 'repository_interface',
+          problemMessage:
+              'Repository method parameter uses data layer model: UserModel',
+          correctionMessage:
+              'Repository method parameters should use domain entities, not data models.',
+        ),
+        const ExpectedV2Diagnostic(
+          relativePath: repo,
+          codeName: 'repository_interface',
+          problemMessage:
+              'Repository in domain layer should be abstract: TodoRepositoryImpl',
+          correctionMessage:
+              'Make repository abstract or move implementation to data layer.',
+        ),
+        const ExpectedV2Diagnostic(
+          relativePath: repo,
+          codeName: 'repository_interface',
+          problemMessage:
+              'Field depends on concrete repository implementation: TodoRepositoryImpl',
+          correctionMessage:
+              'Use abstract repository interface instead of concrete implementation.',
+        ),
+        const ExpectedV2Diagnostic(
+          relativePath: repo,
+          codeName: 'repository_interface',
+          problemMessage:
+              'Constructor depends on concrete repository implementation: TodoRepositoryImpl',
+          correctionMessage:
+              'Use abstract repository interface instead of concrete implementation.',
+        ),
+      ]);
+    });
   });
 }
