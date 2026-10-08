@@ -3,3 +3,12 @@ publish_to: none
 
 environment:
   sdk: ^3.13.0
+
+# Dart-only consumer. flutter_riverpod and hooks_riverpod 3.4.3 require the
+# Flutter SDK, so this fixture pins the shared riverpod 3.4.3 line instead.
+dependencies:
+  riverpod: 3.4.3
+  riverpod_annotation: 4.0.7
+
+dev_dependencies:
+  riverpod_generator: 4.0.9
