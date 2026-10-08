@@ -157,15 +157,15 @@ warning - lib/bad_examples/features/todo/data/repositories/todo_repository_impl.
 
 ## 🧩 호환성 — analyzer 14 / Riverpod 3+
 
-2026-10-08, Dart SDK 3.13.5에서 [`poc_v2/consumer_riverpod_lint`](poc_v2/consumer_riverpod_lint)에 `dart pub get`과 `dart analyze`로 확인했습니다. 기존 fixture 진단 2건(`presentation_no_throw`, `riverpod_state_after_async_gap`)만 나왔고, `build()` 안의 `ref.watch(provider.listenable)`은 `riverpod_ref_usage`를 추가하지 않았습니다.
+2026-10-08에 확인했습니다. Dart fixture [`poc_v2/consumer_riverpod_lint`](poc_v2/consumer_riverpod_lint)(Dart SDK 3.13.5)는 기존 진단 2건(`presentation_no_throw`, `riverpod_state_after_async_gap`)만 보고했고, `build()`의 `ref.watch(provider.listenable)`은 `riverpod_ref_usage`를 추가하지 않았습니다. Flutter fixture [`poc_v2/consumer_flutter_riverpod`](poc_v2/consumer_flutter_riverpod)(Flutter **3.47.6**, Dart **3.13.5**)는 `flutter_riverpod` **3.4.3**에 의존합니다. `dart analyze`는 notifier `build()`의 `ref.read`에 `riverpod_ref_usage` 1건을 보고했고, `build()`에서 `ref.watch`를 쓰는 `ConsumerWidget`은 깨끗했습니다.
 
 | 줄 | 버전 |
 | --- | --- |
 | `riverpod` | **3.4.3** |
+| `flutter_riverpod` | **3.4.3** (Flutter **3.47.6** / Dart **3.13.5**, 2026-10-08) |
 | `riverpod_annotation` / `riverpod_generator` | **4.0.7** / **4.0.9** |
 | `riverpod_lint` (plugin host, `^3.1.9`) | **3.1.9** (`riverpod` 3.4.3에 의존) |
 | analyzer / `analysis_server_plugin` (plugin host) | **14.5.0** / **0.3.24** |
-| `flutter_riverpod` / `hooks_riverpod` | pub.dev **3.4.3**. 이 fixture는 Dart 전용이라 Flutter SDK가 필요한 두 패키지는 solve하지 않음 |
 | flagship `ittae` lockfile (2026-09-04, 여기서 재확인하지 않음) | `riverpod` / `flutter_riverpod` **3.3.2** |
 
 이 패키지는 `analysis_server_plugin: ^0.3.23`과 `analyzer: >=14.3.0 <15.0.0`에 의존합니다. 위의 2026-10-08 consumer 실행은 `analysis_server_plugin` **0.3.24**와 analyzer **14.5.0**으로 resolve되었습니다. `analysis_server_plugin 0.3.20`이 2.4.x를 `0.3.15`/analyzer 13에 묶어 두었던 "dart analyze 무한 spinning" hang을 고쳤습니다. `riverpod_lint`와 하나의 plugin synthetic package에서 공존하려면 `riverpod_lint 3.1.9`(analyzer `>=13.0.0 <15.0.0`, Dart `>=3.13.0`)가 필요하며, Dart 3.12.x에서는 소비자의 `riverpod_lint` 제약이 3.1.8 이하를 허용하면(예: `^3.1.3`) pub이 조용히 `clean_architecture_linter 2.4.0`으로 되돌리고, `^3.1.9`로 고정하면 3.1.9의 SDK 하한 때문에 Dart 3.13 미만에서 solve 자체가 실패합니다. 2026-09-04 Dart 3.13.2에서 확인: `riverpod_lint ^3.1.3`을 함께 켠 flagship `ittae` 트리(resolve 결과 3.1.9)가 29~40초(2.4.0: 20~38초)에 분석을 마치며 3회 연속 hang 없음.
