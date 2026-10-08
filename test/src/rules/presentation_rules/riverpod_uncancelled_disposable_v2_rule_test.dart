@@ -511,6 +511,7 @@ class Duration {
 class PomodoroNotifier {
   Future<void> build() async {
     final timer = Timer.periodic(const Duration(seconds: 1), (_) {});
+    final kept = Timer.periodic(const Duration(seconds: 1), (_) {});
     Timer(const Duration(seconds: 1), () {});
     ref.onDispose(() {
       timer.cancel();
@@ -523,6 +524,12 @@ class PomodoroNotifier {
             );
 
         result.expectDiagnostics([
+          const ExpectedV2Diagnostic(
+            relativePath: _path,
+            codeName: 'riverpod_uncancelled_disposable',
+            problemMessage:
+                'Timer/resource "kept" is started but not cancelled in ref.onDispose.',
+          ),
           const ExpectedV2Diagnostic(
             relativePath: _path,
             codeName: 'riverpod_uncancelled_disposable',

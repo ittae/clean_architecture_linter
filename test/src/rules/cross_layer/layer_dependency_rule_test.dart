@@ -221,11 +221,15 @@ class Todo {}
           files: {
             usecase: '''
 import '../../data/repositories/todo_repository.dart';
+import '../../presentation/pages/todo_page.dart';
+import 'package:http/http.dart';
 
 class GetTodo {}
 ''',
             'lib/features/todo/data/repositories/todo_repository.dart':
                 'class TodoRepository {}',
+            'lib/features/todo/presentation/pages/todo_page.dart':
+                'class TodoPage {}',
           },
           definingFile: usecase,
         );
@@ -237,6 +241,20 @@ class GetTodo {}
             line: 1,
             problemMessage:
                 'Layer dependency violation: Application layer cannot depend on outer layers. Found import: ../../data/repositories/todo_repository.dart',
+          ),
+          const ExpectedV2Diagnostic(
+            relativePath: usecase,
+            codeName: 'layer_dependency',
+            line: 2,
+            problemMessage:
+                'Layer dependency violation: Application layer cannot depend on outer layers. Found import: ../../presentation/pages/todo_page.dart',
+          ),
+          const ExpectedV2Diagnostic(
+            relativePath: usecase,
+            codeName: 'layer_dependency',
+            line: 3,
+            problemMessage:
+                'Layer dependency violation: Application layer cannot depend on outer layers. Found import: package:http/http.dart',
           ),
         ]);
       },
