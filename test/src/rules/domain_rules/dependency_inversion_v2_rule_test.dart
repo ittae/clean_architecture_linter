@@ -179,7 +179,7 @@ class GetTodoUseCase {
   GetTodoUseCase(this.repository);
 }
 
-class TodoRepository {}
+abstract interface class TodoRepository {}
 ''',
             },
             definingFile: domain,
@@ -187,6 +187,30 @@ class TodoRepository {}
 
       result.expectNoDiagnostics();
     });
+
+    test(
+      'allows a non-abstract repository type without an implementation suffix',
+      () async {
+        const domain =
+            'lib/features/todo/domain/usecases/get_todo_usecase.dart';
+        final result = await V2RuleHarness(rule: DependencyInversionRule())
+            .analyze(
+              files: {
+                domain: '''
+class GetTodoUseCase {
+  final TodoRepository repository;
+  GetTodoUseCase(this.repository);
+}
+
+class TodoRepository {}
+''',
+              },
+              definingFile: domain,
+            );
+
+        result.expectNoDiagnostics();
+      },
+    );
 
     test(
       'skips the same concrete dependency outside the domain layer',

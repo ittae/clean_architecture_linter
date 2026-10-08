@@ -121,6 +121,7 @@ class Todo {}
 
     test('recognizes exception types, parent classes, and rethrow', () {
       final unit = parseString(
+        throwIfDiagnostics: false,
         content: '''
 class TodoException extends Exception {}
 class TodoFailure implements Exception {}
@@ -133,6 +134,9 @@ class Box {
   void run() {
     try {} catch (e) {
       throw e;
+      // Parser recovers the keyword as the thrown expression. A bare
+      // `rethrow;` is a RethrowExpression, which isRethrow does not accept.
+      throw rethrow;
     }
   }
 }
@@ -145,11 +149,13 @@ class Box {
       expect(CleanArchitectureUtils.implementsException(classes[2]), isTrue);
       expect(CleanArchitectureUtils.implementsException(classes[3]), isFalse);
 
-      final throwNode = _firstThrow(unit);
-      expect(CleanArchitectureUtils.isRethrow(throwNode), isFalse);
+      final throws = _throws(unit);
+      expect(CleanArchitectureUtils.isRethrow(throws[0]), isFalse);
+      expect(throws[1].expression.toString(), 'rethrow');
+      expect(CleanArchitectureUtils.isRethrow(throws[1]), isTrue);
       expect(
         classDeclarationName(
-          CleanArchitectureUtils.findParentClass(throwNode)!,
+          CleanArchitectureUtils.findParentClass(throws[0])!,
         ),
         'Box',
       );
@@ -161,17 +167,17 @@ class Box {
   });
 }
 
-ThrowExpression _firstThrow(CompilationUnit unit) {
+List<ThrowExpression> _throws(CompilationUnit unit) {
   final visitor = _ThrowFinder();
   unit.accept(visitor);
-  return visitor.node!;
+  return visitor.nodes;
 }
 
 class _ThrowFinder extends RecursiveAstVisitor<void> {
-  ThrowExpression? node;
+  final nodes = <ThrowExpression>[];
 
   @override
   void visitThrowExpression(ThrowExpression node) {
-    this.node ??= node;
+    nodes.add(node);
   }
 }
