@@ -12,7 +12,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 ## ✨ Key Features
 
 - 🛡️ **Automatic Clean Architecture Protection** - Write code freely, linter catches violations
-- 🎯 **34 Specialized Rules** - Comprehensive coverage of all Clean Architecture layers
+- 🎯 **35 Specialized Rules** - Comprehensive coverage of all Clean Architecture layers
 - 🚀 **Flutter-Optimized** - Built specifically for Flutter development patterns
 - 🎨 **Riverpod State Management** - Enforces 3-tier provider architecture (Entity → UI → Computed)
 - 📚 **Educational** - Learn Clean Architecture through guided corrections
@@ -20,7 +20,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 - 🔧 **Zero Configuration** - Works out of the box with sensible defaults
 - 🧪 **Test-Aware** - Smart exceptions for test files and development contexts
 
-## 📋 Rules Overview (34 Rules)
+## 📋 Rules Overview (35 Rules)
 
 ### 🌐 Core Clean Architecture Principles (6 rules)
 1. **Layer Dependency** - Enforces dependency direction (inward only)
@@ -47,7 +47,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 18. **DataSource Exception Types** - Use defined data layer exceptions only
 19. **Model Entity Direct Access** - Use `.toEntity()` instead of direct `.entity` access
 
-### 🎨 Presentation Layer Rules (14 rules)
+### 🎨 Presentation Layer Rules (15 rules)
 20. **No Presentation Models** - Use Freezed State instead of ViewModels
 21. **Extension Location** - Extensions in same file as the class
 22. **Freezed Usage** - Use Freezed instead of Equatable
@@ -63,8 +63,10 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 32. **Ref Mounted Usage** - Avoid `ref.mounted` in the UI layer (widgets/pages); inside a Notifier it is the recommended disposal guard and is not reported
 33. **Riverpod Keep Alive** - Only use `keepAlive: true` for app-wide or app-lifetime state (auth, settings, cache, startup, listener, ...). Name/path heuristic; full keyword list and the `// ignore` + reason convention for generic-noun caches in [doc/EXAMPLES.md §9](doc/EXAMPLES.md#9-keepalive-outside-app-wide-state-riverpod_keep_alive-위반)
 
+34. **Riverpod Extension Scoped Dependency** - An `extension`'s `@Dependencies([...])` must be a subset of the target notifier's `@Riverpod(dependencies: [...])`. `@Dependencies` on an extension is lint-only metadata and does not widen the notifier's runtime scope, so reading an undeclared scoped provider throws at runtime (often swallowed by a surrounding `catch`)
+
 ### 🔧 Cross-Layer Rules (1 rule)
-34. **Allowed Instance Variables** - Enforces stateless architecture (UseCase/Repository/DataSource)
+35. **Allowed Instance Variables** - Enforces stateless architecture (UseCase/Repository/DataSource)
 
 ### 🔕 Opt-in: Riverpod State After Async Gap
 **Riverpod State After Async Gap** (`riverpod_state_after_async_gap`) - Reports an unguarded `state = …` write or `state` read after an `await` in provider methods, including `state = await …`, same-statement reads that run after an `await` (`await foo() ?? state`), and reads in bodies that run after a control-flow await (`await for`, `if (await …)`, a pattern `when` guard that awaits). Receiver-first forms (`state.foo(await x)`) and locals/parameters named `state` are not reported; `this.state` and `super.state` still are (reads and writes alike). Riverpod 3 throws `UnmountedRefException` from both the `state` setter and getter once the provider is disposed, so the guard belongs right after the await: `await …; if (!ref.mounted) return;` (or `final next = await …; if (!ref.mounted) return; state = next;`). **Disabled by default** because the `state = await` idiom is common in existing apps; enable it per project:
@@ -122,7 +124,7 @@ dart pub get
 dart analyze        # Flutter projects too — use `dart analyze`, NOT `flutter analyze`
 ```
 
-Locally, `dart analyze` reports the 34 default rules in its output (plus the
+Locally, `dart analyze` reports the 35 default rules in its output (plus the
 opt-in `riverpod_state_after_async_gap`, see the rule list above). In CI, a
 single `No issues found!` is not proof the plugin answered — use the sentinel
 gate in the warning below.
@@ -165,18 +167,18 @@ See `docs/config/RECOMMENDED_SETUP.md` for details.
 
 ## 🧩 Compatibility — analyzer 14 / Riverpod 3+
 
-Verified consumer matrix (2026-09-04, maintainer SDK + flagship `ittae` lockfile):
+Verified in this repo on 2026-10-08. The Dart fixture [`poc_v2/consumer_riverpod_lint`](poc_v2/consumer_riverpod_lint) (Dart SDK 3.13.5) still reported only `presentation_no_throw` and `riverpod_state_after_async_gap`, and `ref.watch(provider.listenable)` in `build()` added no `riverpod_ref_usage` diagnostic. The Flutter fixture [`poc_v2/consumer_flutter_riverpod`](poc_v2/consumer_flutter_riverpod) (Flutter **3.47.6**, Dart **3.13.5**) depends on `flutter_riverpod` **3.4.3**. `dart analyze` reported one `riverpod_ref_usage` on `ref.read` inside a notifier `build()`, and the `ConsumerWidget` that uses `ref.watch` in `build()` stayed clean.
 
 | Line | Version |
 | --- | --- |
-| Flutter | **3.47.2** (Dart **3.13.2**) |
-| `riverpod` / `flutter_riverpod` | **3.3.2** |
-| `riverpod_generator` / `riverpod_annotation` | **4.0.4** / **4.0.3** |
-| `riverpod_lint` (resolved in the plugin host from `^3.1.3`) | **3.1.9** |
+| `riverpod` | **3.4.3** |
+| `flutter_riverpod` | **3.4.3** (Flutter **3.47.6** / Dart **3.13.5**, 2026-10-08) |
+| `riverpod_annotation` / `riverpod_generator` | **4.0.7** / **4.0.9** |
+| `riverpod_lint` (plugin host, from `^3.1.9`) | **3.1.9** (depends on `riverpod` 3.4.3) |
+| analyzer / `analysis_server_plugin` (plugin host) | **14.5.0** / **0.3.24** |
+| flagship `ittae` lockfile (2026-09-04, not re-checked here) | `riverpod` / `flutter_riverpod` **3.3.2**, `riverpod_generator` / `riverpod_annotation` **4.0.4** / **4.0.3**, Flutter **3.47.2** (Dart **3.13.2**) |
 
-pub.dev latest Riverpod **3.4.2** is not in this verified set.
-
-The package runs on the official `analysis_server_plugin` (`>=0.3.22 <0.3.23`), which pins analyzer **14.3.0**; the declared analyzer range `>=14.3.0 <15.0.0` therefore resolves to 14.3.0 today and is kept open for the next ASP bump. `analysis_server_plugin 0.3.20` fixed the "dart analyze could spin indefinitely" hang that kept 2.4.x on `0.3.15` / analyzer 13. Coexistence with `riverpod_lint` in one plugin synthetic package requires `riverpod_lint 3.1.9` (analyzer `>=13.0.0 <15.0.0`, Dart `>=3.13.0`); on Dart 3.12.x a consumer whose `riverpod_lint` constraint still admits 3.1.8 or older (for example `^3.1.3`) is silently resolved back to `clean_architecture_linter 2.4.0`, while `^3.1.9` fails to solve outright below Dart 3.13 because of its SDK bound. Verified 2026-09-04 on Dart 3.13.2: the flagship `ittae` tree (with `riverpod_lint ^3.1.3`) analyzes in 29–40 s (2.4.0: 20–38 s) with no hang across three consecutive runs.
+The package depends on `analysis_server_plugin: ^0.3.23` and `analyzer: >=14.3.0 <15.0.0`. The 2026-10-08 consumer run above resolved `analysis_server_plugin` **0.3.24** and analyzer **14.5.0**. `analysis_server_plugin 0.3.20` fixed the "dart analyze could spin indefinitely" hang that kept 2.4.x on `0.3.15` / analyzer 13. Coexistence with `riverpod_lint` in one plugin synthetic package requires `riverpod_lint 3.1.9` (analyzer `>=13.0.0 <15.0.0`, Dart `>=3.13.0`); on Dart 3.12.x a consumer whose `riverpod_lint` constraint still admits 3.1.8 or older (for example `^3.1.3`) is silently resolved back to `clean_architecture_linter 2.4.0`, while `^3.1.9` fails to solve outright below Dart 3.13 because of its SDK bound. Verified 2026-09-04 on Dart 3.13.2: the flagship `ittae` tree (with `riverpod_lint ^3.1.3`) analyzes in 29–40 s (2.4.0: 20–38 s) with no hang across three consecutive runs.
 
 This line also closes a silent-loss bug in the 2.4.x line. With `analysis_server_plugin 0.3.15` the plugin reported *idle* to the analysis server between its first file and its full pass, so `dart analyze` (which stops collecting at the first idle status) returned with zero or partial plugin diagnostics and exit code 0: on this package's fixtures 11 of 20 runs (2-row fixture) and 7 of 10 runs (16-row fixture) lost rows, and 15 of 15 did under parallel load. `analysis_server_plugin 0.3.16` reworked the plugin server so its status follows the analysis driver; on 0.3.22 the same fixtures delivered every row in 55 of 55 `dart analyze` runs, including 15 under the same load. See `tools/verify_analyze_parity.sh` for the CI guard that still verifies delivery.
 

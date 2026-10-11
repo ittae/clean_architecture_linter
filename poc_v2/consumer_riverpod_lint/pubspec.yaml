@@ -3,3 +3,12 @@ publish_to: none
 
 environment:
   sdk: ^3.13.0
+
+# Dart-only consumer of the shared riverpod 3.4.3 package.
+# flutter_riverpod is checked in poc_v2/consumer_flutter_riverpod.
+dependencies:
+  riverpod: 3.4.3
+  riverpod_annotation: 4.0.7
+
+dev_dependencies:
+  riverpod_generator: 4.0.9

@@ -31,6 +31,7 @@ import 'src/rules/presentation_rules/ref_mounted_usage_rule.dart';
 import 'src/rules/presentation_rules/riverpod_generator_rule.dart';
 import 'src/rules/presentation_rules/riverpod_keep_alive_rule.dart';
 import 'src/rules/presentation_rules/riverpod_provider_naming_rule.dart';
+import 'src/rules/presentation_rules/riverpod_extension_scoped_dependency_rule.dart';
 import 'src/rules/presentation_rules/riverpod_ref_after_async_gap_rule.dart';
 import 'src/rules/presentation_rules/riverpod_state_after_async_gap_rule.dart';
 import 'src/rules/presentation_rules/riverpod_ref_usage_rule.dart';
@@ -83,6 +84,7 @@ class CleanArchitectureLinterPlugin extends Plugin {
     registry.registerWarningRule(RiverpodGeneratorRule());
     registry.registerWarningRule(RiverpodKeepAliveRule());
     registry.registerWarningRule(RiverpodProviderNamingRule());
+    registry.registerWarningRule(RiverpodExtensionScopedDependencyRule());
     registry.registerWarningRule(RiverpodRefAfterAsyncGapRule());
     // First opt-in rule of this package: registerLintRule leaves it disabled
     // until a consumer sets `diagnostics: riverpod_state_after_async_gap: true`.
