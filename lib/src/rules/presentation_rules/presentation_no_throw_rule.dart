@@ -227,7 +227,10 @@ class _PresentationNoThrowVisitor extends SimpleAstVisitor<void> {
     return superName == 'StatelessWidget' ||
         superName == 'StatefulWidget' ||
         superName == 'ConsumerWidget' ||
+        superName == 'ConsumerStatefulWidget' ||
         superName == 'HookConsumerWidget' ||
+        superName == 'StatefulHookConsumerWidget' ||
+        superName == 'HookWidget' ||
         superName == 'ConsumerState';
   }
 

@@ -169,10 +169,13 @@ See `docs/config/RECOMMENDED_SETUP.md` for details.
 
 Verified in this repo on 2026-10-08. The Dart fixture [`poc_v2/consumer_riverpod_lint`](poc_v2/consumer_riverpod_lint) (Dart SDK 3.13.5) still reported only `presentation_no_throw` and `riverpod_state_after_async_gap`, and `ref.watch(provider.listenable)` in `build()` added no `riverpod_ref_usage` diagnostic. The Flutter fixture [`poc_v2/consumer_flutter_riverpod`](poc_v2/consumer_flutter_riverpod) (Flutter **3.47.6**, Dart **3.13.5**) depends on `flutter_riverpod` **3.4.3**. `dart analyze` reported one `riverpod_ref_usage` on `ref.read` inside a notifier `build()`, and the `ConsumerWidget` that uses `ref.watch` in `build()` stayed clean.
 
+Verified again on 2026-10-11 with [`poc_v2/consumer_hooks_riverpod`](poc_v2/consumer_hooks_riverpod) on the same Flutter **3.47.6** / Dart **3.13.5** SDK. That fixture depends on `hooks_riverpod` **3.4.3** and `flutter_hooks` **0.21.3+1** (`flutter_riverpod` **3.4.3** comes in transitively). `dart analyze` reported the same single `riverpod_ref_usage` on `ref.read` inside a notifier `build()`. A `HookConsumerWidget`, a nested `HookConsumer` builder, and a `StatefulHookConsumerWidget` whose state is `ConsumerState` stayed clean; each uses `ref.watch` in `build()`.
+
 | Line | Version |
 | --- | --- |
 | `riverpod` | **3.4.3** |
 | `flutter_riverpod` | **3.4.3** (Flutter **3.47.6** / Dart **3.13.5**, 2026-10-08) |
+| `hooks_riverpod` / `flutter_hooks` | **3.4.3** / **0.21.3+1** (Flutter **3.47.6** / Dart **3.13.5**, 2026-10-11) |
 | `riverpod_annotation` / `riverpod_generator` | **4.0.7** / **4.0.9** |
 | `riverpod_lint` (plugin host, from `^3.1.9`) | **3.1.9** (depends on `riverpod` 3.4.3) |
 | analyzer / `analysis_server_plugin` (plugin host) | **14.5.0** / **0.3.24** |

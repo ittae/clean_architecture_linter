@@ -369,5 +369,36 @@ extension TodoNotifierHelpers on TodoNotifier {
         ),
       ]);
     });
+
+    test(
+      'does not treat HookConsumerWidget or StatefulHookConsumerWidget as a Notifier',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefUsageRule()).analyze(
+          files: {
+            'lib/features/todo/presentation/providers/todo_counter_provider.dart':
+                '''
+class HookConsumerWidget {}
+class StatefulHookConsumerWidget {}
+
+class TodoHookNotifier extends HookConsumerWidget {
+  int build() {
+    return ref.read(counterProvider);
+  }
+}
+
+class TodoStatefulHookNotifier extends StatefulHookConsumerWidget {
+  int build() {
+    return ref.read(counterProvider);
+  }
+}
+''',
+          },
+          definingFile:
+              'lib/features/todo/presentation/providers/todo_counter_provider.dart',
+        );
+
+        result.expectNoDiagnostics();
+      },
+    );
   });
 }

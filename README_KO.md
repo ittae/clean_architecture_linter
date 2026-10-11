@@ -161,10 +161,13 @@ warning - lib/bad_examples/features/todo/data/repositories/todo_repository_impl.
 
 2026-10-08에 확인했습니다. Dart fixture [`poc_v2/consumer_riverpod_lint`](poc_v2/consumer_riverpod_lint)(Dart SDK 3.13.5)는 기존 진단 2건(`presentation_no_throw`, `riverpod_state_after_async_gap`)만 보고했고, `build()`의 `ref.watch(provider.listenable)`은 `riverpod_ref_usage`를 추가하지 않았습니다. Flutter fixture [`poc_v2/consumer_flutter_riverpod`](poc_v2/consumer_flutter_riverpod)(Flutter **3.47.6**, Dart **3.13.5**)는 `flutter_riverpod` **3.4.3**에 의존합니다. `dart analyze`는 notifier `build()`의 `ref.read`에 `riverpod_ref_usage` 1건을 보고했고, `build()`에서 `ref.watch`를 쓰는 `ConsumerWidget`은 깨끗했습니다.
 
+2026-10-11에 같은 Flutter **3.47.6** / Dart **3.13.5** SDK로 [`poc_v2/consumer_hooks_riverpod`](poc_v2/consumer_hooks_riverpod)도 확인했습니다. 이 fixture는 `hooks_riverpod` **3.4.3**과 `flutter_hooks` **0.21.3+1**에 의존하고, `flutter_riverpod` **3.4.3**은 전이 의존성입니다. `dart analyze`는 notifier `build()`의 `ref.read`에 같은 `riverpod_ref_usage` 1건만 보고했습니다. `build()`에서 `ref.watch`를 쓰는 `HookConsumerWidget`, 그 안의 `HookConsumer` builder, `ConsumerState`를 쓰는 `StatefulHookConsumerWidget`은 깨끗했습니다.
+
 | 줄 | 버전 |
 | --- | --- |
 | `riverpod` | **3.4.3** |
 | `flutter_riverpod` | **3.4.3** (Flutter **3.47.6** / Dart **3.13.5**, 2026-10-08) |
+| `hooks_riverpod` / `flutter_hooks` | **3.4.3** / **0.21.3+1** (Flutter **3.47.6** / Dart **3.13.5**, 2026-10-11) |
 | `riverpod_annotation` / `riverpod_generator` | **4.0.7** / **4.0.9** |
 | `riverpod_lint` (plugin host, `^3.1.9`) | **3.1.9** (`riverpod` 3.4.3에 의존) |
 | analyzer / `analysis_server_plugin` (plugin host) | **14.5.0** / **0.3.24** |
