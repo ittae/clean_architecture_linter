@@ -140,6 +140,175 @@ class TodoPage {
     });
 
     test(
+      'reports business exception branching in HookConsumerWidget without a widget name suffix',
+      () async {
+        final result = await V2RuleHarness(rule: PresentationNoThrowRule())
+            .analyze(
+              files: {
+                'lib/features/todo/presentation/todo_counter.dart': '''
+class TodoFailure implements Exception {}
+
+class TodoCounter extends HookConsumerWidget {
+  void onTap() {
+    try {
+      risky();
+    } on TodoFailure catch (_) {
+      showError();
+    }
+  }
+
+  void risky() {}
+  void showError() {}
+}
+''',
+              },
+              definingFile: 'lib/features/todo/presentation/todo_counter.dart',
+            );
+
+        result.expectDiagnostics([
+          const ExpectedV2Diagnostic(
+            relativePath: 'lib/features/todo/presentation/todo_counter.dart',
+            codeName: 'presentation_no_throw',
+            line: 7,
+          ),
+        ]);
+      },
+    );
+
+    test(
+      'reports business exception branching in StatefulHookConsumerWidget',
+      () async {
+        final result = await V2RuleHarness(rule: PresentationNoThrowRule())
+            .analyze(
+              files: {
+                'lib/features/todo/presentation/todo_counter.dart': '''
+class TodoFailure implements Exception {}
+
+class TodoCounter extends StatefulHookConsumerWidget {
+  void onTap() {
+    try {
+      risky();
+    } on TodoFailure catch (_) {
+      showError();
+    }
+  }
+
+  void risky() {}
+  void showError() {}
+}
+''',
+              },
+              definingFile: 'lib/features/todo/presentation/todo_counter.dart',
+            );
+
+        result.expectDiagnostics([
+          const ExpectedV2Diagnostic(
+            relativePath: 'lib/features/todo/presentation/todo_counter.dart',
+            codeName: 'presentation_no_throw',
+            line: 7,
+          ),
+        ]);
+      },
+    );
+
+    test(
+      'reports business exception branching in HookWidget without a widget name suffix',
+      () async {
+        final result = await V2RuleHarness(rule: PresentationNoThrowRule())
+            .analyze(
+              files: {
+                'lib/features/todo/presentation/todo_counter.dart': '''
+class TodoFailure implements Exception {}
+
+class TodoCounter extends HookWidget {
+  void onTap() {
+    try {
+      risky();
+    } on TodoFailure catch (_) {
+      showError();
+    }
+  }
+
+  void risky() {}
+  void showError() {}
+}
+''',
+              },
+              definingFile: 'lib/features/todo/presentation/todo_counter.dart',
+            );
+
+        result.expectDiagnostics([
+          const ExpectedV2Diagnostic(
+            relativePath: 'lib/features/todo/presentation/todo_counter.dart',
+            codeName: 'presentation_no_throw',
+            line: 7,
+          ),
+        ]);
+      },
+    );
+
+    test(
+      'reports business exception branching in ConsumerStatefulWidget',
+      () async {
+        final result = await V2RuleHarness(rule: PresentationNoThrowRule())
+            .analyze(
+              files: {
+                'lib/features/todo/presentation/todo_counter.dart': '''
+class TodoFailure implements Exception {}
+
+class TodoCounter extends ConsumerStatefulWidget {
+  void onTap() {
+    try {
+      risky();
+    } on TodoFailure catch (_) {
+      showError();
+    }
+  }
+
+  void risky() {}
+  void showError() {}
+}
+''',
+              },
+              definingFile: 'lib/features/todo/presentation/todo_counter.dart',
+            );
+
+        result.expectDiagnostics([
+          const ExpectedV2Diagnostic(
+            relativePath: 'lib/features/todo/presentation/todo_counter.dart',
+            codeName: 'presentation_no_throw',
+            line: 7,
+          ),
+        ]);
+      },
+    );
+
+    test('ignores programming errors in StatefulHookConsumerWidget', () async {
+      final result = await V2RuleHarness(rule: PresentationNoThrowRule())
+          .analyze(
+            files: {
+              'lib/features/todo/presentation/todo_counter.dart': '''
+class TodoCounter extends StatefulHookConsumerWidget {
+  void onTap() {
+    try {
+      risky();
+    } on StateError catch (_) {
+      showError();
+    }
+  }
+
+  void risky() {}
+  void showError() {}
+}
+''',
+            },
+            definingFile: 'lib/features/todo/presentation/todo_counter.dart',
+          );
+
+      result.expectNoDiagnostics();
+    });
+
+    test(
       'ignores programming errors, private helpers, and constructors',
       () async {
         final result = await V2RuleHarness(rule: PresentationNoThrowRule())
