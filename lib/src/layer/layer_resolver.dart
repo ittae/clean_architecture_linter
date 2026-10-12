@@ -9,6 +9,11 @@ import 'package:analyzer/dart/element/element.dart';
 ///
 /// No lint rule calls this yet.
 class LayerResolver {
+  /// [packageName] is the pub package under review.
+  ///
+  /// When it is null, every `package:` URI is [LayerKind.external]. A missing
+  /// name must not turn a dependency whose path contains `domain` or `data`
+  /// into a local layer.
   LayerResolver({String? packageName}) : _packageName = packageName;
 
   final String? _packageName;
@@ -51,9 +56,6 @@ class LayerResolver {
     final kind = _kindFor(segments);
     final feature = _featureName(segments);
     if (kind == null) {
-      if (uri.scheme == 'package' && _packageName == null) {
-        return _location(uri, LayerKind.external);
-      }
       return _location(uri, LayerKind.unknown, feature: feature);
     }
     return _location(
@@ -65,9 +67,9 @@ class LayerResolver {
   }
 
   bool _inCurrentPackage(Uri uri) {
-    if (_packageName == null) return true;
-    return uri.pathSegments.isNotEmpty &&
-        uri.pathSegments.first == _packageName;
+    final packageName = _packageName;
+    if (packageName == null) return false;
+    return uri.pathSegments.isNotEmpty && uri.pathSegments.first == packageName;
   }
 
   List<String> _classifiableSegments(Uri uri) {

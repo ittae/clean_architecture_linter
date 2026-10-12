@@ -159,6 +159,68 @@ void main() {
     expect(resolver.resolveLibrary(io).infrastructurePackage, isFalse);
   });
 
+  // characterization: locks current behavior; not red-first proof of this change.
+  test('another package with a domain folder is external', () {
+    final location = resolver.resolveLibrary(
+      session.library('deps/other_pkg/lib/domain/entity.dart'),
+    );
+
+    expect(
+      location.libraryUri,
+      Uri.parse('package:other_pkg/domain/entity.dart'),
+    );
+    expect(location.kind, LayerKind.external);
+    expect(location.feature, isNull);
+    expect(location.infrastructurePackage, isFalse);
+  });
+
+  test('an omitted packageName treats package URIs as external', () {
+    final unnamed = LayerResolver();
+    final own = unnamed.resolveLibrary(
+      session.library('lib/features/todo/domain/entities/todo.dart'),
+    );
+    final other = unnamed.resolveLibrary(
+      session.library('deps/other_pkg/lib/domain/entity.dart'),
+    );
+
+    expect(own.kind, LayerKind.external);
+    expect(other.kind, LayerKind.external);
+    expect(other.infrastructurePackage, isFalse);
+  });
+
+  // characterization: locks current behavior; not red-first proof of this change.
+  test('package:dio is an infrastructure package', () {
+    final location = resolver.resolveLibrary(
+      session.library('deps/dio/lib/dio.dart'),
+    );
+
+    expect(location.libraryUri, Uri.parse('package:dio/dio.dart'));
+    expect(location.kind, LayerKind.external);
+    expect(location.infrastructurePackage, isTrue);
+  });
+
+  // characterization: locks current behavior; not red-first proof of this change.
+  test('classifies an infrastructure folder inside the current package', () {
+    final location = resolver.resolveLibrary(
+      session.library('lib/features/todo/infrastructure/todo_gateway.dart'),
+    );
+
+    expect(location.kind, LayerKind.infrastructure);
+    expect(location.feature, 'todo');
+    expect(location.infrastructurePackage, isFalse);
+  });
+
+  // characterization: locks current behavior; not red-first proof of this change.
+  test('classifies a services folder as infrastructure', () {
+    final location = resolver.resolveLibrary(
+      session.library('lib/features/todo/services/todo_service.dart'),
+    );
+
+    expect(location.kind, LayerKind.infrastructure);
+    expect(location.feature, 'todo');
+    expect(location.infrastructurePackage, isFalse);
+  });
+
   test('a capital Domain folder is not the domain layer', () {
     final location = resolver.resolveLibrary(
       session.library('lib/features/todo/Domain/todo_case.dart'),
@@ -231,18 +293,34 @@ void read(Todo todo) {}
   'lib/features/todo/Domain/todo_case.dart': '''
 class TodoCase {}
 ''',
+  'lib/features/todo/infrastructure/todo_gateway.dart': '''
+class TodoGateway {}
+''',
+  'lib/features/todo/services/todo_service.dart': '''
+class TodoService {}
+''',
+};
+
+const _dependencyPackages = {
+  'other_pkg': {'lib/domain/entity.dart': 'class OtherEntity {}\n'},
+  'dio': {'lib/dio.dart': 'class Dio {}\n'},
 };
 
 class _FixtureSession {
-  _FixtureSession._(this._collection, this._libraries, this._root);
+  _FixtureSession._(this._collection, this._libraries, this._root, this._deps);
 
   final AnalysisContextCollection _collection;
   final Map<String, ResolvedLibraryResult> _libraries;
   final Directory _root;
+  final Directory _deps;
 
   static Future<_FixtureSession> open(Map<String, String> files) async {
     final root = await Directory.systemTemp.createTemp('cal_layer_resolver_');
+    final deps = await Directory.systemTemp.createTemp(
+      'cal_layer_resolver_deps_',
+    );
     final rootPath = p.normalize(root.absolute.path);
+    final depsPath = p.normalize(deps.absolute.path);
     _write(p.join(rootPath, 'pubspec.yaml'), '''
 name: cal_v2_harness_app
 environment:
@@ -264,24 +342,71 @@ environment:
     for (final entry in files.entries) {
       _write(p.join(rootPath, entry.key), entry.value);
     }
+    final includedPaths = <String>[rootPath];
+    for (final package in _dependencyPackages.entries) {
+      final packageRoot = p.join(depsPath, package.key);
+      _write(p.join(packageRoot, 'pubspec.yaml'), '''
+name: ${package.key}
+environment:
+  sdk: ^3.7.0
+''');
+      _write(p.join(packageRoot, '.dart_tool', 'package_config.json'), '''
+{
+  "configVersion": 2,
+  "packages": [
+    {
+      "name": "${package.key}",
+      "rootUri": "../",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
+    }
+  ]
+}
+''');
+      for (final file in package.value.entries) {
+        _write(p.join(packageRoot, file.key), file.value);
+      }
+      includedPaths.add(p.normalize(packageRoot));
+    }
 
     final collection = AnalysisContextCollection(
-      includedPaths: [rootPath],
+      includedPaths: includedPaths,
       resourceProvider: PhysicalResourceProvider.INSTANCE,
     );
     final libraries = <String, ResolvedLibraryResult>{};
     for (final relative in files.keys) {
-      final absolute = p.normalize(p.join(rootPath, relative));
-      final result = await collection
-          .contextFor(absolute)
-          .currentSession
-          .getResolvedLibraryContaining(absolute);
-      if (result is! ResolvedLibraryResult) {
-        throw StateError('Failed to resolve $relative: $result');
-      }
-      libraries[relative] = result;
+      libraries[relative] = await _resolve(
+        collection,
+        p.normalize(p.join(rootPath, relative)),
+        relative,
+      );
     }
-    return _FixtureSession._(collection, libraries, root);
+    for (final package in _dependencyPackages.entries) {
+      for (final relative in package.value.keys) {
+        final key = 'deps/${package.key}/$relative';
+        libraries[key] = await _resolve(
+          collection,
+          p.normalize(p.join(depsPath, package.key, relative)),
+          key,
+        );
+      }
+    }
+    return _FixtureSession._(collection, libraries, root, deps);
+  }
+
+  static Future<ResolvedLibraryResult> _resolve(
+    AnalysisContextCollection collection,
+    String absolute,
+    String label,
+  ) async {
+    final result = await collection
+        .contextFor(absolute)
+        .currentSession
+        .getResolvedLibraryContaining(absolute);
+    if (result is! ResolvedLibraryResult) {
+      throw StateError('Failed to resolve $label: $result');
+    }
+    return result;
   }
 
   LibraryElement library(String relativePath) {
@@ -315,6 +440,9 @@ environment:
     await _collection.dispose();
     if (_root.existsSync()) {
       _root.deleteSync(recursive: true);
+    }
+    if (_deps.existsSync()) {
+      _deps.deleteSync(recursive: true);
     }
   }
 
