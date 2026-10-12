@@ -45,7 +45,7 @@ class LayerResolver {
     if (library.isInSdk || uri.scheme == 'dart') {
       return _location(uri, LayerKind.external);
     }
-    if (_isInfrastructurePackage(uri)) {
+    if (_isInfrastructurePackage(uri) && !_inCurrentPackage(uri)) {
       return _location(uri, LayerKind.external, infrastructurePackage: true);
     }
     if (uri.scheme == 'package' && !_inCurrentPackage(uri)) {

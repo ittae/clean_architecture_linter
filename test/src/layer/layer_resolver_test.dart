@@ -199,6 +199,42 @@ void main() {
     expect(location.infrastructurePackage, isTrue);
   });
 
+  test('a package under review named dio is classified by its folders', () {
+    final reviewingDio = LayerResolver(packageName: 'dio');
+    final location = reviewingDio.resolveLibrary(
+      session.library('deps/dio/lib/features/todo/domain/entities/todo.dart'),
+    );
+
+    expect(
+      location.libraryUri,
+      Uri.parse('package:dio/features/todo/domain/entities/todo.dart'),
+    );
+    expect(location.kind, LayerKind.domain);
+    expect(location.feature, 'todo');
+    expect(location.useCaseLibrary, isFalse);
+    expect(location.infrastructurePackage, isFalse);
+  });
+
+  test(
+    'a package under review named firebase_demo is classified by its folders',
+    () {
+      final reviewingFirebase = LayerResolver(packageName: 'firebase_demo');
+      final location = reviewingFirebase.resolveLibrary(
+        session.library(
+          'deps/firebase_demo/lib/features/todo/domain/todo.dart',
+        ),
+      );
+
+      expect(
+        location.libraryUri,
+        Uri.parse('package:firebase_demo/features/todo/domain/todo.dart'),
+      );
+      expect(location.kind, LayerKind.domain);
+      expect(location.feature, 'todo');
+      expect(location.infrastructurePackage, isFalse);
+    },
+  );
+
   // characterization: locks current behavior; not red-first proof of this change.
   test('classifies an infrastructure folder inside the current package', () {
     final location = resolver.resolveLibrary(
@@ -303,7 +339,13 @@ class TodoService {}
 
 const _dependencyPackages = {
   'other_pkg': {'lib/domain/entity.dart': 'class OtherEntity {}\n'},
-  'dio': {'lib/dio.dart': 'class Dio {}\n'},
+  'dio': {
+    'lib/dio.dart': 'class Dio {}\n',
+    'lib/features/todo/domain/entities/todo.dart': 'class DioTodo {}\n',
+  },
+  'firebase_demo': {
+    'lib/features/todo/domain/todo.dart': 'class FirebaseDemoTodo {}\n',
+  },
 };
 
 class _FixtureSession {
