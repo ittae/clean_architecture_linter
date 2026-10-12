@@ -1,6 +1,6 @@
 # Resolved layer detection
 
-Status: design only. Owner has approved the direction. This document does not change rule behavior. Implementation PRs start after the owner reviews it.
+Status: design only. Owner has approved the direction. Step 2 ships as 3.0.0 with the existing diagnostics left default-on; there is no shadow-diagnostic period. This document does not change rule behavior. The resolver lands in a separate PR.
 
 Audience: maintainers of `clean_architecture_linter`. The package is the public `analysis_server_plugin` that reports Clean Architecture violations from `dart analyze`.
 
@@ -166,7 +166,7 @@ Each PR stays under 800 lines, including tests and fixtures. None of them migrat
 | PR | Change | Breaking | Semver | Default |
 | --- | --- | --- | --- | --- |
 | 1 | `LayerResolver` + unit tests. No rule calls it. No rule drops `canUseParsedResult => true`. | No new or removed diagnostics | No release by itself. A release that contains only this PR is a patch. | n/a |
-| 2 | `layer_dependency` and `boundary_crossing` classify `importedLibrary` and referenced `NamedType.element.library`. | Yes. Barrels, extension-less relative imports, and mis-foldered part libraries gain diagnostics. Some substring false positives disappear (`Domain` vs `domain` included). | **Major 3.0.0** if these stay default-on. A shadow period is a **minor** only if the new behavior is registered with `registerLintRule` under new diagnostic codes and the old codes are unchanged. | Default-on in 3.0.0. Same codes: `layer_dependency`, `boundary_crossing`. |
+| 2 | `layer_dependency` and `boundary_crossing` classify `importedLibrary` and referenced `NamedType.element.library`. | Yes. Barrels, extension-less relative imports, and mis-foldered part libraries gain diagnostics. Some substring false positives disappear (`Domain` vs `domain` included). | **Major 3.0.0.** No shadow-diagnostic period and no parallel codes. | Default-on in 3.0.0. Same codes: `layer_dependency`, `boundary_crossing`. |
 | 2b | Same release as PR 2. `circular_dependency` and the import half of `domain_purity` use the resolver. Split out only if PR 2 would cross 800 lines. | Yes, same class of new edges. | Ships inside 3.0.0. Do not publish PR 2 without 2b. The four hard checks would disagree on a barrel. | Default-on, same codes. |
 | 3 | `dependency_inversion`, `repository_interface`, `repository_implementation` use declaration ownership. Drop `Gateway` / `Client` / `Adapter` and `Dto` / `Response` / `Model` as proof of a concrete data type. | Yes. A domain type named `PaymentGateway` stops warning. A data class named `TodoStore` referenced from domain starts warning. A domain signature that mentions a type declared in `data/` starts warning even when the name does not end in `Dto`. | **Major**, same 3.0.0 as PR 2 if it lands in that release; otherwise the next major. Do not ship this as a patch on 2.x. | Default-on, same codes. |
 | 4 | New rule `cross_feature_boundary`. | New diagnostic. Not breaking while it is opt-in. Breaking if turned on by default. | **Minor** while opt-in. Flipping the default is a later **major**. | **Opt-in** via `registerLintRule`, same mechanism as `riverpod_state_after_async_gap`. |
@@ -314,7 +314,7 @@ Risks to accept before PR 2 merges:
 
 Open questions for the owner:
 
-1. Confirm 3.0.0 with the existing codes left default-on, versus a 2.x minor that registers shadow codes via `registerLintRule` and keeps today's substring checks until a later major.
+1. **Decided:** Step 2 ships as 3.0.0 with the existing codes left default-on. There is no shadow-diagnostic period and no 2.x minor that registers parallel codes via `registerLintRule`.
 2. Confirm that an unused import of a barrel which exports a data library is silent. The alternative (walk `exportedLibraries`) false-positives on `hide` / `show`.
 3. Confirm that a part file's layer is the parent library URI even when the part's own path is under a different layer folder.
 4. Should path conventions become an `analysis_options` map, or stay an internal table? These PRs assume the internal table.
