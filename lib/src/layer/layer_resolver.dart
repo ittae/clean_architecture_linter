@@ -4,7 +4,10 @@ import 'package:analyzer/dart/element/element.dart';
 /// its declaring library.
 ///
 /// Path folders are read from [LibraryElement.uri], not from import text and
-/// not from a part file's own path. Design:
+/// not from a part file's own path. Only the current package's `package:` URI
+/// is classified from those folders. A `file:` URI, and any other non-`dart`
+/// scheme, stays [LayerKind.unknown] even when the absolute path contains
+/// `data` or `features`. Design:
 /// https://github.com/ittae/clean_architecture_linter/pull/192
 ///
 /// No lint rule calls this yet.
@@ -48,7 +51,10 @@ class LayerResolver {
     if (_isInfrastructurePackage(uri) && !_inCurrentPackage(uri)) {
       return _location(uri, LayerKind.external, infrastructurePackage: true);
     }
-    if (uri.scheme == 'package' && !_inCurrentPackage(uri)) {
+    if (uri.scheme != 'package') {
+      return _location(uri, LayerKind.unknown);
+    }
+    if (!_inCurrentPackage(uri)) {
       return _location(uri, LayerKind.external);
     }
 

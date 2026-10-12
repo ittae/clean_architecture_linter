@@ -159,6 +159,32 @@ void main() {
     expect(resolver.resolveLibrary(io).infrastructurePackage, isFalse);
   });
 
+  test(
+    'file URIs stay unknown when the absolute path contains layer folders',
+    () {
+      final dataPath = resolver.resolveLibrary(
+        session.library('data/note.dart'),
+      );
+      final featurePath = resolver.resolveLibrary(
+        session.library('features/billing/ui/page.dart'),
+      );
+
+      expect(dataPath.libraryUri.scheme, 'file');
+      expect(dataPath.libraryUri.pathSegments, contains('data'));
+      expect(featurePath.libraryUri.scheme, 'file');
+      expect(featurePath.libraryUri.pathSegments, contains('features'));
+      expect(featurePath.libraryUri.pathSegments, contains('ui'));
+
+      expect(dataPath.kind, LayerKind.unknown);
+      expect(dataPath.feature, isNull);
+      expect(featurePath.kind, LayerKind.unknown);
+      expect(featurePath.feature, isNull);
+      expect(dataPath.infrastructurePackage, isFalse);
+      expect(featurePath.infrastructurePackage, isFalse);
+      expect(dataPath.kind, featurePath.kind);
+    },
+  );
+
   // characterization: locks current behavior; not red-first proof of this change.
   test('another package with a domain folder is external', () {
     final location = resolver.resolveLibrary(
@@ -334,6 +360,12 @@ class TodoGateway {}
 ''',
   'lib/features/todo/services/todo_service.dart': '''
 class TodoService {}
+''',
+  'data/note.dart': '''
+class DataPathNote {}
+''',
+  'features/billing/ui/page.dart': '''
+class BillingPage {}
 ''',
 };
 
