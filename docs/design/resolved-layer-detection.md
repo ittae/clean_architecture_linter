@@ -1,6 +1,6 @@
 # Resolved layer detection
 
-Status: design only. Owner has approved the direction. Step 2 ships as 3.0.0 with the existing diagnostics left default-on; there is no shadow-diagnostic period. This document does not change rule behavior. The resolver lands in a separate PR.
+Status: design only. Owner has approved the direction. Step 2 ships as 3.0.0 with the existing diagnostics left default-on; there is no shadow-diagnostic period. Unknown code stays exempt for `layer_dependency`, `boundary_crossing`, and `circular_dependency`. In that same 3.0.0 step, `domain_purity` reports a domain import of an in-package unknown library when `package:flutter`, `dart:ui`, `dart:io`, or an infrastructure package is reachable through unknown libraries only. This document does not change rule behavior. The resolver lands in a separate PR.
 
 Audience: maintainers of `clean_architecture_linter`. The package is the public `analysis_server_plugin` that reports Clean Architecture violations from `dart analyze`.
 
@@ -145,17 +145,19 @@ A part file that physically sits in `data/` while its library file sits in `doma
 
 ### Unknown layer policy
 
-`unknown` is a real result. It is not a diagnostic.
+`unknown` is a real result. It is not itself a diagnostic.
 
-For `layer_dependency`, `boundary_crossing`, `circular_dependency`, and `domain_purity` after they move:
+**Decided.** Composition roots and other in-package libraries with no layer segment stay exempt from the direction rules. That set includes `lib/main.dart`, `app.dart`, `core/providers`, and bootstrap code. For `layer_dependency`, `boundary_crossing`, and `circular_dependency`:
 
 - `unknown` → `unknown`: allow
-- `unknown` → any in-package layer: allow (composition roots, `lib/main.dart`, `lib/core/`)
+- `unknown` → any in-package layer: allow
 - any in-package layer → `unknown`: allow
-- `external` is not fed through the in-package direction matrix. `domain_purity` and `dependency_inversion` keep their infrastructure-package behavior through `infrastructurePackage` and `isInSdk`, which is the current prefix-list behavior expressed on the resolved URI
+- `external` is not fed through the in-package direction matrix. Direct infrastructure imports keep the current prefix-list behavior through `infrastructurePackage` and `isInSdk`
 - in-package layer → in-package layer: the existing direction matrix
 
 DI-file exceptions inside `layer_dependency` stay in that rule. The resolver does not treat a file named `injection.dart` as `unknown`.
+
+`domain_purity` does not treat domain → in-package `unknown` as a blanket allow. The 3.0.0 walk is specified under PR 2b. A domain file that imports `package:flutter`, `dart:ui`, or an infrastructure-package URI directly still reports on that import, which is the rule's current prefix check on the resolved URI. A direct `dart:io` import from a domain library stays allowed: domain signatures may name `File` and `Directory`. `dart:io` is a hit only when an unknown library reached from domain imports it.
 
 ## 2. Migration plan
 
@@ -167,7 +169,7 @@ Each PR stays under 800 lines, including tests and fixtures. None of them migrat
 | --- | --- | --- | --- | --- |
 | 1 | `LayerResolver` + unit tests. No rule calls it. No rule drops `canUseParsedResult => true`. | No new or removed diagnostics | No release by itself. A release that contains only this PR is a patch. | n/a |
 | 2 | `layer_dependency` and `boundary_crossing` classify `importedLibrary` and referenced `NamedType.element.library`. | Yes. Barrels, extension-less relative imports, and mis-foldered part libraries gain diagnostics. Some substring false positives disappear (`Domain` vs `domain` included). | **Major 3.0.0.** No shadow-diagnostic period and no parallel codes. | Default-on in 3.0.0. Same codes: `layer_dependency`, `boundary_crossing`. |
-| 2b | Same release as PR 2. `circular_dependency` and the import half of `domain_purity` use the resolver. Split out only if PR 2 would cross 800 lines. | Yes, same class of new edges. | Ships inside 3.0.0. Do not publish PR 2 without 2b. The four hard checks would disagree on a barrel. | Default-on, same codes. |
+| 2b | Same release as PR 2. `circular_dependency` and the import half of `domain_purity` use the resolver, including the unknown-library reachability walk. Split out only if PR 2 would cross 800 lines. | Yes. Barrel edges, plus a domain import of in-package `unknown` that can reach Flutter, `dart:ui`, `dart:io`, or an infrastructure package. | Ships inside 3.0.0. Do not publish PR 2 without 2b. The four hard checks would disagree on a barrel. | Default-on, same codes. |
 | 3 | `dependency_inversion`, `repository_interface`, `repository_implementation` use declaration ownership. Drop `Gateway` / `Client` / `Adapter` and `Dto` / `Response` / `Model` as proof of a concrete data type. | Yes. A domain type named `PaymentGateway` stops warning. A data class named `TodoStore` referenced from domain starts warning. A domain signature that mentions a type declared in `data/` starts warning even when the name does not end in `Dto`. A domain class that implements a domain repository interface and has a concrete method body starts warning under `repository_implementation` even when its name does not end with `Impl`. Method bodies on ordinary domain entities and value objects stay silent. | **Major**, same 3.0.0 as PR 2 if it lands in that release; otherwise the next major. Do not ship this as a patch on 2.x. | Default-on, same codes. |
 | 4 | New rule `cross_feature_boundary`. | New diagnostic. Not breaking while it is opt-in. Breaking if turned on by default. | **Minor** while opt-in. Flipping the default is a later **major**. | **Opt-in** via `registerLintRule`, same mechanism as `riverpod_state_after_async_gap`. |
 | 5 | Error-boundary corrections on the existing presentation and repository throw rules. | Mixed. `contains('State')` false positives go away (a fix). `rethrow;` and intermediate bases such as `class DomainFailure extends AppFailure` where `AppFailure implements Exception` start participating in the check the rule already documents. | **Minor** on the 3.x line (or on 2.x if it lands before 3.0.0). This is a correction of the current codes, not a new policy. If the new `rethrow;` reports are wide, the owner can hold them for 3.0.0 instead. | Default-on, same codes. |
@@ -187,13 +189,35 @@ Both rules delete `canUseParsedResult => true`. For each `ImportDirective` they 
 
 `boundary_crossing` stops treating `_impl.dart`, `_implementation.dart`, and `/impl/` as the definition of concrete. A concrete cross-layer edge is a referenced `ClassElement` whose declaring library is a forbidden layer and whose `isAbstract` is false, or whose methods are not all abstract. The domain → data and domain → presentation import edges that the rule already reports stay, now keyed by `LayerLocation.kind`.
 
-`layer_dependency`'s direction matrix, DI-file exception, and infrastructure allow-list stay. The allow-list reads `infrastructurePackage` and `LayerKind.infrastructure` instead of `importUri.startsWith`.
+`layer_dependency`'s direction matrix, DI-file exception, and infrastructure allow-list stay. The allow-list reads `infrastructurePackage` and `LayerKind.infrastructure` instead of `importUri.startsWith`. Unknown libraries stay exempt in this PR, including `lib/main.dart`, `app.dart`, `core/providers`, and bootstrap. The `/core/constants/` domain cross-cutting change is in PR 2b, same release, not a new direction-rule report.
 
 ### PR 2b — `circular_dependency` and `domain_purity` imports
 
 `circular_dependency` builds its graph from `importedLibrary.uri` and from declaring libraries of referenced elements, using the same `LayerKind` as PR 2.
 
 `domain_purity` decides the source file with `resolveLibrary(context.libraryElement!)`. Import violations for data, presentation, and the infrastructure prefix list use `LayerLocation`. The superclass and interface name lists in `domain_purity` stay in this PR only when the diff still fits; otherwise they move with PR 5's supertype walk and this PR only switches the import check. Framework classes are then recognized because `element.library.isInSdk` (or an `infrastructurePackage` URI) is true, which removes the need to special-case the identifier `HttpClient`.
+
+**Decided (unknown reachability).** When the source library is `domain` and an import's `importedLibrary` is an in-package `unknown` library, `domain_purity` follows that library's imports. The first hop is the domain `ImportDirective.libraryImport.importedLibrary`, the same edge as PR 2. Further hops read `LibraryFragment.libraryImports` (`List<LibraryImport> get libraryImports` on `LibraryFragment` in analyzer 14.5.0) from `LibraryElement.fragments` and follow `LibraryImport.importedLibrary`. The walk does not follow `LibraryFragment.libraryExports`. It continues only along in-package `unknown` → `unknown` edges. It does not enter `domain`, `data`, `presentation`, or `infrastructure` libraries. An `external` target is not walked; it is only tested as a terminal. Cycles in the unknown graph stop at a library already on the stack. The reachability result is cached per library URI for the analysis (one entry per `library.uri.toString()`), the same lifetime as the `LayerResolver` cache: do not retain `LibraryElement` across analysis requests. A second domain file that imports the same unknown library reuses the cached chain.
+
+If any of the following is reachable, report on the domain file's import line (the `ImportDirective` in the domain library), still under the existing code `domain_purity`. The message names the chain of library URIs from that import to the forbidden library, in order:
+
+- `package:flutter/` (any library, including `package:flutter/widgets.dart` and `package:flutter/material.dart`)
+- `dart:ui`
+- `dart:io`
+- the existing infrastructure prefix list in `layer_dependency._isInfrastructurePackage`: `package:http/`, `package:dio/`, `package:sqflite/`, `package:hive/`, `package:shared_preferences/`, `package:cloud_firestore/`, `package:firebase_`, `package:drift/`, `package:isar/`, `package:objectbox/`, `package:realm/`
+- the IO prefixes `domain_purity._checkForViolation` already reports on a direct domain import: networking (`package:http/`, `package:dio/`, `package:connectivity_plus/`), storage (`package:sqflite/`, `package:hive/`, `package:shared_preferences/`, `package:path_provider/`, `package:cloud_firestore/`, `package:firebase_database/`), and platform (`package:device_info_plus/`, `package:permission_handler/`, `package:camera/`, `package:location/`, `package:geolocator/`)
+
+The walk does not add `package:ffi/`, `dart:html`, `dart:js`, or the state-management prefixes. Those stay on the direct-import check only. The walk does not apply to `layer_dependency`, `boundary_crossing`, or `circular_dependency`. Those three still allow the unknown edges in the policy section, so `lib/main.dart` importing Flutter stays silent for them.
+
+`/core/constants/` leaves the domain cross-cutting allowlist. Today `layer_dependency._isCrossCuttingConcern` matches `/core/constants/` and `/shared/constants/` for every source layer. In 3.0.0 a domain source no longer treats `/core/constants/` as cross-cutting. `/shared/constants/` is unchanged. Data and presentation sources still match `/core/constants/`. `layer_dependency` itself still allows domain → `unknown`, so this drop does not make `layer_dependency` report `core/constants`. The report is the `domain_purity` walk.
+
+Evidence from consumer apps:
+
+- `ittae` `lib/core/error/app_exception.dart`, and `flutter_boilerplate` and `dear_days` `lib/core/errors/exceptions.dart`, import `package:flutter/widgets.dart` only for the `AppExceptionL10n.toLocalizedMessage(BuildContext)` extension. `ittae` `features/schedule/domain/usecases/create_schedule_usecase.dart` imports that core error library. The diagnostic is the domain import. The chain names the core error library and `package:flutter/widgets.dart`.
+- `ittae` `core/constants/domain_colors.dart` imports `package:flutter/material.dart`. That is why `/core/constants/` is not a domain allowlist entry. A domain import of that library reports until the file no longer reaches `package:flutter`.
+- `maeil_scrum` and `short_form` `failures` / `result` libraries are pure Dart. An unknown library that never reaches `package:flutter`, `dart:ui`, `dart:io`, or an IO/infrastructure prefix stays silent.
+
+3.0.0 migration: each affected app moves the `BuildContext` localization extension out of `core/error` or `core/errors` into presentation. That is one file per app. The exception types stay where they are. After the move, the domain use case can keep importing the core error library.
 
 ### PR 3 — declaration ownership
 
@@ -243,8 +267,9 @@ Per-rule cost on top of resolution:
 - one `resolveLibrary` for `context.libraryElement` per library
 - one `resolveLibrary` per import's `importedLibrary`
 - one `Element.library` read per `NamedType` the rule already has a reason to visit
+- for `domain_purity` only, one cached walk of in-package `unknown` → `unknown` imports when a domain library imports an unknown library
 
-That is a pointer read plus a hash lookup. It is not another resolution. Rules that do not need referenced names (`layer_dependency` on a direct, non-barrel import) skip the `NamedType` walk.
+That is a pointer read plus a hash lookup. It is not another resolution. The unknown walk does not call `getResolvedUnit` again; it reads import edges on libraries the driver has already resolved, and each unknown library is classified once per analysis. Rules that do not need referenced names (`layer_dependency` on a direct, non-barrel import) skip the `NamedType` walk.
 
 `InterfaceType.allSupertypes` is computed by the analyzer for the type. PR 5 calls it on the thrown type and on the class being classified, not on every type in the unit.
 
@@ -292,7 +317,8 @@ Required bypass fixtures, each as a negative/positive pair inside the harness `f
 | Custom intermediate base | `class AppFailure implements Exception` and `class DomainFailure extends AppFailure`, thrown from a presentation notifier whose immediate superclass is a project `BaseNotifier extends Notifier`. PR 5 classifies the throw as an exception and the class as a notifier. | `class Statement extends ConsumerWidget` does not match the state check. A `rethrow;` inside an allowed catch stays allowed where the rule already allows rethrow. |
 | Part file | Library file is `domain/todo.dart` with `part 'todo_part.dart'` stored beside it. The part's elements classify as `domain` even if a second fixture places the part source under `data/` via the harness path. | A `data/` library with a part under `data/` classifies as `data`. |
 | Package vs relative | `import '../domain/todo.dart'` and `import 'package:<harness>/features/todo/domain/todo.dart'` in two files produce the same `LayerLocation.kind`. | A `package:meta/meta.dart` import is `external`, not `unknown` and not `domain`. |
-| Unknown | `lib/main.dart` imports a domain entity. No `layer_dependency` report. | `lib/features/todo/domain/todo.dart` imports `lib/features/todo/data/todo_model.dart`. Report. |
+| Unknown | `lib/features/todo/domain/todo.dart` imports `lib/features/todo/data/todo_model.dart`. Report `layer_dependency`. | `lib/main.dart` imports a domain entity. No `layer_dependency` report. `app.dart`, `core/providers`, and bootstrap stay silent for `layer_dependency`, `boundary_crossing`, and `circular_dependency` even when they import Flutter. |
+| Domain unknown reachability | Domain imports `lib/core/error/app_exception.dart`, which imports `package:flutter/widgets.dart`. `domain_purity` reports on the domain import and the message names both URIs. The same report fires for `lib/core/constants/domain_colors.dart` importing `package:flutter/material.dart`, and for an unknown library that imports `dart:io`. | Domain imports `lib/core/failures.dart`, which imports only `lib/core/result.dart` (pure Dart, as in `maeil_scrum` / `short_form`). Silent. A direct `dart:io` import in the domain file, used as a `File` or `Directory` signature, stays silent. |
 | Cross-feature | Opt-in rule, PR 4: `features/todo/presentation` imports `features/user/data`. Report. | `features/todo/presentation` imports `features/user/domain`. Silent. |
 | Use case | Opt-in, PR 6: a use case class with public `call` and public `execute`, and a use case that constructs another use case. Report the matching code. | A use case with public `call` and private `_validate`, depending on a domain repository. Silent. |
 
@@ -308,6 +334,7 @@ Risks to accept before PR 2 merges:
 - `ClassElement.isAbstract` is the modifier, not "no concrete methods." Dropping it in PR 3 reintroduces false negatives for `class TodoRepository { Future<Todo> get(String id); }` without `abstract`.
 - `exportedLibraries` ignores combinators. Using it as a "this barrel exports data" check will report barrels that `hide` the data names.
 - Publishing PR 2 without PR 2b leaves `layer_dependency` and `circular_dependency` / `domain_purity` on different definitions of the same import.
+- The unknown walk reports a domain import when Flutter or IO is reachable only through other unknown libraries. It does not follow a known layer, so an unknown file that imports presentation, which then imports Flutter, stays silent for this check. The direction rules still allow that unknown → presentation edge.
 - Case folding is inconsistent today (`CleanArchitectureUtils` is case-sensitive; `layer_dependency` lowercases). The resolver is case-sensitive. A tree that relies on `Domain` matching `/domain/` will lose that accidental match in 3.0.0.
 - `Identifier` is deprecated and `NameExpression` is experimental. Building PR 2 on `NameExpression.resolution` would couple the release to an unstable AST. PR 2 uses `NamedType` and `LibraryImport` only.
 - `onDispose` tear-offs stay false negatives until a separate bugfix. This design does not schedule that fix.
@@ -323,3 +350,4 @@ Open questions for the owner:
 7. For `usecase_single_public_call`, is the folder (`usecases` / `use_cases`) enough to select the class, or must the class name also end with `UseCase`? The proposal is folder-only, so a misnamed class in that folder is still checked.
 8. Should PR 5's new `rethrow;` findings ship as the minor bugfix, or be held for 3.0.0 if they are noisy?
 9. When should `domain_purity`'s remaining superclass name list, the model rules' `Dto` / `Response` checks, and `allowed_instance_variables`'s `Client` name set move onto declaring libraries? They are intentionally outside PRs 1–6 except where PR 2b can absorb the `domain_purity` import half.
+10. **Decided:** Unknown libraries (`lib/main.dart`, `app.dart`, `core/providers`, bootstrap, and any other in-package library with no layer segment) stay exempt for `layer_dependency`, `boundary_crossing`, and `circular_dependency`. `domain_purity` in 3.0.0 walks in-package `unknown` → `unknown` imports, cached per library, and reports on the domain import when `package:flutter`, `dart:ui`, `dart:io`, or an IO/infrastructure prefix is reachable. The message names the chain. `/core/constants/` is removed from the domain cross-cutting allowlist. Each affected app moves the `BuildContext` l10n extension out of `core/error(s)` into presentation, one file per app.
