@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0](https://github.com/ittae/clean_architecture_linter/compare/v2.7.5...v2.8.0) (2026-10-12)
+
+
+### Features
+
+* 확장 @Dependencies가 notifier 런타임 스코프를 벗어나면 보고한다 ([#188](https://github.com/ittae/clean_architecture_linter/issues/188)) ([0073892](https://github.com/ittae/clean_architecture_linter/commit/0073892bf04e1f94d26b75bdaa1c92733853d810))
+
+
+### Bug Fixes
+
+* presentation_no_throw가 ConsumerStatefulWidget, StatefulHookConsumerWidget, HookWidget 슈퍼클래스를 위젯으로 본다 ([#190](https://github.com/ittae/clean_architecture_linter/issues/190)) ([9d875a3](https://github.com/ittae/clean_architecture_linter/commit/9d875a3295004bc9c5749ba0c9adc02e645b18ca))
+
+
+### Documentation
+
+* Riverpod 3.4.3 / flutter_riverpod 3.4.3 / hooks_riverpod 3.4.3 호환을 확인했다 ([#186](https://github.com/ittae/clean_architecture_linter/issues/186)) ([542a349](https://github.com/ittae/clean_architecture_linter/commit/542a349963e15bd22ffc1f00bdd4bae275b6441c)), ([#190](https://github.com/ittae/clean_architecture_linter/issues/190)) ([9d875a3](https://github.com/ittae/clean_architecture_linter/commit/9d875a3295004bc9c5749ba0c9adc02e645b18ca))
+
 ## [2.7.5](https://github.com/ittae/clean_architecture_linter/compare/v2.7.4...v2.7.5) (2026-10-07)
 
 
