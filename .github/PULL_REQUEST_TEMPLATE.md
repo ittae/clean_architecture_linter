@@ -21,7 +21,9 @@
 
 <!-- 실행 환경, 실행한 명령, 관측한 결과를 적습니다.
      CI, unit test, lint 결과만으로 끝내지 않습니다.
-     검증하지 않은 영역이 있으면 함께 적습니다. -->
+     검증하지 않은 영역이 있으면 함께 적습니다.
+     (선택) 로컬 pre-pr-review 감사 흔적 — 머지 게이트 아님, receipt가 있으면 아래 형식 한 줄을 추가합니다:
+     - pre-pr-review: PASS (engine=<engine>, head <sha8>) / skipped (bot) -->
 
 ## 🚫 범위 밖
 

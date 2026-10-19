@@ -1,0 +1,17 @@
+name: Runner guard
+
+# ITT-4169: fail a PR whose workflows can run a job on a GitHub-hosted runner (Free plan:
+# hosted minutes in private repos are a leak). Logic and allowlist live in ittae/.github
+# (.github/workflows/runner-guard.yml, tools/check_hosted_runs_on.py) — do not duplicate.
+# Public repos skip inside the reusable; their fork PRs never reach the Mac mini.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  runner-guard:
+    uses: ittae/.github/.github/workflows/runner-guard.yml@main

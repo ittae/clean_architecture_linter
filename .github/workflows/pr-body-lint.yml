@@ -1,7 +1,7 @@
 name: PR body lint
 
 # Human/agent PRs only — title/body are AI review inputs (org template).
-# Dependabot/bots: skip — machine changelog ≠ agent template (lane A CI must stay green).
+# Dependabot/bots skipped (changelog body ≠ template; not AI-reviewed merge lane text).
 # release-please: skip — release-please-action runs with RELEASE_PLEASE_TOKEN (a PAT, not
 # GITHUB_TOKEN) so tags trigger publish.yml; that makes the PR author a real user, not a
 # bot, so the actor/user.type checks below don't catch it. Its branch name is always
@@ -19,20 +19,45 @@ permissions:
 
 jobs:
   lint:
+    # `edited` re-lints only when the body changed; title/base edits are skipped.
+    # SKIPPED never hides an earlier FAILURE: statusCheckRollup keeps every run of a check name on
+    # the head (measured: ittae/.github#238 head 4ac6d13 had `lint` SKIPPED,SUCCESS,SUCCESS), and
+    # classify_checks fails on any FAILURE/CANCELLED among them.
     if: >-
       github.event.pull_request.draft != true &&
       github.actor != 'dependabot[bot]' &&
       github.actor != 'dependabot-preview[bot]' &&
       github.event.pull_request.user.type != 'Bot' &&
-      !startsWith(github.event.pull_request.head.ref, 'release-please--')
-    runs-on: ubuntu-latest
+      !startsWith(github.event.pull_request.head.ref, 'release-please--') &&
+      (github.event.action != 'edited' || github.event.changes.body != null)
+    # Seconds-long body lint: private same-repo PRs run on the Mac mini (ittae-2) to save
+    # hosted minutes (ITT-4169). Public repos and fork PRs stay on GitHub-hosted runners.
+    # Mac mini down: add the org `ci-hosted` PR label (`gh label create ci-hosted` if this repo lacks
+    # it). It applies from the next body edit or push: `labeled` is not a trigger and re-run keeps
+    # the old payload.
+    runs-on: ${{ (github.event.repository.private && github.event.pull_request.head.repo.full_name == github.repository && !contains(github.event.pull_request.labels.*.name, 'ci-hosted')) && fromJSON('["self-hosted", "ittae-2"]') || 'ubuntu-latest' }}
+    # Shared Mac mini runner: never hold a slot for the 360-minute default if gh/curl hangs.
+    timeout-minutes: 5
+    # No concurrency on purpose: the merge gate (classify_checks) treats any CANCELLED run on
+    # the head SHA as FAIL, and back-to-back `edited` events share one SHA (ITT-4169).
     steps:
+      # The lint runs PR-head .github/scripts/pr_body_lint.sh and gh on the Mac mini, whose user HOME
+      # is the live machine (gh config, CLIs, caches). Point HOME at the job temp dir first and fail
+      # closed if the override did not apply; hosted fallback runs skip both steps.
+      - name: Isolate HOME (self-hosted)
+        if: runner.environment == 'self-hosted'
+        run: |
+          mkdir -p "$RUNNER_TEMP/home"
+          echo "HOME=$RUNNER_TEMP/home" >> "$GITHUB_ENV"
+      - name: Verify HOME isolation (self-hosted)
+        if: runner.environment == 'self-hosted'
+        run: test "$HOME" = "$RUNNER_TEMP/home"
       - uses: actions/checkout@v7
       - name: Fetch PR body
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh pr view "${{ github.event.pull_request.number }}" -R "${{ github.repository }}" --json body -q .body > /tmp/pr-body.md
+          gh pr view "${{ github.event.pull_request.number }}" -R "${{ github.repository }}" --json body -q .body > "$RUNNER_TEMP/pr-body.md"
       - name: Lint PR body
-        run: bash .github/scripts/pr_body_lint.sh /tmp/pr-body.md
+        run: bash .github/scripts/pr_body_lint.sh "$RUNNER_TEMP/pr-body.md"
