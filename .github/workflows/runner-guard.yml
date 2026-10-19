@@ -1,9 +1,10 @@
 name: Runner guard
 
-# ITT-4169: fail a PR whose workflows can run a job on a GitHub-hosted runner (Free plan:
-# hosted minutes in private repos are a leak). Logic and allowlist live in ittae/.github
-# (.github/workflows/runner-guard.yml, tools/check_hosted_runs_on.py) — do not duplicate.
-# Public repos skip inside the reusable; their fork PRs never reach the Mac mini.
+# Public repository. Hosted minutes are free, and a fork pull request must not
+# reach the org self-hosted runner. This file does not call the private reusable
+# workflow: GitHub rejects that call before any job starts ("public repositories
+# can only access public workflows"). Private repositories install the reusable
+# caller instead.
 
 on:
   pull_request:
@@ -14,4 +15,16 @@ permissions:
 
 jobs:
   runner-guard:
-    uses: ittae/.github/.github/workflows/runner-guard.yml@main
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Confirm this caller is only for a public repository
+        env:
+          REPO_PRIVATE: ${{ github.event.repository.private }}
+        run: |
+          set -euo pipefail
+          if [ "$REPO_PRIVATE" = "true" ]; then
+            echo "private repository must call the org runner-guard reusable, not this public caller" >&2
+            exit 1
+          fi
+          echo "public repository: hosted runners stay on GitHub"
