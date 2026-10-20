@@ -1,8 +1,13 @@
+# Public repository copy. GitHub rejects uses: of a private reusable
+# (public repositories can only access public workflows), so this file
+# stays inline. Only a merged close starts the job, and the same-repo
+# guard stays so a fork pull request does not run on self-hosted.
+
 name: Multica PR Webhook Relay
 
 on:
   pull_request:
-    types: [opened, closed, reopened]
+    types: [closed]
 
 permissions:
   contents: read
@@ -13,7 +18,7 @@ jobs:
     # self-hosted (local webhook URL file + home dir). Aligns with
     # pr-review.yml same-repo gate. Identical fanout from a private pilot must
     # not drop this `if`.
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event.pull_request.merged == true && github.event.pull_request.head.repo.full_name == github.repository
     # 의도 라벨 명시 (bare self-hosted 금지 — 이 PR의 정책 규율). 라벨은 관례일 뿐
     # 현재 2대 단일 풀에서 스케줄 격리는 아니다 (macmini-gha-runners-ops-pitfalls.md).
     runs-on: [self-hosted, ittae-2]
