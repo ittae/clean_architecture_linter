@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.2](https://github.com/ittae/clean_architecture_linter/compare/v2.8.1...v2.8.2) (2026-10-20)
+
+
+### Bug Fixes
+
+* relay를 머지된 같은 저장소 close만 보내게 좁힌다 ([#197](https://github.com/ittae/clean_architecture_linter/issues/197)) ([feadb8e](https://github.com/ittae/clean_architecture_linter/commit/feadb8ed8ff6b9b42c2f91767109881e02384ba8))
+
 ## [2.8.1](https://github.com/ittae/clean_architecture_linter/compare/v2.8.0...v2.8.1) (2026-10-19)
 
 
