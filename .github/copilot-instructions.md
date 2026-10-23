@@ -5,6 +5,36 @@
 - 검증은 root `dart analyze`, root `dart test`, `cd example && dart analyze`, `cd poc_v2/consumer_riverpod_lint && dart analyze`를 기준으로 한다.
 - 상세 규칙 / Vision / rule 등록: `CLAUDE.md` 참조.
 
+<!-- BEGIN agent-owner-brief (managed) -->
+## 성준님 브리프 (작업 전에 먼저 읽는다)
+
+정본은 workspace `policies/owner-brief.md`다. 다른 지침과 충돌하면 결정 규칙은 이 블록을 따르고, 금지 사항은 `policies/owner-rules.md`를 따른다.
+
+**목표.** 성준님이 손대지 않아도 돌아가는 앱이 순이익을 내게 한다. 사업의 월 순이익이 500만원이 되면 성준님은 퇴사한다. 지금 앱 매출은 0이다. 모든 작업은 이 거리를 줄이거나, 성준님의 손을 덜거나, 사용자가 좋아할 이유를 늘려야 한다.
+
+**돈의 원칙.** 돈은 사용자가 원해서 내는 것이다. 사용자를 속이는 결제 화면, 해지를 막는 흐름, 과한 알림은 만들지 않는다. 사용자의 말(리뷰·추천)이 매출보다 먼저 오른다.
+
+**완료의 기준.**
+- `## Result`의 `evidence:` 줄이 `done_evidence`를 충족한다. 이 줄이 비어 있으면 완료가 아니다.
+- 작업하는 동안 성준님이 손댄 횟수가 0이다.
+- 성준님께 보내는 결과는 화면 캡처, 짧은 영상, 숫자 한 줄 중 하나다. 1분 안에 판단할 수 있어야 한다. 성준님의 시간은 주 4시간뿐이다. 코드와 diff는 보내지 않는다.
+
+**초점** (갱신일 2026-10-22. 이 날짜에서 8일이 지나면 이 목록은 무시한다)
+- ittae 0.5, 11월 초: 1인 창업자와 크리에이터를 위한 매니저 앱. 아침에는 하루가 이미 정리돼 있고, 때맞춰 알림이 오고, 밤에는 확인만 누른다. 결제할 수 있어야 한다.
+- nebtoon: 스토어에 한 번 제출한다. 기능은 추가하지 않는다.
+- h.itae 카드뉴스: 지금처럼 봇이 운영한다.
+- 위 세 가지 밖의 작업과, 지표를 움직이지 못하는 시스템 개선은 하지 않는다.
+
+**스스로 결정한다.**
+1. 지표 셋(순이익, 성준님의 손, 사용자의 말) 중 무엇을 움직이는지 한 줄로 쓰지 못하면 하지 않는다.
+2. 되돌릴 수 있는 결정은 묻지 않고 한다. 되돌릴 수 없는 일(키, prd 데이터, 스토어 제출, 결제 실행)에서만 멈춘다.
+3. 두 방법이 비슷하면 성준님의 손이 덜 가는 쪽을 고른다. 돈과 성준님의 손이 충돌해도 손을 지킨다.
+4. 수익이 나기 전의 저장소에서는 다듬기보다 출시가 먼저다.
+5. 막혀도 묻지 않는다. `blocked` 또는 `needs-info`를 남기고 멈춘다. 성준님께 가져가는 안건은 자본 배분, 인력, 최종 승인 세 가지뿐이다.
+
+**시작하기 전에.** 같은 goal의 열린 이슈나 PR이 있으면 `no-op`으로 끝낸다. 브리프와 이슈의 Constraints를 첫 답글에 되읽는다. 자기 lane에 해당하는 `docs/known-mistakes.md` 항목을 읽는다. 같은 방법이 두 번 실패하면 방법을 바꾸고 `mistake:` 줄을 남긴다.
+<!-- END agent-owner-brief -->
+
 ## sandbox 안전 규율
 <!-- BEGIN agent-safety-discipline (managed) -->
 - `.env` secret을 출력·검사·커밋하지 않는다. 필요한 경우 `.env.example`의 key 이름만 확인한다.
@@ -24,15 +54,10 @@
 
 ## 검색·컨텍스트 규율 (토큰 효율)
 <!-- BEGIN agent-search-discipline (managed) -->
-- 코드/텍스트 검색은 `rg`, **파일명·최근변경 찾기는 `fd`** (`find` 금지), 구조(AST) 매칭은 `ast-grep`/`sg` (`grep -r`/`find`/정규식 대신).
-- `ast-grep`의 Dart는 내장이지만 맨 패턴(`print($A)`)은 ERROR 노드로 0건이다. 완전한 문맥 + `--selector`로 쓴다: `ast-grep run -l dart -p 'void f(){ print($A); }' --selector call_expression lib` (위젯은 `-p 'Widget f() => Padding(padding: $P, child: $C);'`). `customLanguages`로 `dart`를 재등록하지 않는다(내장과 충돌해 파일 모드 0건). exit 1은 매치 없음이지 오류가 아니다.
-- 파일을 통째로 읽지 않는다. `rg`/`ast-grep`로 위치를 특정한 뒤 필요한 심볼/라인 범위만 읽는다.
-- 툴 결과 JSON/YAML을 raw로 컨텍스트에 넣지 않는다. `jq`/`yq`로 필요한 필드만 필터한다.
-- GitHub는 `gh`, HTTP 스모크는 `xh`(없으면 `curl`). Multica 플랫폼은 `multica` CLI만.
-- 광범위 매칭을 통째로 프롬프트에 넣지 않는다. 범위를 좁히거나 count만 확인한다.
-- 목적: 토큰 낭비·환각(길 잃음) 방지. Multica 할당 에이전트도 workspace context/agent instructions의 Mac mini CLI routing과 동일 적용.
-- **위 필터 규율은 조회(read)에만 적용한다.** 상태를 바꾸는 명령(`git push`, `gh pr create/edit/merge`, `--apply`, 배포·설정 생성)은 출력을 `| tail`/`| head`로 자르지 않는다. 에러는 잘린 부분에 숨고, 남은 마지막 줄은 성공처럼 보인다. 실측 사례: `gh pr edit ... -q .`가 `unknown shorthand flag: 'q'`로 실패했는데 `| tail -1`이 usage 끝줄만 남겨 성공으로 오독했다.
-- **쓰기 명령은 실행 후 목적지를 조회해 확인한다.** `push` 성공은 브랜치에 올라갔다는 뜻일 뿐 PR에 반영됐다는 뜻이 아니다 — `gh pr view <n> --json state,commits`로 확인한다. 이 확인을 생략해 수정 커밋이 머지 1분 뒤에 도착했고, 게이트가 깨진 채 하루 동안 배포돼 있었다.
+- 텍스트 검색은 `rg`, 파일명·최근 변경은 `fd`(`find` 금지), 구조(AST) 매칭은 `ast-grep`. Dart는 완전한 문맥 + `--selector`로 쓴다: `ast-grep run -l dart -p 'void f(){ print($A); }' --selector call_expression lib` (맨 `print($A)`는 0건, exit 1은 매치 없음). `customLanguages`로 `dart`를 재등록하지 않는다(상세: workspace `policies/worker-contract.md` §2).
+- 파일을 통째로 읽지 않는다. 위치를 특정한 뒤 필요한 범위만 읽고, 툴 결과 JSON/YAML은 `jq`/`yq`로 필요한 필드만 남긴다. GitHub는 `gh`, HTTP 스모크는 `xh`(없으면 `curl`), Multica는 `multica` CLI만.
+- 이 필터 규율은 조회(read)에만 적용한다. 상태를 바꾸는 명령(`git push`, `gh pr create/edit/merge`, `--apply`, 배포·설정 생성)은 출력을 `| tail`/`| head`로 자르지 않는다. 에러는 잘린 부분에 숨고 마지막 줄은 성공처럼 보인다.
+- 쓰기 명령은 실행 뒤 목적지를 조회해 확인한다. `push` 성공은 PR 반영이 아니다 — `gh pr view <n> --json state,commits`.
 <!-- END agent-search-discipline -->
 
 ## 검증 규율 (analyze 먼저, test 나중)
