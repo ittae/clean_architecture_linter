@@ -253,8 +253,11 @@ class TodoNotifier extends Notifier<Object> {
           true,
         ),
         (
-          'flags ref.watch in an async helper called from build()',
-          'Future<Object> build() async => _load();\n'
+          'flags ref.watch in an async helper called from a sync build()',
+          'Object build() {\n'
+              '  _load();\n'
+              '  return const Object();\n'
+              '}\n'
               'Future<Object> _load() async {\n'
               '  await Future<void>.delayed(Duration.zero);\n'
               '  return ref.watch(currentUserProvider);\n'
