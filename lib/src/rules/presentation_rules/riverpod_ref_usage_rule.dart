@@ -13,8 +13,9 @@ import '../../utils/riverpod_provider_detector.dart';
 ///
 /// Covers Notifier classes, extensions on Notifiers, and top-level
 /// `@riverpod` functional providers (whose whole body is the `build()`
-/// equivalent). A private synchronous helper that only `build()` runs
-/// (directly or transitively) may use `ref.watch()`.
+/// equivalent, except that reads inside closures are left alone). A private
+/// synchronous helper that only a synchronous `build()` runs (directly or
+/// transitively) may use `ref.watch()`.
 class RiverpodRefUsageRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'riverpod_ref_usage',
@@ -97,7 +98,13 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
     if (!hasRiverpodAnnotation(node.metadata)) return;
 
     // The function body runs once per (re)build, exactly like `build()`.
-    _checkBodyRefUsage(node.functionExpression.body, isBuildMethod: true);
+    // Reads inside a closure (a returned callback, a `ref.listen` handler) run
+    // after the build, where `ref.read` is the right call.
+    _checkBodyRefUsage(
+      node.functionExpression.body,
+      isBuildMethod: true,
+      ignoreClosureReads: true,
+    );
   }
 
   @override
@@ -247,6 +254,7 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
     FunctionBody body, {
     required bool isBuildMethod,
     bool allowWatchInMethod = false,
+    bool ignoreClosureReads = false,
   }) {
     if (body is! BlockFunctionBody && body is! ExpressionFunctionBody) return;
 
@@ -257,7 +265,8 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
     if (isBuildMethod) {
       for (final refReadCall in refReadCalls) {
         if (_isAllowedOneShotProviderCall(refReadCall) ||
-            _isNotifierAccess(refReadCall)) {
+            _isNotifierAccess(refReadCall) ||
+            (ignoreClosureReads && _isInsideClosure(refReadCall, body))) {
           continue;
         }
         rule.reportAtNode(
@@ -428,7 +437,9 @@ class _SelfCallCollector extends RecursiveAstVisitor<void> {
   void visitMethodInvocation(MethodInvocation node) {
     final target = node.target;
     final name = node.methodName.name;
-    if ((target == null || target is ThisExpression) &&
+    // `x..name()` has a null target too, but is a call on `x`.
+    if (!node.isCascaded &&
+        (target == null || target is ThisExpression) &&
         _candidates.contains(name)) {
       (sites[name] ??= {}).add(node);
     }

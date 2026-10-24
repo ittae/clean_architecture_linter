@@ -602,6 +602,12 @@ class PomodoroNotifier {
           true,
         ),
         (
+          'flags a timer when onDispose only cascades on another object',
+          '$timer$start    ref.onDispose(() => other..cancel());\n  }\n'
+              '  void cancel() {\n    _timer?.cancel();\n  }',
+          true,
+        ),
+        (
           'flags a helper tear-off that does not cancel',
           '$timer$start    ref.onDispose(_cleanup);\n  }\n  void _cleanup() {}',
           true,

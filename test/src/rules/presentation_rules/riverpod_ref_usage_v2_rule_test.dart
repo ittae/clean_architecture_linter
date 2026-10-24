@@ -353,6 +353,13 @@ class TodoNotifier extends Notifier<Object> {
           true,
         ),
         (
+          'allows ref.watch in a build-only helper whose name a cascade repeats',
+          'Object build() => _compute();\n'
+              'void other(List<int> xs) => xs.._compute();\n'
+              'Object _compute() => ref.watch(userProvider);',
+          false,
+        ),
+        (
           'flags ref.watch in a helper that a public method also calls',
           'Object build() => _compute();\n'
               'void increment() => _compute();\n'
@@ -426,6 +433,20 @@ class TodoNotifier extends Notifier<Object> {
               '  ref.read(todoRepositoryProvider);\n'
               '  ref.read(getTodosUseCaseProvider);\n'
               '  return ref.watch(userProvider) != null;\n'
+              '}',
+          false,
+        ),
+        (
+          'allows a state provider ref.read inside a returned callback',
+          '@riverpod\nObject Function() reader(Object ref) =>\n'
+              '    () => ref.read(userProvider);',
+          false,
+        ),
+        (
+          'allows a state provider ref.read inside a ref.listen callback',
+          '@riverpod\nFuture<int> counter(Object ref) async {\n'
+              '  ref.listen(otherProvider, (_, __) => ref.read(userProvider));\n'
+              '  return 0;\n'
               '}',
           false,
         ),

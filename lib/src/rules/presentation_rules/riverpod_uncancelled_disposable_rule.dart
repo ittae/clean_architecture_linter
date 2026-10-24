@@ -361,7 +361,8 @@ class _ReleaseCollector extends RecursiveAstVisitor<void> {
       if (name != null) _released.add(name);
     }
     final target = node.target;
-    if (target == null || target is ThisExpression) {
+    // `x..name()` has a null target too, but is a call on `x`.
+    if (!node.isCascaded && (target == null || target is ThisExpression)) {
       followHelper(node.methodName.name);
     }
     super.visitMethodInvocation(node);
