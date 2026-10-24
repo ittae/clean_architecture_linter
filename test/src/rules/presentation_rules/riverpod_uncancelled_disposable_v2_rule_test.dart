@@ -591,6 +591,17 @@ class PomodoroNotifier {
           false,
         ),
         (
+          'accepts a this.cancel tear-off whose helper cancels',
+          '$timer$start    ref.onDispose(this.cancel);\n  }\n'
+              '  void cancel() {\n    _timer?.cancel();\n  }',
+          false,
+        ),
+        (
+          'flags a helper that is only passed to another function in onDispose',
+          '$timer$start    ref.onDispose(() => registry.add(_cleanup));\n  }\n$cancelHelper',
+          true,
+        ),
+        (
           'flags a helper tear-off that does not cancel',
           '$timer$start    ref.onDispose(_cleanup);\n  }\n  void _cleanup() {}',
           true,

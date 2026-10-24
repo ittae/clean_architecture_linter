@@ -167,7 +167,16 @@ class _BodyScanner extends RecursiveAstVisitor<void> {
   void visitMethodInvocation(MethodInvocation node) {
     // ref.onDispose(() { x.cancel(); }) — collect released names.
     if (node.methodName.name == 'onDispose' && _isRefTarget(node.target)) {
-      node.argumentList.accept(_ReleaseCollector(_released, _methods));
+      final collector = _ReleaseCollector(_released, _methods);
+      // `ref.onDispose(_cleanup)` / `ref.onDispose(this._cleanup)`: Riverpod
+      // calls only what is handed to onDispose, so only these direct
+      // tear-offs run a helper; a tear-off passed on to another function
+      // inside the callback does not.
+      for (final argument in node.argumentList.arguments) {
+        final tearOff = _tearOffName(callbackArgumentExpression(argument));
+        if (tearOff != null) collector.followHelper(tearOff);
+      }
+      node.argumentList.accept(collector);
     }
 
     // recv.start(onX: ...) only. Stream.listen is tracked via assignment
@@ -309,6 +318,14 @@ class _BodyScanner extends RecursiveAstVisitor<void> {
   bool _isRiverpodOwnedListen(MethodInvocation node) =>
       node.methodName.name == 'listen' && _isRefTarget(node.target);
 
+  String? _tearOffName(Expression? expr) {
+    if (expr is SimpleIdentifier) return expr.name;
+    if (expr is PropertyAccess && expr.target is ThisExpression) {
+      return expr.propertyName.name;
+    }
+    return null;
+  }
+
   String? _receiverName(Expression? target) => _nameOf(target);
 
   String? _assignedName(Expression lhs) => _nameOf(lhs);
@@ -345,36 +362,12 @@ class _ReleaseCollector extends RecursiveAstVisitor<void> {
     }
     final target = node.target;
     if (target == null || target is ThisExpression) {
-      _followHelper(node.methodName.name);
+      followHelper(node.methodName.name);
     }
     super.visitMethodInvocation(node);
   }
 
-  @override
-  void visitSimpleIdentifier(SimpleIdentifier node) {
-    // `ref.onDispose(_cleanup)`: the argument is a bare method tear-off. A
-    // call's method name is handled by visitMethodInvocation, and a prefixed /
-    // property name is a member of another object, never an own-class helper.
-    final parent = node.parent;
-    if (parent is ArgumentList) {
-      _followHelper(node.name);
-    }
-    super.visitSimpleIdentifier(node);
-  }
-
-  @override
-  void visitPropertyAccess(PropertyAccess node) {
-    // `ref.onDispose(this._cleanup)` tear-off.
-    if (node.target is ThisExpression &&
-        node.parent is ArgumentList &&
-        !_releaseMethods.contains(node.propertyName.name)) {
-      _followHelper(node.propertyName.name);
-    }
-    _collectPropertyRelease(node);
-    super.visitPropertyAccess(node);
-  }
-
-  void _followHelper(String name) {
+  void followHelper(String name) {
     final helper = _methods[name];
     if (helper == null || !_visitedHelpers.add(name)) return;
     helper.body.accept(this);
@@ -389,11 +382,13 @@ class _ReleaseCollector extends RecursiveAstVisitor<void> {
     super.visitPrefixedIdentifier(node);
   }
 
-  void _collectPropertyRelease(PropertyAccess node) {
+  @override
+  void visitPropertyAccess(PropertyAccess node) {
     if (_releaseMethods.contains(node.propertyName.name)) {
       final name = _nameOf(node.target);
       if (name != null) _released.add(name);
     }
+    super.visitPropertyAccess(node);
   }
 
   String? _nameOf(Expression? expr) {

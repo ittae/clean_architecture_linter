@@ -78,14 +78,16 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
     final unit = node.parent;
     final className = classDeclarationName(node);
     if (unit is! CompilationUnit || className == null) return const [];
-    return [
-      for (final declaration in unit.declarations)
-        if (declaration is ExtensionDeclaration &&
-            (declaration.onClause?.extendedType as NamedType?)?.name.lexeme ==
-                className)
-          for (final member in extensionMembers(declaration))
-            if (member is MethodDeclaration) member.body,
-    ];
+    final bodies = <AstNode>[];
+    for (final declaration in unit.declarations) {
+      if (declaration is! ExtensionDeclaration) continue;
+      final extended = declaration.onClause?.extendedType;
+      if (extended is! NamedType || extended.name.lexeme != className) continue;
+      for (final member in extensionMembers(declaration)) {
+        if (member is MethodDeclaration) bodies.add(member.body);
+      }
+    }
+    return bodies;
   }
 
   @override
@@ -158,7 +160,12 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
     }
     if (build == null || helpers.isEmpty) return const {};
 
-    final fromBuild = _reachHelpers([build.body], helpers, syncOnly: true);
+    final fromBuild = _reachHelpers(
+      [build.body],
+      helpers,
+      syncOnly: true,
+      beforeOffset: _firstAwaitEnd(build.body),
+    );
     // Every method that is not `build()` or a build-only helper is another
     // entry point: public, async, or a private helper `build()` never runs.
     final entryBodies = <AstNode>[
@@ -179,22 +186,36 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
     return fromBuild.difference(fromElsewhere).difference(tearOffs.names);
   }
 
+  /// Offset where the first `await` of [body] completes, or null. A call
+  /// after it runs after a suspension point, not in `build()`'s synchronous run.
+  int? _firstAwaitEnd(FunctionBody body) {
+    final finder = _FirstAwaitFinder();
+    body.accept(finder);
+    return finder.end;
+  }
+
   /// Helper names called from [roots], following calls through helper bodies.
+  /// With [beforeOffset], calls in the roots at or after it are ignored.
   Set<String> _reachHelpers(
     List<AstNode> roots,
     Map<String, MethodDeclaration> helpers, {
     required bool syncOnly,
+    int? beforeOffset,
   }) {
     final reached = <String>{};
-    final pending = [...roots];
+    final pending = <(AstNode, int?)>[
+      for (final root in roots) (root, beforeOffset),
+    ];
     while (pending.isNotEmpty) {
+      final (node, cutoff) = pending.removeLast();
       final collector = _SelfCallCollector(
         helpers.keys.toSet(),
         syncOnly: syncOnly,
+        beforeOffset: cutoff,
       );
-      pending.removeLast().accept(collector);
+      node.accept(collector);
       for (final name in collector.calledHelpers) {
-        if (reached.add(name)) pending.add(helpers[name]!.body);
+        if (reached.add(name)) pending.add((helpers[name]!.body, null));
       }
     }
     return reached;
@@ -238,8 +259,13 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
           ],
         );
       }
-    } else if (!allowWatchInMethod) {
+    } else {
       for (final refWatchCall in refWatchCalls) {
+        // A build-only helper may watch in its own synchronous run, but a
+        // closure inside it can fire after `build()` returned.
+        if (allowWatchInMethod && !_isInsideClosure(refWatchCall, body)) {
+          continue;
+        }
         rule.reportAtNode(
           refWatchCall,
           arguments: const [
@@ -249,6 +275,13 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
         );
       }
     }
+  }
+
+  bool _isInsideClosure(AstNode node, AstNode body) {
+    for (AstNode? p = node.parent; p != null && p != body; p = p.parent) {
+      if (p is FunctionExpression) return true;
+    }
+    return false;
   }
 
   void _collectRefCalls(
@@ -370,10 +403,17 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
 /// enclosing body returned, so a call inside it is not part of that body's
 /// synchronous run.
 class _SelfCallCollector extends RecursiveAstVisitor<void> {
-  _SelfCallCollector(this._candidates, {required this.syncOnly});
+  _SelfCallCollector(
+    this._candidates, {
+    required this.syncOnly,
+    this.beforeOffset,
+  });
 
   final Set<String> _candidates;
   final bool syncOnly;
+
+  /// Calls starting at or after this offset are ignored.
+  final int? beforeOffset;
   final Set<String> calledHelpers = {};
 
   @override
@@ -385,11 +425,41 @@ class _SelfCallCollector extends RecursiveAstVisitor<void> {
   @override
   void visitMethodInvocation(MethodInvocation node) {
     final target = node.target;
+    final cutoff = beforeOffset;
     if ((target == null || target is ThisExpression) &&
-        _candidates.contains(node.methodName.name)) {
+        _candidates.contains(node.methodName.name) &&
+        (cutoff == null || node.offset < cutoff)) {
       calledHelpers.add(node.methodName.name);
     }
     super.visitMethodInvocation(node);
+  }
+}
+
+/// Finds where the first `await` (or `await for`) of a body completes,
+/// without entering closures, which suspend on their own.
+class _FirstAwaitFinder extends RecursiveAstVisitor<void> {
+  int? end;
+
+  @override
+  void visitFunctionExpression(FunctionExpression node) {}
+
+  @override
+  void visitAwaitExpression(AwaitExpression node) {
+    final current = end;
+    if (current == null || node.end < current) end = node.end;
+    super.visitAwaitExpression(node);
+  }
+
+  @override
+  void visitForStatement(ForStatement node) {
+    final awaitKeyword = node.awaitKeyword;
+    if (awaitKeyword != null) {
+      final current = end;
+      if (current == null || awaitKeyword.end < current) {
+        end = awaitKeyword.end;
+      }
+    }
+    super.visitForStatement(node);
   }
 }
 

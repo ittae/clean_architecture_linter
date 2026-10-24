@@ -309,6 +309,34 @@ class TodoNotifier extends Notifier<Object> {
           true,
         ),
         (
+          'allows ref.watch in a helper called before the first await in build()',
+          'Future<Object> build() async {\n'
+              '  final v = _compute();\n'
+              '  await Future<void>.delayed(Duration.zero);\n'
+              '  return v;\n'
+              '}\n'
+              'Object _compute() => ref.watch(userProvider);',
+          false,
+        ),
+        (
+          'flags ref.watch in a helper called after an await in build()',
+          'Future<Object> build() async {\n'
+              '  await Future<void>.delayed(Duration.zero);\n'
+              '  return _compute();\n'
+              '}\n'
+              'Object _compute() => ref.watch(userProvider);',
+          true,
+        ),
+        (
+          'flags only the closure ref.watch inside a build-only helper',
+          'Object build() => _compute();\n'
+              'Object _compute() {\n'
+              '  Timer.run(() => ref.watch(todoProvider));\n'
+              '  return ref.watch(userProvider);\n'
+              '}',
+          true,
+        ),
+        (
           'flags ref.watch in a helper that a public method also calls',
           'Object build() => _compute();\n'
               'void increment() => _compute();\n'
