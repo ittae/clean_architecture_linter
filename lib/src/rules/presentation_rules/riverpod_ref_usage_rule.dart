@@ -69,30 +69,8 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
     final members = classMembers(node).toList();
     _scanMembers(
       members,
-      buildReachable: _buildReachableHelpers(
-        members,
-        _extensionBodiesOn(node),
-        node.parent ?? node,
-      ),
+      buildReachable: _buildReachableHelpers(members, node.parent ?? node),
     );
-  }
-
-  /// Method bodies of same-file extensions on [node]'s class; they can call
-  /// its private helpers too.
-  List<AstNode> _extensionBodiesOn(ClassDeclaration node) {
-    final unit = node.parent;
-    final className = classDeclarationName(node);
-    if (unit is! CompilationUnit || className == null) return const [];
-    final bodies = <AstNode>[];
-    for (final declaration in unit.declarations) {
-      if (declaration is! ExtensionDeclaration) continue;
-      final extended = declaration.onClause?.extendedType;
-      if (extended is! NamedType || extended.name.lexeme != className) continue;
-      for (final member in extensionMembers(declaration)) {
-        if (member is MethodDeclaration) bodies.add(member.body);
-      }
-    }
-    return bodies;
   }
 
   @override
@@ -136,28 +114,20 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
     }
   }
 
-  /// Names of private, synchronous methods that only `build()` runs: every
-  /// call to them is `name()` / `this.name()` made in `build()`'s synchronous
-  /// run or in another such helper, and nothing else references them.
+  /// Names of private, synchronous methods that only a synchronous `build()`
+  /// runs: every occurrence of the name in [referenceScope] (the whole file)
+  /// must be a `name()` / `this.name()` call made in `build()`'s synchronous
+  /// run or in another such helper. Doc-comment mentions do not count.
   ///
   /// `ref.watch()` there runs inside the synchronous `build()` call graph, so
-  /// it is a reactive dependency of the provider, not a one-time read. Left
-  /// out, because `ref.watch()` is a real mistake there:
-  /// - public, `async` and generator (`sync*`) methods, which event handlers
-  ///   or a suspension point can run;
-  /// - every helper of an `async` `build()`, whose calls may follow an
-  ///   `await` (kept conservative on purpose);
-  /// - a call inside any closure (`ref.listen`, `Timer`, `then`,
-  ///   `Stream.map`, ...), which may run after `build()` returned;
-  /// - a helper that anything else also calls: another method, a field
-  ///   initializer, or an extension in the same file (extensions in other
-  ///   `part` files are not visible);
-  /// - a helper referenced in any other way anywhere in the file: a tear-off
-  ///   (`ref.listen(p, _onChange)`) or a call on another object
-  ///   (`notifier._compute()`).
+  /// it is a reactive dependency of the provider, not a one-time read. Any
+  /// other occurrence (a public or `async` method, a closure, a tear-off, a
+  /// field initializer, an extension, a subclass, a call on another object)
+  /// may run it outside `build()`, so the helper stays reported. A helper of
+  /// an `async` `build()` is never exempt: its calls may follow an `await`.
+  /// Extensions in other `part` files are not visible.
   Set<String> _buildReachableHelpers(
     List<AstNode> members,
-    List<AstNode> extensionBodies,
     AstNode referenceScope,
   ) {
     final helpers = <String, MethodDeclaration>{};
@@ -178,34 +148,20 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
     }
 
     final names = helpers.keys.toSet();
-    final allSites = _callSites([...members, ...extensionBodies], names);
-    final tearOffs = _OtherReferenceCollector(names);
-    referenceScope.accept(tearOffs);
+    final occurrences = _NameOccurrenceCollector(names);
+    referenceScope.accept(occurrences);
 
-    // Greatest fixed point: a helper stays only while every call to it sits in
-    // `build()`'s synchronous run or in the synchronous run of a kept helper.
-    final reachable = _reachableFromBuild(build, helpers);
-    var kept = {
-      for (final name in reachable)
-        if (!tearOffs.names.contains(name)) name,
-    };
+    // Greatest fixed point: a helper stays only while each of its occurrences
+    // is a synchronous call in `build()` or in a helper that stays.
+    var kept = _reachableFromBuild(build, helpers);
     while (true) {
-      final syncSites = <MethodInvocation>{
-        ..._callSites(
-          [build.body],
-          names,
-          syncOnly: true,
-        ).values.expand((sites) => sites),
-        for (final name in kept)
-          ..._callSites(
-            [helpers[name]!.body],
-            names,
-            syncOnly: true,
-          ).values.expand((sites) => sites),
+      final syncCalls = <SimpleIdentifier>{
+        for (final root in [build.body, for (final n in kept) helpers[n]!.body])
+          for (final calls in _callNames([root], names).values) ...calls,
       };
       final next = {
         for (final name in kept)
-          if (syncSites.containsAll(allSites[name] ?? const {})) name,
+          if (syncCalls.containsAll(occurrences.byName[name] ?? const {})) name,
       };
       if (next.length == kept.length) return next;
       kept = next;
@@ -221,25 +177,23 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
     final reached = <String>{};
     final pending = <AstNode>[build.body];
     while (pending.isNotEmpty) {
-      final sites = _callSites([pending.removeLast()], names, syncOnly: true);
-      for (final name in sites.keys) {
+      for (final name in _callNames([pending.removeLast()], names).keys) {
         if (reached.add(name)) pending.add(helpers[name]!.body);
       }
     }
     return reached;
   }
 
-  /// Call sites of [names] found in [roots], keyed by helper name.
-  Map<String, Set<MethodInvocation>> _callSites(
+  /// Method-name nodes of the synchronous self calls to [names] in [roots].
+  Map<String, Set<SimpleIdentifier>> _callNames(
     List<AstNode> roots,
-    Set<String> names, {
-    bool syncOnly = false,
-  }) {
-    final collector = _SelfCallCollector(names, syncOnly: syncOnly);
+    Set<String> names,
+  ) {
+    final collector = _SelfCallCollector(names);
     for (final root in roots) {
       root.accept(collector);
     }
-    return collector.sites;
+    return collector.callNames;
   }
 
   bool _isProviderFile(String filePath) {
@@ -419,24 +373,17 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
   }
 }
 
-/// Collects calls to own-class methods named in [_candidates] written as
-/// `name()` or `this.name()`.
-///
-/// With [syncOnly], closures are skipped: a closure may run after the
-/// enclosing body returned, so a call inside it is not part of that body's
-/// synchronous run.
+/// Collects the method-name nodes of `name()` / `this.name()` calls to
+/// own-class methods named in [_candidates] that run synchronously. Closures
+/// are skipped: a closure may run after the enclosing body returned.
 class _SelfCallCollector extends RecursiveAstVisitor<void> {
-  _SelfCallCollector(this._candidates, {required this.syncOnly});
+  _SelfCallCollector(this._candidates);
 
   final Set<String> _candidates;
-  final bool syncOnly;
-  final Map<String, Set<MethodInvocation>> sites = {};
+  final Map<String, Set<SimpleIdentifier>> callNames = {};
 
   @override
-  void visitFunctionExpression(FunctionExpression node) {
-    if (syncOnly) return;
-    super.visitFunctionExpression(node);
-  }
+  void visitFunctionExpression(FunctionExpression node) {}
 
   @override
   void visitMethodInvocation(MethodInvocation node) {
@@ -446,34 +393,27 @@ class _SelfCallCollector extends RecursiveAstVisitor<void> {
     if (!node.isCascaded &&
         (target == null || target is ThisExpression) &&
         _candidates.contains(name)) {
-      (sites[name] ??= {}).add(node);
+      (callNames[name] ??= {}).add(node.methodName);
     }
     super.visitMethodInvocation(node);
   }
 }
 
-/// Collects [_candidates] referenced other than as the method name of a
-/// `name()` / `this.name()` call: tear-offs such as `ref.listen(p, _onChange)`
-/// and calls on another object such as `notifier._compute()`. Run over a whole
-/// compilation unit, so it also sees other classes and top-level functions.
-class _OtherReferenceCollector extends RecursiveAstVisitor<void> {
-  _OtherReferenceCollector(this._candidates);
+/// Collects every identifier spelled like one of [_candidates], by name, so
+/// that any use the analysis does not understand counts against the helper.
+/// Doc-comment references are not uses.
+class _NameOccurrenceCollector extends RecursiveAstVisitor<void> {
+  _NameOccurrenceCollector(this._candidates);
 
   final Set<String> _candidates;
-  final Set<String> names = {};
+  final Map<String, Set<SimpleIdentifier>> byName = {};
+
+  @override
+  void visitCommentReference(CommentReference node) {}
 
   @override
   void visitSimpleIdentifier(SimpleIdentifier node) {
-    if (_candidates.contains(node.name) && !_isSelfCallName(node)) {
-      names.add(node.name);
-    }
+    if (_candidates.contains(node.name)) (byName[node.name] ??= {}).add(node);
     super.visitSimpleIdentifier(node);
-  }
-
-  bool _isSelfCallName(SimpleIdentifier node) {
-    final parent = node.parent;
-    if (parent is! MethodInvocation || parent.methodName != node) return false;
-    final target = parent.target;
-    return !parent.isCascaded && (target == null || target is ThisExpression);
   }
 }

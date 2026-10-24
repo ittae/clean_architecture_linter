@@ -370,6 +370,13 @@ class TodoNotifier extends Notifier<Object> {
           true,
         ),
         (
+          'allows ref.watch in a build-only helper that a doc comment mentions',
+          '/// Delegates to [_compute].\n'
+              'Object build() => _compute();\n'
+              'Object _compute() => ref.watch(userProvider);',
+          false,
+        ),
+        (
           'flags ref.watch in a helper that a public method also calls',
           'Object build() => _compute();\n'
               'void increment() => _compute();\n'
@@ -440,6 +447,29 @@ class TodoNotifier extends Notifier<Object> {
                   'Object _compute() => ref.watch(userProvider);\n'
                   '}\n'
                   'void refresh(TodoNotifier notifier) => notifier._compute();',
+                ),
+              },
+              definingFile: _path,
+            );
+
+        result.expectDiagnostics([_watchInMethodDiagnostic()]);
+      },
+    );
+
+    test(
+      'flags ref.watch in a helper that a same-file subclass also calls',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefUsageRule())
+            .analyze(
+              files: {
+                _path: _source(
+                  '@riverpod\nclass TodoNotifier {\n'
+                  'Object build() => _compute();\n'
+                  'Object _compute() => ref.watch(userProvider);\n'
+                  '}\n'
+                  'class SubNotifier extends TodoNotifier {\n'
+                  '  void refresh() => _compute();\n'
+                  '}',
                 ),
               },
               definingFile: _path,
