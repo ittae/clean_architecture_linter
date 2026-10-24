@@ -66,7 +66,26 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
     if (!isRiverpodNotifierClass(node)) return;
 
     final members = classMembers(node).toList();
-    _scanMembers(members, buildReachable: _buildReachableHelpers(members));
+    _scanMembers(
+      members,
+      buildReachable: _buildReachableHelpers(members, _extensionBodiesOn(node)),
+    );
+  }
+
+  /// Method bodies of same-file extensions on [node]'s class; they can call
+  /// its private helpers too.
+  List<AstNode> _extensionBodiesOn(ClassDeclaration node) {
+    final unit = node.parent;
+    final className = classDeclarationName(node);
+    if (unit is! CompilationUnit || className == null) return const [];
+    return [
+      for (final declaration in unit.declarations)
+        if (declaration is ExtensionDeclaration &&
+            (declaration.onClause?.extendedType as NamedType?)?.name.lexeme ==
+                className)
+          for (final member in extensionMembers(declaration))
+            if (member is MethodDeclaration) member.body,
+    ];
   }
 
   @override
@@ -106,18 +125,21 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
 
   /// Names of private, synchronous methods that only `build()` runs: it calls
   /// them directly or through other such helpers (`_helper()` /
-  /// `this._helper()`), and no other method does.
+  /// `this._helper()`), and nothing else references them.
   ///
   /// `ref.watch()` there runs inside the synchronous `build()` call graph, so
   /// it is a reactive dependency of the provider, not a one-time read. Left
   /// out, because `ref.watch()` is a real mistake there:
-  /// - public and `async` methods, which event handlers or a suspension point
-  ///   can run;
-  /// - helpers called from a deferred callback in `build()` (`ref.listen`,
-  ///   `Timer`, `then`, ...); only closures handed to a synchronous collection
-  ///   method (`map`, `where`, `forEach`, ...) still count as `build()` code;
-  /// - helpers that any method other than `build()` also reaches.
-  Set<String> _buildReachableHelpers(List<AstNode> members) {
+  /// - public, `async` and generator (`sync*`) methods, which event handlers
+  ///   or a suspension point can run;
+  /// - calls inside any closure in `build()` (`ref.listen`, `Timer`, `then`,
+  ///   `Stream.map`, ...): the closure may run after `build()` returned;
+  /// - helpers that another method or a same-file extension also calls;
+  /// - helpers used as a tear-off (`ref.listen(p, _onChange)`).
+  Set<String> _buildReachableHelpers(
+    List<AstNode> members,
+    List<AstNode> extensionBodies,
+  ) {
     final helpers = <String, MethodDeclaration>{};
     final others = <MethodDeclaration>[];
     MethodDeclaration? build;
@@ -126,7 +148,9 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
       final name = member.name.lexeme;
       if (name == 'build') {
         build = member;
-      } else if (name.startsWith('_') && !member.body.isAsynchronous) {
+      } else if (name.startsWith('_') &&
+          !member.body.isAsynchronous &&
+          !member.body.isGenerator) {
         helpers[name] = member;
       } else {
         others.add(member);
@@ -141,9 +165,18 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
       for (final method in others) method.body,
       for (final entry in helpers.entries)
         if (!fromBuild.contains(entry.key)) entry.value.body,
+      ...extensionBodies,
     ];
     final fromElsewhere = _reachHelpers(entryBodies, helpers, syncOnly: false);
-    return fromBuild.difference(fromElsewhere);
+
+    final tearOffs = _TearOffCollector(helpers.keys.toSet());
+    for (final member in members) {
+      member.accept(tearOffs);
+    }
+    for (final body in extensionBodies) {
+      body.accept(tearOffs);
+    }
+    return fromBuild.difference(fromElsewhere).difference(tearOffs.names);
   }
 
   /// Helper names called from [roots], following calls through helper bodies.
@@ -330,34 +363,12 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
   }
 }
 
-/// Collection methods that run their callback argument before returning.
-const _syncCallbackMethods = {
-  'map',
-  'where',
-  'expand',
-  'forEach',
-  'fold',
-  'reduce',
-  'any',
-  'every',
-  'firstWhere',
-  'lastWhere',
-  'singleWhere',
-  'takeWhile',
-  'skipWhile',
-  'removeWhere',
-  'retainWhere',
-  'sort',
-  'putIfAbsent',
-  'generate',
-};
-
 /// Collects calls to own-class methods named in [_candidates] written as
 /// `name()` or `this.name()`.
 ///
-/// With [syncOnly], closures are skipped unless they are handed to one of
-/// [_syncCallbackMethods]: any other closure may run after the enclosing body
-/// returned, so a call inside it is not part of that body's synchronous run.
+/// With [syncOnly], closures are skipped: a closure may run after the
+/// enclosing body returned, so a call inside it is not part of that body's
+/// synchronous run.
 class _SelfCallCollector extends RecursiveAstVisitor<void> {
   _SelfCallCollector(this._candidates, {required this.syncOnly});
 
@@ -367,7 +378,7 @@ class _SelfCallCollector extends RecursiveAstVisitor<void> {
 
   @override
   void visitFunctionExpression(FunctionExpression node) {
-    if (syncOnly && !_runsSynchronously(node)) return;
+    if (syncOnly) return;
     super.visitFunctionExpression(node);
   }
 
@@ -380,12 +391,21 @@ class _SelfCallCollector extends RecursiveAstVisitor<void> {
     }
     super.visitMethodInvocation(node);
   }
+}
 
-  bool _runsSynchronously(FunctionExpression node) {
+/// Collects [_candidates] referenced other than as the method name of a call,
+/// i.e. tear-offs such as `ref.listen(p, _onChange)` or `this._onChange`.
+class _TearOffCollector extends RecursiveAstVisitor<void> {
+  _TearOffCollector(this._candidates);
+
+  final Set<String> _candidates;
+  final Set<String> names = {};
+
+  @override
+  void visitSimpleIdentifier(SimpleIdentifier node) {
     final parent = node.parent;
-    if (parent is! ArgumentList) return false;
-    final call = parent.parent;
-    return call is MethodInvocation &&
-        _syncCallbackMethods.contains(call.methodName.name);
+    final isCallName = parent is MethodInvocation && parent.methodName == node;
+    if (!isCallName && _candidates.contains(node.name)) names.add(node.name);
+    super.visitSimpleIdentifier(node);
   }
 }

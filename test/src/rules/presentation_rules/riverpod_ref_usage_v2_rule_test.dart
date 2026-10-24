@@ -247,12 +247,6 @@ class TodoNotifier extends Notifier<Object> {
           false,
         ),
         (
-          'allows ref.watch in a helper called from a sync collection callback',
-          'Object build() => [1].map((id) => _load(id)).toList();\n'
-              'Object _load(int id) => ref.watch(todoProvider(id));',
-          false,
-        ),
-        (
           'flags ref.watch in a helper that build() does not call',
           'Object build() => const Object();\n'
               'Object _other() => ref.watch(currentUserProvider);',
@@ -292,6 +286,29 @@ class TodoNotifier extends Notifier<Object> {
           true,
         ),
         (
+          'flags ref.watch in a helper called from a Stream.map callback',
+          'Stream<int> build() => _source.map((e) => _convert(e));\n'
+              'int _convert(int e) => ref.watch(xProvider) + e;',
+          true,
+        ),
+        (
+          'flags ref.watch in a helper passed as a ref.listen tear-off',
+          'Object build() {\n'
+              '  ref.listen(otherProvider, _onChange);\n'
+              '  return _onChange(null, null);\n'
+              '}\n'
+              'Object _onChange(Object? a, Object? b) => ref.watch(userProvider);',
+          true,
+        ),
+        (
+          'flags ref.watch in a generator helper called from build()',
+          'Object build() => _items().toList();\n'
+              'Iterable<Object> _items() sync* {\n'
+              '  yield ref.watch(userProvider);\n'
+              '}',
+          true,
+        ),
+        (
           'flags ref.watch in a helper that a public method also calls',
           'Object build() => _compute();\n'
               'void increment() => _compute();\n'
@@ -327,6 +344,29 @@ class TodoNotifier extends Notifier<Object> {
       }
     });
 
+    test(
+      'flags ref.watch in a helper that a same-file extension also calls',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefUsageRule())
+            .analyze(
+              files: {
+                _path: _source(
+                  '@riverpod\nclass TodoNotifier {\n'
+                  'Object build() => _compute();\n'
+                  'Object _compute() => ref.watch(userProvider);\n'
+                  '}\n'
+                  'extension TodoActions on TodoNotifier {\n'
+                  '  void refresh() => _compute();\n'
+                  '}',
+                ),
+              },
+              definingFile: _path,
+            );
+
+        result.expectDiagnostics([_watchInMethodDiagnostic()]);
+      },
+    );
+
     group('top-level @riverpod functional providers', () {
       // (name, declaration, whether ref.read of a state provider is reported)
       const cases = <(String, String, bool)>[
@@ -336,10 +376,11 @@ class TodoNotifier extends Notifier<Object> {
           true,
         ),
         (
-          'allows ref.watch, usecase reads and notifier reads',
+          'allows ref.watch, usecase/repository reads and notifier reads',
           '@riverpod\nbool canSubmit(Object ref) {\n'
               '  ref.read(todoProvider.notifier);\n'
               '  ref.read(todoRepositoryProvider);\n'
+              '  ref.read(getTodosUseCaseProvider);\n'
               '  return ref.watch(userProvider) != null;\n'
               '}',
           false,
