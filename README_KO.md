@@ -10,7 +10,7 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 ## ✨ 주요 기능
 
 - 🛡️ **자동 클린 아키텍처 보호** - 자유롭게 코드 작성, 린터가 위반사항 감지
-- 🎯 **35개의 전문화된 규칙** - 모든 클린 아키텍처 계층 포괄
+- 🎯 **36개의 전문화된 규칙** - 모든 클린 아키텍처 계층 포괄
 - 🚀 **Flutter 최적화** - Flutter 개발 패턴에 특화
 - 📚 **교육적** - 수정 가이드를 통해 클린 아키텍처 학습
 - ⚡ **실시간 피드백** - 즉각적인 경고와 실행 가능한 해결책
@@ -18,7 +18,7 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 - 🧪 **테스트 인식** - 테스트 파일과 개발 컨텍스트에 대한 스마트 예외처리
 - 🎨 **Riverpod 상태 관리** - 3-tier provider 아키텍처 강제 (Entity → UI → Computed)
 
-## 📋 규칙 개요 (35개 규칙)
+## 📋 규칙 개요 (36개 규칙)
 
 ### 🌐 핵심 클린 아키텍처 원칙 (6개 규칙)
 1. **Layer Dependency** - 의존성 방향 강제 (안쪽으로만)
@@ -32,7 +32,7 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 7. **UseCase No Result Return** - UseCase는 Result 타입 언래핑
 8. **Exception Naming Convention** - 도메인 예외에 기능 접두사
 
-### 💾 데이터 계층 규칙 (10개 규칙)
+### 💾 데이터 계층 규칙 (11개 규칙)
 9. **Model Structure** - Entity 구성을 포함하는 Freezed 모델
 10. **Model Field Duplication** - 모델에 중복 엔티티 필드 없음
 11. **Model Conversion Methods** - 확장에 필수 `toEntity()` 메서드
@@ -45,7 +45,7 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 18. **DataSource Exception Types** - 정의된 데이터 계층 예외만 사용
 19. **Model Entity Direct Access** - 직접 `.entity` 접근 대신 `.toEntity()` 사용
 
-### 🎨 프레젠테이션 계층 규칙 (15개 규칙)
+### 🎨 프레젠테이션 계층 규칙 (16개 규칙)
 20. **No Presentation Models** - ViewModel 대신 Freezed State 사용
 21. **Extension Location** - 클래스와 동일 파일에 확장 정의
 22. **Freezed Usage** - Equatable 대신 Freezed 사용
@@ -55,7 +55,7 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 26. **Presentation No Throw** - 프레젠테이션 계층에서 예외 throw 금지
 27. **Widget No UseCase Call** - Widget은 UseCase를 직접 호출하지 않음 (Provider 사용)
 28. **Widget Ref Read Then When** - ref.read() 후 .when() 사용 금지 (안티패턴)
-29. **Riverpod Ref Usage** - build()에서 ref.watch(), 메서드에서 ref.read() (UseCase 감지 포함)
+29. **Riverpod Ref Usage** - build()에서 ref.watch(), 메서드에서 ref.read() (UseCase 감지 포함). 최상위 `@riverpod` 함수형 provider는 `build()`와 동일하게 검사하고, `build()`가 (직접 또는 다른 헬퍼를 거쳐) 호출하는 private 동기 헬퍼에서는 `ref.watch()`를 허용
 30. **Riverpod Ref After Async Gap** - provider method에서 await 이후 ref.read/watch/listen/invalidate/refresh 사용 시 advisory 경고 (직전에 `if (!ref.mounted) return;` 가드가 있으면 보고하지 않음)
 31. **Riverpod Provider Naming** - Provider 함수는 타입 접미사 포함 필수 (repository/usecase/datasource)
 32. **Ref Mounted Usage** - UI 레이어(위젯/페이지)에서만 `ref.mounted` 금지. Notifier 안에서는 권장되는 dispose 가드이므로 보고하지 않음
@@ -63,8 +63,10 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 
 34. **Riverpod Extension Scoped Dependency** - `extension`의 `@Dependencies([...])`는 대상 notifier의 `@Riverpod(dependencies: [...])`의 부분집합이어야 함. 확장에 붙은 `@Dependencies`는 린트 전용 메타데이터일 뿐 notifier의 런타임 스코프를 넓히지 않으므로, 선언되지 않은 scoped provider를 읽으면 런타임에 throw(주변 `catch`에 삼켜지는 경우가 많음)
 
+35. **Riverpod Uncancelled Disposable** - provider에서 시작한 Timer·스트림 구독·`AppLifecycleListener`는 `ref.onDispose`에서 해제해야 함 (직접 호출, `timer.cancel` tear-off, 또는 `ref.onDispose(_cleanup)`처럼 onDispose가 실행하는 같은 클래스 헬퍼)
+
 ### 🔧 Cross-Layer 규칙 (1개 규칙)
-35. **Allowed Instance Variables** - 무상태 아키텍처 강제 (UseCase/Repository/DataSource)
+36. **Allowed Instance Variables** - 무상태 아키텍처 강제 (UseCase/Repository/DataSource)
 
 ### 🔕 Opt-in: Riverpod State After Async Gap
 **Riverpod State After Async Gap** (`riverpod_state_after_async_gap`) - provider method에서 `await` 이후 가드 없는 `state = …` 대입(`state = await …` 포함)과 `state` 읽기를 보고합니다. 같은 문장에서 평가 순서상 `await` 뒤에 오는 읽기(`await foo() ?? state`)와, 제어식의 await 뒤에 실행되는 본문의 읽기(`await for`, `if (await …)`, await하는 패턴 `when` 가드)도 포함합니다. receiver가 먼저 평가되는 `state.foo(await x)`와 로컬/파라미터 `state`는 보고하지 않고, `this.state`·`super.state`는 읽기·쓰기 모두 보고합니다. Riverpod 3는 provider가 dispose된 뒤 `state`를 읽거나 쓰면 `UnmountedRefException`을 던지므로 가드는 await 직후에 두세요: `await …; if (!ref.mounted) return;` (또는 `final next = await …; if (!ref.mounted) return; state = next;`). 기존 앱에 `state = await` 관용구가 흔해 **기본 비활성**이며 프로젝트별로 켭니다:
@@ -122,7 +124,7 @@ dart pub get
 dart analyze        # Flutter 프로젝트도 flutter analyze가 아니라 dart analyze를 쓰세요
 ```
 
-로컬에서는 `dart analyze` 결과에 기본 35개 규칙이 직접 포함됩니다 (opt-in
+로컬에서는 `dart analyze` 결과에 기본 36개 규칙이 직접 포함됩니다 (opt-in
 `riverpod_state_after_async_gap`은 위 규칙 목록 참고). CI에서는 단일
 `No issues found!`를 플러그인이 응답했다는 증거로 쓰지 말고, 아래 경고의
 sentinel 레시피로 게이트하세요.

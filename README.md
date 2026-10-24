@@ -12,7 +12,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 ## ✨ Key Features
 
 - 🛡️ **Automatic Clean Architecture Protection** - Write code freely, linter catches violations
-- 🎯 **35 Specialized Rules** - Comprehensive coverage of all Clean Architecture layers
+- 🎯 **36 Specialized Rules** - Comprehensive coverage of all Clean Architecture layers
 - 🚀 **Flutter-Optimized** - Built specifically for Flutter development patterns
 - 🎨 **Riverpod State Management** - Enforces 3-tier provider architecture (Entity → UI → Computed)
 - 📚 **Educational** - Learn Clean Architecture through guided corrections
@@ -20,7 +20,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 - 🔧 **Zero Configuration** - Works out of the box with sensible defaults
 - 🧪 **Test-Aware** - Smart exceptions for test files and development contexts
 
-## 📋 Rules Overview (35 Rules)
+## 📋 Rules Overview (36 Rules)
 
 ### 🌐 Core Clean Architecture Principles (6 rules)
 1. **Layer Dependency** - Enforces dependency direction (inward only)
@@ -34,7 +34,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 7. **UseCase No Result Return** - UseCases should return entities directly (pass-through pattern)
 8. **Exception Naming Convention** - Feature prefix for domain exceptions
 
-### 💾 Data Layer Rules (10 rules)
+### 💾 Data Layer Rules (11 rules)
 9. **Model Structure** - Freezed models with entity composition
 10. **Model Field Duplication** - No duplicate entity fields in models
 11. **Model Conversion Methods** - Required `toEntity()` method in extensions
@@ -47,7 +47,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 18. **DataSource Exception Types** - Use defined data layer exceptions only
 19. **Model Entity Direct Access** - Use `.toEntity()` instead of direct `.entity` access
 
-### 🎨 Presentation Layer Rules (15 rules)
+### 🎨 Presentation Layer Rules (16 rules)
 20. **No Presentation Models** - Use Freezed State instead of ViewModels
 21. **Extension Location** - Extensions in same file as the class
 22. **Freezed Usage** - Use Freezed instead of Equatable
@@ -57,7 +57,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 26. **Presentation No Throw** - No exception throwing in Presentation layer
 27. **Widget No UseCase Call** - Widgets should not call UseCases directly (use Providers)
 28. **Widget Ref Read Then When** - Avoid using .when() after ref.read() (anti-pattern)
-29. **Riverpod Ref Usage** - Use ref.watch() in build(), ref.read() in methods (with UseCase detection)
+29. **Riverpod Ref Usage** - Use ref.watch() in build(), ref.read() in methods (with UseCase detection). Top-level `@riverpod` functional providers are checked like `build()`, and a private synchronous helper that `build()` calls (directly or through other helpers) may use `ref.watch()`
 30. **Riverpod Ref After Async Gap** - Advisory warning for ref.read/watch/listen/invalidate/refresh after await in provider methods (a preceding `if (!ref.mounted) return;` guard suppresses it)
 31. **Riverpod Provider Naming** - Provider functions must include type suffix (repository/usecase/datasource)
 32. **Ref Mounted Usage** - Avoid `ref.mounted` in the UI layer (widgets/pages); inside a Notifier it is the recommended disposal guard and is not reported
@@ -65,8 +65,10 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 
 34. **Riverpod Extension Scoped Dependency** - An `extension`'s `@Dependencies([...])` must be a subset of the target notifier's `@Riverpod(dependencies: [...])`. `@Dependencies` on an extension is lint-only metadata and does not widen the notifier's runtime scope, so reading an undeclared scoped provider throws at runtime (often swallowed by a surrounding `catch`)
 
+35. **Riverpod Uncancelled Disposable** - Timers, stream subscriptions, and `AppLifecycleListener`s started in a provider must be cancelled in `ref.onDispose` (a direct call, a `timer.cancel` tear-off, or a same-class helper that `onDispose` runs, e.g. `ref.onDispose(_cleanup)`)
+
 ### 🔧 Cross-Layer Rules (1 rule)
-35. **Allowed Instance Variables** - Enforces stateless architecture (UseCase/Repository/DataSource)
+36. **Allowed Instance Variables** - Enforces stateless architecture (UseCase/Repository/DataSource)
 
 ### 🔕 Opt-in: Riverpod State After Async Gap
 **Riverpod State After Async Gap** (`riverpod_state_after_async_gap`) - Reports an unguarded `state = …` write or `state` read after an `await` in provider methods, including `state = await …`, same-statement reads that run after an `await` (`await foo() ?? state`), and reads in bodies that run after a control-flow await (`await for`, `if (await …)`, a pattern `when` guard that awaits). Receiver-first forms (`state.foo(await x)`) and locals/parameters named `state` are not reported; `this.state` and `super.state` still are (reads and writes alike). Riverpod 3 throws `UnmountedRefException` from both the `state` setter and getter once the provider is disposed, so the guard belongs right after the await: `await …; if (!ref.mounted) return;` (or `final next = await …; if (!ref.mounted) return; state = next;`). **Disabled by default** because the `state = await` idiom is common in existing apps; enable it per project:
@@ -124,7 +126,7 @@ dart pub get
 dart analyze        # Flutter projects too — use `dart analyze`, NOT `flutter analyze`
 ```
 
-Locally, `dart analyze` reports the 35 default rules in its output (plus the
+Locally, `dart analyze` reports the 36 default rules in its output (plus the
 opt-in `riverpod_state_after_async_gap`, see the rule list above). In CI, a
 single `No issues found!` is not proof the plugin answered — use the sentinel
 gate in the warning below.
