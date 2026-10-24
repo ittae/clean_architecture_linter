@@ -3,6 +3,17 @@ import 'package:test/test.dart';
 
 import '../../../v2_harness/analysis_rule_harness.dart';
 
+const _path = 'lib/features/todo/presentation/providers/todo_notifier.dart';
+
+ExpectedV2Diagnostic _watchInMethodDiagnostic() => const ExpectedV2Diagnostic(
+  relativePath: _path,
+  codeName: 'riverpod_ref_usage',
+  problemMessage:
+      'Use ref.read() instead of ref.watch() in methods for one-time reads.',
+  correctionMessage:
+      'Change ref.watch() to ref.read() for one-time provider access in methods.',
+);
+
 void main() {
   group('RiverpodRefUsageRule v2', () {
     test('reports ref.read state provider usage in build', () async {
@@ -217,14 +228,12 @@ class TodoNotifier extends Notifier<Object> {
     });
 
     test(
-      'flags ref.watch in a private helper synchronously delegated from build() '
-      '(documents a known over-flagging gap, not endorsed behavior)',
+      'allows ref.watch in a private sync helper called from build()',
       () async {
         final result = await V2RuleHarness(rule: RiverpodRefUsageRule())
             .analyze(
               files: {
-                'lib/features/todo/presentation/providers/todo_notifier.dart':
-                    '''
+                _path: '''
 class riverpod {
   const riverpod();
 }
@@ -241,35 +250,139 @@ class TodoNotifier {
 }
 ''',
               },
-              definingFile:
-                  'lib/features/todo/presentation/providers/todo_notifier.dart',
+              definingFile: _path,
             );
 
-        // A private helper invoked synchronously from build() is idiomatic
-        // Riverpod (ref.watch just needs to run during the sync build call
-        // graph), but this rule only recognises a method literally named
-        // `build`, so today it reports the helper as a "read outside build"
-        // violation. This test pins today's behavior as a regression guard;
-        // it is not an endorsement of the false positive.
-        result.expectDiagnostics([
-          const ExpectedV2Diagnostic(
-            relativePath:
-                'lib/features/todo/presentation/providers/todo_notifier.dart',
-            codeName: 'riverpod_ref_usage',
-            problemMessage:
-                'Use ref.read() instead of ref.watch() in methods for one-time reads.',
-            correctionMessage:
-                'Change ref.watch() to ref.read() for one-time provider access in methods.',
-          ),
-        ]);
+        result.expectNoDiagnostics();
       },
     );
 
-    test('does not check ref usage in top-level @riverpod functional providers '
-        '(documents a known coverage gap)', () async {
+    test(
+      'allows ref.watch in a helper reached transitively from build()',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefUsageRule())
+            .analyze(
+              files: {
+                _path: '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class TodoNotifier {
+  Object build() {
+    return this._first();
+  }
+
+  Object _first() => _second();
+
+  Object _second() => ref.watch(currentUserProvider);
+}
+''',
+              },
+              definingFile: _path,
+            );
+
+        result.expectNoDiagnostics();
+      },
+    );
+
+    test(
+      'still flags ref.watch in a helper that build() does not call',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefUsageRule())
+            .analyze(
+              files: {
+                _path: '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class TodoNotifier {
+  Object build() {
+    return const Object();
+  }
+
+  Object _onlyFromEvents() {
+    return ref.watch(currentUserProvider);
+  }
+}
+''',
+              },
+              definingFile: _path,
+            );
+
+        result.expectDiagnostics([_watchInMethodDiagnostic()]);
+      },
+    );
+
+    test(
+      'still flags ref.watch in an async helper called from build()',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefUsageRule())
+            .analyze(
+              files: {
+                _path: '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class TodoNotifier {
+  Future<Object> build() async {
+    return _loadInitial();
+  }
+
+  Future<Object> _loadInitial() async {
+    await Future<void>.delayed(Duration.zero);
+    return ref.watch(currentUserProvider);
+  }
+}
+''',
+              },
+              definingFile: _path,
+            );
+
+        result.expectDiagnostics([_watchInMethodDiagnostic()]);
+      },
+    );
+
+    test(
+      'still flags ref.watch in a public method called from build()',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefUsageRule())
+            .analyze(
+              files: {
+                _path: '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class TodoNotifier {
+  Object build() {
+    return refresh();
+  }
+
+  Object refresh() {
+    return ref.watch(currentUserProvider);
+  }
+}
+''',
+              },
+              definingFile: _path,
+            );
+
+        result.expectDiagnostics([_watchInMethodDiagnostic()]);
+      },
+    );
+
+    test('reports ref.read of a state provider in a @riverpod functional '
+        'provider', () async {
       final result = await V2RuleHarness(rule: RiverpodRefUsageRule()).analyze(
         files: {
-          'lib/features/todo/presentation/providers/todo_notifier.dart': '''
+          _path: '''
 class riverpod {
   const riverpod();
 }
@@ -280,15 +393,57 @@ bool canSubmitTodo(Object ref) {
 }
 ''',
         },
-        definingFile:
-            'lib/features/todo/presentation/providers/todo_notifier.dart',
+        definingFile: _path,
       );
 
-      // This rule registers ClassDeclaration and ExtensionDeclaration nodes,
-      // so top-level @riverpod functions -- this repo's own Tier-3 "computed
-      // logic provider" convention (see CLAUDE.md) -- still get no
-      // ref.watch/ref.read discipline check. This test documents that gap
-      // explicitly so it cannot regress silently into "already covered".
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath: _path,
+          codeName: 'riverpod_ref_usage',
+          line: 7,
+          problemMessage:
+              'Use ref.watch() instead of ref.read() for State providers in build().',
+          correctionMessage:
+              'Change ref.read() to ref.watch() for reactive State provider dependencies.',
+        ),
+      ]);
+    });
+
+    test('allows ref.watch, usecase reads and notifier reads in a @riverpod '
+        'functional provider', () async {
+      final result = await V2RuleHarness(rule: RiverpodRefUsageRule()).analyze(
+        files: {
+          _path: '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+bool canSubmitTodo(Object ref) {
+  ref.read(todoProvider.notifier);
+  ref.read(todoRepositoryProvider);
+  return ref.watch(currentUserProvider) != null;
+}
+''',
+        },
+        definingFile: _path,
+      );
+
+      result.expectNoDiagnostics();
+    });
+
+    test('ignores top-level functions without @riverpod', () async {
+      final result = await V2RuleHarness(rule: RiverpodRefUsageRule()).analyze(
+        files: {
+          _path: '''
+bool canSubmitTodo(Object ref) {
+  return ref.read(currentUserProvider) != null;
+}
+''',
+        },
+        definingFile: _path,
+      );
+
       result.expectNoDiagnostics();
     });
 

@@ -10,6 +10,11 @@ import '../../compat/analyzer_ast_compat.dart';
 import '../../utils/riverpod_provider_detector.dart';
 
 /// Enforces proper usage of ref.watch() vs ref.read() in Riverpod code.
+///
+/// Covers Notifier classes, extensions on Notifiers, and top-level
+/// `@riverpod` functional providers (whose whole body is the `build()`
+/// equivalent). A private synchronous helper that `build()` delegates to
+/// (directly or transitively) may use `ref.watch()`.
 class RiverpodRefUsageRule extends AnalysisRule {
   static const LintCode code = LintCode(
     'riverpod_ref_usage',
@@ -41,6 +46,8 @@ class RiverpodRefUsageRule extends AnalysisRule {
     // Extension methods on Notifiers (common part-file helpers) need the same
     // ref.watch / ref.read discipline as class members.
     registry.addExtensionDeclaration(this, visitor);
+    // Top-level `@riverpod` functional providers are build-only.
+    registry.addFunctionDeclaration(this, visitor);
   }
 }
 
@@ -58,7 +65,18 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
     if (!_isProviderFile(_filePath)) return;
     if (!isRiverpodNotifierClass(node)) return;
 
-    _scanMembers(classMembers(node));
+    final members = classMembers(node).toList();
+    _scanMembers(members, buildReachable: _buildReachableHelpers(members));
+  }
+
+  @override
+  void visitFunctionDeclaration(FunctionDeclaration node) {
+    if (node.parent is! CompilationUnit) return;
+    if (!_isProviderFile(_filePath)) return;
+    if (!hasRiverpodAnnotation(node.metadata)) return;
+
+    // The function body runs once per (re)build, exactly like `build()`.
+    _checkBodyRefUsage(node.functionExpression.body, isBuildMethod: true);
   }
 
   @override
@@ -70,15 +88,53 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
     _scanMembers(extensionMembers(node), isBuildMethod: false);
   }
 
-  void _scanMembers(Iterable<AstNode> members, {bool? isBuildMethod}) {
+  void _scanMembers(
+    Iterable<AstNode> members, {
+    bool? isBuildMethod,
+    Set<String> buildReachable = const {},
+  }) {
     for (final member in members) {
       if (member is MethodDeclaration) {
-        _checkMethodRefUsage(
-          member,
-          isBuildMethod ?? member.name.lexeme == 'build',
+        _checkBodyRefUsage(
+          member.body,
+          isBuildMethod: isBuildMethod ?? member.name.lexeme == 'build',
+          allowWatchInMethod: buildReachable.contains(member.name.lexeme),
         );
       }
     }
+  }
+
+  /// Names of private, synchronous methods that `build()` calls directly or
+  /// through other such helpers (`_helper()` / `this._helper()`).
+  ///
+  /// `ref.watch()` there runs inside the synchronous `build()` call graph, so
+  /// it is a reactive dependency of the provider, not a one-time read. Public
+  /// and `async` helpers stay out: they can be invoked from event handlers or
+  /// after a suspension point, where `ref.watch()` is a real mistake.
+  Set<String> _buildReachableHelpers(List<AstNode> members) {
+    final helpers = <String, MethodDeclaration>{};
+    MethodDeclaration? build;
+    for (final member in members) {
+      if (member is! MethodDeclaration) continue;
+      final name = member.name.lexeme;
+      if (name == 'build') {
+        build = member;
+      } else if (name.startsWith('_') && !member.body.isAsynchronous) {
+        helpers[name] = member;
+      }
+    }
+    if (build == null || helpers.isEmpty) return const {};
+
+    final reachable = <String>{};
+    final pending = <AstNode>[build.body];
+    while (pending.isNotEmpty) {
+      final collector = _SelfCallCollector(helpers.keys.toSet());
+      pending.removeLast().accept(collector);
+      for (final name in collector.calledHelpers) {
+        if (reachable.add(name)) pending.add(helpers[name]!.body);
+      }
+    }
+    return reachable;
   }
 
   bool _isProviderFile(String filePath) {
@@ -94,8 +150,11 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
         normalizedPath.endsWith('_notifiers.dart');
   }
 
-  void _checkMethodRefUsage(MethodDeclaration methodNode, bool isBuildMethod) {
-    final body = methodNode.body;
+  void _checkBodyRefUsage(
+    FunctionBody body, {
+    required bool isBuildMethod,
+    bool allowWatchInMethod = false,
+  }) {
     if (body is! BlockFunctionBody && body is! ExpressionFunctionBody) return;
 
     final refWatchCalls = <MethodInvocation>[];
@@ -116,7 +175,7 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
           ],
         );
       }
-    } else {
+    } else if (!allowWatchInMethod) {
       for (final refWatchCall in refWatchCalls) {
         rule.reportAtNode(
           refWatchCall,
@@ -238,5 +297,24 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
       return firstArg.identifier.name == 'notifier';
     }
     return false;
+  }
+}
+
+/// Collects calls to own-class methods named in [_candidates] written as
+/// `name()` or `this.name()`.
+class _SelfCallCollector extends RecursiveAstVisitor<void> {
+  _SelfCallCollector(this._candidates);
+
+  final Set<String> _candidates;
+  final Set<String> calledHelpers = {};
+
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    final target = node.target;
+    if ((target == null || target is ThisExpression) &&
+        _candidates.contains(node.methodName.name)) {
+      calledHelpers.add(node.methodName.name);
+    }
+    super.visitMethodInvocation(node);
   }
 }
