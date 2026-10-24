@@ -698,6 +698,79 @@ class PomodoroNotifier {
     );
 
     test(
+      'does not flag a timer cancelled by a this-prefixed helper tear-off in onDispose',
+      () async {
+        final result =
+            await V2RuleHarness(
+              rule: RiverpodUncancelledDisposableRule(),
+            ).analyze(
+              files: {
+                _path: '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class PomodoroNotifier {
+  Timer? _timer;
+
+  Future<void> build() async {
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {});
+    ref.onDispose(this._cleanup);
+  }
+
+  void _cleanup() {
+    _timer?.cancel();
+  }
+}
+''',
+              },
+              definingFile: _path,
+            );
+
+        result.expectNoDiagnostics();
+      },
+    );
+
+    test(
+      'flags a timer when the this-prefixed onDispose helper tear-off does not cancel it',
+      () async {
+        final result =
+            await V2RuleHarness(
+              rule: RiverpodUncancelledDisposableRule(),
+            ).analyze(
+              files: {
+                _path: '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class PomodoroNotifier {
+  Timer? _timer;
+
+  Future<void> build() async {
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {});
+    ref.onDispose(this._cleanup);
+  }
+
+  void _cleanup() {}
+}
+''',
+              },
+              definingFile: _path,
+            );
+
+        result.expectDiagnostics([
+          const ExpectedV2Diagnostic(
+            relativePath: _path,
+            codeName: 'riverpod_uncancelled_disposable',
+          ),
+        ]);
+      },
+    );
+
+    test(
       'flags a timer when the onDispose helper does not cancel it',
       () async {
         final result =

@@ -378,6 +378,170 @@ class TodoNotifier {
       },
     );
 
+    test(
+      'still flags ref.watch in a helper only called from a ref.listen callback',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefUsageRule())
+            .analyze(
+              files: {
+                _path: '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class TodoNotifier {
+  Object build() {
+    ref.listen(currentUserProvider, (_, __) => _onChange());
+    return const Object();
+  }
+
+  void _onChange() {
+    ref.watch(todoProvider);
+  }
+}
+''',
+              },
+              definingFile: _path,
+            );
+
+        result.expectDiagnostics([_watchInMethodDiagnostic()]);
+      },
+    );
+
+    test(
+      'still flags ref.watch in a helper only called from a Timer callback',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefUsageRule())
+            .analyze(
+              files: {
+                _path: '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class TodoNotifier {
+  Object build() {
+    Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+    return const Object();
+  }
+
+  void _tick() {
+    ref.watch(todoProvider);
+  }
+}
+''',
+              },
+              definingFile: _path,
+            );
+
+        result.expectDiagnostics([_watchInMethodDiagnostic()]);
+      },
+    );
+
+    test(
+      'still flags ref.watch in a helper that a public method also calls',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefUsageRule())
+            .analyze(
+              files: {
+                _path: '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class TodoNotifier {
+  Object build() {
+    return _compute();
+  }
+
+  void increment() {
+    _compute();
+  }
+
+  Object _compute() {
+    return ref.watch(currentUserProvider);
+  }
+}
+''',
+              },
+              definingFile: _path,
+            );
+
+        result.expectDiagnostics([_watchInMethodDiagnostic()]);
+      },
+    );
+
+    test(
+      'still flags a shared helper reached via another helper that a public method calls',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefUsageRule())
+            .analyze(
+              files: {
+                _path: '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class TodoNotifier {
+  Object build() {
+    return _compute();
+  }
+
+  void increment() {
+    _viaHelper();
+  }
+
+  void _viaHelper() {
+    _compute();
+  }
+
+  Object _compute() {
+    return ref.watch(currentUserProvider);
+  }
+}
+''',
+              },
+              definingFile: _path,
+            );
+
+        result.expectDiagnostics([_watchInMethodDiagnostic()]);
+      },
+    );
+
+    test(
+      'allows ref.watch in a helper called from a synchronous collection callback in build()',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefUsageRule())
+            .analyze(
+              files: {
+                _path: '''
+class riverpod {
+  const riverpod();
+}
+
+@riverpod
+class TodoNotifier {
+  Object build() {
+    return [1, 2].map((id) => _load(id)).toList();
+  }
+
+  Object _load(int id) {
+    return ref.watch(todoProvider(id));
+  }
+}
+''',
+              },
+              definingFile: _path,
+            );
+
+        result.expectNoDiagnostics();
+      },
+    );
+
     test('reports ref.read of a state provider in a @riverpod functional '
         'provider', () async {
       final result = await V2RuleHarness(rule: RiverpodRefUsageRule()).analyze(

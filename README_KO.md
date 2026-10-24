@@ -55,7 +55,7 @@ Flutter/Dart 프로젝트에서 **클린 아키텍처 원칙을 자동으로 강
 26. **Presentation No Throw** - 프레젠테이션 계층에서 예외 throw 금지
 27. **Widget No UseCase Call** - Widget은 UseCase를 직접 호출하지 않음 (Provider 사용)
 28. **Widget Ref Read Then When** - ref.read() 후 .when() 사용 금지 (안티패턴)
-29. **Riverpod Ref Usage** - build()에서 ref.watch(), 메서드에서 ref.read() (UseCase 감지 포함). 최상위 `@riverpod` 함수형 provider는 `build()`와 동일하게 검사하고, `build()`가 (직접 또는 다른 헬퍼를 거쳐) 호출하는 private 동기 헬퍼에서는 `ref.watch()`를 허용
+29. **Riverpod Ref Usage** - build()에서 ref.watch(), 메서드에서 ref.read() (UseCase 감지 포함). 최상위 `@riverpod` 함수형 provider는 `build()`와 동일하게 검사하고, `build()`만 (직접 또는 다른 헬퍼를 거쳐, 지연 콜백이 아닌 곳에서) 실행하는 private 동기 헬퍼에서는 `ref.watch()`를 허용
 30. **Riverpod Ref After Async Gap** - provider method에서 await 이후 ref.read/watch/listen/invalidate/refresh 사용 시 advisory 경고 (직전에 `if (!ref.mounted) return;` 가드가 있으면 보고하지 않음)
 31. **Riverpod Provider Naming** - Provider 함수는 타입 접미사 포함 필수 (repository/usecase/datasource)
 32. **Ref Mounted Usage** - UI 레이어(위젯/페이지)에서만 `ref.mounted` 금지. Notifier 안에서는 권장되는 dispose 가드이므로 보고하지 않음

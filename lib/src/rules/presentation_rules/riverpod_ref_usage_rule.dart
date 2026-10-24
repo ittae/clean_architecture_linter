@@ -13,7 +13,7 @@ import '../../utils/riverpod_provider_detector.dart';
 ///
 /// Covers Notifier classes, extensions on Notifiers, and top-level
 /// `@riverpod` functional providers (whose whole body is the `build()`
-/// equivalent). A private synchronous helper that `build()` delegates to
+/// equivalent). A private synchronous helper that only `build()` runs
 /// (directly or transitively) may use `ref.watch()`.
 class RiverpodRefUsageRule extends AnalysisRule {
   static const LintCode code = LintCode(
@@ -104,15 +104,22 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
     }
   }
 
-  /// Names of private, synchronous methods that `build()` calls directly or
-  /// through other such helpers (`_helper()` / `this._helper()`).
+  /// Names of private, synchronous methods that only `build()` runs: it calls
+  /// them directly or through other such helpers (`_helper()` /
+  /// `this._helper()`), and no other method does.
   ///
   /// `ref.watch()` there runs inside the synchronous `build()` call graph, so
-  /// it is a reactive dependency of the provider, not a one-time read. Public
-  /// and `async` helpers stay out: they can be invoked from event handlers or
-  /// after a suspension point, where `ref.watch()` is a real mistake.
+  /// it is a reactive dependency of the provider, not a one-time read. Left
+  /// out, because `ref.watch()` is a real mistake there:
+  /// - public and `async` methods, which event handlers or a suspension point
+  ///   can run;
+  /// - helpers called from a deferred callback in `build()` (`ref.listen`,
+  ///   `Timer`, `then`, ...); only closures handed to a synchronous collection
+  ///   method (`map`, `where`, `forEach`, ...) still count as `build()` code;
+  /// - helpers that any method other than `build()` also reaches.
   Set<String> _buildReachableHelpers(List<AstNode> members) {
     final helpers = <String, MethodDeclaration>{};
+    final others = <MethodDeclaration>[];
     MethodDeclaration? build;
     for (final member in members) {
       if (member is! MethodDeclaration) continue;
@@ -121,20 +128,43 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
         build = member;
       } else if (name.startsWith('_') && !member.body.isAsynchronous) {
         helpers[name] = member;
+      } else {
+        others.add(member);
       }
     }
     if (build == null || helpers.isEmpty) return const {};
 
-    final reachable = <String>{};
-    final pending = <AstNode>[build.body];
+    final fromBuild = _reachHelpers([build.body], helpers, syncOnly: true);
+    // Every method that is not `build()` or a build-only helper is another
+    // entry point: public, async, or a private helper `build()` never runs.
+    final entryBodies = <AstNode>[
+      for (final method in others) method.body,
+      for (final entry in helpers.entries)
+        if (!fromBuild.contains(entry.key)) entry.value.body,
+    ];
+    final fromElsewhere = _reachHelpers(entryBodies, helpers, syncOnly: false);
+    return fromBuild.difference(fromElsewhere);
+  }
+
+  /// Helper names called from [roots], following calls through helper bodies.
+  Set<String> _reachHelpers(
+    List<AstNode> roots,
+    Map<String, MethodDeclaration> helpers, {
+    required bool syncOnly,
+  }) {
+    final reached = <String>{};
+    final pending = [...roots];
     while (pending.isNotEmpty) {
-      final collector = _SelfCallCollector(helpers.keys.toSet());
+      final collector = _SelfCallCollector(
+        helpers.keys.toSet(),
+        syncOnly: syncOnly,
+      );
       pending.removeLast().accept(collector);
       for (final name in collector.calledHelpers) {
-        if (reachable.add(name)) pending.add(helpers[name]!.body);
+        if (reached.add(name)) pending.add(helpers[name]!.body);
       }
     }
-    return reachable;
+    return reached;
   }
 
   bool _isProviderFile(String filePath) {
@@ -300,13 +330,46 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
   }
 }
 
+/// Collection methods that run their callback argument before returning.
+const _syncCallbackMethods = {
+  'map',
+  'where',
+  'expand',
+  'forEach',
+  'fold',
+  'reduce',
+  'any',
+  'every',
+  'firstWhere',
+  'lastWhere',
+  'singleWhere',
+  'takeWhile',
+  'skipWhile',
+  'removeWhere',
+  'retainWhere',
+  'sort',
+  'putIfAbsent',
+  'generate',
+};
+
 /// Collects calls to own-class methods named in [_candidates] written as
 /// `name()` or `this.name()`.
+///
+/// With [syncOnly], closures are skipped unless they are handed to one of
+/// [_syncCallbackMethods]: any other closure may run after the enclosing body
+/// returned, so a call inside it is not part of that body's synchronous run.
 class _SelfCallCollector extends RecursiveAstVisitor<void> {
-  _SelfCallCollector(this._candidates);
+  _SelfCallCollector(this._candidates, {required this.syncOnly});
 
   final Set<String> _candidates;
+  final bool syncOnly;
   final Set<String> calledHelpers = {};
+
+  @override
+  void visitFunctionExpression(FunctionExpression node) {
+    if (syncOnly && !_runsSynchronously(node)) return;
+    super.visitFunctionExpression(node);
+  }
 
   @override
   void visitMethodInvocation(MethodInvocation node) {
@@ -316,5 +379,13 @@ class _SelfCallCollector extends RecursiveAstVisitor<void> {
       calledHelpers.add(node.methodName.name);
     }
     super.visitMethodInvocation(node);
+  }
+
+  bool _runsSynchronously(FunctionExpression node) {
+    final parent = node.parent;
+    if (parent is! ArgumentList) return false;
+    final call = parent.parent;
+    return call is MethodInvocation &&
+        _syncCallbackMethods.contains(call.methodName.name);
   }
 }
