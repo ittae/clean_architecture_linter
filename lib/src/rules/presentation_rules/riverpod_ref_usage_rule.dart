@@ -125,25 +125,28 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
     }
   }
 
-  /// Names of private, synchronous methods that only `build()` runs: it calls
-  /// them directly or through other such helpers (`_helper()` /
-  /// `this._helper()`), and nothing else references them.
+  /// Names of private, synchronous methods that only `build()` runs: every
+  /// call to them is `name()` / `this.name()` made in `build()`'s synchronous
+  /// run or in another such helper, and nothing else references them.
   ///
   /// `ref.watch()` there runs inside the synchronous `build()` call graph, so
   /// it is a reactive dependency of the provider, not a one-time read. Left
   /// out, because `ref.watch()` is a real mistake there:
   /// - public, `async` and generator (`sync*`) methods, which event handlers
   ///   or a suspension point can run;
-  /// - calls inside any closure in `build()` (`ref.listen`, `Timer`, `then`,
-  ///   `Stream.map`, ...): the closure may run after `build()` returned;
-  /// - helpers that another method or a same-file extension also calls;
-  /// - helpers used as a tear-off (`ref.listen(p, _onChange)`).
+  /// - every helper of an `async` `build()`, whose calls may follow an
+  ///   `await` (kept conservative on purpose);
+  /// - a call inside any closure (`ref.listen`, `Timer`, `then`,
+  ///   `Stream.map`, ...), which may run after `build()` returned;
+  /// - a helper that anything else also calls: another method, a field
+  ///   initializer, or an extension in the same file (extensions in other
+  ///   `part` files are not visible);
+  /// - a helper used as a tear-off (`ref.listen(p, _onChange)`).
   Set<String> _buildReachableHelpers(
     List<AstNode> members,
     List<AstNode> extensionBodies,
   ) {
     final helpers = <String, MethodDeclaration>{};
-    final others = <MethodDeclaration>[];
     MethodDeclaration? build;
     for (final member in members) {
       if (member is! MethodDeclaration) continue;
@@ -154,71 +157,77 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
           !member.body.isAsynchronous &&
           !member.body.isGenerator) {
         helpers[name] = member;
-      } else {
-        others.add(member);
       }
     }
-    if (build == null || helpers.isEmpty) return const {};
-
-    final fromBuild = _reachHelpers(
-      [build.body],
-      helpers,
-      syncOnly: true,
-      beforeOffset: _firstAwaitEnd(build.body),
-    );
-    // Every method that is not `build()` or a build-only helper is another
-    // entry point: public, async, or a private helper `build()` never runs.
-    final entryBodies = <AstNode>[
-      for (final method in others) method.body,
-      for (final entry in helpers.entries)
-        if (!fromBuild.contains(entry.key)) entry.value.body,
-      ...extensionBodies,
-    ];
-    final fromElsewhere = _reachHelpers(entryBodies, helpers, syncOnly: false);
-
-    final tearOffs = _TearOffCollector(helpers.keys.toSet());
-    for (final member in members) {
-      member.accept(tearOffs);
+    if (build == null || build.body.isAsynchronous || helpers.isEmpty) {
+      return const {};
     }
-    for (final body in extensionBodies) {
-      body.accept(tearOffs);
+
+    final names = helpers.keys.toSet();
+    final allSites = _callSites([...members, ...extensionBodies], names);
+    final tearOffs = _TearOffCollector(names);
+    for (final node in [...members, ...extensionBodies]) {
+      node.accept(tearOffs);
     }
-    return fromBuild.difference(fromElsewhere).difference(tearOffs.names);
+
+    // Greatest fixed point: a helper stays only while every call to it sits in
+    // `build()`'s synchronous run or in the synchronous run of a kept helper.
+    final reachable = _reachableFromBuild(build, helpers);
+    var kept = {
+      for (final name in reachable)
+        if (!tearOffs.names.contains(name)) name,
+    };
+    while (true) {
+      final syncSites = <MethodInvocation>{
+        ..._callSites(
+          [build.body],
+          names,
+          syncOnly: true,
+        ).values.expand((sites) => sites),
+        for (final name in kept)
+          ..._callSites(
+            [helpers[name]!.body],
+            names,
+            syncOnly: true,
+          ).values.expand((sites) => sites),
+      };
+      final next = {
+        for (final name in kept)
+          if (syncSites.containsAll(allSites[name] ?? const {})) name,
+      };
+      if (next.length == kept.length) return next;
+      kept = next;
+    }
   }
 
-  /// Offset where the first `await` of [body] completes, or null. A call
-  /// after it runs after a suspension point, not in `build()`'s synchronous run.
-  int? _firstAwaitEnd(FunctionBody body) {
-    final finder = _FirstAwaitFinder();
-    body.accept(finder);
-    return finder.end;
-  }
-
-  /// Helper names called from [roots], following calls through helper bodies.
-  /// With [beforeOffset], calls in the roots at or after it are ignored.
-  Set<String> _reachHelpers(
-    List<AstNode> roots,
-    Map<String, MethodDeclaration> helpers, {
-    required bool syncOnly,
-    int? beforeOffset,
-  }) {
+  /// Helpers `build()` reaches through synchronous calls only.
+  Set<String> _reachableFromBuild(
+    MethodDeclaration build,
+    Map<String, MethodDeclaration> helpers,
+  ) {
+    final names = helpers.keys.toSet();
     final reached = <String>{};
-    final pending = <(AstNode, int?)>[
-      for (final root in roots) (root, beforeOffset),
-    ];
+    final pending = <AstNode>[build.body];
     while (pending.isNotEmpty) {
-      final (node, cutoff) = pending.removeLast();
-      final collector = _SelfCallCollector(
-        helpers.keys.toSet(),
-        syncOnly: syncOnly,
-        beforeOffset: cutoff,
-      );
-      node.accept(collector);
-      for (final name in collector.calledHelpers) {
-        if (reached.add(name)) pending.add((helpers[name]!.body, null));
+      final sites = _callSites([pending.removeLast()], names, syncOnly: true);
+      for (final name in sites.keys) {
+        if (reached.add(name)) pending.add(helpers[name]!.body);
       }
     }
     return reached;
+  }
+
+  /// Call sites of [names] found in [roots], keyed by helper name.
+  Map<String, Set<MethodInvocation>> _callSites(
+    List<AstNode> roots,
+    Set<String> names, {
+    bool syncOnly = false,
+  }) {
+    final collector = _SelfCallCollector(names, syncOnly: syncOnly);
+    for (final root in roots) {
+      root.accept(collector);
+    }
+    return collector.sites;
   }
 
   bool _isProviderFile(String filePath) {
@@ -403,18 +412,11 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
 /// enclosing body returned, so a call inside it is not part of that body's
 /// synchronous run.
 class _SelfCallCollector extends RecursiveAstVisitor<void> {
-  _SelfCallCollector(
-    this._candidates, {
-    required this.syncOnly,
-    this.beforeOffset,
-  });
+  _SelfCallCollector(this._candidates, {required this.syncOnly});
 
   final Set<String> _candidates;
   final bool syncOnly;
-
-  /// Calls starting at or after this offset are ignored.
-  final int? beforeOffset;
-  final Set<String> calledHelpers = {};
+  final Map<String, Set<MethodInvocation>> sites = {};
 
   @override
   void visitFunctionExpression(FunctionExpression node) {
@@ -425,41 +427,12 @@ class _SelfCallCollector extends RecursiveAstVisitor<void> {
   @override
   void visitMethodInvocation(MethodInvocation node) {
     final target = node.target;
-    final cutoff = beforeOffset;
+    final name = node.methodName.name;
     if ((target == null || target is ThisExpression) &&
-        _candidates.contains(node.methodName.name) &&
-        (cutoff == null || node.offset < cutoff)) {
-      calledHelpers.add(node.methodName.name);
+        _candidates.contains(name)) {
+      (sites[name] ??= {}).add(node);
     }
     super.visitMethodInvocation(node);
-  }
-}
-
-/// Finds where the first `await` (or `await for`) of a body completes,
-/// without entering closures, which suspend on their own.
-class _FirstAwaitFinder extends RecursiveAstVisitor<void> {
-  int? end;
-
-  @override
-  void visitFunctionExpression(FunctionExpression node) {}
-
-  @override
-  void visitAwaitExpression(AwaitExpression node) {
-    final current = end;
-    if (current == null || node.end < current) end = node.end;
-    super.visitAwaitExpression(node);
-  }
-
-  @override
-  void visitForStatement(ForStatement node) {
-    final awaitKeyword = node.awaitKeyword;
-    if (awaitKeyword != null) {
-      final current = end;
-      if (current == null || awaitKeyword.end < current) {
-        end = awaitKeyword.end;
-      }
-    }
-    super.visitForStatement(node);
   }
 }
 

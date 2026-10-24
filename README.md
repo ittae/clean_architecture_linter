@@ -57,7 +57,7 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 26. **Presentation No Throw** - No exception throwing in Presentation layer
 27. **Widget No UseCase Call** - Widgets should not call UseCases directly (use Providers)
 28. **Widget Ref Read Then When** - Avoid using .when() after ref.read() (anti-pattern)
-29. **Riverpod Ref Usage** - Use ref.watch() in build(), ref.read() in methods (with UseCase detection). Top-level `@riverpod` functional providers are checked like `build()`, and a private synchronous helper that only `build()` runs (directly or through other helpers, not from a deferred callback) may use `ref.watch()`
+29. **Riverpod Ref Usage** - Use ref.watch() in build(), ref.read() in methods (with UseCase detection). Top-level `@riverpod` functional providers are checked like `build()`, and a private synchronous helper that only a synchronous `build()` runs (directly or through other helpers, never from a closure, tear-off or another method) may use `ref.watch()`
 30. **Riverpod Ref After Async Gap** - Advisory warning for ref.read/watch/listen/invalidate/refresh after await in provider methods (a preceding `if (!ref.mounted) return;` guard suppresses it)
 31. **Riverpod Provider Naming** - Provider functions must include type suffix (repository/usecase/datasource)
 32. **Ref Mounted Usage** - Avoid `ref.mounted` in the UI layer (widgets/pages); inside a Notifier it is the recommended disposal guard and is not reported

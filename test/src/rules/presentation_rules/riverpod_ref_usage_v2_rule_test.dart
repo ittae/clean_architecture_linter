@@ -309,14 +309,14 @@ class TodoNotifier extends Notifier<Object> {
           true,
         ),
         (
-          'allows ref.watch in a helper called before the first await in build()',
+          'flags ref.watch in a helper of an async build() (conservative)',
           'Future<Object> build() async {\n'
               '  final v = _compute();\n'
               '  await Future<void>.delayed(Duration.zero);\n'
               '  return v;\n'
               '}\n'
               'Object _compute() => ref.watch(userProvider);',
-          false,
+          true,
         ),
         (
           'flags ref.watch in a helper called after an await in build()',
@@ -334,6 +334,22 @@ class TodoNotifier extends Notifier<Object> {
               '  Timer.run(() => ref.watch(todoProvider));\n'
               '  return ref.watch(userProvider);\n'
               '}',
+          true,
+        ),
+        (
+          'flags ref.watch in a helper that build() also calls from a closure',
+          'Object build() {\n'
+              '  ref.listen(otherProvider, (_, __) => _compute());\n'
+              '  return _compute();\n'
+              '}\n'
+              'Object _compute() => ref.watch(userProvider);',
+          true,
+        ),
+        (
+          'flags ref.watch in a helper that a field initializer also calls',
+          'late final _cached = _compute();\n'
+              'Object build() => _compute();\n'
+              'Object _compute() => ref.watch(userProvider);',
           true,
         ),
         (
