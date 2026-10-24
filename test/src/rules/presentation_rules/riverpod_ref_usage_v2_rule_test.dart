@@ -356,11 +356,18 @@ class TodoNotifier extends Notifier<Object> {
           true,
         ),
         (
-          'allows ref.watch in a build-only helper whose name a cascade repeats',
+          'flags ref.watch in a helper whose name a cascade also uses (conservative)',
           'Object build() => _compute();\n'
               'void other(List<int> xs) => xs.._compute();\n'
               'Object _compute() => ref.watch(userProvider);',
-          false,
+          true,
+        ),
+        (
+          'flags ref.watch in a helper called on another instance',
+          'Object build() => _compute();\n'
+              'void sync(TodoNotifier other) => other._compute();\n'
+              'Object _compute() => ref.watch(userProvider);',
+          true,
         ),
         (
           'flags ref.watch in a helper that a public method also calls',
@@ -412,6 +419,27 @@ class TodoNotifier extends Notifier<Object> {
                   'extension TodoActions on TodoNotifier {\n'
                   '  void refresh() => _compute();\n'
                   '}',
+                ),
+              },
+              definingFile: _path,
+            );
+
+        result.expectDiagnostics([_watchInMethodDiagnostic()]);
+      },
+    );
+
+    test(
+      'flags ref.watch in a helper that a top-level function also calls',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefUsageRule())
+            .analyze(
+              files: {
+                _path: _source(
+                  '@riverpod\nclass TodoNotifier {\n'
+                  'Object build() => _compute();\n'
+                  'Object _compute() => ref.watch(userProvider);\n'
+                  '}\n'
+                  'void refresh(TodoNotifier notifier) => notifier._compute();',
                 ),
               },
               definingFile: _path,

@@ -69,7 +69,11 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
     final members = classMembers(node).toList();
     _scanMembers(
       members,
-      buildReachable: _buildReachableHelpers(members, _extensionBodiesOn(node)),
+      buildReachable: _buildReachableHelpers(
+        members,
+        _extensionBodiesOn(node),
+        node.parent ?? node,
+      ),
     );
   }
 
@@ -148,10 +152,13 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
   /// - a helper that anything else also calls: another method, a field
   ///   initializer, or an extension in the same file (extensions in other
   ///   `part` files are not visible);
-  /// - a helper used as a tear-off (`ref.listen(p, _onChange)`).
+  /// - a helper referenced in any other way anywhere in the file: a tear-off
+  ///   (`ref.listen(p, _onChange)`) or a call on another object
+  ///   (`notifier._compute()`).
   Set<String> _buildReachableHelpers(
     List<AstNode> members,
     List<AstNode> extensionBodies,
+    AstNode referenceScope,
   ) {
     final helpers = <String, MethodDeclaration>{};
     MethodDeclaration? build;
@@ -172,10 +179,8 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
 
     final names = helpers.keys.toSet();
     final allSites = _callSites([...members, ...extensionBodies], names);
-    final tearOffs = _TearOffCollector(names);
-    for (final node in [...members, ...extensionBodies]) {
-      node.accept(tearOffs);
-    }
+    final tearOffs = _OtherReferenceCollector(names);
+    referenceScope.accept(tearOffs);
 
     // Greatest fixed point: a helper stays only while every call to it sits in
     // `build()`'s synchronous run or in the synchronous run of a kept helper.
@@ -447,19 +452,28 @@ class _SelfCallCollector extends RecursiveAstVisitor<void> {
   }
 }
 
-/// Collects [_candidates] referenced other than as the method name of a call,
-/// i.e. tear-offs such as `ref.listen(p, _onChange)` or `this._onChange`.
-class _TearOffCollector extends RecursiveAstVisitor<void> {
-  _TearOffCollector(this._candidates);
+/// Collects [_candidates] referenced other than as the method name of a
+/// `name()` / `this.name()` call: tear-offs such as `ref.listen(p, _onChange)`
+/// and calls on another object such as `notifier._compute()`. Run over a whole
+/// compilation unit, so it also sees other classes and top-level functions.
+class _OtherReferenceCollector extends RecursiveAstVisitor<void> {
+  _OtherReferenceCollector(this._candidates);
 
   final Set<String> _candidates;
   final Set<String> names = {};
 
   @override
   void visitSimpleIdentifier(SimpleIdentifier node) {
-    final parent = node.parent;
-    final isCallName = parent is MethodInvocation && parent.methodName == node;
-    if (!isCallName && _candidates.contains(node.name)) names.add(node.name);
+    if (_candidates.contains(node.name) && !_isSelfCallName(node)) {
+      names.add(node.name);
+    }
     super.visitSimpleIdentifier(node);
+  }
+
+  bool _isSelfCallName(SimpleIdentifier node) {
+    final parent = node.parent;
+    if (parent is! MethodInvocation || parent.methodName != node) return false;
+    final target = parent.target;
+    return !parent.isCascaded && (target == null || target is ThisExpression);
   }
 }
