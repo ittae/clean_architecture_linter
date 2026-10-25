@@ -43,7 +43,7 @@ Other recorded gaps, with the current code:
 
 - `CleanArchitectureUtils.isRethrow` accepts only a `ThrowExpression`. `rethrow;` is a `RethrowExpression`, a sibling node (`rethrowExpression ::= 'rethrow'`), not the child of `throw`. `presentation_no_throw` registers `addThrowExpression` only, and its `_isRethrow` checks `ThrowExpression.expression is RethrowExpression`, which that grammar does not produce. `presentation_use_async_value` already walks `RethrowExpression` in `_RethrowFinder`.
 - `presentation_no_throw._isStateOrNotifierClass` reads `extendsClause.superclass.name.lexeme` (the immediate superclass token) and `className.contains('State')`. The substring matches `Statement`. `ref_mounted_usage_rule` already walks `InterfaceElement.allSupertypes` for notifier classification.
-- `riverpod_uncancelled_disposable` records the gap in source: helper bodies passed to `ref.onDispose` are not traversed, so a tear-off such as `ref.onDispose(subscription.cancel)` or `ref.onDispose(_dispose)` is invisible. That gap is recorded here and is not one of the PRs below.
+- `riverpod_uncancelled_disposable` used to skip helper bodies passed to `ref.onDispose`, so `ref.onDispose(_dispose)` reported a resource its helper did cancel. It now follows same-class helpers that `onDispose` runs, as a tear-off or a call, transitively. A direct tear-off such as `ref.onDispose(subscription.cancel)` was already recognised. Helpers declared outside the class (an extension or a mixin) are still not followed.
 - There is no rule that stops `features/x` from importing `features/y/data` or `features/y/presentation`.
 - The only registered use-case rule is `usecase_no_result_return`. Nothing requires a single public `call`, and nothing forbids a use case from depending on another use case.
 
@@ -362,7 +362,7 @@ Risks to accept before PR 2 merges:
 - The unknown walk reports a domain import when Flutter or IO is reachable only through other unknown libraries. It does not follow a known layer, so an unknown file that imports presentation, which then imports Flutter, stays silent for this check. The direction rules still allow that unknown → presentation edge.
 - Case folding is inconsistent today (`CleanArchitectureUtils` is case-sensitive; `layer_dependency` lowercases). The resolver is case-sensitive. A tree that relies on `Domain` matching `/domain/` will lose that accidental match in 3.0.0.
 - `Identifier` is deprecated and `NameExpression` is experimental. Building PR 2 on `NameExpression.resolution` would couple the release to an unstable AST. PR 2 uses `NamedType` and `LibraryImport` only.
-- `onDispose` tear-offs stay false negatives until a separate bugfix. This design does not schedule that fix.
+- `onDispose` helper tear-offs (`ref.onDispose(_dispose)`) are resolved by following same-class helper bodies, not by this design's element resolution. Helpers outside the class stay unresolved.
 
 Open questions for the owner:
 

@@ -540,6 +540,116 @@ class PomodoroNotifier {
       },
     );
 
+    group('onDispose cleanup forms', () {
+      const timer = '  Timer? _timer;\n';
+      const start =
+          '  Future<void> build() async {\n'
+          '    _timer = Timer.periodic(const Duration(seconds: 1), (_) {});\n';
+      const cancelHelper = '  void _cleanup() {\n    _timer?.cancel();\n  }\n';
+      // (name, class members, whether the timer is reported)
+      const cases = <(String, String, bool)>[
+        (
+          'accepts a timer.cancel tear-off',
+          '$start    ref.onDispose(_timer.cancel);\n  }',
+          false,
+        ),
+        (
+          'accepts a this.timer.cancel tear-off',
+          '$start    ref.onDispose(this._timer.cancel);\n  }',
+          false,
+        ),
+        (
+          'accepts a listener.dispose tear-off',
+          '  Future<void> build() async {\n'
+              '    final listener = AppLifecycleListener(onResume: _onResume);\n'
+              '    ref.onDispose(listener.dispose);\n'
+              '  }',
+          false,
+        ),
+        (
+          'accepts a helper tear-off that cancels',
+          '$timer$start    ref.onDispose(_cleanup);\n  }\n$cancelHelper',
+          false,
+        ),
+        (
+          'accepts a this-prefixed helper tear-off that cancels',
+          '$timer$start    ref.onDispose(this._cleanup);\n  }\n$cancelHelper',
+          false,
+        ),
+        (
+          'accepts a helper call that cancels through another helper',
+          '$timer$start    ref.onDispose(() => this._cleanup());\n  }\n'
+              '  void _cleanup() => _stop();\n'
+              '  void _stop() => _timer?.cancel();',
+          false,
+        ),
+        (
+          'accepts mutually recursive helpers that cancel',
+          '$timer$start    ref.onDispose(_a);\n  }\n'
+              '  void _a() => _b();\n'
+              '  void _b() {\n    _a();\n    _timer?.cancel();\n  }',
+          false,
+        ),
+        (
+          'accepts a this.cancel tear-off whose helper cancels',
+          '$timer$start    ref.onDispose(this.cancel);\n  }\n'
+              '  void cancel() {\n    _timer?.cancel();\n  }',
+          false,
+        ),
+        (
+          'flags a helper that is only passed to another function in onDispose',
+          '$timer$start    ref.onDispose(() => registry.add(_cleanup));\n  }\n$cancelHelper',
+          true,
+        ),
+        (
+          'flags a timer when onDispose only cascades on another object',
+          '$timer$start    ref.onDispose(() => other..cancel());\n  }\n'
+              '  void cancel() {\n    _timer?.cancel();\n  }',
+          true,
+        ),
+        (
+          'flags a helper tear-off that does not cancel',
+          '$timer$start    ref.onDispose(_cleanup);\n  }\n  void _cleanup() {}',
+          true,
+        ),
+        (
+          'flags a this-prefixed helper tear-off that does not cancel',
+          '$timer$start    ref.onDispose(this._cleanup);\n  }\n  void _cleanup() {}',
+          true,
+        ),
+        (
+          'flags a cancelling helper that is not registered in onDispose',
+          '$timer$start    ref.onDispose(() {});\n  }\n$cancelHelper',
+          true,
+        ),
+      ];
+
+      for (final (name, members, flagged) in cases) {
+        test(name, () async {
+          final result =
+              await V2RuleHarness(
+                rule: RiverpodUncancelledDisposableRule(),
+              ).analyze(
+                files: {
+                  _path:
+                      'class riverpod {\n  const riverpod();\n}\n\n'
+                      '@riverpod\nclass PomodoroNotifier {\n$members\n}\n',
+                },
+                definingFile: _path,
+              );
+
+          flagged
+              ? result.expectDiagnostics([
+                  const ExpectedV2Diagnostic(
+                    relativePath: _path,
+                    codeName: 'riverpod_uncancelled_disposable',
+                  ),
+                ])
+              : result.expectNoDiagnostics();
+        });
+      }
+    });
+
     test('skips non-provider files', () async {
       const widgetPath =
           'lib/features/pomodoro/presentation/widgets/pomodoro_widget.dart';

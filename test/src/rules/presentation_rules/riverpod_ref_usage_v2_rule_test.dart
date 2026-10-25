@@ -3,6 +3,20 @@ import 'package:test/test.dart';
 
 import '../../../v2_harness/analysis_rule_harness.dart';
 
+const _path = 'lib/features/todo/presentation/providers/todo_notifier.dart';
+
+ExpectedV2Diagnostic _watchInMethodDiagnostic() => const ExpectedV2Diagnostic(
+  relativePath: _path,
+  codeName: 'riverpod_ref_usage',
+  problemMessage:
+      'Use ref.read() instead of ref.watch() in methods for one-time reads.',
+  correctionMessage:
+      'Change ref.watch() to ref.read() for one-time provider access in methods.',
+);
+
+String _source(String declarations) =>
+    'class riverpod {\n  const riverpod();\n}\n\n$declarations\n';
+
 void main() {
   group('RiverpodRefUsageRule v2', () {
     test('reports ref.read state provider usage in build', () async {
@@ -216,80 +230,368 @@ class TodoNotifier extends Notifier<Object> {
       ]);
     });
 
+    group('private helpers of build()', () {
+      // (name, class members, whether ref.watch in a helper is reported)
+      const cases = <(String, String, bool)>[
+        (
+          'allows ref.watch in a private sync helper called from build()',
+          'Object build() => _compute();\n'
+              'Object _compute() => ref.watch(currentUserProvider);',
+          false,
+        ),
+        (
+          'allows ref.watch in a helper reached transitively from build()',
+          'Object build() => this._first();\n'
+              'Object _first() => _second();\n'
+              'Object _second() => ref.watch(currentUserProvider);',
+          false,
+        ),
+        (
+          'flags ref.watch in a helper that build() does not call',
+          'Object build() => const Object();\n'
+              'Object _other() => ref.watch(currentUserProvider);',
+          true,
+        ),
+        (
+          'flags ref.watch in an async helper called from a sync build()',
+          'Object build() {\n'
+              '  _load();\n'
+              '  return const Object();\n'
+              '}\n'
+              'Future<Object> _load() async {\n'
+              '  await Future<void>.delayed(Duration.zero);\n'
+              '  return ref.watch(currentUserProvider);\n'
+              '}',
+          true,
+        ),
+        (
+          'flags ref.watch in a public method called from build()',
+          'Object build() => refresh();\n'
+              'Object refresh() => ref.watch(currentUserProvider);',
+          true,
+        ),
+        (
+          'flags ref.watch in a helper only called from a ref.listen callback',
+          'Object build() {\n'
+              '  ref.listen(currentUserProvider, (_, __) => _onChange());\n'
+              '  return const Object();\n'
+              '}\n'
+              'void _onChange() => ref.watch(todoProvider);',
+          true,
+        ),
+        (
+          'flags ref.watch in a helper only called from a Timer callback',
+          'Object build() {\n'
+              '  Timer.periodic(const Duration(seconds: 1), (_) => _tick());\n'
+              '  return const Object();\n'
+              '}\n'
+              'void _tick() => ref.watch(todoProvider);',
+          true,
+        ),
+        (
+          'flags ref.watch in a helper called from a Stream.map callback',
+          'Stream<int> build() => _source.map((e) => _convert(e));\n'
+              'int _convert(int e) => ref.watch(xProvider) + e;',
+          true,
+        ),
+        (
+          'flags ref.watch in a helper passed as a ref.listen tear-off',
+          'Object build() {\n'
+              '  ref.listen(otherProvider, _onChange);\n'
+              '  return _onChange(null, null);\n'
+              '}\n'
+              'Object _onChange(Object? a, Object? b) => ref.watch(userProvider);',
+          true,
+        ),
+        (
+          'flags ref.watch in a generator helper called from build()',
+          'Object build() => _items().toList();\n'
+              'Iterable<Object> _items() sync* {\n'
+              '  yield ref.watch(userProvider);\n'
+              '}',
+          true,
+        ),
+        (
+          'flags ref.watch in a helper of an async build() (conservative)',
+          'Future<Object> build() async {\n'
+              '  final v = _compute();\n'
+              '  await Future<void>.delayed(Duration.zero);\n'
+              '  return v;\n'
+              '}\n'
+              'Object _compute() => ref.watch(userProvider);',
+          true,
+        ),
+        (
+          'flags ref.watch in a helper called after an await in build()',
+          'Future<Object> build() async {\n'
+              '  await Future<void>.delayed(Duration.zero);\n'
+              '  return _compute();\n'
+              '}\n'
+              'Object _compute() => ref.watch(userProvider);',
+          true,
+        ),
+        (
+          'flags only the closure ref.watch inside a build-only helper',
+          'Object build() => _compute();\n'
+              'Object _compute() {\n'
+              '  Timer.run(() => ref.watch(todoProvider));\n'
+              '  return ref.watch(userProvider);\n'
+              '}',
+          true,
+        ),
+        (
+          'flags ref.watch in a helper that build() also calls from a closure',
+          'Object build() {\n'
+              '  ref.listen(otherProvider, (_, __) => _compute());\n'
+              '  return _compute();\n'
+              '}\n'
+              'Object _compute() => ref.watch(userProvider);',
+          true,
+        ),
+        (
+          'flags ref.watch in a helper that a field initializer also calls',
+          'late final _cached = _compute();\n'
+              'Object build() => _compute();\n'
+              'Object _compute() => ref.watch(userProvider);',
+          true,
+        ),
+        (
+          'flags ref.watch in a helper whose name a cascade also uses (conservative)',
+          'Object build() => _compute();\n'
+              'void other(List<int> xs) => xs.._compute();\n'
+              'Object _compute() => ref.watch(userProvider);',
+          true,
+        ),
+        (
+          'flags ref.watch in a helper called on another instance',
+          'Object build() => _compute();\n'
+              'void sync(TodoNotifier other) => other._compute();\n'
+              'Object _compute() => ref.watch(userProvider);',
+          true,
+        ),
+        (
+          'allows ref.watch in a build-only helper that a doc comment mentions',
+          '/// Delegates to [_compute].\n'
+              'Object build() => _compute();\n'
+              'Object _compute() => ref.watch(userProvider);',
+          false,
+        ),
+        (
+          'flags ref.watch in a helper that a public method also calls',
+          'Object build() => _compute();\n'
+              'void increment() => _compute();\n'
+              'Object _compute() => ref.watch(currentUserProvider);',
+          true,
+        ),
+        (
+          'flags a shared helper reached via a helper that a public method calls',
+          'Object build() => _compute();\n'
+              'void increment() => _viaHelper();\n'
+              'void _viaHelper() => _compute();\n'
+              'Object _compute() => ref.watch(currentUserProvider);',
+          true,
+        ),
+      ];
+
+      for (final (name, members, flagged) in cases) {
+        test(name, () async {
+          final result = await V2RuleHarness(rule: RiverpodRefUsageRule())
+              .analyze(
+                files: {
+                  _path: _source(
+                    '@riverpod\nclass TodoNotifier {\n$members\n}',
+                  ),
+                },
+                definingFile: _path,
+              );
+
+          flagged
+              ? result.expectDiagnostics([_watchInMethodDiagnostic()])
+              : result.expectNoDiagnostics();
+        });
+      }
+    });
+
+    group('private helpers and part files', () {
+      const partPath =
+          'lib/features/todo/presentation/providers/todo_notifier_helpers.dart';
+
+      Future<V2RuleResult> analyzeWithPart(String partDeclarations) =>
+          V2RuleHarness(rule: RiverpodRefUsageRule()).analyze(
+            files: {
+              _path:
+                  "part 'todo_notifier_helpers.dart';\n"
+                  '${_source('@riverpod\nclass TodoNotifier {\n'
+                  'Object build() => _compute();\n'
+                  'Object _compute() => ref.watch(userProvider);\n'
+                  '}')}',
+              partPath: "part of 'todo_notifier.dart';\n\n$partDeclarations",
+            },
+            definingFile: _path,
+          );
+
+      test(
+        'flags ref.watch in a helper that a part-file extension calls',
+        () async {
+          final result = await analyzeWithPart(
+            'extension TodoActions on TodoNotifier {\n'
+            '  void refresh() => _compute();\n'
+            '}',
+          );
+
+          result.expectDiagnostics([_watchInMethodDiagnostic()]);
+        },
+      );
+
+      test(
+        'flags ref.watch in a helper that a part-file function calls',
+        () async {
+          final result = await analyzeWithPart(
+            'void refresh(TodoNotifier notifier) => notifier._compute();',
+          );
+
+          result.expectDiagnostics([_watchInMethodDiagnostic()]);
+        },
+      );
+
+      test('allows ref.watch in a build-only helper when the part file '
+          'does not use it', () async {
+        final result = await analyzeWithPart(
+          'extension TodoActions on TodoNotifier {\n'
+          '  void refresh() => ref.read(userProvider);\n'
+          '}',
+        );
+
+        result.expectNoDiagnostics();
+      });
+    });
+
     test(
-      'flags ref.watch in a private helper synchronously delegated from build() '
-      '(documents a known over-flagging gap, not endorsed behavior)',
+      'flags ref.watch in a helper that a same-file extension also calls',
       () async {
         final result = await V2RuleHarness(rule: RiverpodRefUsageRule())
             .analyze(
               files: {
-                'lib/features/todo/presentation/providers/todo_notifier.dart':
-                    '''
-class riverpod {
-  const riverpod();
-}
-
-@riverpod
-class TodoNotifier {
-  Object build() {
-    return _computeInitial();
-  }
-
-  Object _computeInitial() {
-    return ref.watch(currentUserProvider);
-  }
-}
-''',
+                _path: _source(
+                  '@riverpod\nclass TodoNotifier {\n'
+                  'Object build() => _compute();\n'
+                  'Object _compute() => ref.watch(userProvider);\n'
+                  '}\n'
+                  'extension TodoActions on TodoNotifier {\n'
+                  '  void refresh() => _compute();\n'
+                  '}',
+                ),
               },
-              definingFile:
-                  'lib/features/todo/presentation/providers/todo_notifier.dart',
+              definingFile: _path,
             );
 
-        // A private helper invoked synchronously from build() is idiomatic
-        // Riverpod (ref.watch just needs to run during the sync build call
-        // graph), but this rule only recognises a method literally named
-        // `build`, so today it reports the helper as a "read outside build"
-        // violation. This test pins today's behavior as a regression guard;
-        // it is not an endorsement of the false positive.
-        result.expectDiagnostics([
-          const ExpectedV2Diagnostic(
-            relativePath:
-                'lib/features/todo/presentation/providers/todo_notifier.dart',
-            codeName: 'riverpod_ref_usage',
-            problemMessage:
-                'Use ref.read() instead of ref.watch() in methods for one-time reads.',
-            correctionMessage:
-                'Change ref.watch() to ref.read() for one-time provider access in methods.',
-          ),
-        ]);
+        result.expectDiagnostics([_watchInMethodDiagnostic()]);
       },
     );
 
-    test('does not check ref usage in top-level @riverpod functional providers '
-        '(documents a known coverage gap)', () async {
-      final result = await V2RuleHarness(rule: RiverpodRefUsageRule()).analyze(
-        files: {
-          'lib/features/todo/presentation/providers/todo_notifier.dart': '''
-class riverpod {
-  const riverpod();
-}
+    test(
+      'flags ref.watch in a helper that a top-level function also calls',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefUsageRule())
+            .analyze(
+              files: {
+                _path: _source(
+                  '@riverpod\nclass TodoNotifier {\n'
+                  'Object build() => _compute();\n'
+                  'Object _compute() => ref.watch(userProvider);\n'
+                  '}\n'
+                  'void refresh(TodoNotifier notifier) => notifier._compute();',
+                ),
+              },
+              definingFile: _path,
+            );
 
-@riverpod
-bool canSubmitTodo(Object ref) {
-  return ref.read(currentUserProvider) != null;
-}
-''',
-        },
-        definingFile:
-            'lib/features/todo/presentation/providers/todo_notifier.dart',
-      );
+        result.expectDiagnostics([_watchInMethodDiagnostic()]);
+      },
+    );
 
-      // This rule registers ClassDeclaration and ExtensionDeclaration nodes,
-      // so top-level @riverpod functions -- this repo's own Tier-3 "computed
-      // logic provider" convention (see CLAUDE.md) -- still get no
-      // ref.watch/ref.read discipline check. This test documents that gap
-      // explicitly so it cannot regress silently into "already covered".
-      result.expectNoDiagnostics();
+    test(
+      'flags ref.watch in a helper that a same-file subclass also calls',
+      () async {
+        final result = await V2RuleHarness(rule: RiverpodRefUsageRule())
+            .analyze(
+              files: {
+                _path: _source(
+                  '@riverpod\nclass TodoNotifier {\n'
+                  'Object build() => _compute();\n'
+                  'Object _compute() => ref.watch(userProvider);\n'
+                  '}\n'
+                  'class SubNotifier extends TodoNotifier {\n'
+                  '  void refresh() => _compute();\n'
+                  '}',
+                ),
+              },
+              definingFile: _path,
+            );
+
+        result.expectDiagnostics([_watchInMethodDiagnostic()]);
+      },
+    );
+
+    group('top-level @riverpod functional providers', () {
+      // (name, declaration, whether ref.read of a state provider is reported)
+      const cases = <(String, String, bool)>[
+        (
+          'reports ref.read of a state provider',
+          '@riverpod\nbool canSubmit(Object ref) => ref.read(userProvider) != null;',
+          true,
+        ),
+        (
+          'allows ref.watch, usecase/repository reads and notifier reads',
+          '@riverpod\nbool canSubmit(Object ref) {\n'
+              '  ref.read(todoProvider.notifier);\n'
+              '  ref.read(todoRepositoryProvider);\n'
+              '  ref.read(getTodosUseCaseProvider);\n'
+              '  return ref.watch(userProvider) != null;\n'
+              '}',
+          false,
+        ),
+        (
+          'allows a state provider ref.read inside a returned callback',
+          '@riverpod\nObject Function() reader(Object ref) =>\n'
+              '    () => ref.read(userProvider);',
+          false,
+        ),
+        (
+          'allows a state provider ref.read inside a ref.listen callback',
+          '@riverpod\nFuture<int> counter(Object ref) async {\n'
+              '  ref.listen(otherProvider, (_, __) => ref.read(userProvider));\n'
+              '  return 0;\n'
+              '}',
+          false,
+        ),
+        (
+          'ignores functions without @riverpod',
+          'bool canSubmit(Object ref) => ref.read(userProvider) != null;',
+          false,
+        ),
+      ];
+
+      for (final (name, declaration, flagged) in cases) {
+        test(name, () async {
+          final result = await V2RuleHarness(
+            rule: RiverpodRefUsageRule(),
+          ).analyze(files: {_path: _source(declaration)}, definingFile: _path);
+
+          flagged
+              ? result.expectDiagnostics([
+                  const ExpectedV2Diagnostic(
+                    relativePath: _path,
+                    codeName: 'riverpod_ref_usage',
+                    problemMessage:
+                        'Use ref.watch() instead of ref.read() for State providers in build().',
+                    correctionMessage:
+                        'Change ref.read() to ref.watch() for reactive State provider dependencies.',
+                  ),
+                ])
+              : result.expectNoDiagnostics();
+        });
+      }
     });
 
     test('reports ref.watch in an extension method on a Notifier', () async {
