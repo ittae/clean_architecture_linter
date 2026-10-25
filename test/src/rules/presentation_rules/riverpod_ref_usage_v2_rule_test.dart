@@ -412,6 +412,60 @@ class TodoNotifier extends Notifier<Object> {
       }
     });
 
+    group('private helpers and part files', () {
+      const partPath =
+          'lib/features/todo/presentation/providers/todo_notifier_helpers.dart';
+
+      Future<V2RuleResult> analyzeWithPart(String partDeclarations) =>
+          V2RuleHarness(rule: RiverpodRefUsageRule()).analyze(
+            files: {
+              _path:
+                  "part 'todo_notifier_helpers.dart';\n"
+                  '${_source('@riverpod\nclass TodoNotifier {\n'
+                  'Object build() => _compute();\n'
+                  'Object _compute() => ref.watch(userProvider);\n'
+                  '}')}',
+              partPath: "part of 'todo_notifier.dart';\n\n$partDeclarations",
+            },
+            definingFile: _path,
+          );
+
+      test(
+        'flags ref.watch in a helper that a part-file extension calls',
+        () async {
+          final result = await analyzeWithPart(
+            'extension TodoActions on TodoNotifier {\n'
+            '  void refresh() => _compute();\n'
+            '}',
+          );
+
+          result.expectDiagnostics([_watchInMethodDiagnostic()]);
+        },
+      );
+
+      test(
+        'flags ref.watch in a helper that a part-file function calls',
+        () async {
+          final result = await analyzeWithPart(
+            'void refresh(TodoNotifier notifier) => notifier._compute();',
+          );
+
+          result.expectDiagnostics([_watchInMethodDiagnostic()]);
+        },
+      );
+
+      test('allows ref.watch in a build-only helper when the part file '
+          'does not use it', () async {
+        final result = await analyzeWithPart(
+          'extension TodoActions on TodoNotifier {\n'
+          '  void refresh() => ref.read(userProvider);\n'
+          '}',
+        );
+
+        result.expectNoDiagnostics();
+      });
+    });
+
     test(
       'flags ref.watch in a helper that a same-file extension also calls',
       () async {

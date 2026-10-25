@@ -69,7 +69,7 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
     final members = classMembers(node).toList();
     _scanMembers(
       members,
-      buildReachable: _buildReachableHelpers(members, node.parent ?? node),
+      buildReachable: _buildReachableHelpers(members, _referenceScopes(node)),
     );
   }
 
@@ -115,8 +115,8 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
   }
 
   /// Names of private, synchronous methods that only a synchronous `build()`
-  /// runs: every occurrence of the name in [referenceScope] (the whole file)
-  /// must be a `name()` / `this.name()` call made in `build()`'s synchronous
+  /// runs: every occurrence of the name in [referenceScopes] (every unit of
+  /// the library, so `part` files count) must be a `name()` / `this.name()` call made in `build()`'s synchronous
   /// run or in another such helper. Doc-comment mentions do not count.
   ///
   /// `ref.watch()` there runs inside the synchronous `build()` call graph, so
@@ -125,10 +125,10 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
   /// field initializer, an extension, a subclass, a call on another object)
   /// may run it outside `build()`, so the helper stays reported. A helper of
   /// an `async` `build()` is never exempt: its calls may follow an `await`.
-  /// Extensions in other `part` files are not visible.
+  /// Other libraries cannot see a private name, so they are not scanned.
   Set<String> _buildReachableHelpers(
     List<AstNode> members,
-    AstNode referenceScope,
+    List<AstNode> referenceScopes,
   ) {
     final helpers = <String, MethodDeclaration>{};
     MethodDeclaration? build;
@@ -149,7 +149,9 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
 
     final names = helpers.keys.toSet();
     final occurrences = _NameOccurrenceCollector(names);
-    referenceScope.accept(occurrences);
+    for (final scope in referenceScopes) {
+      scope.accept(occurrences);
+    }
 
     // Greatest fixed point: a helper stays only while each of its occurrences
     // is a synchronous call in `build()` or in a helper that stays.
@@ -166,6 +168,19 @@ class _RiverpodRefUsageVisitor extends SimpleAstVisitor<void> {
       if (next.length == kept.length) return next;
       kept = next;
     }
+  }
+
+  /// The unit holding [node] plus every other unit of its library. The node's
+  /// own unit is kept as is so its identifiers stay identical to the ones the
+  /// call analysis visits; other units are matched by file path.
+  List<AstNode> _referenceScopes(ClassDeclaration node) {
+    final own = node.parent ?? node;
+    final ownPath = _filePath;
+    return [
+      own,
+      for (final unit in context.allUnits)
+        if (unit.file.path != ownPath) unit.unit,
+    ];
   }
 
   /// Helpers `build()` reaches through synchronous calls only.
