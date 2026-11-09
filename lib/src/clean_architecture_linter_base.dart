@@ -863,7 +863,10 @@ class CleanArchitectureUtils {
     return method.name.lexeme.startsWith('_');
   }
 
-  /// Checks if a throw expression is a rethrow.
+  /// Checks if [node] is a rethrow.
+  ///
+  /// Accepts a bare `rethrow;` ([RethrowExpression]), the [ExpressionStatement]
+  /// wrapping it, or a [ThrowExpression] whose operand is `rethrow`.
   ///
   /// A rethrow re-throws the currently caught exception without wrapping it.
   ///
@@ -878,12 +881,20 @@ class CleanArchitectureUtils {
   /// ```
   ///
   /// Parameters:
-  /// - [node]: The throw expression to check
+  /// - [node]: The node to check
   ///
-  /// Returns `true` if the expression is a rethrow.
-  static bool isRethrow(ThrowExpression node) {
-    return node.expression.toString() == 'rethrow' ||
-        node.expression is RethrowExpression;
+  /// Returns `true` if the node is a rethrow.
+  static bool isRethrow(AstNode node) {
+    if (node is RethrowExpression) return true;
+    if (node is ExpressionStatement) {
+      return node.expression is RethrowExpression;
+    }
+    if (node is ThrowExpression) {
+      // Parser recovery can surface `throw rethrow` as a ThrowExpression.
+      return node.expression is RethrowExpression ||
+          node.expression.toString() == 'rethrow';
+    }
+    return false;
   }
 
   // ============================================================================
