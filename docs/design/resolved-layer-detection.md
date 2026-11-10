@@ -229,7 +229,7 @@ The walk does not add `package:ffi/`, `dart:html`, `dart:js`, or the state-manag
 
 Evidence from consumer apps:
 
-- `ittae` `lib/core/error/app_exception.dart`, and `flutter_boilerplate` and `dear_days` `lib/core/errors/exceptions.dart`, import `package:flutter/widgets.dart` only for the `AppExceptionL10n.toLocalizedMessage(BuildContext)` extension. `ittae` `features/schedule/domain/usecases/create_schedule_usecase.dart` imports that core error library. The diagnostic is the domain import. The chain names the core error library and `package:flutter/widgets.dart`.
+- `ittae` `lib/core/error/app_exception.dart`, and `flutter_boilerplate` and `soleday` `lib/core/errors/exceptions.dart`, import `package:flutter/widgets.dart` only for the `AppExceptionL10n.toLocalizedMessage(BuildContext)` extension. `ittae` `features/schedule/domain/usecases/create_schedule_usecase.dart` imports that core error library. The diagnostic is the domain import. The chain names the core error library and `package:flutter/widgets.dart`.
 - `ittae` `core/constants/domain_colors.dart` imports `package:flutter/material.dart`. That is why `/core/constants/` is not a domain allowlist entry. A domain import of that library reports until the file no longer reaches `package:flutter`.
 - `maeil_scrum` and `short_form` `failures` / `result` libraries are pure Dart. An unknown library that never reaches `package:flutter`, `dart:ui`, `dart:io`, or an IO/infrastructure prefix stays silent.
 
