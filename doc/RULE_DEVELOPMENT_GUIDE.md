@@ -548,7 +548,7 @@ return _normalizePath(filePath).contains('/domain/') ||
 - [ ] All tests passing (`dart pub test`)
 - [ ] No warnings (`dart analyze`)
 - [ ] Formatted (`dart format .`)
-- [ ] Documentation updated (README.md, CLAUDE.md)
+- [ ] Documentation updated (README.md, doc/RIVERPOD_ARCHITECTURE_GUIDE.md)
 
 ## Common Pitfalls
 
@@ -612,7 +612,7 @@ static const _code = LintCode(
 - [Custom Lint Builder](https://pub.dev/packages/custom_lint_builder)
 - [AST Node Reference](https://pub.dev/documentation/analyzer/latest/dart_ast_ast/dart_ast_ast-library.html)
 - [ARCHITECTURE.md](../ARCHITECTURE.md) - Design decisions
-- [CLAUDE.md](../CLAUDE.md) - Project overview
+- [RIVERPOD_ARCHITECTURE_GUIDE.md](RIVERPOD_ARCHITECTURE_GUIDE.md) - Enforced architecture and Riverpod patterns
 
 ---
 
