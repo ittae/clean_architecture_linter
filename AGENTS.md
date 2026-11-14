@@ -5,7 +5,43 @@
 - public GitHub metadata(브랜치명, PR 제목/본문, release note)에 private Multica `ITT-*` key를 노출하지 않는다. traceability는 Multica 내부에만 둔다.
 - PR은 human merge only다. agent는 명시 승인 없이 merge/close/label/review approval/force push를 하지 않는다.
 - 실제 검증 명령은 manifest/현행 문서 기준으로만 기록하고 실행한다: root `dart analyze`, root `dart test`, consumer smoke `cd example && dart analyze`, analysis_server_plugin/Riverpod coexistence smoke `cd poc_v2/consumer_riverpod_lint && dart analyze`.
-- Vision / rule 등록 / Riverpod 3-tier 상세: `CLAUDE.md` 참조.
+- 이 패키지가 강제하는 패턴(Layer 의존, Riverpod 3-tier, Repository, stateless 규칙)의 정본은 [doc/RIVERPOD_ARCHITECTURE_GUIDE.md](doc/RIVERPOD_ARCHITECTURE_GUIDE.md)다. rule을 만들거나 고치기 전에 읽는다.
+
+## Project Why (Read First)
+
+> **Org Vision:** Help people turn their plans into reality. *(원문: 사람들의 계획이 현실이 되도록 돕는 것입니다.)*
+> **Org Mission:** Help people cherish yesterday, dream of tomorrow, and live today. *(원문: 어제를 소중히 여기고, 내일을 꿈꾸며, 오늘을 살아갈 수 있도록 돕는 것입니다.)*
+
+**This project's role:** Auto-enforces Riverpod-based Clean Architecture via lints — so good architecture does not depend on a PR reviewer's memory, sustaining the Vision.
+
+> Note: This package is also published to external users. The Org Vision is the *internal working standard for the maintainer (ittae)* and is not imposed on external users. External users only see "Automatic Clean Architecture enforcement" in the README.
+
+Every change here must *reinforce* the Vision and this project's role. If a change would dilute them, stop and ask the human first.
+
+### Decision Filter (ask before starting)
+
+1. Does this change *reinforce* or *dilute* the Vision and this project's role?
+2. Does this change conflict with this project's How (consistency across 33 rules, Riverpod 3-tier assumptions, Domain Purity, etc.)?
+3. If it conflicts — is the principle worth changing, or should this change be dropped?
+
+### Mandatory First Step (before any code/file changes)
+
+When a new issue arrives, post the following as your first response (if a comment channel exists, publish it there) before starting work:
+
+1. **Why restatement (1 sentence):** describe how this issue reinforces the Vision (사람들의 계획이 현실이 되도록 돕는 것입니다) and this project's role.
+2. If you conclude it does not reinforce them → stop and ask the human.
+3. If it does → state your How (approach principles) in 1–3 bullets, then begin.
+
+> This step is a gate to catch misunderstandings early. Keep it brief and to the point.
+
+## Package Internals (rule registration)
+
+rule 등록·패키지 내부 가이드의 정본 링크:
+
+- Rule 추가/등록: [CONTRIBUTING.md](CONTRIBUTING.md), [doc/RULE_DEVELOPMENT_GUIDE.md](doc/RULE_DEVELOPMENT_GUIDE.md)
+- Mixin / 아키텍처: [ARCHITECTURE.md](ARCHITECTURE.md), [lib/src/mixins/README.md](lib/src/mixins/README.md)
+- Exception 패턴: [doc/UNIFIED_ERROR_GUIDE.md](doc/UNIFIED_ERROR_GUIDE.md)
+- Configuration / Testing / Commands: [doc/CONFIGURATION.md](doc/CONFIGURATION.md), [doc/TESTING_GUIDE.md](doc/TESTING_GUIDE.md)
 
 <!-- BEGIN agent-owner-brief (managed) -->
 ## 성준님 브리프 (작업 전에 먼저 읽는다)

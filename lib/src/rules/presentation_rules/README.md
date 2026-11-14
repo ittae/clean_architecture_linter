@@ -162,7 +162,7 @@ class TodoUIState with _$TodoUIState {
 }
 
 // Note: For entity data, use AsyncNotifier instead of storing in State
-// See CLAUDE.md § Riverpod State Management Patterns
+// See doc/RIVERPOD_ARCHITECTURE_GUIDE.md § Riverpod State Management Patterns
 ```
 
 ---
@@ -205,7 +205,7 @@ class TodoList extends _$TodoList {
   }
 }
 
-// See CLAUDE.md § Riverpod State Management Patterns for complete 3-tier architecture
+// See doc/RIVERPOD_ARCHITECTURE_GUIDE.md § Riverpod State Management Patterns for complete 3-tier architecture
 ```
 
 ---

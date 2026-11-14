@@ -84,7 +84,7 @@ plugins:
 
 > 📖 **구현 가이드**: 자세한 패턴과 예제는 [CLEAN_ARCHITECTURE_GUIDE.md](doc/CLEAN_ARCHITECTURE_GUIDE.md)를 참조하세요.
 >
-> 🎨 **Riverpod 상태 관리**: 3-tier provider 아키텍처 가이드는 [CLAUDE.md § Riverpod State Management Patterns](CLAUDE.md#riverpod-state-management-patterns)를 참조하세요.
+> 🎨 **Riverpod 상태 관리**: 3-tier provider 아키텍처 가이드는 [Riverpod Clean Architecture Patterns § Riverpod State Management Patterns](doc/RIVERPOD_ARCHITECTURE_GUIDE.md#riverpod-state-management-patterns)를 참조하세요.
 
 ## 🚀 빠른 시작
 

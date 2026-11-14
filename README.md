@@ -86,7 +86,7 @@ plugins:
 
 > 📖 **Implementation Guide**: See [CLEAN_ARCHITECTURE_GUIDE.md](doc/CLEAN_ARCHITECTURE_GUIDE.md) for detailed patterns and examples.
 >
-> 🎨 **Riverpod State Management**: See [CLAUDE.md § Riverpod State Management Patterns](CLAUDE.md#riverpod-state-management-patterns) for 3-tier provider architecture guide.
+> 🎨 **Riverpod State Management**: See [Riverpod Clean Architecture Patterns § Riverpod State Management Patterns](doc/RIVERPOD_ARCHITECTURE_GUIDE.md#riverpod-state-management-patterns) for 3-tier provider architecture guide.
 
 ## 🚀 Quick Start
 

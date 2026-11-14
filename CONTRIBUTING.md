@@ -515,7 +515,7 @@ dart pub test --watch
 
 2. **Update Documentation**:
    - Add rule to README.md
-   - Update CLAUDE.md if architecture changed
+   - Update doc/RIVERPOD_ARCHITECTURE_GUIDE.md if architecture changed
    - Add entry to CHANGELOG.md
 
 3. **Add Examples**:
@@ -549,7 +549,7 @@ Brief description of the change
 
 ## Documentation
 - [ ] Updated README.md
-- [ ] Updated CLAUDE.md (if applicable)
+- [ ] Updated doc/RIVERPOD_ARCHITECTURE_GUIDE.md (if applicable)
 - [ ] Added dartdoc comments
 - [ ] Added examples
 
@@ -608,7 +608,7 @@ context.registry.addThrowExpression((node) {
 
 - **Issues**: [GitHub Issues](https://github.com/yourusername/clean_architecture_linter/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/yourusername/clean_architecture_linter/discussions)
-- **Documentation**: [ARCHITECTURE.md](ARCHITECTURE.md), [CLAUDE.md](CLAUDE.md)
+- **Documentation**: [ARCHITECTURE.md](ARCHITECTURE.md), [doc/RIVERPOD_ARCHITECTURE_GUIDE.md](doc/RIVERPOD_ARCHITECTURE_GUIDE.md)
 
 ## License
 
