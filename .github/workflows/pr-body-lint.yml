@@ -60,4 +60,7 @@ jobs:
           set -euo pipefail
           gh pr view "${{ github.event.pull_request.number }}" -R "${{ github.repository }}" --json body -q .body > "$RUNNER_TEMP/pr-body.md"
       - name: Lint PR body
+        env:
+          # ITT-4880: Closes/Related ITT link required; public repos keep ITT keys out.
+          PR_BODY_ISSUE_LINK: ${{ github.event.repository.private && 'required' || 'off' }}
         run: bash .github/scripts/pr_body_lint.sh "$RUNNER_TEMP/pr-body.md"
