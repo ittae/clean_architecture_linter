@@ -54,8 +54,8 @@ rule 등록·패키지 내부 가이드의 정본 링크:
 
 **완료의 기준.**
 - `## Result`의 `evidence:` 줄이 `done_evidence`를 충족한다. 이 줄이 비어 있으면 완료가 아니다.
-- 작업하는 동안 성준님이 손댄 횟수가 0이다.
-- 성준님께 보내는 결과는 화면 캡처, 짧은 영상, 숫자 한 줄 중 하나다. 1분 안에 판단할 수 있어야 한다. 성준님의 시간은 주 4시간뿐이다. 코드와 diff는 보내지 않는다.
+- 결정 외 성준님이 들어올 일(「손」)은 없다.
+- 성준님께 보내는 결과는 화면 캡처, 짧은 영상, 숫자 한 줄 중 하나다. 1분 안에 판단할 수 있어야 한다. 코드와 diff는 보내지 않는다.
 
 **초점** (갱신일 2026-10-22. 이 날짜에서 8일이 지나면 이 목록은 무시한다)
 - ittae 0.5, 11월 초: 1인 창업자와 크리에이터를 위한 매니저 앱. 아침에는 하루가 이미 정리돼 있고, 때맞춰 알림이 오고, 밤에는 확인만 누른다. 결제할 수 있어야 한다.
@@ -66,9 +66,9 @@ rule 등록·패키지 내부 가이드의 정본 링크:
 **스스로 결정한다.**
 1. 지표 셋(순이익, 성준님의 손, 사용자의 말) 중 무엇을 움직이는지 한 줄로 쓰지 못하면 하지 않는다.
 2. 되돌릴 수 있는 결정은 묻지 않고 한다. 되돌릴 수 없는 일(키, prd 데이터, 스토어 제출, 결제 실행)에서만 멈춘다. 세부 기본값은 `policies/owner-rules.md` § 판단 기본값.
-3. 두 방법이 비슷하면 성준님의 손이 덜 가는 쪽을 고른다. 돈과 성준님의 손이 충돌해도 손을 지킨다.
+3. 두 방법이 비슷하면 성준님의 손이 덜 가는 쪽을 고른다. 돈과 충돌해도 손을 지킨다. 가격·결제·스토어는 2번과 달리 묻는다.
 4. 수익이 나기 전의 저장소에서는 다듬기보다 출시가 먼저다.
-5. 막혀도 묻지 않는다. `blocked` 또는 `needs-info`를 남기고 멈춘다. 성준님께 가져가는 안건은 자본 배분, 인력, 최종 승인 세 가지뿐이다.
+5. 꼭 필요한 결정만 그 이슈 코멘트로 묻는다(`needs-info`). 아니면 `blocked`. 성준님께 가져가는 안건은 자본 배분, 인력, 최종 승인 세 가지뿐이다.
 
 **시작하기 전에.** 같은 goal의 열린 이슈나 PR이 있으면 `no-op`으로 끝낸다. 브리프와 이슈의 Constraints를 첫 답글에 되읽는다. 자기 lane에 해당하는 `docs/known-mistakes.md` 항목을 읽는다. 같은 방법이 두 번 실패하면 방법을 바꾸고 `mistake:` 줄을 남긴다.
 <!-- END agent-owner-brief -->
@@ -96,6 +96,7 @@ rule 등록·패키지 내부 가이드의 정본 링크:
 - `clean_architecture_linter`는 public package다. branch, commit, PR title/body/comment, release note 등 public GitHub metadata에 private Multica `ITT-*` key를 넣지 않는다.
 - PR 본문은 org template를 사용하고 workspace `pr-fetch-template-ittae.sh` → validate → `pr-create-ittae.sh --body-file` 경로로 생성한다. private Multica 이슈 키는 public metadata에 넣지 않는다. 해당 없는 섹션은 지우고, "미확인" 또는 "해당 없음" placeholder는 쓰지 않는다.
 - 한 스토리이고 effective 800 cap 안이면 workspace `scripts/git/pr-create-ittae.sh` 단일 PR. 레이어가 여러 개이거나 그 cap을 넘기면 workspace `scripts/git/stack-submit-ittae.sh`만 사용한다. bare `gh stack submit`와 브랜치 인자 `gh stack link`는 금지. 정본: workspace `policies/ittae-gh-stack.md`.
+- 브랜치는 `<type>/<slug>`(ITT key 없음, 예: `fix/lint-false-positive`). `pr-create-ittae.sh`가 다른 이름을 거절한다.
 - 실제 검증 명령·결과와 미검증 범위, public API/lint semantics risk, rollback을 본문에 기록한다.
 - PR은 ready까지 전환하되 agent가 merge, approve, force-push, protection 변경을 하지 않는다. 이 package는 human merge only다.
 <!-- END agent-pr-discipline -->
