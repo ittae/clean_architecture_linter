@@ -164,7 +164,71 @@ class Box {
           .single;
       expect(CleanArchitectureUtils.findParentClass(topLevel), isNull);
     });
+
+    group('isRethrow with standalone rethrow statement', () {
+      late CompilationUnit unit;
+
+      setUp(() {
+        unit = parseString(
+          throwIfDiagnostics: false,
+          content: '''
+class Box {
+  void run() {
+    try {} catch (e) {
+      rethrow;
+    }
+    try {} catch (e) {
+      throw e;
+    }
+    try {} catch (e) {
+      throw Exception('x');
+    }
+  }
+}
+''',
+        ).unit;
+      });
+
+      test('recognizes a bare `rethrow;` RethrowExpression', () {
+        final rethrows = _rethrows(unit);
+
+        expect(rethrows, hasLength(1));
+        expect(CleanArchitectureUtils.isRethrow(rethrows.single), isTrue);
+      });
+
+      test('recognizes the ExpressionStatement wrapping `rethrow;`', () {
+        final statement = _rethrows(unit).single.parent!;
+
+        expect(statement, isA<ExpressionStatement>());
+        expect(CleanArchitectureUtils.isRethrow(statement), isTrue);
+      });
+
+      test('does not treat `throw e;` or `throw Exception()` as rethrow', () {
+        final throws = _throws(unit);
+
+        expect(throws, hasLength(2));
+        for (final node in throws) {
+          expect(CleanArchitectureUtils.isRethrow(node), isFalse);
+        }
+        expect(CleanArchitectureUtils.isRethrow(throws[0].parent!), isFalse);
+      });
+    });
   });
+}
+
+List<RethrowExpression> _rethrows(CompilationUnit unit) {
+  final visitor = _RethrowFinder();
+  unit.accept(visitor);
+  return visitor.nodes;
+}
+
+class _RethrowFinder extends RecursiveAstVisitor<void> {
+  final nodes = <RethrowExpression>[];
+
+  @override
+  void visitRethrowExpression(RethrowExpression node) {
+    nodes.add(node);
+  }
 }
 
 List<ThrowExpression> _throws(CompilationUnit unit) {
