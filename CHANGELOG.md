@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.4](https://github.com/ittae/clean_architecture_linter/compare/v2.8.3...v2.8.4) (2026-11-14)
+
+
+### Bug Fixes
+
+* ITT-6072 isRethrow가 단독 rethrow; 문장을 인식하게 한다 ([#205](https://github.com/ittae/clean_architecture_linter/issues/205)) ([d5b842f](https://github.com/ittae/clean_architecture_linter/commit/d5b842fc627873f3e9720e49b640123251574f3a))
+
 ## [2.8.3](https://github.com/ittae/clean_architecture_linter/compare/v2.8.2...v2.8.3) (2026-10-25)
 
 
