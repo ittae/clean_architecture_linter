@@ -10,127 +10,127 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-* ITT-6072 isRethrow가 단독 rethrow; 문장을 인식하게 한다 ([#205](https://github.com/ittae/clean_architecture_linter/issues/205)) ([d5b842f](https://github.com/ittae/clean_architecture_linter/commit/d5b842fc627873f3e9720e49b640123251574f3a))
+* `isRethrow` recognizes a standalone `rethrow;` statement ([#205](https://github.com/ittae/clean_architecture_linter/issues/205)) ([d5b842f](https://github.com/ittae/clean_architecture_linter/commit/d5b842fc627873f3e9720e49b640123251574f3a))
 
 ## [2.8.3](https://github.com/ittae/clean_architecture_linter/compare/v2.8.2...v2.8.3) (2026-10-25)
 
 
 ### Bug Fixes
 
-* riverpod_ref_usage·riverpod_uncancelled_disposable 오탐을 고치고 README 규칙 수를 맞춘다 ([#202](https://github.com/ittae/clean_architecture_linter/issues/202)) ([1e937bd](https://github.com/ittae/clean_architecture_linter/commit/1e937bd5b8d84aa738e13f8215abeb4fcbaf9140))
+* fix false positives in riverpod_ref_usage and riverpod_uncancelled_disposable, and correct the rule count in README ([#202](https://github.com/ittae/clean_architecture_linter/issues/202)) ([1e937bd](https://github.com/ittae/clean_architecture_linter/commit/1e937bd5b8d84aa738e13f8215abeb4fcbaf9140))
 
 ## [2.8.2](https://github.com/ittae/clean_architecture_linter/compare/v2.8.1...v2.8.2) (2026-10-20)
 
 
 ### Bug Fixes
 
-* relay를 머지된 같은 저장소 close만 보내게 좁힌다 ([#197](https://github.com/ittae/clean_architecture_linter/issues/197)) ([feadb8e](https://github.com/ittae/clean_architecture_linter/commit/feadb8ed8ff6b9b42c2f91767109881e02384ba8))
+* narrow the relay to send only merged same-repository close events ([#197](https://github.com/ittae/clean_architecture_linter/issues/197)) ([feadb8e](https://github.com/ittae/clean_architecture_linter/commit/feadb8ed8ff6b9b42c2f91767109881e02384ba8))
 
 ## [2.8.1](https://github.com/ittae/clean_architecture_linter/compare/v2.8.0...v2.8.1) (2026-10-19)
 
 
 ### Bug Fixes
 
-* public runner-guard가 private reusable을 호출하지 않게 한다 ([#195](https://github.com/ittae/clean_architecture_linter/issues/195)) ([049636c](https://github.com/ittae/clean_architecture_linter/commit/049636c207d25360790effd3f55d441aa011d2e5))
+* stop the public runner-guard from calling a private reusable workflow ([#195](https://github.com/ittae/clean_architecture_linter/issues/195)) ([049636c](https://github.com/ittae/clean_architecture_linter/commit/049636c207d25360790effd3f55d441aa011d2e5))
 
 ## [2.8.0](https://github.com/ittae/clean_architecture_linter/compare/v2.7.5...v2.8.0) (2026-10-12)
 
 
 ### Features
 
-* 확장 @Dependencies가 notifier 런타임 스코프를 벗어나면 보고한다 ([#188](https://github.com/ittae/clean_architecture_linter/issues/188)) ([0073892](https://github.com/ittae/clean_architecture_linter/commit/0073892bf04e1f94d26b75bdaa1c92733853d810))
+* report extension @Dependencies that escape the notifier runtime scope ([#188](https://github.com/ittae/clean_architecture_linter/issues/188)) ([0073892](https://github.com/ittae/clean_architecture_linter/commit/0073892bf04e1f94d26b75bdaa1c92733853d810))
 
 
 ### Bug Fixes
 
-* presentation_no_throw가 ConsumerStatefulWidget, StatefulHookConsumerWidget, HookWidget 슈퍼클래스를 위젯으로 본다 ([#190](https://github.com/ittae/clean_architecture_linter/issues/190)) ([9d875a3](https://github.com/ittae/clean_architecture_linter/commit/9d875a3295004bc9c5749ba0c9adc02e645b18ca))
+* presentation_no_throw treats ConsumerStatefulWidget, StatefulHookConsumerWidget, and HookWidget superclasses as widgets ([#190](https://github.com/ittae/clean_architecture_linter/issues/190)) ([9d875a3](https://github.com/ittae/clean_architecture_linter/commit/9d875a3295004bc9c5749ba0c9adc02e645b18ca))
 
 
 ### Documentation
 
-* Riverpod 3.4.3 / flutter_riverpod 3.4.3 / hooks_riverpod 3.4.3 호환을 확인했다 ([#186](https://github.com/ittae/clean_architecture_linter/issues/186)) ([542a349](https://github.com/ittae/clean_architecture_linter/commit/542a349963e15bd22ffc1f00bdd4bae275b6441c)), ([#190](https://github.com/ittae/clean_architecture_linter/issues/190)) ([9d875a3](https://github.com/ittae/clean_architecture_linter/commit/9d875a3295004bc9c5749ba0c9adc02e645b18ca))
+* confirm compatibility with Riverpod 3.4.3 / flutter_riverpod 3.4.3 / hooks_riverpod 3.4.3 ([#186](https://github.com/ittae/clean_architecture_linter/issues/186)) ([542a349](https://github.com/ittae/clean_architecture_linter/commit/542a349963e15bd22ffc1f00bdd4bae275b6441c)), ([#190](https://github.com/ittae/clean_architecture_linter/issues/190)) ([9d875a3](https://github.com/ittae/clean_architecture_linter/commit/9d875a3295004bc9c5749ba0c9adc02e645b18ca))
 
 ## [2.7.5](https://github.com/ittae/clean_architecture_linter/compare/v2.7.4...v2.7.5) (2026-10-07)
 
 
 ### Bug Fixes
 
-* DI 파일명 예외가 remain.dart를 건너뛰지 않게 한다 ([#183](https://github.com/ittae/clean_architecture_linter/issues/183)) ([545dbb5](https://github.com/ittae/clean_architecture_linter/commit/545dbb558458f1f4650efe581dab953614149052))
+* the DI file-name exemption no longer skips remain.dart ([#183](https://github.com/ittae/clean_architecture_linter/issues/183)) ([545dbb5](https://github.com/ittae/clean_architecture_linter/commit/545dbb558458f1f4650efe581dab953614149052))
 
 ## [2.7.4](https://github.com/ittae/clean_architecture_linter/compare/v2.7.3...v2.7.4) (2026-09-26)
 
 
 ### Bug Fixes
 
-* no_presentation_models가 presentation 파일에서만 ChangeNotifier를 보고한다 ([#175](https://github.com/ittae/clean_architecture_linter/issues/175)) ([6cb1414](https://github.com/ittae/clean_architecture_linter/commit/6cb14146d5c07f7b207c964e7242ffaa85890982))
-* riverpod_state_after_async_gap이 private 메서드의 await 뒤 state 접근을 보고한다 ([#177](https://github.com/ittae/clean_architecture_linter/issues/177)) ([bf65af4](https://github.com/ittae/clean_architecture_linter/commit/bf65af44bc627caa8d54abff31b9e65bfa1e9eca))
+* no_presentation_models reports ChangeNotifier only in presentation files ([#175](https://github.com/ittae/clean_architecture_linter/issues/175)) ([6cb1414](https://github.com/ittae/clean_architecture_linter/commit/6cb14146d5c07f7b207c964e7242ffaa85890982))
+* riverpod_state_after_async_gap reports state access after await in private methods ([#177](https://github.com/ittae/clean_architecture_linter/issues/177)) ([bf65af4](https://github.com/ittae/clean_architecture_linter/commit/bf65af44bc627caa8d54abff31b9e65bfa1e9eca))
 
 ## [2.7.3](https://github.com/ittae/clean_architecture_linter/compare/v2.7.2...v2.7.3) (2026-09-25)
 
 
 ### Bug Fixes
 
-* public inline reviewer_engine allowlist에 cursor를 추가한다 ([#172](https://github.com/ittae/clean_architecture_linter/issues/172)) ([5f9f605](https://github.com/ittae/clean_architecture_linter/commit/5f9f605ade78c75ea06d6f5373baf377d548461b))
+* add cursor to the public inline reviewer_engine allowlist ([#172](https://github.com/ittae/clean_architecture_linter/issues/172)) ([5f9f605](https://github.com/ittae/clean_architecture_linter/commit/5f9f605ade78c75ea06d6f5373baf377d548461b))
 
 ## [2.7.2](https://github.com/ittae/clean_architecture_linter/compare/v2.7.1...v2.7.2) (2026-09-11)
 
 
 ### Bug Fixes
 
-* riverpod_ref_after_async_gap이 캐스케이드·괄호 ref 접근을 보고한다 ([#169](https://github.com/ittae/clean_architecture_linter/issues/169)) ([33e1c6f](https://github.com/ittae/clean_architecture_linter/commit/33e1c6f95a40abeeb80b77d8d35ebb5fe66894cc))
+* riverpod_ref_after_async_gap reports cascade and parenthesized ref access ([#169](https://github.com/ittae/clean_architecture_linter/issues/169)) ([33e1c6f](https://github.com/ittae/clean_architecture_linter/commit/33e1c6f95a40abeeb80b77d8d35ebb5fe66894cc))
 
 ## [2.7.1](https://github.com/ittae/clean_architecture_linter/compare/v2.7.0...v2.7.1) (2026-09-11)
 
 
 ### Bug Fixes
 
-* riverpod_ref_after_async_gap이 Stream.listen·Timer 콜백의 ref 접근을 보고한다 ([#167](https://github.com/ittae/clean_architecture_linter/issues/167)) ([811dbdb](https://github.com/ittae/clean_architecture_linter/commit/811dbdb07a0b624ec190356aabfe913387a0d573))
+* riverpod_ref_after_async_gap reports ref access in Stream.listen and Timer callbacks ([#167](https://github.com/ittae/clean_architecture_linter/issues/167)) ([811dbdb](https://github.com/ittae/clean_architecture_linter/commit/811dbdb07a0b624ec190356aabfe913387a0d573))
 
 ## [2.7.0](https://github.com/ittae/clean_architecture_linter/compare/v2.6.0...v2.7.0) (2026-09-08)
 
 
 ### Features
 
-* sentinel 게이트에 SENTINEL_REQUIRE_ALL·SENTINEL_FILE 옵트인 스위치를 추가한다 ([#164](https://github.com/ittae/clean_architecture_linter/issues/164)) ([22f01e3](https://github.com/ittae/clean_architecture_linter/commit/22f01e3a2404301c8c4aebe20c80349a42298bca))
+* add SENTINEL_REQUIRE_ALL and SENTINEL_FILE opt-in switches to the sentinel gate ([#164](https://github.com/ittae/clean_architecture_linter/issues/164)) ([22f01e3](https://github.com/ittae/clean_architecture_linter/commit/22f01e3a2404301c8c4aebe20c80349a42298bca))
 
 
 ### Bug Fixes
 
-* riverpod_state_after_async_gap이 루프 재진입 시점의 state 읽기 gap을 보고한다 ([#166](https://github.com/ittae/clean_architecture_linter/issues/166)) ([89f5ca1](https://github.com/ittae/clean_architecture_linter/commit/89f5ca13c283a29ef0f20e2bf00f970ca0719d00))
+* riverpod_state_after_async_gap reports the state-read gap on loop re-entry ([#166](https://github.com/ittae/clean_architecture_linter/issues/166)) ([89f5ca1](https://github.com/ittae/clean_architecture_linter/commit/89f5ca13c283a29ef0f20e2bf00f970ca0719d00))
 
 ## [2.6.0](https://github.com/ittae/clean_architecture_linter/compare/v2.5.0...v2.6.0) (2026-09-06)
 
 
 ### Features
 
-* riverpod_state_after_async_gap이 await 이후 state 읽기와 super.state 쓰기를 보고한다 ([#162](https://github.com/ittae/clean_architecture_linter/issues/162)) ([764eb4c](https://github.com/ittae/clean_architecture_linter/commit/764eb4c0182259cdbc9b12ce2c054ff351ee6036)), closes [#161](https://github.com/ittae/clean_architecture_linter/issues/161)
+* riverpod_state_after_async_gap reports state reads and super.state writes after await ([#162](https://github.com/ittae/clean_architecture_linter/issues/162)) ([764eb4c](https://github.com/ittae/clean_architecture_linter/commit/764eb4c0182259cdbc9b12ce2c054ff351ee6036)), closes [#161](https://github.com/ittae/clean_architecture_linter/issues/161)
 
 ## [2.5.0](https://github.com/ittae/clean_architecture_linter/compare/v2.4.0...v2.5.0) (2026-09-04)
 
 
 ### Features
 
-* analyzer 14.3 / analysis_server_plugin 0.3.22 라인으로 올린다 ([#154](https://github.com/ittae/clean_architecture_linter/issues/154)) ([e66767a](https://github.com/ittae/clean_architecture_linter/commit/e66767a3f25039c029c0f29053fabbde1e6cd94b))
-* await 이후 state 대입 검출을 opt-in 규칙 riverpod_state_after_async_gap으로 분리한다 ([#156](https://github.com/ittae/clean_architecture_linter/issues/156)) ([8228c76](https://github.com/ittae/clean_architecture_linter/commit/8228c76b5a68c019919916abc400154fc4ee4e6c))
-* riverpod_keep_alive가 앱 수명 provider 이름(startup, bootstrap, listener, manager, storage, timezone)을 허용한다 ([#152](https://github.com/ittae/clean_architecture_linter/issues/152)) ([67dea73](https://github.com/ittae/clean_architecture_linter/commit/67dea73bcb6c79c8bc806c5cbfab7d6d91593a00))
+* move to the analyzer 14.3 / analysis_server_plugin 0.3.22 line ([#154](https://github.com/ittae/clean_architecture_linter/issues/154)) ([e66767a](https://github.com/ittae/clean_architecture_linter/commit/e66767a3f25039c029c0f29053fabbde1e6cd94b))
+* split detection of state assignment after await into the opt-in rule riverpod_state_after_async_gap ([#156](https://github.com/ittae/clean_architecture_linter/issues/156)) ([8228c76](https://github.com/ittae/clean_architecture_linter/commit/8228c76b5a68c019919916abc400154fc4ee4e6c))
+* riverpod_keep_alive allows app-lifetime provider names (startup, bootstrap, listener, manager, storage, timezone) ([#152](https://github.com/ittae/clean_architecture_linter/issues/152)) ([67dea73](https://github.com/ittae/clean_architecture_linter/commit/67dea73bcb6c79c8bc806c5cbfab7d6d91593a00))
 
 
 ### Bug Fixes
 
-* AI 리뷰 finding 카운트 추출이 PR review 코멘트를 놓치는 문제 수정 ([#121](https://github.com/ittae/clean_architecture_linter/issues/121)) ([cc8391d](https://github.com/ittae/clean_architecture_linter/commit/cc8391da9dd08ea1fec89583bb413e707a79c1d7))
-* AI 리뷰 host engine order resolve helper를 추가한다 ([#141](https://github.com/ittae/clean_architecture_linter/issues/141)) ([59ff494](https://github.com/ittae/clean_architecture_linter/commit/59ff4948f76ce5fc5afdd7bfe0e6804bfeb01e55))
-* AI 리뷰 host SoT 파서·model resolve와 검증 unit을 추가한다 ([#139](https://github.com/ittae/clean_architecture_linter/issues/139)) ([0934da6](https://github.com/ittae/clean_architecture_linter/commit/0934da6b7ce825cfb0596ee22e28f605d14370a4))
-* AI 리뷰 meta에 reviewer_engine inject helper를 추가한다 ([#140](https://github.com/ittae/clean_architecture_linter/issues/140)) ([96d6ea7](https://github.com/ittae/clean_architecture_linter/commit/96d6ea782da3dc2bec286f6f4a075559bf6f001d))
-* body lint가 주석 문법 인용 본문을 오탐 reject하지 않게 한다 ([#126](https://github.com/ittae/clean_architecture_linter/issues/126)) ([1fbc090](https://github.com/ittae/clean_architecture_linter/commit/1fbc090b57dbac7d6de7c52761a01a403043203e))
-* extension 멤버 미스캔으로 진단이 누락되던 FN을 고친다 ([#135](https://github.com/ittae/clean_architecture_linter/issues/135)) ([5a81c78](https://github.com/ittae/clean_architecture_linter/commit/5a81c7825c1393d1d71c7df986d072375c26e4ad))
-* ITT-2464 product relay sparse-checkout을 full checkout으로 맞춘다 ([c680729](https://github.com/ittae/clean_architecture_linter/commit/c680729d49f18fc64d99f351a0f40a1367b5d32d))
-* ITT-2464 relay sparse-checkout 제거 (full clean checkout) ([d874300](https://github.com/ittae/clean_architecture_linter/commit/d874300544024dff016a73ad75ecfd389ff41e3f))
-* presentation_use_async_value uiEffect 부분 실패 오탐을 없앤다 ([#136](https://github.com/ittae/clean_architecture_linter/issues/136)) ([98e7ab5](https://github.com/ittae/clean_architecture_linter/commit/98e7ab527e3e3e5c0ddfac6ba5cb0edbc120ec7b))
-* presentation_use_async_value 필드명 부분일치 오탐을 없앤다 ([#137](https://github.com/ittae/clean_architecture_linter/issues/137)) ([79979c1](https://github.com/ittae/clean_architecture_linter/commit/79979c163a1bfda1417e0f011e6d9857334f17c4))
-* Riverpod 3.3 presentation 규칙 갭을 정리하고 DI read 오탐을 줄인다 ([#142](https://github.com/ittae/clean_architecture_linter/issues/142)) ([d439bf7](https://github.com/ittae/clean_architecture_linter/commit/d439bf78d51b93f8f38ee5171f3ea59a249b3189))
-* riverpod_ref_after_async_gap이 await 이후 state 대입을 추적한다 ([#143](https://github.com/ittae/clean_architecture_linter/issues/143)) ([7a4e169](https://github.com/ittae/clean_architecture_linter/commit/7a4e1698406c1b5562593f7f8bcdbfa50976372f))
-* this.ref UseCase provider 직접 호출을 감지한다 ([#134](https://github.com/ittae/clean_architecture_linter/issues/134)) ([06b70ea](https://github.com/ittae/clean_architecture_linter/commit/06b70ea7a98950853e6a5fdb5b03df24163611b2))
-* widget_ref_read_then_when이 Freezed Result snapshot .when을 허용한다 ([#144](https://github.com/ittae/clean_architecture_linter/issues/144)) ([c977e7a](https://github.com/ittae/clean_architecture_linter/commit/c977e7aa9b3c32b4c51159a94e77fcae9abd1bfb))
+* AI review finding count extraction no longer misses PR review comments ([#121](https://github.com/ittae/clean_architecture_linter/issues/121)) ([cc8391d](https://github.com/ittae/clean_architecture_linter/commit/cc8391da9dd08ea1fec89583bb413e707a79c1d7))
+* add an AI review host engine order resolve helper ([#141](https://github.com/ittae/clean_architecture_linter/issues/141)) ([59ff494](https://github.com/ittae/clean_architecture_linter/commit/59ff4948f76ce5fc5afdd7bfe0e6804bfeb01e55))
+* add an AI review host SoT parser, model resolve, and their unit tests ([#139](https://github.com/ittae/clean_architecture_linter/issues/139)) ([0934da6](https://github.com/ittae/clean_architecture_linter/commit/0934da6b7ce825cfb0596ee22e28f605d14370a4))
+* add a reviewer_engine inject helper for AI review meta ([#140](https://github.com/ittae/clean_architecture_linter/issues/140)) ([96d6ea7](https://github.com/ittae/clean_architecture_linter/commit/96d6ea782da3dc2bec286f6f4a075559bf6f001d))
+* body lint no longer falsely rejects bodies that quote comment syntax ([#126](https://github.com/ittae/clean_architecture_linter/issues/126)) ([1fbc090](https://github.com/ittae/clean_architecture_linter/commit/1fbc090b57dbac7d6de7c52761a01a403043203e))
+* fix false negatives where extension members were not scanned ([#135](https://github.com/ittae/clean_architecture_linter/issues/135)) ([5a81c78](https://github.com/ittae/clean_architecture_linter/commit/5a81c7825c1393d1d71c7df986d072375c26e4ad))
+* align the product relay sparse-checkout to a full checkout ([c680729](https://github.com/ittae/clean_architecture_linter/commit/c680729d49f18fc64d99f351a0f40a1367b5d32d))
+* remove the relay sparse-checkout (full clean checkout) ([d874300](https://github.com/ittae/clean_architecture_linter/commit/d874300544024dff016a73ad75ecfd389ff41e3f))
+* remove presentation_use_async_value false positives on uiEffect partial failure ([#136](https://github.com/ittae/clean_architecture_linter/issues/136)) ([98e7ab5](https://github.com/ittae/clean_architecture_linter/commit/98e7ab527e3e3e5c0ddfac6ba5cb0edbc120ec7b))
+* remove presentation_use_async_value false positives from partial field-name matches ([#137](https://github.com/ittae/clean_architecture_linter/issues/137)) ([79979c1](https://github.com/ittae/clean_architecture_linter/commit/79979c163a1bfda1417e0f011e6d9857334f17c4))
+* close Riverpod 3.3 presentation rule gaps and reduce DI read false positives ([#142](https://github.com/ittae/clean_architecture_linter/issues/142)) ([d439bf7](https://github.com/ittae/clean_architecture_linter/commit/d439bf78d51b93f8f38ee5171f3ea59a249b3189))
+* riverpod_ref_after_async_gap tracks state assignment after await ([#143](https://github.com/ittae/clean_architecture_linter/issues/143)) ([7a4e169](https://github.com/ittae/clean_architecture_linter/commit/7a4e1698406c1b5562593f7f8bcdbfa50976372f))
+* detect direct UseCase provider calls through this.ref ([#134](https://github.com/ittae/clean_architecture_linter/issues/134)) ([06b70ea](https://github.com/ittae/clean_architecture_linter/commit/06b70ea7a98950853e6a5fdb5b03df24163611b2))
+* widget_ref_read_then_when allows Freezed Result snapshot .when ([#144](https://github.com/ittae/clean_architecture_linter/issues/144)) ([c977e7a](https://github.com/ittae/clean_architecture_linter/commit/c977e7aa9b3c32b4c51159a94e77fcae9abd1bfb))
 
 ## [2.4.0](https://github.com/ittae/clean_architecture_linter/compare/v2.3.1...v2.4.0) (2026-07-30)
 
@@ -147,31 +147,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-* AI 리뷰 게이트를 finding count 기준으로 정렬 ([#117](https://github.com/ittae/clean_architecture_linter/issues/117)) ([4ebf4f6](https://github.com/ittae/clean_architecture_linter/commit/4ebf4f698780739e0c8b4c5e019ecd5abdf6d995))
-* analyzer 13 plugin host 정렬 ([#116](https://github.com/ittae/clean_architecture_linter/issues/116)) ([cfa8f18](https://github.com/ittae/clean_architecture_linter/commit/cfa8f182f86021c2b49fc8dcafc901700a83a63c))
+* align the AI review gate to finding counts ([#117](https://github.com/ittae/clean_architecture_linter/issues/117)) ([4ebf4f6](https://github.com/ittae/clean_architecture_linter/commit/4ebf4f698780739e0c8b4c5e019ecd5abdf6d995))
+* align the analyzer 13 plugin host ([#116](https://github.com/ittae/clean_architecture_linter/issues/116)) ([cfa8f18](https://github.com/ittae/clean_architecture_linter/commit/cfa8f182f86021c2b49fc8dcafc901700a83a63c))
 
 ## [2.3.1](https://github.com/ittae/clean_architecture_linter/compare/v2.3.0...v2.3.1) (2026-07-28)
 
 
 ### Bug Fixes
 
-* ITT-1978 PR body lint이 release-please PR을 봇으로 오인해 실패하는 문제 수정 ([#115](https://github.com/ittae/clean_architecture_linter/issues/115)) ([441cbf4](https://github.com/ittae/clean_architecture_linter/commit/441cbf494c14e88d54c4e6f0bf42bfe453baeeca))
-* pub.dev score 개선 - poc_v2 패키지명 중복 제거 및 isAbstract deprecation 해소 ([#113](https://github.com/ittae/clean_architecture_linter/issues/113)) ([6661bcd](https://github.com/ittae/clean_architecture_linter/commit/6661bcd2cd86b005c3013ea37e88795310ce3685))
+* fix PR body lint failing because it mistook the release-please PR for a bot PR ([#115](https://github.com/ittae/clean_architecture_linter/issues/115)) ([441cbf4](https://github.com/ittae/clean_architecture_linter/commit/441cbf494c14e88d54c4e6f0bf42bfe453baeeca))
+* improve the pub.dev score: remove the duplicate poc_v2 package name and resolve the isAbstract deprecation ([#113](https://github.com/ittae/clean_architecture_linter/issues/113)) ([6661bcd](https://github.com/ittae/clean_architecture_linter/commit/6661bcd2cd86b005c3013ea37e88795310ce3685))
 
 ## [2.3.0](https://github.com/ittae/clean_architecture_linter/compare/v2.2.0...v2.3.0) (2026-07-27)
 
 
 ### Features
 
-* ITT-1838 Riverpod 3 non-codegen provider 인식 공통화 ([#110](https://github.com/ittae/clean_architecture_linter/issues/110)) ([b9c8c27](https://github.com/ittae/clean_architecture_linter/commit/b9c8c27d100481e317589998079260eb90387bd3))
-* ITT-1911 riverpod_uncancelled_disposable 룰 main 이식 ([#112](https://github.com/ittae/clean_architecture_linter/issues/112)) ([37e43d8](https://github.com/ittae/clean_architecture_linter/commit/37e43d84cde19b6ef5c0b8054b278e827406d8d0))
+* unify recognition of Riverpod 3 non-codegen providers ([#110](https://github.com/ittae/clean_architecture_linter/issues/110)) ([b9c8c27](https://github.com/ittae/clean_architecture_linter/commit/b9c8c27d100481e317589998079260eb90387bd3))
+* port the riverpod_uncancelled_disposable rule to main ([#112](https://github.com/ittae/clean_architecture_linter/issues/112)) ([37e43d8](https://github.com/ittae/clean_architecture_linter/commit/37e43d84cde19b6ef5c0b8054b278e827406d8d0))
 
 
 ### Bug Fixes
 
 * AI review engine chain grok→codex→claude (public inline sync) ([#111](https://github.com/ittae/clean_architecture_linter/issues/111)) ([3b1d410](https://github.com/ittae/clean_architecture_linter/commit/3b1d4107b07fb97f490fcecf1a73cfaf0c33e546))
-* **ci:** pub.dev 자동 publish는 tag push + RELEASE_PLEASE_TOKEN ([#108](https://github.com/ittae/clean_architecture_linter/issues/108)) ([315dab9](https://github.com/ittae/clean_architecture_linter/commit/315dab9f91d18ecb2bc649edca1be39c322c2a8d))
-* **ci:** Release Please에서 pub.dev publish를 workflow_call로 연결 ([#106](https://github.com/ittae/clean_architecture_linter/issues/106)) ([8eec99b](https://github.com/ittae/clean_architecture_linter/commit/8eec99be3b4be87a9e249b8ded15f546bd3b95f6))
+* **ci:** publish to pub.dev automatically through tag push + RELEASE_PLEASE_TOKEN ([#108](https://github.com/ittae/clean_architecture_linter/issues/108)) ([315dab9](https://github.com/ittae/clean_architecture_linter/commit/315dab9f91d18ecb2bc649edca1be39c322c2a8d))
+* **ci:** connect pub.dev publish to Release Please through workflow_call ([#106](https://github.com/ittae/clean_architecture_linter/issues/106)) ([8eec99b](https://github.com/ittae/clean_architecture_linter/commit/8eec99be3b4be87a9e249b8ded15f546bd3b95f6))
 
 ## [2.2.0](https://github.com/ittae/clean_architecture_linter/compare/v2.1.1...v2.2.0) (2026-07-24)
 
@@ -183,15 +183,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-* AI 리뷰 always-on + owner(get6) authored only ([#104](https://github.com/ittae/clean_architecture_linter/issues/104)) ([8e48d49](https://github.com/ittae/clean_architecture_linter/commit/8e48d49132e59f7e5bbdb9bdb0430f1f738a9daa))
+* AI review always-on + owner (get6) authored only ([#104](https://github.com/ittae/clean_architecture_linter/issues/104)) ([8e48d49](https://github.com/ittae/clean_architecture_linter/commit/8e48d49132e59f7e5bbdb9bdb0430f1f738a9daa))
 * align release-please tags with vX.Y.Z (avoid false major) ([#91](https://github.com/ittae/clean_architecture_linter/issues/91)) ([f6978ee](https://github.com/ittae/clean_architecture_linter/commit/f6978ee2555bb64da6710eff7d79bcfdabcbcd36))
 * **ci:** harden public package AI review and mention guards ([#93](https://github.com/ittae/clean_architecture_linter/issues/93)) ([dfe8908](https://github.com/ittae/clean_architecture_linter/commit/dfe89083d7d6334d895872589250bda4cdc887cb))
-* dependabot이 내부 reusable workflow를 추적하지 않도록 ignore ([#100](https://github.com/ittae/clean_architecture_linter/issues/100)) ([8cf0943](https://github.com/ittae/clean_architecture_linter/commit/8cf0943ca5a0d0ba37e8828bcf85a0d832999131))
-* ITT-1266 Future continuation callback ref 접근 진단 ([#79](https://github.com/ittae/clean_architecture_linter/issues/79)) ([96de2c6](https://github.com/ittae/clean_architecture_linter/commit/96de2c6f7244ace2ca2c27ce8d93f773ac5daa0b))
-* ITT-1673 ref.mounted 룰 레이어 인식 전환 (Notifier 오탐 제거) ([#97](https://github.com/ittae/clean_architecture_linter/issues/97)) ([d5d200c](https://github.com/ittae/clean_architecture_linter/commit/d5d200ca7729cf419d3995c6d893c84f3d743ee6))
-* light 리뷰 caller issues:write 승격 (reusable harden [#30](https://github.com/ittae/clean_architecture_linter/issues/30) 이후 startup_failure 복구) ([#82](https://github.com/ittae/clean_architecture_linter/issues/82)) ([649c984](https://github.com/ittae/clean_architecture_linter/commit/649c98409d6a8b875878b267d0a560e64e72043d))
-* 동작 불가능한 claude 멘션 워크플로 제거 (ITT-1703) ([#101](https://github.com/ittae/clean_architecture_linter/issues/101)) ([a5aaf05](https://github.com/ittae/clean_architecture_linter/commit/a5aaf05021e91cf9fc65a8905ab0c8b78b268891))
-* 리뷰 caller paths에 .github/** 추가 (ITT-1703 follow / rebased) ([#102](https://github.com/ittae/clean_architecture_linter/issues/102)) ([0bb5b86](https://github.com/ittae/clean_architecture_linter/commit/0bb5b865532a142a2c43a5ca18ba87812e3c9fc4))
+* ignore internal reusable workflows so dependabot does not track them ([#100](https://github.com/ittae/clean_architecture_linter/issues/100)) ([8cf0943](https://github.com/ittae/clean_architecture_linter/commit/8cf0943ca5a0d0ba37e8828bcf85a0d832999131))
+* diagnose ref access in Future continuation callbacks ([#79](https://github.com/ittae/clean_architecture_linter/issues/79)) ([96de2c6](https://github.com/ittae/clean_architecture_linter/commit/96de2c6f7244ace2ca2c27ce8d93f773ac5daa0b))
+* make the ref.mounted rule layer-aware (removes Notifier false positives) ([#97](https://github.com/ittae/clean_architecture_linter/issues/97)) ([d5d200c](https://github.com/ittae/clean_architecture_linter/commit/d5d200ca7729cf419d3995c6d893c84f3d743ee6))
+* promote the light review caller to issues:write (recovers startup_failure after reusable harden [#30](https://github.com/ittae/clean_architecture_linter/issues/30)) ([#82](https://github.com/ittae/clean_architecture_linter/issues/82)) ([649c984](https://github.com/ittae/clean_architecture_linter/commit/649c98409d6a8b875878b267d0a560e64e72043d))
+* remove the non-working claude mention workflow ([#101](https://github.com/ittae/clean_architecture_linter/issues/101)) ([a5aaf05](https://github.com/ittae/clean_architecture_linter/commit/a5aaf05021e91cf9fc65a8905ab0c8b78b268891))
+* add .github/** to the review caller paths (follow-up, rebased) ([#102](https://github.com/ittae/clean_architecture_linter/issues/102)) ([0bb5b86](https://github.com/ittae/clean_architecture_linter/commit/0bb5b865532a142a2c43a5ca18ba87812e3c9fc4))
 
 ## [Unreleased]
 
@@ -220,16 +220,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **analyzer 9–13 compatibility.** Widened the analyzer constraint to `>=9.0.0 <14.0.0` and introduced a runtime AST compatibility layer (`analyzer_ast_compat`) bridging renamed analyzer APIs (formal parameter / named argument / class & extension members). This lets the plugin load across analyzer 9–13 and **coexist with other analysis_server_plugin plugins such as `riverpod_lint`** in a single consumer (ITT-338).
+- **analyzer 9–13 compatibility.** Widened the analyzer constraint to `>=9.0.0 <14.0.0` and introduced a runtime AST compatibility layer (`analyzer_ast_compat`) bridging renamed analyzer APIs (formal parameter / named argument / class & extension members). This lets the plugin load across analyzer 9–13 and **coexist with other analysis_server_plugin plugins such as `riverpod_lint`** in a single consumer.
 
 ### Fixed (since `2.0.0-dev.1`)
 
-- `repository_pass_through`: false report on non-`Future` `Result` returns and over-flagging of nested try-catch blocks (ITT-301).
-- `circular_dependency`: false positive reporting cycles that do not contain the analyzed file (ITT-290).
-- `repository_interface`: now detects data-layer models exposed inside nested generics (e.g. `Future<Result<UserModel>>`, `Future<List<UserModel>>`) via recursive type-argument inspection (ITT-291).
-- `model_field_duplication`: replaced `startsWith`-based primitive detection with exact base-type matching (fixes false negatives for `Settings`/`Interval`/`MapLocation`/`Boolean`), added missing SDK types (`num`/`Object`/`dynamic`/`Iterable`), and stopped flagging record / function / structural-typed fields (ITT-295, ITT-380).
-- `datasource_abstraction`: correct `lib/`→`test/` resolution for relative paths so a present test file is no longer missed (ITT-296).
-- presentation rules: detect `try { } on X catch` data-exception handling (`CatchClause`), narrow over-broad `state = AsyncValue` matching, de-duplicate `!ref.mounted` reports, and fix the `extension_location` correction message (ITT-304).
+- `repository_pass_through`: false report on non-`Future` `Result` returns and over-flagging of nested try-catch blocks.
+- `circular_dependency`: false positive reporting cycles that do not contain the analyzed file.
+- `repository_interface`: now detects data-layer models exposed inside nested generics (e.g. `Future<Result<UserModel>>`, `Future<List<UserModel>>`) via recursive type-argument inspection.
+- `model_field_duplication`: replaced `startsWith`-based primitive detection with exact base-type matching (fixes false negatives for `Settings`/`Interval`/`MapLocation`/`Boolean`), added missing SDK types (`num`/`Object`/`dynamic`/`Iterable`), and stopped flagging record / function / structural-typed fields.
+- `datasource_abstraction`: correct `lib/`→`test/` resolution for relative paths so a present test file is no longer missed.
+- presentation rules: detect `try { } on X catch` data-exception handling (`CatchClause`), narrow over-broad `state = AsyncValue` matching, de-duplicate `!ref.mounted` reports, and fix the `extension_location` correction message.
 
 ## [2.0.0-dev.1] - 2026-05-31
 
@@ -277,11 +277,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🛠 Maintenance
 
-- D 방향 reusable 워크플로우 적용 (Claude Code Review + mention responder)
-- `karpathy-guidelines` 스킬 준수 줄을 CLAUDE.md에 추가
-- `dart format` 미적용 파일 정리 (CI 통과 위함)
+- Apply the direction-D reusable workflows (Claude Code Review + mention responder)
+- Add a `karpathy-guidelines` skill compliance line to CLAUDE.md
+- Format files that `dart format` had not been applied to (so CI passes)
 
-코드 로직 변경 없음 — 의존성/콘텐츠 안정. 1.3.0과 동등하게 사용 가능.
+No code logic changes — dependencies and content are stable. Usable as an equivalent of 1.3.0.
 
 ## [1.3.0] - 2026-02-15
 
@@ -331,78 +331,78 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🚀 Breaking Changes
 
-- **Pass-through Repository Pattern** - Result 패턴 제거, pass-through 패턴으로 전환
-  - Repository는 이제 `Future<Entity>`를 직접 반환 (권장)
-  - `Future<Result<Entity, Failure>>` 사용 시 경고 표시
-  - 에러는 DataSource에서 발생하여 Presentation까지 pass-through
-  - `AsyncValue.guard()`로 에러 자동 캐치
+- **Pass-through Repository Pattern** - Removed the Result pattern in favor of the pass-through pattern
+  - Repositories now return `Future<Entity>` directly (recommended)
+  - Warns when `Future<Result<Entity, Failure>>` is used
+  - Errors originate in the DataSource and pass through to Presentation
+  - `AsyncValue.guard()` catches errors automatically
 
 ### ✨ Added
 
-- **AppException 타입 인식** - `exception_validation_mixin`에 AppException 타입 세트 추가
-  - 표준 AppException 타입: `AppException`, `NetworkException`, `TimeoutException`, `ServerException`, `UnauthorizedException`, `ForbiddenException`, `NotFoundException`, `InvalidInputException`, `ConflictException`, `CacheException`, `UnknownException`
-  - `isAppExceptionType()` 메서드 추가
-  - `isAllowedWithoutPrefix()`가 AppException 타입 인식
+- **AppException type recognition** - Added the AppException type set to `exception_validation_mixin`
+  - Standard AppException types: `AppException`, `NetworkException`, `TimeoutException`, `ServerException`, `UnauthorizedException`, `ForbiddenException`, `NotFoundException`, `InvalidInputException`, `ConflictException`, `CacheException`, `UnknownException`
+  - `isAppExceptionType()` method added
+  - `isAllowedWithoutPrefix()` recognizes AppException types
 
-- **Loading 필드 감지** - `presentation_use_async_value` 규칙 강화
-  - `isLoading`, `loading`, `isSubmitting`, `submitting`, `isFetching`, `fetching`, `isProcessing`, `processing` 필드 감지
-  - Freezed State에서 수동 로딩 상태 관리 금지 (AsyncValue가 자동 관리)
+- **Loading field detection** - Strengthened the `presentation_use_async_value` rule
+  - Detects the fields `isLoading`, `loading`, `isSubmitting`, `submitting`, `isFetching`, `fetching`, `isProcessing`, `processing`
+  - Manual loading state in Freezed State is disallowed (AsyncValue manages it automatically)
 
 ### 🔄 Changed
 
-- **repository_must_return_result** - Result 패턴 사용 시 경고
-  - 이전: `Future<Entity>` 또는 `Future<Result<Entity, Failure>>` 모두 허용
-  - 이후: `Future<Entity>` 권장, Result 사용 시 WARNING
+- **repository_must_return_result** - Warns when the Result pattern is used
+  - Before: both `Future<Entity>` and `Future<Result<Entity, Failure>>` were allowed
+  - After: `Future<Entity>` is recommended; using Result is a WARNING
 
-- **repository_must_return_result** → **repository_pass_through** (이름 변경)
-  - 규칙 이름이 pass-through 패턴을 더 명확하게 반영
+- **repository_must_return_result** → **repository_pass_through** (renamed)
+  - The rule name reflects the pass-through pattern more clearly
 
-- **repository_no_throw** - 문서 업데이트
-  - Pass-through 패턴 중심으로 문서 재작성
-  - AppException 타입 throw 허용
-  - 비표준 예외 throw 시 INFO 레벨 경고
+- **repository_no_throw** - Documentation update
+  - Rewrote the documentation around the pass-through pattern
+  - Throwing AppException types is allowed
+  - Throwing a non-standard exception is an INFO-level warning
 
-- **datasource_exception_types** - AppException 타입 체크 추가
-  - `isAppExceptionType()` 체크 추가
-  - DataSource에서 AppException 타입만 throw 허용
+- **datasource_exception_types** - Added an AppException type check
+  - `isAppExceptionType()` check added
+  - DataSources may throw only AppException types
 
 ### ⚠️ Deprecated
 
-- **usecase_must_convert_failure** - Pass-through 패턴으로 인해 더 이상 필요 없음
-  - UseCase에서 Failure→Exception 변환 불필요
-  - 에러가 DataSource에서 Presentation까지 직접 전달됨
-  - 규칙은 유지되지만 no-op (아무 동작 안함)
+- **usecase_must_convert_failure** - No longer needed with the pass-through pattern
+  - UseCases no longer convert Failure to Exception
+  - Errors pass directly from the DataSource to Presentation
+  - The rule is kept but is a no-op
 
-- **failure_naming_convention** - Failure 클래스 사용 자체를 경고
-  - Result 패턴 제거로 Failure 클래스 불필요
-  - 규칙이 Failure 클래스 정의 시 경고 표시
-  - AppException 사용 권장
+- **failure_naming_convention** - Warns on any use of a Failure class
+  - Failure classes are unnecessary now that the Result pattern is removed
+  - The rule warns when a Failure class is defined
+  - AppException is recommended instead
 
 ### 📝 Documentation
 
-- **CLAUDE.md** - Pass-through 패턴 중심으로 업데이트
-  - Result 패턴 예제 제거
-  - STATE_MANAGEMENT_GUIDE.md 참조 추가
+- **CLAUDE.md** - Updated around the pass-through pattern
+  - Removed Result pattern examples
+  - Added a reference to STATE_MANAGEMENT_GUIDE.md
 
-- **doc/UNIFIED_ERROR_GUIDE.md** - 통합 에러 핸들링 가이드 추가
-- **doc/STATE_MANAGEMENT_GUIDE.md** - 상태 관리 가이드 추가
+- **doc/UNIFIED_ERROR_GUIDE.md** - Added a unified error handling guide
+- **doc/STATE_MANAGEMENT_GUIDE.md** - Added a state management guide
 
 ### 🧪 Tests
 
-- 모든 테스트 업데이트 (568개 테스트 통과)
-  - `exception_validation_mixin_test.dart` - AppException 타입 테스트 추가
-  - `repository_no_throw_rule_test.dart` - Pass-through 패턴 테스트로 변경
-  - `exception_handling_integration_test.dart` - 전체 리팩토링
+- Updated all tests (568 tests pass)
+  - `exception_validation_mixin_test.dart` - Added AppException type tests
+  - `repository_no_throw_rule_test.dart` - Switched to pass-through pattern tests
+  - `exception_handling_integration_test.dart` - Full refactor
 
 ## [1.0.11] - 2025-12-31
 
 ### 🔧 Fixed
 
-- **layer_dependency_rule** - DI Provider 파일에서 Data Models import 금지 추가
-  - DI/Provider 파일(`*_providers.dart`, `providers.dart`)에서 DataSource/Repository 구현체 import는 허용
-  - 하지만 **Data Models(`/data/models/`)** import는 DI 파일에서도 **금지**
-  - Data Models는 Data 레이어 내부용이며, Presentation 레이어(DI 포함)에서 사용하면 안됨
-  - 새로운 `_isDataModelImport()` 헬퍼 메서드 추가
+- **layer_dependency_rule** - DI provider files may no longer import Data Models
+  - DI/provider files (`*_providers.dart`, `providers.dart`) may import DataSource/Repository implementations
+  - But importing **Data Models (`/data/models/`)** is **forbidden** even in DI files
+  - Data Models are internal to the Data layer and must not be used in the Presentation layer (including DI)
+  - Added the new `_isDataModelImport()` helper method
 
 ## [1.0.10] - 2025-12-10
 

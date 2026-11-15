@@ -44,9 +44,18 @@ git push origin vX.Y.Z              # re-create with user credentials → trigge
 
 Do **not** use component-prefixed tags like `clean_architecture_linter-v2.1.1`.
 
+## Changelog language
+
+`CHANGELOG.md` is public: pub.dev renders it on the package page. Release Please copies the subject of each changelog-visible commit into it verbatim, and PRs are squash-merged, so the PR title is the changelog line.
+
+- `changelog-sections` in `release-please-config.json` renders `feat`, `fix`, `perf`, `revert`, and `deps`. `docs`, `chore`, `ci`, `refactor`, `test`, `build`, and `style` are hidden. A breaking change (`!`) is rendered whatever its type. Commits of hidden types alone do not open a Release PR.
+- Titles of the rendered types are written in English and carry no private issue key. `.github/workflows/pr-title-lint.yml` runs `.github/scripts/pr_title_lint.sh` on every PR title to enforce this. It sees the title only: a `BREAKING CHANGE:` footer in the squash commit body also renders the commit, so write that title in English too.
+- CI, tooling, and agent-document changes do not change package behavior. Use `ci`, `chore`, or `docs` for them so they stay out of the changelog.
+- To reword a line after merge, add a `BEGIN_COMMIT_OVERRIDE` … `END_COMMIT_OVERRIDE` block to the merged PR's body; Release Please uses it in place of the commit message on its next run. A released entry can be edited on `main`, but pub.dev shows the change only after the next version is published.
+
 ## Human gate
 
-Merging the Release PR is the ship signal. Multica Version Goal (**ITT-1521**) is `manual` release.
+Merging the Release PR is the ship signal. Releases are `manual`.
 
 ## Files
 

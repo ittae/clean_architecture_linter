@@ -3,6 +3,7 @@
 - 패키지 구현 경로는 `lib/src/rules/`, `lib/src/mixins/`, plugin entrypoint는 `lib/clean_architecture_linter.dart`다. 예제/fixture의 `lib/features/...`는 소비자 앱 lint semantics를 검증하기 위한 입력이며, agent 구현 레이아웃으로 해석하지 않는다.
 - lint semantics와 agent 운영 규칙을 분리한다. 이 패키지는 Riverpod 기반 Clean Architecture 위반을 `dart analyze`에서 검출하는 제품이며, agent 지침은 maintainer 작업 절차일 뿐 package behavior나 public docs API가 아니다.
 - public GitHub metadata(브랜치명, PR 제목/본문, release note)에 private Multica `ITT-*` key를 노출하지 않는다. traceability는 Multica 내부에만 둔다.
+- `feat`·`fix`·`perf`·`revert`·`deps`와 breaking(`!`) PR 제목은 **영어**로 쓴다. release-please가 squash 커밋 제목을 `CHANGELOG.md`에 그대로 옮기고 pub.dev가 그것을 패키지 사용자에게 보여 준다. PR 본문과 그 밖의 type 제목은 org 템플릿대로 한국어다. 패키지 동작을 바꾸지 않는 CI·도구·agent 문서 변경은 `ci`·`chore`·`docs`로 써서 changelog에 넣지 않는다. 검사: `.github/scripts/pr_title_lint.sh`, 설명: [docs/release-please.md](docs/release-please.md#changelog-language).
 - PR은 human merge only다. agent는 명시 승인 없이 merge/close/label/review approval/force push를 하지 않는다.
 - 실제 검증 명령은 manifest/현행 문서 기준으로만 기록하고 실행한다: root `dart analyze`, root `dart test`, consumer smoke `cd example && dart analyze`, analysis_server_plugin/Riverpod coexistence smoke `cd poc_v2/consumer_riverpod_lint && dart analyze`.
 - 이 패키지가 강제하는 패턴(Layer 의존, Riverpod 3-tier, Repository, stateless 규칙)의 정본은 [doc/RIVERPOD_ARCHITECTURE_GUIDE.md](doc/RIVERPOD_ARCHITECTURE_GUIDE.md)다. rule을 만들거나 고치기 전에 읽는다.
