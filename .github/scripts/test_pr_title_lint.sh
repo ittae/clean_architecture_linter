@@ -72,6 +72,19 @@ other '\352\224\200' # U+A500 Vai
 other '\352\246\200' # U+A980 Javanese
 other '\357\275\261' # U+FF71 halfwidth Katakana
 other '\357\277\240' # U+FFE0 fullwidth cent sign
+# The code point just outside each block edge.
+other '\341\203\277' # U+10FF, below Jamo
+other '\341\210\200' # U+1200, above Jamo
+other '\343\204\257' # U+312F, below compatibility Jamo
+other '\343\210\237' # U+321F, above parenthesized Hangul
+other '\343\211\237' # U+325F, below circled Hangul
+other '\343\211\277' # U+327F, above circled Hangul
+other '\352\245\237' # U+A95F, below Jamo Extended-A
+other '\352\257\277' # U+ABFF, below the syllables
+other '\355\236\244' # U+D7A4, gap after the last syllable
+other '\355\236\257' # U+D7AF, gap before Jamo Extended-B
+other '\357\276\237' # U+FF9F, below halfwidth Hangul
+other '\357\277\235' # U+FFDD, above halfwidth Hangul
 # A breaking change is always rendered, whatever its type.
 expect 1 'refactor!: 공개 API를 정리한다'
 expect 1 'chore(api)!: 공개 API를 정리한다'
