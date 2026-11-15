@@ -36,12 +36,42 @@ expect 1 'feat: 확장 @Dependencies가 스코프를 벗어나면 보고한다'
 expect 1 'perf(rules): 조회를 캐시한다'
 expect 1 'revert: 예외를 되돌린다'
 expect 1 'deps: analyzer를 올린다'
-# Hangul in the scope, and each Hangul block on its own: compatibility Jamo, Jamo.
+# Hangul in the scope.
 expect 1 'fix(규칙): report ref access'
-expect 1 'fix: report ref access ㅋ'
-expect 1 "fix: report ref access $(printf '\341\204\200')"
-# Non-Hangul text outside ASCII is not this lint's concern.
-expect 0 'fix: report ref access — café'
+# Each Hangul block on its own, first and last code point, as UTF-8 octal bytes.
+hangul() { expect 1 "fix: report ref access $(printf '%b' "$1")"; }
+hangul '\341\204\200' # U+1100 Jamo
+hangul '\341\207\277' # U+11FF Jamo
+hangul '\343\204\261' # U+3131 compatibility Jamo
+hangul '\343\205\207' # U+3147 compatibility Jamo
+hangul '\343\206\216' # U+318E compatibility Jamo
+hangul '\343\210\200' # U+3200 parenthesized Hangul
+hangul '\343\210\236' # U+321E parenthesized Hangul
+hangul '\343\211\240' # U+3260 circled Hangul
+hangul '\343\211\276' # U+327E circled Hangul
+hangul '\352\245\240' # U+A960 Jamo Extended-A
+hangul '\352\245\274' # U+A97C Jamo Extended-A
+hangul '\352\260\200' # U+AC00 first syllable
+hangul '\353\214\200' # U+B300 syllable
+hangul '\355\225\234' # U+D55C syllable
+hangul '\355\236\243' # U+D7A3 last syllable
+hangul '\355\236\260' # U+D7B0 Jamo Extended-B
+hangul '\355\237\273' # U+D7FB Jamo Extended-B
+hangul '\357\276\241' # U+FFA1 halfwidth Hangul
+hangul '\357\277\234' # U+FFDC halfwidth Hangul
+# Neighbouring non-Hangul code points pass: this lint is about Hangul only.
+other() { expect 0 "fix: report ref access $(printf '%b' "$1")"; }
+other '\342\200\224 caf\303\251' # em dash, Latin-1
+other '\343\204\205' # U+3105 Bopomofo
+other '\343\206\220' # U+3190 Kanbun
+other '\343\210\240' # U+3220 parenthesized ideograph
+other '\343\212\200' # U+3280 circled ideograph
+other '\346\227\245' # U+65E5 CJK ideograph
+other '\352\200\200' # U+A000 Yi
+other '\352\224\200' # U+A500 Vai
+other '\352\246\200' # U+A980 Javanese
+other '\357\275\261' # U+FF71 halfwidth Katakana
+other '\357\277\240' # U+FFE0 fullwidth cent sign
 # A breaking change is always rendered, whatever its type.
 expect 1 'refactor!: 공개 API를 정리한다'
 expect 1 'chore(api)!: 공개 API를 정리한다'
