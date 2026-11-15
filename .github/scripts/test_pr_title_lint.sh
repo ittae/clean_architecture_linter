@@ -36,6 +36,12 @@ expect 1 'feat: 확장 @Dependencies가 스코프를 벗어나면 보고한다'
 expect 1 'perf(rules): 조회를 캐시한다'
 expect 1 'revert: 예외를 되돌린다'
 expect 1 'deps: analyzer를 올린다'
+# Hangul in the scope, and each Hangul block on its own: compatibility Jamo, Jamo.
+expect 1 'fix(규칙): report ref access'
+expect 1 'fix: report ref access ㅋ'
+expect 1 "fix: report ref access $(printf '\341\204\200')"
+# Non-Hangul text outside ASCII is not this lint's concern.
+expect 0 'fix: report ref access — café'
 # A breaking change is always rendered, whatever its type.
 expect 1 'refactor!: 공개 API를 정리한다'
 expect 1 'chore(api)!: 공개 API를 정리한다'
