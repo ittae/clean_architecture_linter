@@ -36,10 +36,25 @@ if [[ "$title" =~ ITT-[0-9]+ ]]; then
   fail "PR title carries a private issue key; remove it (public metadata): $title"
 fi
 
-# Hangul Jamo, compatibility Jamo, and syllables as UTF-8 byte sequences.
-# Byte patterns keep the check independent of the runner locale.
+# Every Hangul block as UTF-8 byte sequences, one alternative per block. Byte
+# patterns keep the check independent of the runner locale. Neighbouring blocks
+# (Bopomofo, Yi, Vai, halfwidth Katakana, ...) are deliberately left out.
+HANGUL_BYTES=$(printf '%s|' \
+  '\341[\204-\207][\200-\277]' \
+  '\343\204[\260-\277]' '\343\205[\200-\277]' '\343\206[\200-\217]' \
+  '\343\210[\200-\236]' \
+  '\343\211[\240-\276]' \
+  '\352\245[\240-\277]' \
+  '\352[\260-\277][\200-\277]' '[\353-\354][\200-\277][\200-\277]' \
+  '\355[\200-\235][\200-\277]' '\355\236[\200-\243]' \
+  '\355\236[\260-\277]' '\355\237[\200-\277]' \
+  '\357\276[\240-\277]' '\357\277[\200-\234]')
+# U+1100-11FF Jamo / U+3130-318F compatibility Jamo / U+3200-321E parenthesized /
+# U+3260-327E circled / U+A960-A97F Jamo Extended-A / U+AC00-D7A3 syllables /
+# U+D7B0-D7FF Jamo Extended-B / U+FFA0-FFDC halfwidth.
 has_hangul() {
-  printf '%s' "$1" | LC_ALL=C grep -qE "$(printf '\341[\204-\207][\200-\277]|\343[\204-\206][\200-\277]|[\352-\355][\200-\277][\200-\277]')"
+  # shellcheck disable=SC2059 # the pattern is the format: printf turns the octal escapes into bytes
+  printf '%s' "$1" | LC_ALL=C grep -qE "$(printf "${HANGUL_BYTES%|}")"
 }
 
 if [[ "$type" =~ ^($CHANGELOG_TYPES)$ ]] || [ -n "$breaking" ]; then
