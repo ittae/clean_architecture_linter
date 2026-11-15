@@ -1,0 +1,37 @@
+name: PR title lint
+
+# Package-local, not part of the org template: release-please copies the squash-merge
+# commit subject (= PR title) of every changelog-visible commit into CHANGELOG.md, which
+# pub.dev shows to package users. feat/fix/perf/revert/deps and breaking titles must be
+# English, and no title may carry a private issue key. Rules and rationale:
+# .github/scripts/pr_title_lint.sh.
+# Bots are skipped: Dependabot and release-please write their own English titles.
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  title:
+    # `edited` re-lints only when the title changed.
+    if: >-
+      github.actor != 'dependabot[bot]' &&
+      github.event.pull_request.user.type != 'Bot' &&
+      !startsWith(github.event.pull_request.head.ref, 'release-please--') &&
+      (github.event.action != 'edited' || github.event.changes.title != null)
+    # Public repo, PR-head script: GitHub-hosted only.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # No concurrency on purpose: the merge gate treats a CANCELLED run on the head SHA as a failure.
+    steps:
+      - uses: actions/checkout@v7
+      - name: Self-test the lint
+        run: bash .github/scripts/test_pr_title_lint.sh
+      - name: Lint PR title
+        env:
+          # Env indirection: the title is attacker-controlled text, never inline it into the script.
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: bash .github/scripts/pr_title_lint.sh "$PR_TITLE"
