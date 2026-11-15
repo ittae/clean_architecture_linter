@@ -1,0 +1,79 @@
+name: Secret scan
+
+# Gitleaks secret scan for a PUBLIC repository (standalone copy of the private reusable
+# ittae/.github gitleaks.yml, which a public repo cannot call). Hosted minutes are free in a
+# public repo, and fork code runs only inside the hosted VM, never on the org self-hosted runner.
+# Same engine and version as the private path: Gitleaks default rules plus the repo's own
+# `.gitleaks.toml` / `.gitleaksignore`. The binary is checked against a pinned SHA-256.
+# Output is `RuleID  File  Line  Commit` only; matches are redacted.
+# The job id fixes the check name `secret-scan / gitleaks` (this job is named `gitleaks`).
+#
+# Public repo rules (policies/ittae-pr-autopilot.md): no ITT key in branch, title or body.
+# Land by pull request and human merge, never by default-branch push.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+env:
+  GITLEAKS_VERSION: '8.30.1'
+  GITLEAKS_SHA256: '551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb' # gitleaks_8.30.1_linux_x64.tar.gz
+
+jobs:
+  gitleaks:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install Gitleaks (pinned SHA-256)
+        run: |
+          set -euo pipefail
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/$archive" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archive}"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/$archive" | sha256sum --check --status
+          mkdir -p "$RUNNER_TEMP/gitleaks-bin"
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP/gitleaks-bin" gitleaks
+          echo "$RUNNER_TEMP/gitleaks-bin" >> "$GITHUB_PATH"
+      - name: Gitleaks
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          zero=0000000000000000000000000000000000000000
+          range='--full-history HEAD --remotes=origin --tags'
+          if [ "$EVENT_NAME" = pull_request ]; then
+            git cat-file -e "${BASE_SHA}^{commit}"
+            range="${BASE_SHA}..HEAD"
+          elif [ "$EVENT_NAME" = push ] && [ "$BEFORE_SHA" != "$zero" ] \
+              && git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null; then
+            range="${BEFORE_SHA}..${AFTER_SHA}"
+          fi
+          report="$RUNNER_TEMP/gitleaks-report.json"
+          rc=0
+          gitleaks git . --no-banner --no-color --redact=100 --exit-code 42 \
+            --report-format json --report-path "$report" --log-opts "$range" >/dev/null 2>&1 || rc=$?
+          trap 'rm -f "$report"' EXIT
+          if { [ "$rc" -ne 0 ] && [ "$rc" -ne 42 ]; } || [ ! -f "$report" ]; then
+            echo "secret-scan: scan failed (exit $rc); raw diagnostics withheld to protect secrets" >&2
+            exit 1
+          fi
+          jq -r '.[] | [.RuleID, .File, (.StartLine|tostring), .Commit[0:12]] | @tsv' "$report"
+          count="$(jq 'length' "$report")"
+          echo "Gitleaks ${GITLEAKS_VERSION}: ${count} finding(s) in ${range}"
+          if [ "$count" -ne 0 ] || [ "$rc" -ne 0 ]; then
+            echo "Remove the value (do not paste it anywhere) and report the key NAME to the owner." >&2
+            exit 1
+          fi
