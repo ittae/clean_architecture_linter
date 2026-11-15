@@ -38,27 +38,28 @@ expect 1 'revert: 예외를 되돌린다'
 expect 1 'deps: analyzer를 올린다'
 # Hangul in the scope.
 expect 1 'fix(규칙): report ref access'
-# Each Hangul block on its own, first and last code point, as UTF-8 octal bytes.
+# Each Hangul block on its own, as UTF-8 octal bytes: the first and last code
+# point of the block, plus one inside for each extra byte pattern the block needs.
 hangul() { expect 1 "fix: report ref access $(printf '%b' "$1")"; }
-hangul '\341\204\200' # U+1100 Jamo
-hangul '\341\207\277' # U+11FF Jamo
-hangul '\343\204\261' # U+3131 compatibility Jamo
-hangul '\343\205\207' # U+3147 compatibility Jamo
-hangul '\343\206\216' # U+318E compatibility Jamo
-hangul '\343\210\200' # U+3200 parenthesized Hangul
-hangul '\343\210\236' # U+321E parenthesized Hangul
-hangul '\343\211\240' # U+3260 circled Hangul
-hangul '\343\211\276' # U+327E circled Hangul
-hangul '\352\245\240' # U+A960 Jamo Extended-A
-hangul '\352\245\274' # U+A97C Jamo Extended-A
-hangul '\352\260\200' # U+AC00 first syllable
-hangul '\353\214\200' # U+B300 syllable
-hangul '\355\225\234' # U+D55C syllable
-hangul '\355\236\243' # U+D7A3 last syllable
-hangul '\355\236\260' # U+D7B0 Jamo Extended-B
-hangul '\355\237\273' # U+D7FB Jamo Extended-B
-hangul '\357\276\241' # U+FFA1 halfwidth Hangul
-hangul '\357\277\234' # U+FFDC halfwidth Hangul
+hangul '\341\204\200' # U+1100 Jamo, first
+hangul '\341\207\277' # U+11FF Jamo, last
+hangul '\343\204\260' # U+3130 compatibility Jamo, first
+hangul '\343\205\207' # U+3147 compatibility Jamo, inside
+hangul '\343\206\217' # U+318F compatibility Jamo, last
+hangul '\343\210\200' # U+3200 parenthesized Hangul, first
+hangul '\343\210\236' # U+321E parenthesized Hangul, last
+hangul '\343\211\240' # U+3260 circled Hangul, first
+hangul '\343\211\276' # U+327E circled Hangul, last
+hangul '\352\245\240' # U+A960 Jamo Extended-A, first
+hangul '\352\245\277' # U+A97F Jamo Extended-A, last
+hangul '\352\260\200' # U+AC00 syllables, first
+hangul '\353\214\200' # U+B300 syllables, inside
+hangul '\355\225\234' # U+D55C syllables, inside
+hangul '\355\236\243' # U+D7A3 syllables, last
+hangul '\355\236\260' # U+D7B0 Jamo Extended-B, first
+hangul '\355\237\277' # U+D7FF Jamo Extended-B, last
+hangul '\357\276\240' # U+FFA0 halfwidth Hangul, first
+hangul '\357\277\234' # U+FFDC halfwidth Hangul, last
 # Neighbouring non-Hangul code points pass: this lint is about Hangul only.
 other() { expect 0 "fix: report ref access $(printf '%b' "$1")"; }
 other '\342\200\224 caf\303\251' # em dash, Latin-1
