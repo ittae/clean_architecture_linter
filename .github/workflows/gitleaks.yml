@@ -6,7 +6,9 @@ name: Secret scan
 # Same engine and version as the private path: Gitleaks default rules plus the repo's own
 # `.gitleaks.toml` / `.gitleaksignore`. The binary is checked against a pinned SHA-256.
 # Output is `RuleID  File  Line  Commit` only; matches are redacted.
-# The job id fixes the check name `secret-scan / gitleaks` (this job is named `gitleaks`).
+# This is a standalone workflow, not a reusable-workflow call, so the check name is just the
+# job name `gitleaks` (no `secret-scan / ` prefix). Verified on PR runs. A required-check
+# setting must use `gitleaks`.
 #
 # Public repo rules (policies/ittae-pr-autopilot.md): no ITT key in branch, title or body.
 # Land by pull request and human merge, never by default-branch push.
