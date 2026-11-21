@@ -101,7 +101,7 @@ plugins:
 ```yaml
 # analysis_options.yaml
 plugins:
-  clean_architecture_linter: ^2.0.0-dev.1
+  clean_architecture_linter: ^2.8.0
 
 analyzer:
   exclude:
@@ -183,7 +183,7 @@ warning - lib/bad_examples/features/todo/data/repositories/todo_repository_impl.
 
 ```yaml
 plugins:
-  clean_architecture_linter: ^2.4.0
+  clean_architecture_linter: ^2.8.0
   riverpod_lint: ^3.1.9
 ```
 

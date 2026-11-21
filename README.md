@@ -103,7 +103,7 @@ plugins:
 ```yaml
 # analysis_options.yaml
 plugins:
-  clean_architecture_linter: ^2.0.0-dev.1
+  clean_architecture_linter: ^2.8.0
 
 analyzer:
   exclude:
@@ -191,7 +191,7 @@ This line also closes a silent-loss bug in the 2.4.x line. With `analysis_server
 
 ```yaml
 plugins:
-  clean_architecture_linter: ^2.4.0
+  clean_architecture_linter: ^2.8.0
   riverpod_lint: ^3.1.9
 ```
 
