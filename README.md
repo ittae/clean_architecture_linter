@@ -9,6 +9,14 @@ A comprehensive custom lint package that **automatically enforces Clean Architec
 
 > ⚠️ **Note**: This package is designed for projects using [Riverpod](https://pub.dev/packages/riverpod) for state management. Some presentation layer rules specifically validate Riverpod patterns.
 
+## 📌 At a Glance
+
+- **Purpose**: an `analysis_server_plugin` lint package that reports Clean Architecture and Riverpod violations through `dart analyze`.
+- **Current version**: `2.8.4` (git tag `v2.8.4`). Changes since the last release and next candidates: [docs/releases.md](docs/releases.md).
+- **Run**: add `clean_architecture_linter` under `plugins:` in `analysis_options.yaml`, then run `dart analyze` ([Quick Start](#-quick-start)).
+- **Build and test** (this repo): `dart pub get`, `dart analyze`, `dart pub test`; consumer smoke with `cd example && dart analyze`.
+- **Release**: Release Please opens a Release PR from Conventional Commits on `main`; merging it creates the `vX.Y.Z` tag, which publishes to pub.dev ([docs/release-please.md](docs/release-please.md)).
+
 ## ✨ Key Features
 
 - 🛡️ **Automatic Clean Architecture Protection** - Write code freely, linter catches violations
