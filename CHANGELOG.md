@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.5](https://github.com/ittae/clean_architecture_linter/compare/v2.8.4...v2.8.5) (2026-11-24)
+
+
+### Bug Fixes
+
+* scope layer paths to package lib and resolve project URIs ([#219](https://github.com/ittae/clean_architecture_linter/issues/219)) ([2b73e4c](https://github.com/ittae/clean_architecture_linter/commit/2b73e4c3dc7507b77fd9efdffda3de760d6aacfc))
+
 ## [2.8.4](https://github.com/ittae/clean_architecture_linter/compare/v2.8.3...v2.8.4) (2026-11-14)
 
 
