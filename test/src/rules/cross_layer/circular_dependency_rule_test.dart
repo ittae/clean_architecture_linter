@@ -298,5 +298,89 @@ class B {}
         ]);
       },
     );
+
+    test('reports export cycles and combinator imports', () async {
+      final result = await V2RuleHarness(rule: CircularDependencyRule())
+          .analyze(
+            files: {
+              'lib/features/todo/domain/a.dart': '''
+export 'b.dart' show B;
+''',
+              'lib/features/todo/domain/b.dart': '''
+import 'a.dart' deferred as a;
+''',
+            },
+            definingFile: 'lib/features/todo/domain/a.dart',
+            additionalDefiningFiles: const ['lib/features/todo/domain/b.dart'],
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath: 'lib/features/todo/domain/b.dart',
+          codeName: 'circular_dependency',
+          line: 1,
+          problemMessage:
+              'Circular dependency detected: domain/b.dart -> domain/a.dart -> domain/b.dart',
+        ),
+      ]);
+    });
+
+    test('does not treat another package path as a local file', () async {
+      final result = await V2RuleHarness(rule: CircularDependencyRule())
+          .analyze(
+            files: {
+              'lib/features/todo/domain/a.dart': '''
+import 'b.dart';
+
+class A {}
+''',
+              'lib/features/todo/domain/b.dart': '''
+import 'package:collection/features/todo/domain/a.dart';
+
+class B {}
+''',
+            },
+            definingFile: 'lib/features/todo/domain/a.dart',
+            additionalDefiningFiles: const ['lib/features/todo/domain/b.dart'],
+          );
+
+      result.expectNoDiagnostics();
+    });
+
+    test(
+      'resolves same-package imports when an ancestor folder is lib',
+      () async {
+        final result = await V2RuleHarness(rule: CircularDependencyRule())
+            .analyze(
+              nestUnder: 'lib/wrapper',
+              files: {
+                'lib/features/todo/domain/a.dart': '''
+import 'package:cal_v2_harness_app/features/todo/domain/b.dart';
+
+class A {}
+''',
+                'lib/features/todo/domain/b.dart': '''
+import 'a.dart';
+
+class B {}
+''',
+              },
+              definingFile: 'lib/features/todo/domain/a.dart',
+              additionalDefiningFiles: const [
+                'lib/features/todo/domain/b.dart',
+              ],
+            );
+
+        result.expectDiagnostics([
+          const ExpectedV2Diagnostic(
+            relativePath: 'lib/features/todo/domain/b.dart',
+            codeName: 'circular_dependency',
+            line: 1,
+            problemMessage:
+                'Circular dependency detected: domain/b.dart -> domain/a.dart -> domain/b.dart',
+          ),
+        ]);
+      },
+    );
   });
 }

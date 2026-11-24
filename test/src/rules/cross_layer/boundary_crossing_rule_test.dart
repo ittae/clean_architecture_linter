@@ -151,6 +151,45 @@ class TodoRepositoryImpl {}
       result.expectNoDiagnostics();
     });
 
+    test('reports exported implementations and barrel impl files', () async {
+      const usecase = 'lib/features/todo/domain/usecases/get_todo_usecase.dart';
+      final result = await V2RuleHarness(rule: BoundaryCrossingRule()).analyze(
+        files: {
+          usecase: '''
+export '../../data/repositories/todo_repository_impl.dart' show TodoRepositoryImpl;
+import '../../todo_api.dart';
+
+class GetTodoUseCase {}
+''',
+          'lib/features/todo/todo_api.dart': '''
+export 'data/impl/todo_repository.dart';
+''',
+          'lib/features/todo/data/repositories/todo_repository_impl.dart':
+              'class TodoRepositoryImpl {}',
+          'lib/features/todo/data/impl/todo_repository.dart':
+              'class TodoRepository {}',
+        },
+        definingFile: usecase,
+      );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath: usecase,
+          codeName: 'boundary_crossing',
+          line: 1,
+          problemMessage:
+              'Boundary crossing violation: domain layer depends on concrete data implementation: ../../data/repositories/todo_repository_impl.dart',
+        ),
+        const ExpectedV2Diagnostic(
+          relativePath: usecase,
+          codeName: 'boundary_crossing',
+          line: 2,
+          problemMessage:
+              'Boundary crossing violation: domain layer depends on concrete data implementation: ../../todo_api.dart',
+        ),
+      ]);
+    });
+
     test('skips generated files', () async {
       final result = await V2RuleHarness(rule: BoundaryCrossingRule()).analyze(
         files: {

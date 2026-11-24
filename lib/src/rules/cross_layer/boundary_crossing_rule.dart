@@ -6,6 +6,7 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
 import '../../clean_architecture_linter_base.dart';
+import '../../utils/project_path.dart';
 
 /// Enforces simplified boundary crossing patterns in Clean Architecture.
 ///
@@ -39,7 +40,9 @@ class BoundaryCrossingRule extends AnalysisRule {
     RuleVisitorRegistry registry,
     RuleContext context,
   ) {
-    registry.addImportDirective(this, _BoundaryCrossingVisitor(this, context));
+    final visitor = _BoundaryCrossingVisitor(this, context);
+    registry.addImportDirective(this, visitor);
+    registry.addExportDirective(this, visitor);
   }
 }
 
@@ -51,31 +54,76 @@ class _BoundaryCrossingVisitor extends SimpleAstVisitor<void> {
 
   @override
   void visitImportDirective(ImportDirective node) {
+    _checkNamespace(node);
+  }
+
+  @override
+  void visitExportDirective(ExportDirective node) {
+    _checkNamespace(node);
+  }
+
+  void _checkNamespace(NamespaceDirective node) {
     final filePath =
         context.currentUnit?.file.path ?? context.definingUnit.file.path;
     if (CleanArchitectureUtils.shouldExcludeFile(filePath)) return;
-
-    final importUri = node.uri.stringValue;
-    if (importUri == null) return;
-
-    if (_isDependencyInjectionFile(filePath)) {
-      return;
-    }
+    if (_isDependencyInjectionFile(filePath)) return;
 
     final sourceLayer = _identifyLayer(filePath);
-    final targetLayer = _identifyLayer(importUri);
+    if (sourceLayer == null) return;
 
-    if (sourceLayer == null || targetLayer == null) return;
-
-    if (_isConcreteDependency(importUri, sourceLayer, targetLayer)) {
+    final packageName = ProjectPaths.packageNameNear(filePath);
+    for (final importUri in ProjectPaths.urisOf(node)) {
+      final resolved = ProjectPaths.resolveProjectFile(
+        uri: importUri,
+        currentFile: filePath,
+        packageName: packageName,
+      );
+      final target = _concreteTarget(
+        importUri: importUri,
+        resolved: resolved,
+        packageName: packageName,
+        source: sourceLayer,
+      );
+      if (target == null) continue;
       rule.reportAtNode(
         node,
         arguments: [
           '${sourceLayer.name} layer depends on concrete '
-              '${targetLayer.name} implementation: $importUri',
+              '${target.name} implementation: $importUri',
         ],
       );
+      return;
     }
+  }
+
+  ArchitecturalLayer? _concreteTarget({
+    required String importUri,
+    required String? resolved,
+    required String? packageName,
+    required ArchitecturalLayer source,
+  }) {
+    final candidates = <String>[importUri];
+    if (resolved != null) {
+      candidates.add(ProjectPaths.scopeToPackageLib(resolved));
+      final direct = _identifyLayer(resolved);
+      if (direct == null) {
+        final reach = ProjectPaths.exportReach(
+          dartFile: resolved,
+          packageName: packageName,
+        );
+        candidates.addAll(reach.uris);
+        for (final file in reach.files) {
+          candidates.add(ProjectPaths.scopeToPackageLib(file));
+        }
+      }
+    }
+
+    for (final candidate in candidates) {
+      final target = _identifyLayer(candidate);
+      if (target == null) continue;
+      if (_isConcreteDependency(candidate, source, target)) return target;
+    }
+    return null;
   }
 
   bool _isConcreteDependency(
@@ -98,7 +146,7 @@ class _BoundaryCrossingVisitor extends SimpleAstVisitor<void> {
   }
 
   ArchitecturalLayer? _identifyLayer(String path) {
-    final normalizedPath = path.replaceAll('\\', '/').toLowerCase();
+    final normalizedPath = ProjectPaths.scopeToPackageLib(path).toLowerCase();
 
     if (normalizedPath.contains('/domain/')) {
       return const ArchitecturalLayer('domain', 4);
@@ -121,7 +169,9 @@ class _BoundaryCrossingVisitor extends SimpleAstVisitor<void> {
   }
 
   bool _isDependencyInjectionFile(String filePath) {
-    final normalizedPath = filePath.replaceAll('\\', '/').toLowerCase();
+    final normalizedPath = ProjectPaths.scopeToPackageLib(
+      filePath,
+    ).toLowerCase();
 
     // Match the entrypoint file name exactly. A bare `main.dart` substring
     // also matches `remain.dart` and `domain_main.dart` (`endsWith` /

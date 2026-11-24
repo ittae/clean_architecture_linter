@@ -6,6 +6,7 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
 import '../../clean_architecture_linter_base.dart';
+import '../../utils/project_path.dart';
 
 /// Detects circular dependencies between files and architectural layers.
 ///
@@ -73,14 +74,17 @@ class _CircularDependencyVisitor extends SimpleAstVisitor<void> {
       rule._fileToLayer[currentFile] = layer;
     }
 
+    final packageName = ProjectPaths.packageNameNear(currentFile);
     for (final directive in node.directives) {
-      if (directive is! ImportDirective) continue;
+      if (directive is! NamespaceDirective) continue;
 
-      final importUri = directive.uri.stringValue;
-      if (importUri == null) continue;
-
-      final resolvedPath = _resolveImportPath(importUri, currentFile);
-      if (resolvedPath != null) {
+      for (final importUri in ProjectPaths.urisOf(directive)) {
+        final resolvedPath = ProjectPaths.resolveProjectFile(
+          uri: importUri,
+          currentFile: currentFile,
+          packageName: packageName,
+        );
+        if (resolvedPath == null) continue;
         rule._dependencyGraph[currentFile]!.add(resolvedPath);
 
         final importedLayer = _identifyLayer(resolvedPath);
@@ -92,25 +96,29 @@ class _CircularDependencyVisitor extends SimpleAstVisitor<void> {
   }
 
   void _checkForCircularDependencies(String currentFile, CompilationUnit node) {
+    final packageName = ProjectPaths.packageNameNear(currentFile);
     for (final directive in node.directives) {
-      if (directive is! ImportDirective) continue;
+      if (directive is! NamespaceDirective) continue;
 
-      final importUri = directive.uri.stringValue;
-      if (importUri == null) continue;
+      for (final importUri in ProjectPaths.urisOf(directive)) {
+        final resolvedPath = ProjectPaths.resolveProjectFile(
+          uri: importUri,
+          currentFile: currentFile,
+          packageName: packageName,
+        );
+        if (resolvedPath == null) continue;
 
-      final resolvedPath = _resolveImportPath(importUri, currentFile);
-      if (resolvedPath == null) continue;
-
-      final path = _findPath(
-        resolvedPath,
-        currentFile,
-        <String>{},
-        rule._dependencyGraph,
-      );
-      if (path != null) {
-        final cycle = [currentFile, ...path];
-        rule.reportAtNode(directive, arguments: [_describeCycle(cycle)]);
-        return;
+        final path = _findPath(
+          resolvedPath,
+          currentFile,
+          <String>{},
+          rule._dependencyGraph,
+        );
+        if (path != null) {
+          final cycle = [currentFile, ...path];
+          rule.reportAtNode(directive, arguments: [_describeCycle(cycle)]);
+          return;
+        }
       }
     }
 
@@ -157,85 +165,41 @@ class _CircularDependencyVisitor extends SimpleAstVisitor<void> {
       }
     }
 
+    final packageName = ProjectPaths.packageNameNear(currentFile);
     for (final directive in node.directives) {
-      if (directive is! ImportDirective) continue;
+      if (directive is! NamespaceDirective) continue;
 
-      final importUri = directive.uri.stringValue;
-      if (importUri == null) continue;
-
-      final resolvedPath = _resolveImportPath(importUri, currentFile);
-      if (resolvedPath == null) continue;
-
-      final targetLayer = rule._fileToLayer[resolvedPath];
-      if (targetLayer == null || targetLayer == currentLayer) continue;
-
-      final layerPath = _findPath(
-        targetLayer,
-        currentLayer,
-        <String>{},
-        layerGraph,
-      );
-      if (layerPath != null && layerPath.length > 1) {
-        final layerCycle = [currentLayer, ...layerPath];
-        rule.reportAtNode(
-          directive,
-          arguments: ['Layer-level cycle: ${layerCycle.join(' -> ')}'],
+      for (final importUri in ProjectPaths.urisOf(directive)) {
+        final resolvedPath = ProjectPaths.resolveProjectFile(
+          uri: importUri,
+          currentFile: currentFile,
+          packageName: packageName,
         );
-        break;
-      }
-    }
-  }
+        if (resolvedPath == null) continue;
 
-  String? _resolveImportPath(String importUri, String currentFile) {
-    if (importUri.startsWith('dart:')) {
-      return null;
-    }
+        final targetLayer = rule._fileToLayer[resolvedPath];
+        if (targetLayer == null || targetLayer == currentLayer) continue;
 
-    if (importUri.startsWith('../') ||
-        importUri.startsWith('./') ||
-        !importUri.contains(':')) {
-      final separatorIndex = currentFile.lastIndexOf('/');
-      if (separatorIndex == -1) return null;
-
-      final currentDir = currentFile.substring(0, separatorIndex);
-      return _normalizeRelativePath(currentDir, importUri);
-    }
-
-    if (importUri.startsWith('package:')) {
-      final packagePath = importUri.substring('package:'.length);
-      final parts = packagePath.split('/');
-      if (parts.length > 1) {
-        final libIndex = currentFile.indexOf('/lib/');
-        if (libIndex != -1) {
-          final projectRoot = currentFile.substring(0, libIndex);
-          return '$projectRoot/lib/${parts.sublist(1).join('/')}';
+        final layerPath = _findPath(
+          targetLayer,
+          currentLayer,
+          <String>{},
+          layerGraph,
+        );
+        if (layerPath != null && layerPath.length > 1) {
+          final layerCycle = [currentLayer, ...layerPath];
+          rule.reportAtNode(
+            directive,
+            arguments: ['Layer-level cycle: ${layerCycle.join(' -> ')}'],
+          );
+          return;
         }
       }
     }
-
-    return null;
-  }
-
-  String _normalizeRelativePath(String basePath, String relativePath) {
-    final segments = basePath.split('/')..addAll(relativePath.split('/'));
-    final normalized = <String>[];
-
-    for (final segment in segments) {
-      if (segment == '..') {
-        if (normalized.isNotEmpty) {
-          normalized.removeLast();
-        }
-      } else if (segment != '.' && segment.isNotEmpty) {
-        normalized.add(segment);
-      }
-    }
-
-    final path = normalized.join('/');
-    return basePath.startsWith('/') ? '/$path' : path;
   }
 
   String? _identifyLayer(String path) {
-    final normalizedPath = path.replaceAll('\\', '/').toLowerCase();
+    final normalizedPath = ProjectPaths.scopeToPackageLib(path).toLowerCase();
 
     if (normalizedPath.contains('/domain/')) {
       return 'domain';
