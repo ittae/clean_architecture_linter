@@ -25,8 +25,21 @@ class V2RuleHarness {
     required Map<String, String> files,
     String definingFile = 'lib/main.dart',
     List<String> additionalDefiningFiles = const [],
+    String? nestUnder,
   }) async {
-    final root = await Directory.systemTemp.createTemp('cal_v2_harness_');
+    Directory? nest;
+    if (nestUnder != null) {
+      nest = Directory(
+        p.join(
+          Directory.systemTemp.path,
+          nestUnder,
+          'cal_nest_${DateTime.now().microsecondsSinceEpoch}',
+        ),
+      )..createSync(recursive: true);
+    }
+    final root = await (nest ?? Directory.systemTemp).createTemp(
+      'cal_v2_harness_',
+    );
     final rootPath = p.normalize(root.absolute.path);
     AnalysisContextCollection? collection;
 
@@ -140,6 +153,9 @@ environment:
       await collection?.dispose();
       if (root.existsSync()) {
         root.deleteSync(recursive: true);
+      }
+      if (nest != null && nest.existsSync()) {
+        nest.deleteSync(recursive: true);
       }
     }
   }

@@ -392,6 +392,36 @@ final providers = <Object>[];
       },
     );
 
+    test('reports a data model re-exported through a DI barrel', () async {
+      const providers =
+          'lib/features/todo/presentation/providers/todo_providers.dart';
+      final result = await V2RuleHarness(rule: LayerDependencyRule()).analyze(
+        files: {
+          providers: '''
+import '../../todo.dart';
+import 'package:meta/meta.dart';
+
+final providers = <Object>[];
+''',
+          'lib/features/todo/todo.dart': '''
+export 'data/models/todo_model.dart';
+''',
+          'lib/features/todo/data/models/todo_model.dart': 'class TodoModel {}',
+        },
+        definingFile: providers,
+      );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath: providers,
+          codeName: 'layer_dependency',
+          line: 1,
+          problemMessage:
+              'Layer dependency violation: Data Models should not be imported even in DI/Provider files. Found import: ../../todo.dart',
+        ),
+      ]);
+    });
+
     test('ignores cross-cutting dart imports', () async {
       final result = await V2RuleHarness(rule: LayerDependencyRule()).analyze(
         files: {
@@ -406,5 +436,196 @@ class Todo {}
 
       result.expectNoDiagnostics();
     });
+
+    test('reports exports, conditional imports, and combinators', () async {
+      const page = 'lib/features/todo/presentation/pages/todo_page.dart';
+      final result = await V2RuleHarness(rule: LayerDependencyRule()).analyze(
+        files: {
+          page: '''
+export '../../data/models/todo_model.dart' show TodoModel;
+import '../domain/entities/todo.dart'
+    if (dart.library.io) '../../data/models/todo_model.dart';
+import '../../data/models/todo_model.dart' hide TodoModel;
+import '../../data/models/todo_model.dart' as models;
+import '../../data/models/todo_model.dart' deferred as lazyModels;
+
+class TodoPage {}
+''',
+          'lib/features/todo/domain/entities/todo.dart': 'class Todo {}',
+          'lib/features/todo/data/models/todo_model.dart': '''
+class TodoModel<T> {}
+''',
+        },
+        definingFile: page,
+      );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath: page,
+          codeName: 'layer_dependency',
+          line: 1,
+          problemMessage:
+              'Layer dependency violation: Presentation layer should not directly depend on Data layer. Found export: ../../data/models/todo_model.dart',
+        ),
+        const ExpectedV2Diagnostic(
+          relativePath: page,
+          codeName: 'layer_dependency',
+          line: 2,
+          problemMessage:
+              'Layer dependency violation: Presentation layer should not directly depend on Data layer. Found import: ../../data/models/todo_model.dart',
+        ),
+        const ExpectedV2Diagnostic(
+          relativePath: page,
+          codeName: 'layer_dependency',
+          line: 4,
+          problemMessage:
+              'Layer dependency violation: Presentation layer should not directly depend on Data layer. Found import: ../../data/models/todo_model.dart',
+        ),
+        const ExpectedV2Diagnostic(
+          relativePath: page,
+          codeName: 'layer_dependency',
+          line: 5,
+          problemMessage:
+              'Layer dependency violation: Presentation layer should not directly depend on Data layer. Found import: ../../data/models/todo_model.dart',
+        ),
+        const ExpectedV2Diagnostic(
+          relativePath: page,
+          codeName: 'layer_dependency',
+          line: 6,
+          problemMessage:
+              'Layer dependency violation: Presentation layer should not directly depend on Data layer. Found import: ../../data/models/todo_model.dart',
+        ),
+      ]);
+    });
+
+    test('resolves package URIs and slash-less relative data imports', () async {
+      const packaged = 'lib/features/todo/presentation/pages/packaged.dart';
+      const relative = 'lib/features/todo/presentation/relative_page.dart';
+      final result = await V2RuleHarness(rule: LayerDependencyRule()).analyze(
+        files: {
+          packaged: '''
+import 'package:cal_v2_harness_app/features/todo/data/models/todo_model.dart';
+
+class PackagedPage {}
+''',
+          relative: '''
+import 'data/todo_model.dart';
+
+class RelativePage {}
+''',
+          'lib/features/todo/presentation/data/todo_model.dart':
+              'class TodoModel {}',
+          'lib/features/todo/data/models/todo_model.dart': 'class TodoModel {}',
+        },
+        definingFile: packaged,
+        additionalDefiningFiles: const [relative],
+      );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath: packaged,
+          codeName: 'layer_dependency',
+          problemMessage:
+              'Layer dependency violation: Presentation layer should not directly depend on Data layer. Found import: package:cal_v2_harness_app/features/todo/data/models/todo_model.dart',
+        ),
+        const ExpectedV2Diagnostic(
+          relativePath: relative,
+          codeName: 'layer_dependency',
+          problemMessage:
+              'Layer dependency violation: Presentation layer should not directly depend on Data layer. Found import: data/todo_model.dart',
+        ),
+      ]);
+    });
+
+    test(
+      'reports a barrel that exports data and ignores a domain barrel',
+      () async {
+        const page = 'lib/features/todo/presentation/pages/todo_page.dart';
+        const clean = 'lib/features/todo/presentation/pages/clean_page.dart';
+        final result = await V2RuleHarness(rule: LayerDependencyRule()).analyze(
+          files: {
+            page: '''
+import '../../todo_api.dart';
+
+class TodoPage {}
+''',
+            clean: '''
+import '../../domain_api.dart';
+
+class CleanPage {}
+''',
+            'lib/features/todo/todo_api.dart': '''
+export 'data/models/todo_model.dart' hide TodoModel;
+export 'domain/entities/todo.dart';
+''',
+            'lib/features/todo/domain_api.dart': '''
+export 'domain/entities/todo.dart' show Todo;
+''',
+            'lib/features/todo/data/models/todo_model.dart':
+                'class TodoModel {}',
+            'lib/features/todo/domain/entities/todo.dart': 'class Todo {}',
+          },
+          definingFile: page,
+          additionalDefiningFiles: const [clean],
+        );
+
+        result.expectDiagnostics([
+          const ExpectedV2Diagnostic(
+            relativePath: page,
+            codeName: 'layer_dependency',
+            problemMessage:
+                'Layer dependency violation: Presentation layer should not directly depend on Data layer. Found import: ../../todo_api.dart',
+          ),
+        ]);
+      },
+    );
+
+    test(
+      'a prefix named data does not make a domain import into data',
+      () async {
+        final result = await V2RuleHarness(rule: LayerDependencyRule()).analyze(
+          files: {
+            'lib/features/todo/presentation/pages/todo_page.dart': '''
+import 'package:cal_v2_harness_app/features/todo/domain/entities/todo.dart' as data;
+
+class TodoPage {}
+''',
+            'lib/features/todo/domain/entities/todo.dart': 'class Todo {}',
+          },
+          definingFile: 'lib/features/todo/presentation/pages/todo_page.dart',
+        );
+
+        result.expectNoDiagnostics();
+      },
+    );
+
+    test(
+      'ancestor folders named data or ui do not hide presentation imports',
+      () async {
+        const page = 'lib/features/todo/presentation/pages/todo_page.dart';
+        final result = await V2RuleHarness(rule: LayerDependencyRule()).analyze(
+          nestUnder: 'data/ui/pages',
+          files: {
+            page: '''
+import '../../data/repositories/todo_repository_impl.dart';
+
+class TodoPage {}
+''',
+            'lib/features/todo/data/repositories/todo_repository_impl.dart':
+                'class TodoRepositoryImpl {}',
+          },
+          definingFile: page,
+        );
+
+        result.expectDiagnostics([
+          const ExpectedV2Diagnostic(
+            relativePath: page,
+            codeName: 'layer_dependency',
+            problemMessage:
+                'Layer dependency violation: Presentation layer should not directly depend on Data layer. Found import: ../../data/repositories/todo_repository_impl.dart',
+          ),
+        ]);
+      },
+    );
   });
 }
