@@ -7,6 +7,7 @@ library;
 import 'package:analyzer/dart/ast/ast.dart';
 
 import 'compat/analyzer_ast_compat.dart';
+import 'utils/project_path.dart';
 
 /// Utility functions for Clean Architecture layer detection and file filtering.
 ///
@@ -37,23 +38,27 @@ class CleanArchitectureUtils {
   ///
   /// Returns `true` if the file should be excluded, `false` otherwise.
   static bool shouldExcludeFile(String filePath) {
+    // Ancestor folders outside lib (for example /tmp/test/app/lib/...) are not
+    // test or build roots of this package.
+    final scoped = ProjectPaths.scopeToPackageLib(filePath);
+
     // Exclude test folders
-    if (_isTestFile(filePath)) {
+    if (_isTestFile(scoped)) {
       return true;
     }
 
     // Exclude generated files
-    if (_isGeneratedFile(filePath)) {
+    if (_isGeneratedFile(scoped)) {
       return true;
     }
 
     // Exclude build artifacts
-    if (_isBuildArtifact(filePath)) {
+    if (_isBuildArtifact(scoped)) {
       return true;
     }
 
     // Exclude documentation files (but keep pubspec.yaml and analysis_options.yaml)
-    if (_isDocumentationFile(filePath)) {
+    if (_isDocumentationFile(scoped)) {
       return true;
     }
 
@@ -130,6 +135,10 @@ class CleanArchitectureUtils {
   /// - `/entities/` - Domain entities
   /// - `/exceptions/` - Domain-specific exceptions
   ///
+  /// `/entities/` and `/exceptions/` do not mark a file as domain when it
+  /// already sits in data or presentation (`data/exceptions`,
+  /// `presentation/entities`).
+  ///
   /// By default, automatically excludes test files, generated files, and build
   /// artifacts. Set [excludeFiles] to `false` to include all files regardless.
   ///
@@ -154,11 +163,25 @@ class CleanArchitectureUtils {
     // Step 2: Path normalization
     final normalized = _normalizePath(filePath);
 
-    // Step 3: Extended path pattern matching
-    return normalized.contains('/domain/') ||
+    if (normalized.contains('/domain/') ||
         normalized.contains('/usecases/') ||
-        normalized.contains('/use_cases/') ||
-        normalized.contains('/entities/') ||
+        normalized.contains('/use_cases/')) {
+      return true;
+    }
+
+    // A data or presentation file can contain these folder names without
+    // becoming a domain library.
+    if (normalized.contains('/data/') ||
+        normalized.contains('/presentation/') ||
+        normalized.contains('/ui/') ||
+        normalized.contains('/widgets/') ||
+        normalized.contains('/screens/') ||
+        normalized.contains('/pages/') ||
+        normalized.contains('/views/')) {
+      return false;
+    }
+
+    return normalized.contains('/entities/') ||
         normalized.contains('/exceptions/');
   }
 
@@ -1049,11 +1072,12 @@ class CleanArchitectureUtils {
   // Category 11: Internal Helpers (Private)
   // ============================================================================
 
-  /// Normalizes a file path by converting backslashes to forward slashes.
+  /// Normalizes a file path for layer checks.
   ///
-  /// This ensures consistent path matching across Windows and Unix systems.
+  /// Backslashes become forward slashes. Absolute paths keep the suffix after
+  /// the package `lib/` directory so ancestor folders are not layers.
   static String _normalizePath(String path) {
-    return path.replaceAll('\\', '/');
+    return ProjectPaths.scopeToPackageLib(path);
   }
 
   /// Capitalizes the first letter and attempts to singularize a string.

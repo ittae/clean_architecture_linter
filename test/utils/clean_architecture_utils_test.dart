@@ -178,6 +178,41 @@ void main() {
           isTrue,
         );
       });
+
+      test('keeps feature entities and ignores layer-local names', () {
+        expect(
+          CleanArchitectureUtils.isDomainFile(
+            'lib/features/auth/entities/user.dart',
+          ),
+          isTrue,
+        );
+        expect(
+          CleanArchitectureUtils.isDomainFile(
+            'lib/features/auth/presentation/entities/user_view.dart',
+          ),
+          isFalse,
+        );
+        expect(
+          CleanArchitectureUtils.isDomainFile(
+            'lib/features/auth/data/exceptions/api_exception.dart',
+          ),
+          isFalse,
+        );
+      });
+
+      test('ignores ancestor folders outside package lib', () {
+        const domain =
+            '/home/data/ui/app/lib/features/auth/domain/entities/user.dart';
+        expect(CleanArchitectureUtils.isDomainFile(domain), isTrue);
+        expect(CleanArchitectureUtils.isPresentationFile(domain), isFalse);
+        expect(CleanArchitectureUtils.isDataFile(domain), isFalse);
+        expect(
+          CleanArchitectureUtils.shouldExcludeFile(
+            '/tmp/test/app/lib/features/auth/domain/user.dart',
+          ),
+          isFalse,
+        );
+      });
     });
 
     group('isDataFile', () {
