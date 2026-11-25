@@ -6,6 +6,7 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
 import '../../clean_architecture_linter_base.dart';
+import '../../utils/project_path.dart';
 
 /// Enforces proper dependency direction between architectural layers.
 ///
@@ -38,7 +39,9 @@ class LayerDependencyRule extends AnalysisRule {
     RuleVisitorRegistry registry,
     RuleContext context,
   ) {
-    registry.addImportDirective(this, _LayerDependencyVisitor(this, context));
+    final visitor = _LayerDependencyVisitor(this, context);
+    registry.addImportDirective(this, visitor);
+    registry.addExportDirective(this, visitor);
   }
 }
 
@@ -50,47 +53,137 @@ class _LayerDependencyVisitor extends SimpleAstVisitor<void> {
 
   @override
   void visitImportDirective(ImportDirective node) {
+    _checkNamespace(node, kind: 'import');
+  }
+
+  @override
+  void visitExportDirective(ExportDirective node) {
+    _checkNamespace(node, kind: 'export');
+  }
+
+  void _checkNamespace(NamespaceDirective node, {required String kind}) {
     final filePath = _currentPath();
     if (CleanArchitectureUtils.shouldExcludeFile(filePath)) return;
 
-    final importUri = node.uri.stringValue;
-    if (importUri == null) return;
+    final packageName = ProjectPaths.packageNameNear(filePath);
+    for (final importUri in ProjectPaths.urisOf(node)) {
+      if (_reportUri(
+        node,
+        filePath: filePath,
+        importUri: importUri,
+        packageName: packageName,
+        kind: kind,
+      )) {
+        return;
+      }
+    }
+  }
+
+  bool _reportUri(
+    NamespaceDirective node, {
+    required String filePath,
+    required String importUri,
+    required String? packageName,
+    required String kind,
+  }) {
+    final resolved = ProjectPaths.resolveProjectFile(
+      uri: importUri,
+      currentFile: filePath,
+      packageName: packageName,
+    );
 
     if (_isDependencyInjectionFile(filePath)) {
-      if (_isDataModelImport(importUri)) {
+      if (_isDataModelImport(importUri, resolved, packageName)) {
         rule.reportAtNode(
           node,
           arguments: [
             'Data Models should not be imported even in DI/Provider files. '
-                'Found import: $importUri',
+                'Found $kind: $importUri',
           ],
         );
+        return true;
       }
-      return;
+      return false;
     }
 
     final sourceLayer = _identifyLayer(filePath);
-    final targetLayer = _identifyLayer(importUri);
+    if (sourceLayer == null || _isCrossCuttingConcern(importUri)) return false;
 
-    if (sourceLayer == null || targetLayer == null) return;
-
-    final violation = _checkDependencyViolation(
-      sourceLayer,
-      targetLayer,
-      importUri,
-    );
-
-    if (violation != null) {
-      rule.reportAtNode(node, arguments: [violation.message]);
+    for (final targetLayer in _targetLayers(importUri, resolved, packageName)) {
+      final violation = _checkDependencyViolation(
+        sourceLayer,
+        targetLayer,
+        importUri,
+        kind,
+      );
+      if (violation != null) {
+        rule.reportAtNode(node, arguments: [violation.message]);
+        return true;
+      }
     }
+    return false;
+  }
+
+  List<ArchitectureLayer> _targetLayers(
+    String importUri,
+    String? resolved,
+    String? packageName,
+  ) {
+    final layers = <ArchitectureLayer>[];
+    void add(ArchitectureLayer? layer) {
+      if (layer != null && !layers.contains(layer)) layers.add(layer);
+    }
+
+    if (resolved != null) {
+      final direct = _identifyLayer(resolved);
+      if (direct != null) {
+        add(direct);
+      } else {
+        final reach = ProjectPaths.exportReach(
+          dartFile: resolved,
+          packageName: packageName,
+        );
+        for (final file in reach.files) {
+          add(_identifyLayer(file));
+        }
+        for (final uri in reach.uris) {
+          add(_identifyLayer(uri));
+        }
+      }
+    }
+    add(_identifyLayer(importUri));
+    return layers;
   }
 
   String _currentPath() {
     return context.currentUnit?.file.path ?? context.definingUnit.file.path;
   }
 
-  bool _isDataModelImport(String importUri) {
-    final normalizedPath = importUri.replaceAll('\\', '/').toLowerCase();
+  bool _isDataModelImport(
+    String importUri,
+    String? resolved,
+    String? packageName,
+  ) {
+    if (_looksLikeDataModel(importUri)) return true;
+    if (resolved != null &&
+        _looksLikeDataModel(ProjectPaths.scopeToPackageLib(resolved))) {
+      return true;
+    }
+    if (resolved == null) return false;
+    final reach = ProjectPaths.exportReach(
+      dartFile: resolved,
+      packageName: packageName,
+    );
+    for (final file in reach.files) {
+      if (_looksLikeDataModel(ProjectPaths.scopeToPackageLib(file))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool _looksLikeDataModel(String path) {
+    final normalizedPath = path.replaceAll('\\', '/').toLowerCase();
     return normalizedPath.contains('/data/models/') ||
         normalizedPath.contains('/models/') &&
             normalizedPath.contains('/data/');
@@ -100,26 +193,23 @@ class _LayerDependencyVisitor extends SimpleAstVisitor<void> {
     ArchitectureLayer source,
     ArchitectureLayer target,
     String importPath,
+    String kind,
   ) {
-    if (_isCrossCuttingConcern(importPath)) {
-      return null;
-    }
-
     switch (source) {
       case ArchitectureLayer.domain:
         if (target == ArchitectureLayer.data) {
           return LayerViolation(
-            'Domain layer cannot depend on Data layer. Found import: $importPath',
+            'Domain layer cannot depend on Data layer. Found $kind: $importPath',
           );
         }
         if (target == ArchitectureLayer.presentation) {
           return LayerViolation(
-            'Domain layer cannot depend on Presentation layer. Found import: $importPath',
+            'Domain layer cannot depend on Presentation layer. Found $kind: $importPath',
           );
         }
         if (target == ArchitectureLayer.infrastructure) {
           return LayerViolation(
-            'Domain layer cannot depend on Infrastructure. Found import: $importPath',
+            'Domain layer cannot depend on Infrastructure. Found $kind: $importPath',
           );
         }
         break;
@@ -127,7 +217,7 @@ class _LayerDependencyVisitor extends SimpleAstVisitor<void> {
       case ArchitectureLayer.data:
         if (target == ArchitectureLayer.presentation) {
           return LayerViolation(
-            'Data layer cannot depend on Presentation layer. Found import: $importPath',
+            'Data layer cannot depend on Presentation layer. Found $kind: $importPath',
           );
         }
         if (target == ArchitectureLayer.infrastructure &&
@@ -141,7 +231,7 @@ class _LayerDependencyVisitor extends SimpleAstVisitor<void> {
       case ArchitectureLayer.presentation:
         if (target == ArchitectureLayer.data) {
           return LayerViolation(
-            'Presentation layer should not directly depend on Data layer. Found import: $importPath',
+            'Presentation layer should not directly depend on Data layer. Found $kind: $importPath',
           );
         }
         if (target == ArchitectureLayer.infrastructure &&
@@ -155,7 +245,7 @@ class _LayerDependencyVisitor extends SimpleAstVisitor<void> {
       case ArchitectureLayer.infrastructure:
         if (target == ArchitectureLayer.presentation) {
           return LayerViolation(
-            'Infrastructure cannot depend on Presentation layer. Found import: $importPath',
+            'Infrastructure cannot depend on Presentation layer. Found $kind: $importPath',
           );
         }
         break;
@@ -165,7 +255,7 @@ class _LayerDependencyVisitor extends SimpleAstVisitor<void> {
             target == ArchitectureLayer.presentation ||
             target == ArchitectureLayer.infrastructure) {
           return LayerViolation(
-            'Application layer cannot depend on outer layers. Found import: $importPath',
+            'Application layer cannot depend on outer layers. Found $kind: $importPath',
           );
         }
         break;
@@ -175,7 +265,7 @@ class _LayerDependencyVisitor extends SimpleAstVisitor<void> {
   }
 
   ArchitectureLayer? _identifyLayer(String path) {
-    final normalizedPath = path.replaceAll('\\', '/').toLowerCase();
+    final normalizedPath = ProjectPaths.scopeToPackageLib(path).toLowerCase();
 
     if (normalizedPath.contains('/domain/')) {
       if (normalizedPath.contains('/domain/usecases/') ||
@@ -265,7 +355,9 @@ class _LayerDependencyVisitor extends SimpleAstVisitor<void> {
   }
 
   bool _isDependencyInjectionFile(String filePath) {
-    final normalizedPath = filePath.replaceAll('\\', '/').toLowerCase();
+    final normalizedPath = ProjectPaths.scopeToPackageLib(
+      filePath,
+    ).toLowerCase();
 
     // Match the entrypoint file name exactly. A bare `main.dart` substring
     // also matches `remain.dart` and `domain_main.dart` (`endsWith` /
