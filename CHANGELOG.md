@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.6](https://github.com/ittae/clean_architecture_linter/compare/v2.8.5...v2.8.6) (2026-11-25)
+
+
+### Bug Fixes
+
+* catch export, part, and barrel edges in domain rules ([#218](https://github.com/ittae/clean_architecture_linter/issues/218)) ([21ab875](https://github.com/ittae/clean_architecture_linter/commit/21ab8756fd735758b08611f08b2d90d9c9b96bfa))
+* report layer dependency violations through export, part, and barrel URIs ([#220](https://github.com/ittae/clean_architecture_linter/issues/220)) ([1d55c6b](https://github.com/ittae/clean_architecture_linter/commit/1d55c6b25b2ecb3675179fd565d2fdde96a8f9a0))
+* stop false package URI cycles and follow barrels across boundaries ([#221](https://github.com/ittae/clean_architecture_linter/issues/221)) ([220e884](https://github.com/ittae/clean_architecture_linter/commit/220e8844adee8ca38f3ecf2b15681578c5355c17))
+
 ## [2.8.5](https://github.com/ittae/clean_architecture_linter/compare/v2.8.4...v2.8.5) (2026-11-24)
 
 
