@@ -6,6 +6,7 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
 import '../../clean_architecture_linter_base.dart';
+import '../../utils/project_path.dart';
 
 /// Enforces domain layer purity by preventing dependencies on external
 /// frameworks and infrastructure concerns.
@@ -38,6 +39,7 @@ class DomainPurityRule extends AnalysisRule {
   ) {
     final visitor = _DomainPurityVisitor(this, context);
     registry.addImportDirective(this, visitor);
+    registry.addExportDirective(this, visitor);
     registry.addClassDeclaration(this, visitor);
   }
 }
@@ -48,32 +50,77 @@ class _DomainPurityVisitor extends SimpleAstVisitor<void> {
   final AnalysisRule rule;
   final RuleContext context;
 
-  String get _filePath =>
+  String get _physicalPath =>
       context.currentUnit?.file.path ?? context.definingUnit.file.path;
+
+  String get _filePath {
+    final unit = context.currentUnit?.unit;
+    if (unit == null) return _physicalPath;
+    return ProjectPaths.libraryFilePath(_physicalPath, unit);
+  }
+
+  bool get _skip =>
+      CleanArchitectureUtils.shouldExcludeFile(_physicalPath) ||
+      !CleanArchitectureUtils.isDomainFile(_filePath);
 
   @override
   void visitImportDirective(ImportDirective node) {
+    _visitNamespace(node);
+  }
+
+  @override
+  void visitExportDirective(ExportDirective node) {
+    _visitNamespace(node);
+  }
+
+  void _visitNamespace(NamespaceDirective node) {
+    if (_skip) return;
     final filePath = _filePath;
-    if (CleanArchitectureUtils.shouldExcludeFile(filePath)) return;
-    if (!CleanArchitectureUtils.isDomainFile(filePath)) return;
 
-    final importUri = node.uri.stringValue;
-    if (importUri == null) return;
+    for (final importUri in ProjectPaths.urisOf(node)) {
+      final violation = _checkForViolation(importUri);
+      if (violation != null) {
+        rule.reportAtNode(
+          node,
+          arguments: [violation.category, violation.suggestion],
+        );
+        return;
+      }
+    }
 
-    final violation = _checkForViolation(importUri);
-    if (violation != null) {
-      rule.reportAtNode(
-        node,
-        arguments: [violation.category, violation.suggestion],
+    final packageName = ProjectPaths.packageNameNear(filePath);
+    for (final importUri in ProjectPaths.urisOf(node)) {
+      final resolved = ProjectPaths.resolveProjectFile(
+        uri: importUri,
+        currentFile: filePath,
+        packageName: packageName,
       );
+      if (resolved == null || CleanArchitectureUtils.isDomainFile(resolved)) {
+        continue;
+      }
+      final reach = ProjectPaths.exportReach(
+        dartFile: resolved,
+        packageName: packageName,
+      );
+      for (final exported in reach.uris) {
+        final violation = _checkForViolation(exported);
+        if (violation != null) {
+          rule.reportAtNode(
+            node,
+            arguments: [
+              '${violation.category} via $exported',
+              violation.suggestion,
+            ],
+          );
+          return;
+        }
+      }
     }
   }
 
   @override
   void visitClassDeclaration(ClassDeclaration node) {
-    final filePath = _filePath;
-    if (CleanArchitectureUtils.shouldExcludeFile(filePath)) return;
-    if (!CleanArchitectureUtils.isDomainFile(filePath)) return;
+    if (_skip) return;
 
     final extendsClause = node.extendsClause;
     if (extendsClause != null) {

@@ -5,8 +5,9 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/error/error.dart';
 
-import '../../compat/analyzer_ast_compat.dart';
 import '../../clean_architecture_linter_base.dart';
+import '../../compat/analyzer_ast_compat.dart';
+import '../../utils/project_path.dart';
 
 /// Enforces Dependency Inversion Principle in the domain layer.
 class DependencyInversionRule extends AnalysisRule {
@@ -39,6 +40,7 @@ class DependencyInversionRule extends AnalysisRule {
     registry.addConstructorDeclaration(this, visitor);
     registry.addFieldDeclaration(this, visitor);
     registry.addImportDirective(this, visitor);
+    registry.addExportDirective(this, visitor);
     registry.addClassDeclaration(this, visitor);
   }
 }
@@ -49,8 +51,14 @@ class _DependencyInversionVisitor extends SimpleAstVisitor<void> {
   final AnalysisRule rule;
   final RuleContext context;
 
-  String get _filePath =>
+  String get _physicalPath =>
       context.currentUnit?.file.path ?? context.definingUnit.file.path;
+
+  String get _filePath {
+    final unit = context.currentUnit?.unit;
+    if (unit == null) return _physicalPath;
+    return ProjectPaths.libraryFilePath(_physicalPath, unit);
+  }
 
   @override
   void visitConstructorDeclaration(ConstructorDeclaration node) {
@@ -83,17 +91,38 @@ class _DependencyInversionVisitor extends SimpleAstVisitor<void> {
 
   @override
   void visitImportDirective(ImportDirective node) {
+    _visitNamespace(node, noun: 'import', verb: 'importing');
+  }
+
+  @override
+  void visitExportDirective(ExportDirective node) {
+    _visitNamespace(node, noun: 'export', verb: 'exporting');
+  }
+
+  void _visitNamespace(
+    NamespaceDirective node, {
+    required String noun,
+    required String verb,
+  }) {
     if (_shouldSkipFile) return;
 
-    final importUri = node.uri.stringValue;
-    if (importUri == null) return;
-
-    final violation = _analyzeImportDependency(importUri);
-    if (violation != null) {
-      rule.reportAtNode(
-        node,
-        arguments: [violation.message, violation.suggestion],
+    final filePath = _filePath;
+    final packageName = ProjectPaths.packageNameNear(filePath);
+    for (final importUri in ProjectPaths.urisOf(node)) {
+      final violation = _analyzeImportDependency(
+        importUri,
+        filePath: filePath,
+        packageName: packageName,
+        noun: noun,
+        verb: verb,
       );
+      if (violation != null) {
+        rule.reportAtNode(
+          node,
+          arguments: [violation.message, violation.suggestion],
+        );
+        return;
+      }
     }
   }
 
@@ -143,9 +172,8 @@ class _DependencyInversionVisitor extends SimpleAstVisitor<void> {
   }
 
   bool get _shouldSkipFile {
-    final filePath = _filePath;
-    return CleanArchitectureUtils.shouldExcludeFile(filePath) ||
-        !CleanArchitectureUtils.isDomainFile(filePath);
+    return CleanArchitectureUtils.shouldExcludeFile(_physicalPath) ||
+        !CleanArchitectureUtils.isDomainFile(_filePath);
   }
 
   DependencyAnalysis _analyzeDependencyTypes(List<FormalParameter> parameters) {
@@ -222,7 +250,13 @@ class _DependencyInversionVisitor extends SimpleAstVisitor<void> {
     return null;
   }
 
-  DependencyViolation? _analyzeImportDependency(String importUri) {
+  DependencyViolation? _analyzeImportDependency(
+    String importUri, {
+    required String filePath,
+    required String? packageName,
+    required String noun,
+    required String verb,
+  }) {
     const infraPatterns = [
       'package:sqflite',
       'package:shared_preferences',
@@ -236,29 +270,49 @@ class _DependencyInversionVisitor extends SimpleAstVisitor<void> {
       if (importUri.startsWith(pattern)) {
         return DependencyViolation(
           node: null,
-          message: 'Direct infrastructure import in domain layer: $importUri',
+          message: 'Direct infrastructure $noun in domain layer: $importUri',
           suggestion:
               'Create domain abstraction and move infrastructure to data layer.',
         );
       }
     }
 
-    if ((importUri.contains('/data/') || importUri.contains('\\data\\')) &&
-        !importUri.contains('/domain/') &&
-        !importUri.contains('\\domain\\')) {
+    final resolved = ProjectPaths.resolveProjectFile(
+      uri: importUri,
+      currentFile: filePath,
+      packageName: packageName,
+    );
+    final scoped = resolved == null
+        ? importUri
+        : ProjectPaths.scopeToPackageLib(resolved);
+    final paths = [
+      importUri.replaceAll('\\', '/'),
+      scoped.replaceAll('\\', '/'),
+    ];
+
+    final dataDependency = paths.any(
+      (path) =>
+          (path.contains('/data/') || path.contains('\\data\\')) &&
+          !path.contains('/domain/') &&
+          !path.contains('\\domain\\'),
+    );
+    if (dataDependency) {
       return DependencyViolation(
         node: null,
-        message: 'Domain layer importing from data layer: $importUri',
+        message: 'Domain layer $verb from data layer: $importUri',
         suggestion:
             'Domain should not depend on data layer. Use dependency inversion.',
       );
     }
 
-    if (importUri.contains('/presentation/') ||
-        importUri.contains('\\presentation\\')) {
+    final presentationDependency = paths.any(
+      (path) =>
+          path.contains('/presentation/') || path.contains('\\presentation\\'),
+    );
+    if (presentationDependency) {
       return DependencyViolation(
         node: null,
-        message: 'Domain layer importing from presentation layer: $importUri',
+        message: 'Domain layer $verb from presentation layer: $importUri',
         suggestion: 'Domain should not depend on presentation layer.',
       );
     }

@@ -212,6 +212,58 @@ class TodoRepository {}
       },
     );
 
+    test('reports exports and part-of libraries', () async {
+      const library = 'lib/features/todo/domain/usecases/get_todo_usecase.dart';
+      const part = 'lib/features/todo/data/get_todo_part.dart';
+      final result = await V2RuleHarness(rule: DependencyInversionRule())
+          .analyze(
+            files: {
+              library: '''
+export '../../data/repositories/todo_repository_impl.dart';
+import 'id.dart'
+    if (dart.library.io) '../../presentation/pages/todo_page.dart';
+part '../../data/get_todo_part.dart';
+
+class GetTodoUseCase {}
+''',
+              'lib/features/todo/domain/usecases/id.dart': 'class TodoId {}',
+              'lib/features/todo/data/repositories/todo_repository_impl.dart':
+                  'class TodoRepositoryImpl {}',
+              'lib/features/todo/presentation/pages/todo_page.dart':
+                  'class TodoPage {}',
+              part: '''
+part of '../domain/usecases/get_todo_usecase.dart';
+
+class GetTodoPart {
+  final TodoRepositoryImpl repository;
+}
+''',
+            },
+            definingFile: library,
+          );
+
+      result.expectDiagnostics([
+        const ExpectedV2Diagnostic(
+          relativePath: library,
+          codeName: 'dependency_inversion',
+          problemMessage:
+              'Domain layer exporting from data layer: ../../data/repositories/todo_repository_impl.dart',
+        ),
+        const ExpectedV2Diagnostic(
+          relativePath: library,
+          codeName: 'dependency_inversion',
+          problemMessage:
+              'Domain layer importing from presentation layer: ../../presentation/pages/todo_page.dart',
+        ),
+        const ExpectedV2Diagnostic(
+          relativePath: part,
+          codeName: 'dependency_inversion',
+          problemMessage:
+              'Field depends on concrete implementation: TodoRepositoryImpl',
+        ),
+      ]);
+    });
+
     test(
       'skips the same concrete dependency outside the domain layer',
       () async {
