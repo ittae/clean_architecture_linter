@@ -63,3 +63,76 @@ jobs:
     permissions:
       id-token: write # Required for authentication using OIDC
     uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+
+  # After pub.dev accepts the version, ask each Flutter app that pins this
+  # package to raise its floor (repository_dispatch). The consumer list lives in
+  # the private ittae/.github (tools/cal_consumers.txt), and this public log
+  # prints counts only, never a consumer name. Prerelease tags are skipped.
+  notify-consumers:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions: {}
+    timeout-minutes: 15
+    steps:
+    - name: Resolve release version
+      id: release
+      env:
+        TAG: ${{ github.ref_name }}
+      run: |
+        version="${TAG#v}"
+        if printf '%s' "$version" | grep -qE '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'; then
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+        else
+          echo "::notice::$TAG is not a release x.y.z tag; consumers are not notified"
+        fi
+
+    - name: Wait until pub.dev serves the version
+      if: steps.release.outputs.version != ''
+      env:
+        VERSION: ${{ steps.release.outputs.version }}
+      run: |
+        url="https://pub.dev/api/packages/clean_architecture_linter/versions/$VERSION"
+        for attempt in $(seq 1 20); do
+          if curl -fsS -o /dev/null "$url"; then
+            echo "pub.dev serves $VERSION"
+            exit 0
+          fi
+          echo "pub.dev does not serve $VERSION yet (attempt $attempt/20)"
+          sleep 15
+        done
+        echo "::error::pub.dev did not serve $VERSION within 5 minutes"
+        exit 1
+
+    - name: Dispatch to consumers
+      if: steps.release.outputs.version != ''
+      env:
+        GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+        VERSION: ${{ steps.release.outputs.version }}
+      run: |
+        set -uo pipefail
+        if ! list="$(gh api -H 'Accept: application/vnd.github.raw' \
+            repos/ittae/.github/contents/tools/cal_consumers.txt 2>/dev/null)"; then
+          echo "::error::RELEASE_PLEASE_TOKEN cannot read the consumer list in ittae/.github"
+          exit 1
+        fi
+        payload="$(jq -nc --arg v "$VERSION" \
+          '{event_type: "clean-architecture-linter-published",
+            client_payload: {package: "clean_architecture_linter", version: $v}}')"
+        total=0
+        failed=0
+        while IFS= read -r line; do
+          repo="${line%%#*}"
+          repo="${repo//[[:space:]]/}"
+          [ -n "$repo" ] || continue
+          echo "::add-mask::$repo"
+          total=$((total + 1))
+          if [[ ! "$repo" =~ ^ittae/[A-Za-z0-9_.-]+$ ]] \
+            || ! gh api -X POST "repos/$repo/dispatches" --input - <<<"$payload" >/dev/null 2>&1; then
+            failed=$((failed + 1))
+            echo "::error::consumer $total: dispatch failed"
+          fi
+        done <<<"$list"
+        echo "dispatched $((total - failed))/$total consumers for $VERSION"
+        if [ "$total" -eq 0 ] || [ "$failed" -gt 0 ]; then
+          exit 1
+        fi

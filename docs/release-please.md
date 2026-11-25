@@ -9,7 +9,10 @@ main push
   → Release Please (with RELEASE_PLEASE_TOKEN PAT/App)
   → creates tag vX.Y.Z (user/app push event)
   → Publish to pub.dev (on.push.tags) → test + OIDC → pub.dev
+  → notify-consumers → repository_dispatch to the ittae Flutter apps
 ```
+
+`notify-consumers` runs only after the publish job succeeds and only for a release `vX.Y.Z` tag. It waits until pub.dev serves the version, reads the consumer list from the private `ittae/.github`, and sends `clean-architecture-linter-published` with `{package, version}`. Each app then opens a PR that raises its `analysis_options.yaml` plugin floor. The public log prints counts, not consumer names.
 
 ## Why automation broke for 2.2.0
 
@@ -24,7 +27,7 @@ So the only reliable auto path is: **Release Please creates the tag with a non-G
 
 | Secret | Purpose |
 |--------|---------|
-| `RELEASE_PLEASE_TOKEN` | PAT or GitHub App installation token with `contents: write` (+ `pull-requests: write`). Used by release-please-action instead of `github.token`. |
+| `RELEASE_PLEASE_TOKEN` | PAT or GitHub App installation token with `contents: write` (+ `pull-requests: write`). Used by release-please-action instead of `github.token`. `notify-consumers` also uses it to read the consumer list and send `repository_dispatch`; without that access the job fails after publish, and each app's weekly fallback opens the same PR. |
 
 Without it, Release PR / tag / GitHub Release may still be created, but **pub.dev will not publish** until someone re-pushes the tag with human/PAT credentials.
 
