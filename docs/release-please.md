@@ -23,13 +23,14 @@ main push
 
 So the only reliable auto path is: **Release Please creates the tag with a non-GITHUB_TOKEN credential** so `publish.yml`'s `on.push.tags` runs.
 
-## Required secret
+## Required secrets
 
 | Secret | Purpose |
 |--------|---------|
-| `RELEASE_PLEASE_TOKEN` | PAT or GitHub App installation token with `contents: write` (+ `pull-requests: write`). Used by release-please-action instead of `github.token`. `notify-consumers` also uses it to read the consumer list and send `repository_dispatch`; without that access the job fails after publish, and each app's weekly fallback opens the same PR. |
+| `RELEASE_PLEASE_TOKEN` | PAT or GitHub App installation token with `contents: write` and `pull-requests: write` on this repository. Used by release-please-action instead of `github.token`. It does not need `contents: write` on consumer app repositories, and `notify-consumers` does not use it. |
+| `CONSUMER_DISPATCH_TOKEN` | Token used only by `notify-consumers`. It reads `tools/cal_consumers.txt` in `ittae/.github` and sends `repository_dispatch`. GitHub requires `contents: write` on each consumer repository for that dispatch. This token is not passed to release-please-action. Without it the job fails after publish, and each app's weekly fallback opens the same PR. |
 
-Without it, Release PR / tag / GitHub Release may still be created, but **pub.dev will not publish** until someone re-pushes the tag with human/PAT credentials.
+Without `RELEASE_PLEASE_TOKEN`, a Release PR, tag, and GitHub Release may still be created, but **pub.dev will not publish** until someone re-pushes the tag with human or PAT credentials.
 
 ### Backfill if publish was missed
 

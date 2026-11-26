@@ -150,8 +150,9 @@ class _LayerDependencyVisitor extends SimpleAstVisitor<void> {
           add(_identifyLayer(uri));
         }
       }
+    } else {
+      add(_identifyLayer(importUri));
     }
-    add(_identifyLayer(importUri));
     return layers;
   }
 

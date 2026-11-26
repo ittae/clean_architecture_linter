@@ -111,7 +111,7 @@ class ProjectPaths {
       if (slash <= 0) return null;
       if (packagePath.substring(0, slash) != packageName) return null;
       final rest = packagePath.substring(slash + 1);
-      if (rest.isEmpty || rest.contains('..')) return null;
+      if (rest.isEmpty || rest.split('/').contains('..')) return null;
       return _insideRoot(root, '$root/lib/$rest');
     }
 
