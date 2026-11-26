@@ -627,5 +627,25 @@ class TodoPage {}
         ]);
       },
     );
+
+    test(
+      'a cancelled data segment does not classify a presentation file as data',
+      () async {
+        const widget = 'lib/features/todo/presentation/widgets/a.dart';
+        final result = await V2RuleHarness(rule: LayerDependencyRule()).analyze(
+          files: {
+            widget: '''
+import '../data/../pages/other.dart';
+
+class A {}
+''',
+            'lib/features/todo/presentation/pages/other.dart': 'class Other {}',
+          },
+          definingFile: widget,
+        );
+
+        result.expectNoDiagnostics();
+      },
+    );
   });
 }

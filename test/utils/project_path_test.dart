@@ -107,6 +107,7 @@ environment:
       expect(resolve('package:other/a.dart'), isNull);
       expect(resolve('package:sample_app'), isNull);
       expect(resolve('package:sample_app/../secret.dart'), isNull);
+      expect(resolve('package:sample_app/foo/../../secret.dart'), isNull);
       expect(resolve('package:sample_app/a.dart', packageName: null), isNull);
       expect(resolve('../../../../../../etc/passwd'), isNull);
       expect(
@@ -116,6 +117,21 @@ environment:
           packageName: 'sample_app',
         ),
         isNull,
+      );
+    });
+
+    test('resolves a library file whose name contains two dots', () {
+      final file = _write(root, 'lib/a.dart', 'class A {}');
+      final dotted = p
+          .normalize(p.join(root.path, 'lib/a..b.dart'))
+          .replaceAll('\\', '/');
+      expect(
+        ProjectPaths.resolveProjectFile(
+          uri: 'package:sample_app/a..b.dart',
+          currentFile: file,
+          packageName: 'sample_app',
+        ),
+        dotted,
       );
     });
 
