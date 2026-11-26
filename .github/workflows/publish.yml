@@ -106,13 +106,13 @@ jobs:
     - name: Dispatch to consumers
       if: steps.release.outputs.version != ''
       env:
-        GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+        GH_TOKEN: ${{ secrets.CONSUMER_DISPATCH_TOKEN }}
         VERSION: ${{ steps.release.outputs.version }}
       run: |
         set -uo pipefail
         if ! list="$(gh api -H 'Accept: application/vnd.github.raw' \
             repos/ittae/.github/contents/tools/cal_consumers.txt 2>/dev/null)"; then
-          echo "::error::RELEASE_PLEASE_TOKEN cannot read the consumer list in ittae/.github"
+          echo "::error::CONSUMER_DISPATCH_TOKEN cannot read the consumer list in ittae/.github"
           exit 1
         fi
         payload="$(jq -nc --arg v "$VERSION" \
