@@ -1,0 +1,23 @@
+# Deliberate breaks for scripts/mutate.sh. Format: file § from § to § label
+# Each from-text must appear once in its file. \n in a field is a newline.
+# Rule breaks are killed by test/features/*.feature, ratchet breaks by test/scripts/coverage_ratchet_test.dart.
+lib/src/rules/cross_layer/layer_dependency_rule.dart§case ArchitectureLayer.presentation:\n        if (target == ArchitectureLayer.data) {§case ArchitectureLayer.presentation:\n        if (false) {§layer_dependency off: presentation importing data is reported
+lib/src/rules/cross_layer/layer_dependency_rule.dart§case ArchitectureLayer.presentation:\n        if (target == ArchitectureLayer.data) {§case ArchitectureLayer.presentation:\n        if (target != ArchitectureLayer.presentation) {§layer_dependency widened: presentation importing domain stays clean
+lib/src/rules/domain_rules/domain_purity_rule.dart§'package:flutter/',§'package:flutter_off/',§domain_purity off: a flutter import in domain is reported
+lib/src/rules/domain_rules/domain_purity_rule.dart§'dart:html',§'dart:io',§domain_purity widened: a dart:io import in domain stays clean
+lib/src/rules/data_rules/repository_pass_through_rule.dart§if (_looksLikeEntityType(returnTypeString)) {§if (false) {§repository_pass_through off: a bare entity return is reported
+lib/src/rules/data_rules/repository_pass_through_rule.dart§returnTypeString.startsWith('Future<') ||§false ||§repository_pass_through widened: a Future<Entity> return stays clean
+lib/src/rules/presentation_rules/presentation_no_throw_rule.dart§if (_isThrowingProgrammingError(node) || _isRethrow(node)) {§if (true) {§presentation_no_throw off: a throw in build is reported
+lib/src/rules/presentation_rules/presentation_no_throw_rule.dart§if (_isInsideAsyncValueGuard(node)) {§if (false) {§presentation_no_throw widened: a throw inside AsyncValue.guard stays clean
+scripts/coverage_ratchet.dart§hit * baseline.found < baseline.hit * found;§hit * baseline.found > baseline.hit * found;§ratchet: coverage below the baseline is a drop
+scripts/coverage_ratchet.dart§if (hits > 0) hit++;§hit++;§ratchet: a line with zero hits is not counted as hit
+scripts/coverage_ratchet.dart§ || hits < 0) {§) {§ratchet: a negative hit count is a malformed record
+scripts/coverage_ratchet.dart§if (found == 0) throw§if (false) throw§ratchet: an LCOV report with no lines is rejected
+scripts/coverage_ratchet.dart§found <= 0 ||§found < 0 ||§ratchet: a zero-line baseline is rejected
+scripts/coverage_ratchet.dart§ || hit < 0 || §  || §ratchet: a negative baseline hit is rejected
+scripts/coverage_ratchet.dart§hit > found) {§hit > found + 1) {§ratchet: a baseline hit above found is rejected
+scripts/coverage_ratchet.dart§.abs() > _pctTolerance) {§.abs() > 100) {§ratchet: a baseline pct must match hit/found
+scripts/coverage_ratchet.dart§if (current.isBelow(baseline)) {§if (false) {§ratchet: a drop exits 1
+scripts/coverage_ratchet.dart§on FormatException catch (e) {\n    err.writeln('coverage ratchet: ${e.message}');\n    return 2;§on FormatException catch (e) {\n    err.writeln('coverage ratchet: ${e.message}');\n    return 0;§ratchet: an invalid baseline exits 2
+scripts/coverage_ratchet.dart§: ${e.path}');\n    return 2;§: ${e.path}');\n    return 0;§ratchet: a missing baseline file exits 2
+scripts/coverage_ratchet.dart§err.writeln(_usage);\n    return 2;§err.writeln(_usage);\n    return 0;§ratchet: an unknown argument exits 2

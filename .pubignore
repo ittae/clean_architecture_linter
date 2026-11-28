@@ -15,6 +15,7 @@ build/
 # Non-essential docs and internal notes
 docs/
 tools/
+scripts/
 poc_v2/
 CONTRIBUTING.md
 TASKMASTER_빠른시작.md

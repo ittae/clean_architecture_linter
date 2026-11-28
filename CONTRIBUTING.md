@@ -455,6 +455,15 @@ dart pub test --coverage
 dart pub test --watch
 ```
 
+### Local Pre-PR Gate
+
+Run `./scripts/verify.sh` before opening a pull request. PR CI does not run it. It runs `dart analyze --fatal-infos`, the format check, `dart test` with the line-coverage ratchet, the Gherkin scenarios, and `tools/verify_analyze_parity.sh`. `--quick` stops after the format check.
+
+- **Gherkin scenarios** live in `test/features/*.feature`, with step definitions in `test/features/steps/`. Each rule there has a scenario that must report and a near-miss that must stay clean. Run them alone with `dart test test/features/features_bdd.dart`. The runner file name does not end in `_test.dart`, so a bare `dart test` (and CI) skips it.
+- **Coverage ratchet**: `.github/coverage_baseline.json` holds the committed line coverage. `verify.sh` fails when coverage falls below it. After adding tests, raise it with `dart scripts/coverage_ratchet.dart --update` and commit the file. Codecov in CI stays informational.
+- **Deliberate breaks**: `bash scripts/mutate.sh` applies each edit in `test/mutation/breaks.txt` and fails when one survives the tests. When you add a rule scenario, add one break that turns the rule off and one that widens it.
+- **Device or simulator e2e does not apply.** This package is a headless `analysis_server_plugin`; `tools/verify_analyze_parity.sh` is the end-to-end check through `dart analyze`.
+
 ## Code Style
 
 ### Dart Style Guidelines
